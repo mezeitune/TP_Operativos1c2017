@@ -17,7 +17,7 @@
 //#define RUTA_LOG "/home/utnso/memoria.log"
 
 t_config* configuracion_memoria;
-int puertoMemoria;
+char* puertoMemoria;
 int marcos;
 int marco_size;
 int entradas_cache;
@@ -42,7 +42,7 @@ int main(void)
 void leerConfiguracion(char* ruta)
 {
 	configuracion_memoria = config_create(ruta);
-	puertoMemoria = config_get_int_value(configuracion_memoria,"PUERTO");
+	puertoMemoria = config_get_string_value(configuracion_memoria,"PUERTO");
 	marcos = config_get_int_value(configuracion_memoria,"MARCOS");
 	marco_size = config_get_int_value(configuracion_memoria,"MARCO_SIZE");
 	entradas_cache = config_get_int_value(configuracion_memoria,"ENTRADA_CACHE");
