@@ -1,0 +1,21 @@
+/*
+ ============================================================================
+ Name        : Memoria.c
+ Author      : Servomotor
+ Version     :
+ Copyright   : Your copyright notice
+ Description : Hello World in C, Ansi-style
+ ============================================================================
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <commons/config.h>
+#include <commons/log.h>
+#include <commons/bitarray.h>
+
+
+int main(void)
+{
+	return EXIT_SUCCESS;
+}
