@@ -20,3 +20,13 @@ Command-line arguments:  -os linux -ws gtk -arch x86 -product org.eclipse.epp.pa
 
 !ENTRY org.eclipse.cdt.core 1 0 2017-03-30 18:27:25.472
 !MESSAGE Indexed 'Memoria' (1 sources, 37 headers) in 0,405 sec: 1.040 declarations; 1.908 references; 0 unresolved inclusions; 0 syntax errors; 0 unresolved names (0%)
+!SESSION 2017-03-30 21:30:41.538 -----------------------------------------------
+eclipse.buildId=4.4.1.M20140925-0400
+java.version=1.7.0_75
+java.vendor=Oracle Corporation
+BootLoader constants: OS=linux, ARCH=x86, WS=gtk, NL=es_AR
+Framework arguments:  -product org.eclipse.epp.package.cpp.product
+Command-line arguments:  -os linux -ws gtk -arch x86 -product org.eclipse.epp.package.cpp.product
+
+!ENTRY org.eclipse.core.resources 2 10035 2017-03-30 22:46:58.038
+!MESSAGE The workspace exited with unsaved changes in the previous session; refreshing workspace to recover changes.

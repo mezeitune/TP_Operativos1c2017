@@ -24,8 +24,6 @@ int entradas_cache;
 int cache_x_proc;
 int retardo_memoria;
 
-//Revisar y discutir estructuras
-
 typedef struct
 {
 	char datosMarco[marco_size];
@@ -39,16 +37,14 @@ typedef struct
 	int num_pag;
 }struct_adm_memoria;
 
-void leerConfiguracion(char* ruta);//Revisar junto a estructura
-void inicializarMemoria(char* ruta);//Falta codificar
+void leerConfiguracion(char* ruta);
+void inicializarMemoria(char* ruta);
 
-//-----------------------FUNCIONES MEMORIA--------------------------//
-int inicializarPrograma(int pid, int cantPaginas);//Falta codificar
-int solicitarBytesPagina(int pid,int pagina, int offset, int size);//Falta codificar
-int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);//Falta codificar
-int asignarPaginaAProceso(int pid, int cantPaginas);//Falta codificar
-int finalizarPrograma(int pid);//Falta codificar
-//------------------------------------------------------------------//
+int inicializarPrograma(int pid, int cantPaginas);
+int solicitarBytesPagina(int pid,int pagina, int offset, int size);
+int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);
+int asignarPaginaAProceso(int pid, int cantPaginas);
+int finalizarPrograma(int pid);
 
 int main(void)
 {
@@ -73,25 +69,25 @@ void inicializarMemoria(char* ruta)
 
 int inicializarPrograma(int pid, int cantPaginas)
 {
-	return EXIT_SUCCESS;
+	return 0;
 }
 
 int solicitarBytesPagina(int pid,int pagina, int offset, int size)
 {
-	return EXIT_SUCCESS;
+	return 0;
 }
 
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 {
-	return EXIT_SUCCESS;
+	return 0;
 }
 
 int asignarPaginaAProceso(int pid, int cantPaginas)
 {
-	return EXIT_SUCCESS;
+	return 0;
 }
 
 int finalizarPrograma(int pid)
 {
-	return EXIT_SUCCESS;
+	return 0;
 }
