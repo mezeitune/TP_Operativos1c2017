@@ -1,6 +1,6 @@
-16:50:12 **** Incremental Build of configuration Debug for project File System ****
+17:04:12 **** Incremental Build of configuration Debug for project File System ****
 make all 
 make: No se hace nada para «all».
 
-16:50:12 Build Finished (took 62ms)
+17:04:12 Build Finished (took 78ms)
 

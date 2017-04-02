@@ -672,3 +672,196 @@ make: No se hace nada para «all».
 16:50:12 **** Incremental Build of configuration Debug for project Memoria ****
 make all 
 make: No se hace nada para «all».
+16:58:21 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+Finished building: ../src/CPU.c
+ 
+Building target: CPU
+Invoking: Cross GCC Linker
+gcc  -o "CPU"  ./src/CPU.o   -lcommons
+Finished building target: CPU
+ 
+16:58:21 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+16:58:22 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+16:58:22 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+16:58:22 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+16:58:39 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+Finished building: ../src/CPU.c
+ 
+Building target: CPU
+Invoking: Cross GCC Linker
+gcc  -o "CPU"  ./src/CPU.o   -lcommons
+Finished building target: CPU
+ 
+16:58:39 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+16:58:39 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+16:58:39 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+16:58:39 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
+16:58:57 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+16:58:57 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+16:58:57 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+16:58:58 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+16:58:58 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
+17:03:22 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+17:03:22 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+17:03:22 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+17:03:22 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+17:03:23 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:75:2: error: too few arguments to function ‘enviar_string’
+  enviar_string(socket_cliente,"Hola");
+  ^
+../src/Memoria.c:57:6: note: declared here
+ void enviar_string(int socket, void* cosaAEnviar, int tamanio);
+      ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:204:7: error: conflicting types for ‘recibir_string’
+ char* recibir_string(int socket_aceptado){
+       ^
+../src/Memoria.c:56:7: note: previous declaration of ‘recibir_string’ was here
+ void* recibir_string(int socket);
+       ^
+../src/Memoria.c:208:6: error: conflicting types for ‘enviar_string’
+ void enviar_string(int socket, char* mensaje){
+      ^
+../src/Memoria.c:57:6: note: previous declaration of ‘enviar_string’ was here
+ void enviar_string(int socket, void* cosaAEnviar, int tamanio);
+      ^
+../src/Memoria.c: In function ‘enviar_string’:
+../src/Memoria.c:211:2: error: too many arguments to function ‘enviar’
+  enviar(socket, (void*) mensaje, tamanio);
+  ^
+../src/Memoria.c:55:6: note: declared here
+ void enviar(int socket, char * mensaje);
+      ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:214:6: error: conflicting types for ‘enviar’
+ void enviar(int socket, void* cosaAEnviar, int tamanio){
+      ^
+../src/Memoria.c:55:6: note: previous declaration of ‘enviar’ was here
+ void enviar(int socket, char * mensaje);
+      ^
+../src/Memoria.c:225:7: error: conflicting types for ‘recibir’
+ void* recibir(int socket){
+       ^
+../src/Memoria.c:54:7: note: previous declaration of ‘recibir’ was here
+ char* recibir(int socket_aceptado);
+       ^
+make: *** [src/Memoria.o] Error 1
+17:03:41 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+17:03:41 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+17:03:41 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+17:03:41 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+17:03:41 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+17:04:08 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+Finished building: ../src/CPU.c
+ 
+Building target: CPU
+Invoking: Cross GCC Linker
+gcc  -o "CPU"  ./src/CPU.o   -lcommons
+Finished building target: CPU
+ 
+17:04:09 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+17:04:09 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+17:04:09 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+17:04:09 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
+17:04:12 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+17:04:12 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+17:04:12 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+17:04:12 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+17:04:12 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».

@@ -51,10 +51,10 @@ typedef struct
 
 int crear_socket_servidor(char *ip, char *puerto);
 int recibirConexion(int socket_servidor);
-char* recibir_string(int socket_aceptado);
-void enviar_string(int socket, char * mensaje);
-void* recibir(int socket);
-void enviar(int socket, void* cosaAEnviar, int tamanio);
+char* recibir(int socket_aceptado);
+void enviar(int socket, char * mensaje);
+void* recibir_string(int socket);
+void enviar_string(int socket, void* cosaAEnviar, int tamanio);
 
 
 void leerConfiguracion(char* ruta);//Revisar junto a estructura

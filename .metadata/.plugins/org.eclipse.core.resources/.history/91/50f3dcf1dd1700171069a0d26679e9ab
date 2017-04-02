@@ -51,10 +51,10 @@ typedef struct
 
 int crear_socket_servidor(char *ip, char *puerto);
 int recibirConexion(int socket_servidor);
-char* recibir_string(int socket_aceptado);
-void enviar_string(int socket, char * mensaje);
-void* recibir(int socket);
-void enviar(int socket, void* cosaAEnviar, int tamanio);
+char* recibir(int socket_aceptado);
+void enviar(int socket, char * mensaje);
+void* recibir_string_generico(int socket);
+void enviar_string(int socket, void* cosaAEnviar, int tamanio);
 
 
 void leerConfiguracion(char* ruta);//Revisar junto a estructura
@@ -72,7 +72,7 @@ int main(void)
 {
 	int socket_servidor = crear_socket_servidor("127.0.0.1","4040");
 	int socket_cliente = recibirConexion(socket_servidor);
-	enviar_string(socket_cliente,"Hola");
+	enviar(socket_cliente,"Hola");
 	return EXIT_SUCCESS;
 }
 
@@ -94,31 +94,26 @@ void inicializarMemoria(char* ruta)
 
 int inicializarPrograma(int pid, int cantPaginas)
 {
-	printf("Inicializar Programa");
 	return EXIT_SUCCESS;
 }
 
 int solicitarBytesPagina(int pid,int pagina, int offset, int size)
 {
-	printf("Solicitar Bytes Pagina");
 	return EXIT_SUCCESS;
 }
 
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 {
-	printf("Almacenar Bytes Pagina");
 	return EXIT_SUCCESS;
 }
 
 int asignarPaginaAProceso(int pid, int cantPaginas)
 {
-	printf("Asignar Pagina A Proceso");
 	return EXIT_SUCCESS;
 }
 
 int finalizarPrograma(int pid)
 {
-	printf("Finalizar Programa");
 	return EXIT_SUCCESS;
 }
 
@@ -201,17 +196,17 @@ int recibirConexion(int socket_servidor){
 	return socket_aceptado;
 }
 
-char* recibir_string(int socket_aceptado){
-	return (char*) recibir(socket_aceptado);
+char* recibir(int socket_aceptado){
+	return (char*) recibir_string_generico(socket_aceptado);
 }
 
-void enviar_string(int socket, char* mensaje){
+void enviar(int socket, char* mensaje){
 	int tamanio = string_length(mensaje) + 1;
 
-	enviar(socket, (void*) mensaje, tamanio);
+	enviar_string(socket, (void*) mensaje, tamanio);
 }
 
-void enviar(int socket, void* cosaAEnviar, int tamanio){
+void enviar_string(int socket, void* cosaAEnviar, int tamanio){
 	void* mensaje = malloc(sizeof(int) + tamanio);
 	void* aux = mensaje;
 	*((int*)aux) = tamanio;
@@ -222,7 +217,7 @@ void enviar(int socket, void* cosaAEnviar, int tamanio){
 	free(mensaje);
 }
 
-void* recibir(int socket){
+void* recibir_string_generico(int socket){
 	int checkSocket = -1;
 
 	void* recibido = malloc(sizeof(int));

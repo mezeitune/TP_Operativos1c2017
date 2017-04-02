@@ -51,10 +51,10 @@ typedef struct
 
 int crear_socket_servidor(char *ip, char *puerto);
 int recibirConexion(int socket_servidor);
-char* recibir_string(int socket_aceptado);
-void enviar_string(int socket, char * mensaje);
-void* recibir(int socket);
-void enviar(int socket, void* cosaAEnviar, int tamanio);
+char* recibir(int socket_aceptado);
+void enviar(int socket, char * mensaje);
+void* recibir_string_generico(int socket);
+void enviar_string(int socket, void* cosaAEnviar, int tamanio);
 
 
 void leerConfiguracion(char* ruta);//Revisar junto a estructura
@@ -72,7 +72,7 @@ int main(void)
 {
 	int socket_servidor = crear_socket_servidor("127.0.0.1","4040");
 	int socket_cliente = recibirConexion(socket_servidor);
-	enviar_string(socket_cliente,"Hola");
+	enviar(socket_cliente,"Hola");
 	return EXIT_SUCCESS;
 }
 
@@ -201,17 +201,17 @@ int recibirConexion(int socket_servidor){
 	return socket_aceptado;
 }
 
-char* recibir_string(int socket_aceptado){
+char* recibir_string_generico(int socket_aceptado){
 	return (char*) recibir(socket_aceptado);
 }
 
-void enviar_string(int socket, char* mensaje){
+void enviar(int socket, char* mensaje){
 	int tamanio = string_length(mensaje) + 1;
 
-	enviar(socket, (void*) mensaje, tamanio);
+	enviar_string(socket, (void*) mensaje, tamanio);
 }
 
-void enviar(int socket, void* cosaAEnviar, int tamanio){
+void enviar_string(int socket, void* cosaAEnviar, int tamanio){
 	void* mensaje = malloc(sizeof(int) + tamanio);
 	void* aux = mensaje;
 	*((int*)aux) = tamanio;

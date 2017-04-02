@@ -23,17 +23,17 @@
 #include <commons/config.h>
 
 int crear_socket_cliente(char * ip, char * puerto);
-char* recibir_string(int socket_aceptado);
-void enviar_string(int socket, char * mensaje);
-void* recibir(int socket);
-void enviar(int socket, void* cosaAEnviar, int tamanio);
+char* recibir(int socket_aceptado);
+void enviar(int socket, char * mensaje);
+void* recibir_string_generico(int socket);
+void enviar_string(int socket, void* cosaAEnviar, int tamanio);
 
 
 int main(void)
 {
 	int socket_Memoria = crear_socket_cliente("127.0.0.1","4040");
-	char* mensaje = recibir_string(socket_Memoria);
-	printf("El mensaje es %s\n",mensaje);
+	char* mensaje = recibir(socket_Memoria);
+	printf("El mensaje es %s",mensaje);
 	return 0;
 }
 
@@ -75,17 +75,17 @@ int crear_socket_cliente(char * ip, char * puerto){
     return descriptorArchivo;
 }
 
-char* recibir_string(int socket_aceptado){
-	return (char*) recibir(socket_aceptado);
+char* recibir(int socket_aceptado){
+	return (char*) recibir_string_generico(socket_aceptado);
 }
 
-void enviar_string(int socket, char* mensaje){
+void enviar(int socket, char* mensaje){
 	int tamanio = string_length(mensaje) + 1;
 
-	enviar(socket, (void*) mensaje, tamanio);
+	enviar_string(socket, (void*) mensaje, tamanio);
 }
 
-void enviar(int socket, void* cosaAEnviar, int tamanio){
+void enviar_string(int socket, void* cosaAEnviar, int tamanio){
 	void* mensaje = malloc(sizeof(int) + tamanio);
 	void* aux = mensaje;
 	*((int*)aux) = tamanio;
@@ -96,7 +96,7 @@ void enviar(int socket, void* cosaAEnviar, int tamanio){
 	free(mensaje);
 }
 
-void* recibir(int socket){
+void* recibir_string_generico(int socket){
 	int checkSocket = -1;
 
 	void* recibido = malloc(sizeof(int));
