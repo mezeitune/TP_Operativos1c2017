@@ -1,10 +1,6 @@
-16:26:22 **** Incremental Build of configuration Debug for project File System ****
+16:50:12 **** Incremental Build of configuration Debug for project File System ****
 make all 
-Building target: File System
-Invoking: Cross GCC Linker
-gcc  -o "File System"  ./src/File\ System.o   -lcommons
-Finished building target: File System
- 
+make: No se hace nada para «all».
 
-16:26:22 Build Finished (took 131ms)
+16:50:12 Build Finished (took 62ms)
 

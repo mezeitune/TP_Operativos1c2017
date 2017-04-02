@@ -72,7 +72,7 @@ int main(void)
 {
 	int socket_servidor = crear_socket_servidor("127.0.0.1","4040");
 	int socket_cliente = recibirConexion(socket_servidor);
-	enviar(socket_cliente,"Hola");
+	enviar_string(socket_cliente,"Hola");
 	return EXIT_SUCCESS;
 }
 

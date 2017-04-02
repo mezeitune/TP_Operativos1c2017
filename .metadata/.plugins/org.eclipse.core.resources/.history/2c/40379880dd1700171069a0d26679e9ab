@@ -119,5 +119,4 @@ void* recibir_string_generico(int socket){
 	}
 
 	return !checkSocket ? NULL:recibido;
-}
 

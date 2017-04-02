@@ -32,7 +32,7 @@ void enviar_string(int socket, void* cosaAEnviar, int tamanio);
 int main(void)
 {
 	int socket_Memoria = crear_socket_cliente("127.0.0.1","4040");
-	char* mensaje = recibir(socket_Memoria);
+	char* mensaje = recibir_string_generico(socket_Memoria);
 	printf("El mensaje es %s",mensaje);
 	return 0;
 }
@@ -76,13 +76,13 @@ int crear_socket_cliente(char * ip, char * puerto){
 }
 
 char* recibir(int socket_aceptado){
-	return (char*) recibir_string_generico(socket_aceptado);
+	return (char*) recibir(socket_aceptado);
 }
 
 void enviar(int socket, char* mensaje){
 	int tamanio = string_length(mensaje) + 1;
 
-	enviar_string(socket, (void*) mensaje, tamanio);
+	enviar(socket, (void*) mensaje, tamanio);
 }
 
 void enviar_string(int socket, void* cosaAEnviar, int tamanio){
@@ -120,4 +120,3 @@ void* recibir_string_generico(int socket){
 
 	return !checkSocket ? NULL:recibido;
 }
-

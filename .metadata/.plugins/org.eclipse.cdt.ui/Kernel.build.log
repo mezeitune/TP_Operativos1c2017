@@ -1,10 +1,6 @@
-16:26:22 **** Incremental Build of configuration Debug for project Kernel ****
+16:50:12 **** Incremental Build of configuration Debug for project Kernel ****
 make all 
-Building target: Kernel
-Invoking: Cross GCC Linker
-gcc  -o "Kernel"  ./src/Kernel.o   -lcommons
-Finished building target: Kernel
- 
+make: No se hace nada para «all».
 
-16:26:22 Build Finished (took 74ms)
+16:50:12 Build Finished (took 74ms)
 

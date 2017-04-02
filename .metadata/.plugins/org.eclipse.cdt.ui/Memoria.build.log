@@ -1,19 +1,6 @@
-16:26:22 **** Incremental Build of configuration Debug for project Memoria ****
+16:50:12 **** Incremental Build of configuration Debug for project Memoria ****
 make all 
-Building file: ../src/Memoria.c
-Invoking: Cross GCC Compiler
-gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
-../src/Memoria.c: In function ‘main’:
-../src/Memoria.c:74:6: warning: unused variable ‘cliente’ [-Wunused-variable]
-  int cliente = recibirConexion(socket_servidor);
-      ^
-Finished building: ../src/Memoria.c
- 
-Building target: Memoria
-Invoking: Cross GCC Linker
-gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
-Finished building target: Memoria
- 
+make: No se hace nada para «all».
 
-16:26:22 Build Finished (took 172ms)
+16:50:12 Build Finished (took 71ms)
 
