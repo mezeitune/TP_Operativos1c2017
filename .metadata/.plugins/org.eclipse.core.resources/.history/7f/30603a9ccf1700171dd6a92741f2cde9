@@ -13,10 +13,6 @@
 #include <commons/config.h>
 #include <commons/log.h>
 #include <commons/bitarray.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <pthread.h>
-
 
 //#define RUTA_LOG "/home/utnso/memoria.log"
 
@@ -42,9 +38,6 @@ typedef struct
 	int pid;
 	int num_pag;
 }struct_adm_memoria;
-
-int esperarConexion();
-int aceptarConexionCliente(int servidor);
 
 void leerConfiguracion(char* ruta);//Revisar junto a estructura
 void inicializarMemoria(char* ruta);//Falta codificar
@@ -101,38 +94,4 @@ int asignarPaginaAProceso(int pid, int cantPaginas)
 int finalizarPrograma(int pid)
 {
 	return EXIT_SUCCESS;
-}
-
-int esperarConexion()
-{
-	struct sockaddr_in direcciónServidor;
-	direcciónServidor.sin_family = AF_INET;
-	direcciónServidor.sin_addr.s_addr = INADDR_ANY;
-	direcciónServidor.sin_port = htons(8080);
-
-	int servidor = socket(AF_INET, SOCK_STREAM, 0);
-	int activado = 1;
-
-	setsockopt(servidor, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
-	if (bind(servidor, (void*) &direcciónServidor, sizeof(direcciónServidor)) != 0)
-	{
-		perror("Falló el bind");
-		return 1;
-	}
-
-	printf("Estoy escuchando\n");
-	listen(servidor, 100);
-
-	int cliente = aceptarConexionCliente(servidor);
-	return cliente;
-}
-
-int aceptarConexionCliente(servidor)
-{
-		struct sockaddr_in direcciónCliente;
-		unsigned int tamañoDirección;
-		int cliente = accept(servidor, (void*) &direcciónCliente, &tamañoDirección);
-		printf("Recibí una conexión en %d!!\n", cliente);
-		return cliente;
 }
