@@ -1,0 +1,29 @@
+16:12:12 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:74:6: warning: unused variable ‘cliente’ [-Wunused-variable]
+  int cliente = recibirConexion(socket_servidor);
+      ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   
+./src/Memoria.o: En la función `leerConfiguracion':
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:80: referencia a `config_create' sin definir
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:81: referencia a `config_get_int_value' sin definir
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:82: referencia a `config_get_int_value' sin definir
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:83: referencia a `config_get_int_value' sin definir
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:84: referencia a `config_get_int_value' sin definir
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:85: referencia a `config_get_int_value' sin definir
+./src/Memoria.o:/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:86: más referencias a `config_get_int_value' sin definir a continuación
+./src/Memoria.o: En la función `enviar_string':
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:203: referencia a `string_length' sin definir
+collect2: error: ld returned 1 exit status
+make: *** [Memoria] Error 1
+
+16:12:12 Build Finished (took 373ms)
+

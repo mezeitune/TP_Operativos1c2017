@@ -1,0 +1,12 @@
+16:12:11 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building target: CPU
+Invoking: Cross GCC Linker
+gcc  -o "CPU"  ./src/CPU.o   
+./src/CPU.o: En la función `enviar_string':
+/home/utnso/workspace/tp-2017-1c-servomotor/CPU/Debug/../src/CPU.c:81: referencia a `string_length' sin definir
+collect2: error: ld returned 1 exit status
+make: *** [CPU] Error 1
+
+16:12:11 Build Finished (took 128ms)
+

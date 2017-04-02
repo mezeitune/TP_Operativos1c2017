@@ -1,0 +1,35 @@
+/*
+ ============================================================================
+ Name        : CPU.c
+ Author      : Servomotor
+ Version     :
+ Copyright   : Your copyright notice
+ Description : Hello World in C, Ansi-style
+ ============================================================================
+ */
+
+#include <sys/epoll.h>
+#include <stdio.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <commons/string.h>
+#include <commons/config.h>
+
+
+int main(void)
+{
+	conectarseAMemoria();
+}
+
+int conectarseAMemoria()
+{
+
+	return EXIT_SUCCESS;
+}
