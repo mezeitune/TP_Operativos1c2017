@@ -31,9 +31,14 @@ void enviar(int socket, void* cosaAEnviar, int tamanio);
 
 int main(void)
 {
+	char orden;
 	int socket_Memoria = crear_socket_cliente("127.0.0.1","4040");
-	char* mensaje = recibir_string(socket_Memoria);
-	printf("El mensaje es %s\n",mensaje);
+	while(1)
+	{
+		scanf(" %c", &orden);
+		enviar(socket_Memoria,(void*) &orden,sizeof(char));
+	}
+
 	return 0;
 }
 
@@ -75,7 +80,8 @@ int crear_socket_cliente(char * ip, char * puerto){
     return descriptorArchivo;
 }
 
-char* recibir_string(int socket_aceptado){
+char* recibir_string(int socket_aceptado)
+{
 	return (char*) recibir(socket_aceptado);
 }
 
