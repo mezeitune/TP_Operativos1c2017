@@ -35,32 +35,42 @@ int retardo_memoria;
 
 //Revisar y discutir estructuras
 
-/*
-typedef struct
-{
-	char datosMarco[marco_size];
-	//Revisar
-}t_Memoria;
-*/
 
 typedef struct
 {
-	int marco;
+	int pag_num;
+	int frame;
+	//char datosMarco[marco_size];
+	//Revisar
+}t_pag_Memoria;
+
+
+typedef struct
+{
 	int pid;
-	int num_pag;
+	int num_pag_memoria;
+	int frame;
+	int num_pag_proceso;
 }struct_adm_memoria;
 
+typedef struct
+{
+
+}tabla_procesos;
+
+//--------------------Funciones Conexiones----------------------------//
 int crear_socket_servidor(char *ip, char *puerto);
 int recibirConexion(int socket_servidor);
 char* recibir_string(int socket_aceptado);
 void enviar_string(int socket, char * mensaje);
 void* recibir(int socket);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
+//----------------------Funciones Conexiones----------------------------//
 
 char nuevaOrdenDeAccion(int puertoCliente);
 
 
-void leerConfiguracion(char* ruta);//Revisar junto a estructura
+void leerConfiguracion(char* ruta);
 void inicializarMemoria(char* ruta);//Falta codificar
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
@@ -125,7 +135,6 @@ void inicializarMemoria(char* ruta)
 void inicializarPrograma(int pid, int cantPaginas)
 {
 	printf("Inicializar Programa\n");
-	return;
 }
 
 int solicitarBytesPagina(int pid,int pagina, int offset, int size)

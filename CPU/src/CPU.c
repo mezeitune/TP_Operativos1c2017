@@ -28,11 +28,18 @@ void enviar_string(int socket, char * mensaje);
 void* recibir(int socket);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
 
+void leerConfiguracion(char* ruta);
+
+t_config* configuracion_memoria;
+char* puertoMemoria;
+char* ipMemoria;
 
 int main(void)
 {
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
+	printf("IP=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
 	char orden;
-	int socket_Memoria = crear_socket_cliente("127.0.0.1","4040");
+	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 	while(1)
 	{
 		scanf(" %c", &orden);
@@ -40,6 +47,13 @@ int main(void)
 	}
 
 	return 0;
+}
+
+void leerConfiguracion(char* ruta)
+{
+	configuracion_memoria = config_create(ruta);
+	puertoMemoria = config_get_string_value(configuracion_memoria,"PUERTO");
+	ipMemoria = config_get_string_value(configuracion_memoria,"IP_MEMORIA");
 }
 
 int crear_socket_cliente(char * ip, char * puerto){
