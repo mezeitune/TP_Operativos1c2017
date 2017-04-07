@@ -19,7 +19,6 @@ char* ip_Kernel;
 int puerto_Kernel;
 
 void leerConfiguracion(char* ruta);
-
 int main(void)
 {
 	return EXIT_SUCCESS;

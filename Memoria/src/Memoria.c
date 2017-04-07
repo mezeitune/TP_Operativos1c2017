@@ -23,7 +23,6 @@
 #include <commons/config.h>
 
 //#define RUTA_LOG "/home/utnso/memoria.log"
-
 t_config* configuracion_memoria;
 char* puertoMemoria;
 char* ipMemoria;
