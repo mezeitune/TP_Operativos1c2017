@@ -1707,3 +1707,119 @@ make: No se hace nada para «all».
 19:36:17 **** Incremental Build of configuration Debug for project Memoria ****
 make all 
 make: No se hace nada para «all».
+15:40:45 **** Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+../src/CPU.c: In function ‘main’:
+../src/CPU.c:37:2: warning: implicit declaration of function ‘leerConfiguracion’ [-Wimplicit-function-declaration]
+  leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
+  ^
+../src/CPU.c: At top level:
+../src/CPU.c:50:6: warning: conflicting types for ‘leerConfiguracion’ [enabled by default]
+ void leerConfiguracion(char* ruta)
+      ^
+../src/CPU.c:37:2: note: previous implicit declaration of ‘leerConfiguracion’ was here
+  leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
+  ^
+Finished building: ../src/CPU.c
+ 
+Building target: CPU
+Invoking: Cross GCC Linker
+gcc  -o "CPU"  ./src/CPU.o   -lcommons
+Finished building target: CPU
+ 
+15:40:45 **** Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+15:40:46 **** Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+15:40:46 **** Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+15:40:46 **** Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:43:7: error: variably modified ‘datosMarco’ at file scope
+  char datosMarco[marco_size];
+       ^
+make: *** [src/Memoria.o] Error 1
+15:41:13 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+Finished building: ../src/CPU.c
+ 
+Building target: CPU
+Invoking: Cross GCC Linker
+gcc  -o "CPU"  ./src/CPU.o   -lcommons
+Finished building target: CPU
+ 
+15:41:13 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+15:41:13 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+15:41:13 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+15:41:14 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:43:7: error: variably modified ‘datosMarco’ at file scope
+  char datosMarco[marco_size];
+       ^
+make: *** [src/Memoria.o] Error 1
+15:41:46 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+15:41:46 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+15:41:46 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+15:41:46 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+15:41:46 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:43:7: error: variably modified ‘datosMarco’ at file scope
+  char datosMarco[marco_size];
+       ^
+make: *** [src/Memoria.o] Error 1
+15:41:54 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+15:41:54 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+15:41:55 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+15:41:55 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+15:41:55 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
