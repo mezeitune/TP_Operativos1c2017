@@ -21,10 +21,9 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <malloc.h>
 #include <arpa/inet.h>
-#include<arpa/inet.h> //inet_addr
-#include<pthread.h> //for threading , link with lpthread
-//#define RUTA_LOG "/home/utnso/memoria.log"
+#include <pthread.h>
 t_config* configuracion_memoria;
 char* puertoMemoria;//4000
 char* ipMemoria;
@@ -35,16 +34,15 @@ int cache_x_proc;
 int retardo_memoria;
 pthread_t thread_id;
 
-//Revisar y discutir estructuras
-
 typedef struct
 {
+	int frame;
 	int pid;
 	int num_pag;
-	int frame;
 }struct_adm_memoria;
 
 char* bitMap;
+void* frame_Memoria;
 
 //the thread function
 void *connection_handler(void *);
@@ -63,7 +61,7 @@ char nuevaOrdenDeAccion(int puertoCliente);
 void *get_in_addr(struct sockaddr *sa);
 
 void leerConfiguracion(char* ruta);
-void inicializarMemoriaAdm();//Falta codificar
+void inicializarMemoriaAdm(void* frame_Memoria);//Falta codificar
 
 int main_inicializarPrograma();//Falta codificar
 int main_solicitarBytesPagina();//Falta codificar
@@ -90,9 +88,9 @@ int main(void)
 
 	bitMap = string_repeat('0',marcos);
 
-	char *frame_Memoria= malloc(marco_size*marcos);
+	void *frame_Memoria= malloc(marco_size*marcos);
 
-	inicializarMemoriaAdm();
+	inicializarMemoriaAdm(frame_Memoria);
 
 
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
@@ -116,12 +114,25 @@ void leerConfiguracion(char* ruta)
 	printf("%d",retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA"));
 }
 
-void inicializarMemoriaAdm()
+void inicializarMemoriaAdm(void* frame_Memoria)
 {
 	int sizeMemoriaAdm = ((sizeof(int)*3*marcos)+marco_size-1)/marco_size;
-	printf("El tamaño a reservar es de %i\n",sizeMemoriaAdm);
+	printf("Las estructuras administrativas ocupan %i paginas\n",sizeMemoriaAdm);
 	ocuparBitMap(0,sizeMemoriaAdm);
-
+	struct_adm_memoria aux;
+	int i = 0;
+	int desplazamiento = sizeof(struct_adm_memoria);
+	aux.pid=-1;
+	aux.num_pag=-1;
+	aux.frame = i;
+	while(i < marcos)
+	{
+		memcpy(frame_Memoria, &aux, sizeof(struct_adm_memoria));
+		i++;
+		aux.frame = i;
+		frame_Memoria = frame_Memoria + desplazamiento;
+	}
+	frame_Memoria = (frame_Memoria - desplazamiento*marcos);
 }
 
 int inicializarPrograma(int pid, int cantPaginas)
@@ -324,7 +335,7 @@ char nuevaOrdenDeAccion(int puertoCliente)
     	//puts("Client disconnected");
         //fflush(stdout);
     }
-    else if(buffer == -1)
+    else if(buffer == NULL)
     {
         return 'X';
     	//perror("recv failed");
