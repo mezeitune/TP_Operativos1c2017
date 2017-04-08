@@ -17,18 +17,34 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-<<<<<<< HEAD
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
 
+t_config* configuracion_kernel;
 
 int crear_socket_cliente(char * ip, char * puerto);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
+void leerConfiguracion(char* ruta);
+
+char *ipMemoria;
+char *puertoProg;//2001
+char *puertoCPU;//3001
+char *puertoMemoria;//4001s
+char *ipFileSys;
+char *puertoFileSys;
+char *quantum;
+char *quantumSleep;
+char *algoritmo;
+char *gradoMultiProg;
+char *semIds;
+char *semInit;
+char *sharedVars;
+
 int main(void)
 {
 	char orden;
-	// Leer config
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	int socket_Memoria = crear_socket_cliente("127.0.0.1","4040"); //Variable definidas
 
 	while(1)
@@ -84,38 +100,6 @@ void enviar(int socket, void* cosaAEnviar, int tamanio){
 
 	send(socket, mensaje, sizeof(int) + tamanio, 0);
 	free(mensaje);
-=======
-#include <commons/string.h>
-#include <commons/config.h>
-
-
-
-t_config* configuracion_kernel;
-
-char *ipMemoria;
-char *puertoProg;//2001
-char *puertoCPU;//3001
-char *puertoMemoria;//4001
-char *ipFileSys;
-char *puertoFileSys;
-char *quantum;
-char *quantumSleep;
-char *algoritmo;
-char *gradoMultiProg;
-char *semIds;
-char *semInit;
-char *sharedVars;
-
-int main(void){
-
-	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
-
-
-	return EXIT_SUCCESS;
->>>>>>> 69145a13b3545aa0a85823560dbb3829f93f2067
-}
-
-
 
 void leerConfiguracion(char* ruta){
 
@@ -133,4 +117,5 @@ void leerConfiguracion(char* ruta){
 	semIds = config_get_array_value(configuracion_kernel,"SEM_IDS");
 	semInit = config_get_array_value(configuracion_kernel,"SEM_INIT");
 	sharedVars = config_get_array_value(configuracion_kernel,"SHARED_VARS");
+
 }

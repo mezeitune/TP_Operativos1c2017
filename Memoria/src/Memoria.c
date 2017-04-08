@@ -21,14 +21,9 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
-<<<<<<< HEAD
 #include <arpa/inet.h>
-=======
 #include<arpa/inet.h> //inet_addr
 #include<pthread.h> //for threading , link with lpthread
->>>>>>> 69145a13b3545aa0a85823560dbb3829f93f2067
-
-
 //#define RUTA_LOG "/home/utnso/memoria.log"
 t_config* configuracion_memoria;
 char* puertoMemoria;//4000
