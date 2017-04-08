@@ -22,6 +22,8 @@ void leerConfiguracion(char* ruta);
 
 int main(void)
 {
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_Consola");
+
 	return EXIT_SUCCESS;
 }
 

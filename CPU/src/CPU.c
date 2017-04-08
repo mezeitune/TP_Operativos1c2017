@@ -21,7 +21,7 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
-
+#include <Consola/sockets.h>
 int crear_socket_cliente(char * ip, char * puerto);
 char* recibir_string(int socket_aceptado);
 void enviar_string(int socket, char * mensaje);
