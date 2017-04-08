@@ -1823,3 +1823,2202 @@ Invoking: Cross GCC Linker
 gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
 Finished building target: Memoria
  
+22:38:18 **** Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:38:18 **** Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:38:19 **** Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:38:19 **** Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:38:19 **** Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:42:8: error: variably modified ‘datosMarco’ at file scope
+  char* datosMarco[marco_size];
+        ^
+make: *** [src/Memoria.o] Error 1
+22:43:25 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:43:25 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:43:25 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:43:26 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:43:26 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:03:42 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:03:42 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:03:43 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:03:43 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:03:43 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:129:20: error: expected identifier or ‘(’ before ‘->’ token
+  struct_adm_memoria->datosMarco = malloc(marco_size);
+                    ^
+make: *** [src/Memoria.o] Error 1
+23:04:07 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:04:07 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:04:08 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:04:08 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:04:08 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:129:2: error: ‘t_pag_memoria’ undeclared (first use in this function)
+  t_pag_memoria->datosMarco = malloc(marco_size);
+  ^
+../src/Memoria.c:129:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [src/Memoria.o] Error 1
+23:05:02 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:05:03 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:05:03 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:05:03 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:05:03 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:128:17: error: expected identifier or ‘(’ before ‘->’ token
+  t_frame_Memoria->datosMarco = malloc(marco_size);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:05:46 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:05:46 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:05:47 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:05:47 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:05:47 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:128:2: error: ‘t_frame_Memoria’ undeclared (first use in this function)
+  t_frame_Memoria->datosMarco = malloc(marco_size);
+  ^
+../src/Memoria.c:128:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [src/Memoria.o] Error 1
+23:06:54 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:06:55 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:06:55 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:06:55 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:06:55 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:82:26: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  struct t_frame_Memoria *frame_Memoria;
+                          ^
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:129:2: error: ‘frame_Memoria’ undeclared (first use in this function)
+  frame_Memoria->datosMarco = malloc(marco_size);
+  ^
+../src/Memoria.c:129:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [src/Memoria.o] Error 1
+23:08:04 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:08:04 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:08:05 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:08:05 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:08:05 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:82:26: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  struct t_frame_Memoria *frame_Memoria;
+                          ^
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:130:2: error: ‘frame_Memoria’ undeclared (first use in this function)
+  frame_Memoria->datosMarco = malloc(marco_size);
+  ^
+../src/Memoria.c:130:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [src/Memoria.o] Error 1
+23:09:02 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:09:02 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:09:02 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:09:02 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:09:03 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:15: error: invalid type argument of ‘->’ (have ‘struct t_frame_Memoria’)
+  frame_Memoria->datosMarco = malloc(marco_size);
+               ^
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:131:2: error: ‘frame_Memoria’ undeclared (first use in this function)
+  frame_Memoria->datosMarco = malloc(marco_size);
+  ^
+../src/Memoria.c:131:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [src/Memoria.o] Error 1
+23:09:06 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:09:06 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:09:06 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:09:06 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:09:07 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:131:2: error: ‘frame_Memoria’ undeclared (first use in this function)
+  frame_Memoria->datosMarco = malloc(marco_size);
+  ^
+../src/Memoria.c:131:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [src/Memoria.o] Error 1
+23:10:01 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:10:01 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:10:01 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:10:01 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:10:01 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:129:25: error: unknown type name ‘t_frame_memoria’
+ void inicializarMemoria(t_frame_memoria *frame_Memoria)
+                         ^
+make: *** [src/Memoria.o] Error 1
+23:10:16 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:10:16 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:10:16 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:10:17 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:10:17 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:15: error: dereferencing pointer to incomplete type
+  frame_Memoria->datosMarco = malloc(marco_size);
+               ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:129:25: error: unknown type name ‘t_frame_memoria’
+ void inicializarMemoria(t_frame_memoria *frame_Memoria)
+                         ^
+make: *** [src/Memoria.o] Error 1
+23:10:37 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:10:37 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:10:37 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:10:37 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:10:37 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:15: error: dereferencing pointer to incomplete type
+  frame_Memoria->datosMarco = malloc(marco_size);
+               ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:129:32: warning: ‘struct t_frame_memoria’ declared inside parameter list [enabled by default]
+ void inicializarMemoria(struct t_frame_memoria *frame_Memoria)
+                                ^
+../src/Memoria.c:129:32: warning: its scope is only this definition or declaration, which is probably not what you want [enabled by default]
+../src/Memoria.c:129:6: error: conflicting types for ‘inicializarMemoria’
+ void inicializarMemoria(struct t_frame_memoria *frame_Memoria)
+      ^
+../src/Memoria.c:70:6: note: previous declaration of ‘inicializarMemoria’ was here
+ void inicializarMemoria(char* ruta);//Falta codificar
+      ^
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:131:15: error: dereferencing pointer to incomplete type
+  frame_Memoria->datosMarco = malloc(marco_size);
+               ^
+make: *** [src/Memoria.o] Error 1
+23:10:45 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:10:46 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:10:46 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:10:46 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:10:46 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:129:32: warning: ‘struct t_frame_memoria’ declared inside parameter list [enabled by default]
+ void inicializarMemoria(struct t_frame_memoria *frame_Memoria)
+                                ^
+../src/Memoria.c:129:32: warning: its scope is only this definition or declaration, which is probably not what you want [enabled by default]
+../src/Memoria.c:129:6: error: conflicting types for ‘inicializarMemoria’
+ void inicializarMemoria(struct t_frame_memoria *frame_Memoria)
+      ^
+../src/Memoria.c:70:6: note: previous declaration of ‘inicializarMemoria’ was here
+ void inicializarMemoria(char* ruta);//Falta codificar
+      ^
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:131:15: error: dereferencing pointer to incomplete type
+  frame_Memoria->datosMarco = malloc(marco_size);
+               ^
+make: *** [src/Memoria.o] Error 1
+23:11:09 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:11:09 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:11:09 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:11:09 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:11:09 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:70:25: error: unknown type name ‘t_frame_memoria’
+ void inicializarMemoria(t_frame_memoria *ruta);//Falta codificar
+                         ^
+../src/Memoria.c:129:25: error: unknown type name ‘t_frame_memoria’
+ void inicializarMemoria(t_frame_memoria *frame_Memoria)
+                         ^
+make: *** [src/Memoria.o] Error 1
+23:11:43 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:11:43 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:11:44 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:11:44 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:11:44 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:28: warning: ‘frame_Memoria’ is used uninitialized in this function [-Wuninitialized]
+  frame_Memoria->datosMarco = malloc(marco_size);
+                            ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:12:06 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:12:06 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:12:06 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:12:06 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:12:06 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:85:28: warning: ‘frame_Memoria’ is used uninitialized in this function [-Wuninitialized]
+  frame_Memoria->datosMarco = malloc(marco_size);
+                            ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:14:34 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:14:34 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:14:34 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:14:34 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:14:34 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:85:15: error: dereferencing pointer to incomplete type
+  frame_Memoria->datosMarco = malloc(marco_size);
+               ^
+make: *** [src/Memoria.o] Error 1
+23:14:44 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:14:44 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:14:44 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:14:44 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:14:44 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:43:1: warning: useless storage class specifier in empty declaration [enabled by default]
+ };
+ ^
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:85:15: error: dereferencing pointer to incomplete type
+  frame_Memoria->datosMarco = malloc(marco_size);
+               ^
+make: *** [src/Memoria.o] Error 1
+23:16:04 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:16:04 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:16:04 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:16:04 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:16:05 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:43:1: warning: useless storage class specifier in empty declaration [enabled by default]
+ };
+ ^
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:84:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(marcos*marco_size)
+  ^
+../src/Memoria.c:85:2: error: expected ‘,’ or ‘;’ before ‘frame_Memoria’
+  frame_Memoria->datosMarco = malloc(marco_size);
+  ^
+../src/Memoria.c:84:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(marcos*marco_size)
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:16:29 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:16:30 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:16:30 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:16:30 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:16:30 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:85:2: error: expected ‘,’ or ‘;’ before ‘frame_Memoria’
+  frame_Memoria->datosMarco = malloc(marco_size);
+  ^
+../src/Memoria.c:84:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(marcos*marco_size)
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:16:39 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:16:39 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:16:39 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:16:39 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:16:39 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:19:22 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:19:23 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:19:23 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:19:23 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:19:23 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:85:2: error: incompatible type for argument 1 of ‘inicializarMemoria’
+  inicializarMemoria(frame_Memoria);
+  ^
+../src/Memoria.c:70:6: note: expected ‘Frame_Memoria’ but argument is of type ‘struct Frame_Memoria *’
+ void inicializarMemoria(Frame_Memoria frame_Memoria);//Falta codificar
+      ^
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:132:17: error: ‘frame_Memoria’ redeclared as different kind of symbol
+  Frame_Memoria *frame_Memoria = malloc(marcos*marco_size);
+                 ^
+../src/Memoria.c:130:39: note: previous definition of ‘frame_Memoria’ was here
+ void inicializarMemoria(Frame_Memoria frame_Memoria)
+                                       ^
+make: *** [src/Memoria.o] Error 1
+23:19:30 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:19:30 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:19:30 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:19:30 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:19:30 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:132:17: error: ‘frame_Memoria’ redeclared as different kind of symbol
+  Frame_Memoria *frame_Memoria = malloc(marcos*marco_size);
+                 ^
+../src/Memoria.c:130:39: note: previous definition of ‘frame_Memoria’ was here
+ void inicializarMemoria(Frame_Memoria frame_Memoria)
+                                       ^
+make: *** [src/Memoria.o] Error 1
+23:19:41 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:19:41 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:19:41 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:19:41 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:19:41 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c:130:6: error: conflicting types for ‘inicializarMemoria’
+ void inicializarMemoria(Frame_Memoria *frame_Memoria)
+      ^
+../src/Memoria.c:70:6: note: previous declaration of ‘inicializarMemoria’ was here
+ void inicializarMemoria(Frame_Memoria frame_Memoria);//Falta codificar
+      ^
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:132:17: error: ‘frame_Memoria’ redeclared as different kind of symbol
+  Frame_Memoria *frame_Memoria = malloc(marcos*marco_size);
+                 ^
+../src/Memoria.c:130:40: note: previous definition of ‘frame_Memoria’ was here
+ void inicializarMemoria(Frame_Memoria *frame_Memoria)
+                                        ^
+make: *** [src/Memoria.o] Error 1
+23:19:49 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:19:49 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:19:49 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:19:49 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:19:49 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:85:2: error: incompatible type for argument 1 of ‘inicializarMemoria’
+  inicializarMemoria(*frame_Memoria);
+  ^
+../src/Memoria.c:70:6: note: expected ‘struct Frame_Memoria *’ but argument is of type ‘Frame_Memoria’
+ void inicializarMemoria(Frame_Memoria *frame_Memoria);//Falta codificar
+      ^
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:132:17: error: ‘frame_Memoria’ redeclared as different kind of symbol
+  Frame_Memoria *frame_Memoria = malloc(marcos*marco_size);
+                 ^
+../src/Memoria.c:130:40: note: previous definition of ‘frame_Memoria’ was here
+ void inicializarMemoria(Frame_Memoria *frame_Memoria)
+                                        ^
+make: *** [src/Memoria.o] Error 1
+23:19:54 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:19:54 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:19:54 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:19:55 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:19:55 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:132:17: error: ‘frame_Memoria’ redeclared as different kind of symbol
+  Frame_Memoria *frame_Memoria = malloc(marcos*marco_size);
+                 ^
+../src/Memoria.c:130:40: note: previous definition of ‘frame_Memoria’ was here
+ void inicializarMemoria(Frame_Memoria *frame_Memoria)
+                                        ^
+make: *** [src/Memoria.o] Error 1
+23:20:00 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:20:00 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:20:00 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:20:00 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:20:00 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘inicializarMemoria’:
+../src/Memoria.c:132:16: error: ‘frame_Memoria’ redeclared as different kind of symbol
+  Frame_Memoria frame_Memoria = malloc(marcos*marco_size);
+                ^
+../src/Memoria.c:130:40: note: previous definition of ‘frame_Memoria’ was here
+ void inicializarMemoria(Frame_Memoria *frame_Memoria)
+                                        ^
+../src/Memoria.c:132:2: error: invalid initializer
+  Frame_Memoria frame_Memoria = malloc(marcos*marco_size);
+  ^
+../src/Memoria.c:133:15: error: invalid type argument of ‘->’ (have ‘Frame_Memoria’)
+  frame_Memoria->datosMarco = malloc(marco_size);
+               ^
+make: *** [src/Memoria.o] Error 1
+23:29:41 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:29:41 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:29:41 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:29:42 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:29:42 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:86:17: error: redeclaration of ‘frame_Memoria’ with no linkage
+  Frame_Memoria *frame_Memoria = malloc(sizeof(frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c:84:17: note: previous declaration of ‘frame_Memoria’ was here
+  Frame_Memoria *frame_Memoria;
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:29:48 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:29:48 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:29:48 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:29:48 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:29:48 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:86:17: error: redeclaration of ‘frame_Memoria’ with no linkage
+  Frame_Memoria *frame_Memoria = malloc(sizeof(*frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c:84:17: note: previous declaration of ‘frame_Memoria’ was here
+  Frame_Memoria *frame_Memoria;
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:29:51 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:29:51 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:29:51 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:29:51 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:29:52 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:86:17: error: redeclaration of ‘frame_Memoria’ with no linkage
+  Frame_Memoria *frame_Memoria = malloc(sizeof(*frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c:84:17: note: previous declaration of ‘frame_Memoria’ was here
+  Frame_Memoria *frame_Memoria;
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:31:06 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:31:07 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:31:07 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:31:07 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:31:07 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:34:23 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:34:23 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:34:23 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:34:23 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:34:24 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:75:2: error: ‘frame_Memoria’ undeclared (first use in this function)
+  frame_Memoria = malloc(marco_size);
+  ^
+../src/Memoria.c:75:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [src/Memoria.o] Error 1
+23:34:34 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:34:34 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:34:34 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:34:34 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:34:34 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:76:2: error: ‘frame_Memoria’ undeclared (first use in this function)
+  frame_Memoria = malloc(marco_size);
+  ^
+../src/Memoria.c:76:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [src/Memoria.o] Error 1
+23:34:43 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:34:43 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:34:43 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:34:43 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:34:43 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:35:36 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:35:36 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:35:36 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:35:36 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:35:36 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
+23:38:20 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:38:20 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:38:20 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:38:20 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:38:20 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:38:37 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:38:37 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:38:37 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:38:37 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:38:37 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:73:40: error: expected expression before ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(Frame_Memoria*marcos);
+                                        ^
+../src/Memoria.c:73:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(Frame_Memoria*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:38:55 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:38:55 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:38:55 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:38:55 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:38:56 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:73:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:41:06 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:41:06 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:41:06 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:41:06 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:41:06 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:14: error: expected identifier or ‘(’ before ‘[’ token
+  typedef char[Marco_size] Frame_Memoria;
+              ^
+../src/Memoria.c:73:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:73:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:73:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:73:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:41:32 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:41:32 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:41:32 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:41:32 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:41:33 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:24: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘char’
+  typedef Frame_Memoria char[Marco_size];
+                        ^
+../src/Memoria.c:72:28: error: expected identifier or ‘(’ before ‘[’ token
+  typedef Frame_Memoria char[Marco_size];
+                            ^
+../src/Memoria.c:73:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:73:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:73:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:73:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:42:44 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:42:44 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:42:44 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:42:45 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:42:45 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:24: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘char’
+  typedef Frame_Memoria char[Marco_size];
+                        ^
+../src/Memoria.c:72:28: error: expected identifier or ‘(’ before ‘[’ token
+  typedef Frame_Memoria char[Marco_size];
+                            ^
+../src/Memoria.c:73:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:73:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:73:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:73:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:43:04 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:43:04 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:43:04 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:43:04 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:43:04 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:24: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘char’
+  typedef Frame_Memoria char[marco_size];
+                        ^
+../src/Memoria.c:72:28: error: expected identifier or ‘(’ before ‘[’ token
+  typedef Frame_Memoria char[marco_size];
+                            ^
+../src/Memoria.c:73:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:73:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:73:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:73:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:44:00 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:44:01 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:44:01 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:44:01 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:44:01 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:24: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘char’
+  typedef Frame_Memoria char[marco_size];
+                        ^
+../src/Memoria.c:72:28: error: expected identifier or ‘(’ before ‘[’ token
+  typedef Frame_Memoria char[marco_size];
+                            ^
+../src/Memoria.c:73:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:73:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:73:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:73:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:44:03 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:44:03 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:44:03 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:44:03 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:44:04 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:24: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘char’
+  typedef Frame_Memoria char[marco_size];
+                        ^
+../src/Memoria.c:72:28: error: expected identifier or ‘(’ before ‘[’ token
+  typedef Frame_Memoria char[marco_size];
+                            ^
+make: *** [src/Memoria.o] Error 1
+23:45:24 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:45:24 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:45:24 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:45:24 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:45:25 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:14: error: expected identifier or ‘(’ before ‘[’ token
+  typedef char[marco_size] Frame_Memoria;
+              ^
+make: *** [src/Memoria.o] Error 1
+23:46:08 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:46:08 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:46:08 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:46:09 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:46:09 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:14: error: expected identifier or ‘(’ before ‘[’ token
+  typedef char[marco_size] Frame_Memoria;
+              ^
+../src/Memoria.c:74:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:74:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:74:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:74:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:46:39 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:46:39 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:46:39 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:46:39 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:46:40 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:14: error: expected identifier or ‘(’ before ‘[’ token
+  typedef char[marco_size] Frame_Memoria;
+              ^
+../src/Memoria.c:74:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:74:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:74:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:74:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:49:02 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:49:02 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:49:02 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:49:03 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:49:03 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:14: error: expected identifier or ‘(’ before ‘[’ token
+  typedef char[marco_size] frame_Memoria;
+              ^
+../src/Memoria.c:74:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:74:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:74:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:74:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:49:07 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:49:07 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:49:07 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:49:07 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:49:07 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:72:14: error: expected identifier or ‘(’ before ‘[’ token
+  typedef char[marco_size] Frame_Memoria;
+              ^
+../src/Memoria.c:74:2: error: unknown type name ‘Frame_Memoria’
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+  ^
+../src/Memoria.c:74:47: error: ‘Frame_Memoria’ undeclared (first use in this function)
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                                               ^
+../src/Memoria.c:74:47: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:74:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+make: *** [src/Memoria.o] Error 1
+23:50:39 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:50:39 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:50:39 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:50:39 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:50:39 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:74:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     20:26:40 **** Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:26:40 **** Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:26:41 **** Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:26:41 **** Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:26:41 **** Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:79:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:129:6: error: conflicting types for ‘inicializarPrograma’
+ void inicializarPrograma(int pid, int cantPaginas)
+      ^
+../src/Memoria.c:67:5: note: previous declaration of ‘inicializarPrograma’ was here
+ int inicializarPrograma(int pid, int cantPaginas);//Falta codificar
+     ^
+make: *** [src/Memoria.o] Error 1
+20:26:59 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:26:59 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:26:59 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:26:59 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:26:59 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:79:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+20:28:21 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:28:21 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:28:21 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:28:21 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:28:22 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:79:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+20:32:55 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:32:55 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:32:56 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:32:56 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:32:56 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+20:40:25 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:40:26 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:40:26 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:40:26 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:40:26 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c: In function ‘verificarEspacio’:
+../src/Memoria.c:332:9: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+  while(i, i<=marcos, i++)
+         ^
+../src/Memoria.c:332:20: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+  while(i, i<=marcos, i++)
+                    ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+20:41:05 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:41:06 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:41:06 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:41:06 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:41:06 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+20:41:20 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:41:20 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:41:21 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:41:21 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:41:21 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+20:44:24 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:44:25 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:44:25 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:44:25 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:44:25 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
+20:55:11 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:55:11 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:55:12 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:55:12 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:55:12 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+20:57:44 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+20:57:44 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+20:57:44 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+20:57:44 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+20:57:45 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:22:57 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:22:57 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:22:57 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:22:58 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:22:58 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:84:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:32:20 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:32:20 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:32:20 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:32:20 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:32:21 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:83:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c: In function ‘inicializarMemoriaAdm’:
+../src/Memoria.c:132:2: warning: implicit declaration of function ‘ocuparBitMap’ [-Wimplicit-function-declaration]
+  ocuparBitMap(0,1);
+  ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:331:6: warning: conflicting types for ‘ocuparBitMap’ [enabled by default]
+ void ocuparBitMap(int pos, int size)
+      ^
+../src/Memoria.c:132:2: note: previous implicit declaration of ‘ocuparBitMap’ was here
+  ocuparBitMap(0,1);
+  ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:33:05 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:33:05 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:33:05 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:33:05 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:33:05 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
+22:33:37 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:33:37 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:33:37 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:33:37 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:33:38 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:86:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:34:00 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:34:00 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:34:00 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:34:01 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:34:01 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:34:54 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:34:55 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:34:55 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:34:55 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:34:55 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:36:55 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:36:55 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:36:56 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:36:56 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:36:56 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:40:16 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:40:16 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:40:16 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:40:17 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:40:17 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:41:40 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:41:40 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:41:40 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:41:40 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:41:40 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:41:50 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:41:50 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:41:50 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:41:50 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:41:50 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+22:57:37 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+22:57:38 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+22:57:38 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+22:57:38 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+22:57:38 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c: In function ‘inicializarMemoriaAdm’:
+../src/Memoria.c:139:2: error: ‘for’ loop initial declarations are only allowed in C99 mode
+  for(int i= 0; i < marcos; i++)
+  ^
+../src/Memoria.c:139:2: note: use option -std=c99 or -std=gnu99 to compile your code
+../src/Memoria.c: In function ‘inicializarPrograma’:
+../src/Memoria.c:152:3: warning: implicit declaration of function ‘asignarPaginasAProceso’ [-Wimplicit-function-declaration]
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:389:6: warning: conflicting types for ‘asignarPaginasAProceso’ [enabled by default]
+ void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
+      ^
+../src/Memoria.c:152:3: note: previous implicit declaration of ‘asignarPaginasAProceso’ was here
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+make: *** [src/Memoria.o] Error 1
+23:11:57 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:11:57 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:11:57 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:11:57 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:11:57 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c: In function ‘inicializarMemoriaAdm’:
+../src/Memoria.c:139:2: error: ‘for’ loop initial declarations are only allowed in C99 mode
+  for(int i= 0; i < marcos; i++)
+  ^
+../src/Memoria.c:139:2: note: use option -std=c99 or -std=gnu99 to compile your code
+../src/Memoria.c: In function ‘inicializarPrograma’:
+../src/Memoria.c:152:3: warning: implicit declaration of function ‘asignarPaginasAProceso’ [-Wimplicit-function-declaration]
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:389:6: warning: conflicting types for ‘asignarPaginasAProceso’ [enabled by default]
+ void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
+      ^
+../src/Memoria.c:152:3: note: previous implicit declaration of ‘asignarPaginasAProceso’ was here
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+make: *** [src/Memoria.o] Error 1
+23:12:36 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:12:36 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:12:36 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:12:37 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:12:37 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c: In function ‘inicializarMemoriaAdm’:
+../src/Memoria.c:139:2: error: ‘for’ loop initial declarations are only allowed in C99 mode
+  for(int i = 0; i < marcos; i++)
+  ^
+../src/Memoria.c:139:2: note: use option -std=c99 or -std=gnu99 to compile your code
+../src/Memoria.c: In function ‘inicializarPrograma’:
+../src/Memoria.c:152:3: warning: implicit declaration of function ‘asignarPaginasAProceso’ [-Wimplicit-function-declaration]
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:389:6: warning: conflicting types for ‘asignarPaginasAProceso’ [enabled by default]
+ void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
+      ^
+../src/Memoria.c:152:3: note: previous implicit declaration of ‘asignarPaginasAProceso’ was here
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+make: *** [src/Memoria.o] Error 1
+23:12:48 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:12:48 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:12:48 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:12:48 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:12:48 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c: In function ‘inicializarMemoriaAdm’:
+../src/Memoria.c:139:8: error: expected expression before ‘int’
+  while(int i = 0; i < marcos; i++)
+        ^
+../src/Memoria.c: In function ‘inicializarPrograma’:
+../src/Memoria.c:152:3: warning: implicit declaration of function ‘asignarPaginasAProceso’ [-Wimplicit-function-declaration]
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:389:6: warning: conflicting types for ‘asignarPaginasAProceso’ [enabled by default]
+ void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
+      ^
+../src/Memoria.c:152:3: note: previous implicit declaration of ‘asignarPaginasAProceso’ was here
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+make: *** [src/Memoria.o] Error 1
+23:13:02 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:13:02 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:13:02 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:13:02 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:13:02 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:17: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  Frame_Memoria *frame_Memoria = malloc(sizeof(Frame_Memoria)*marcos);
+                 ^
+../src/Memoria.c: In function ‘inicializarPrograma’:
+../src/Memoria.c:149:3: warning: implicit declaration of function ‘asignarPaginasAProceso’ [-Wimplicit-function-declaration]
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:386:6: warning: conflicting types for ‘asignarPaginasAProceso’ [enabled by default]
+ void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
+      ^
+../src/Memoria.c:149:3: note: previous implicit declaration of ‘asignarPaginasAProceso’ was here
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:21:16 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:21:16 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:21:17 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:21:17 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:21:17 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:86:8: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  char *frame_Memoria= malloc(marco_size*marcos);
+        ^
+../src/Memoria.c: In function ‘inicializarPrograma’:
+../src/Memoria.c:148:3: warning: implicit declaration of function ‘asignarPaginasAProceso’ [-Wimplicit-function-declaration]
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+../src/Memoria.c: At top level:
+../src/Memoria.c:385:6: warning: conflicting types for ‘asignarPaginasAProceso’ [enabled by default]
+ void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
+      ^
+../src/Memoria.c:148:3: note: previous implicit declaration of ‘asignarPaginasAProceso’ was here
+   asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+   ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:25:03 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:25:03 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:25:03 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:25:04 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:25:04 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main’:
+../src/Memoria.c:87:8: warning: unused variable ‘frame_Memoria’ [-Wunused-variable]
+  char *frame_Memoria= malloc(marco_size*marcos);
+        ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons
+Finished building target: Memoria
+ 
+23:30:21 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+23:30:21 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+23:30:21 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+23:30:21 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+23:30:22 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
