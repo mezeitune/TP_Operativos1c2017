@@ -36,28 +36,14 @@ int retardo_memoria;
 
 //Revisar y discutir estructuras
 
-
-typedef struct
-{
-	int pag_num;
-	int frame;
-	//char datosMarco[marco_size];
-	//Revisar
-}t_pag_Memoria;
-
-
 typedef struct
 {
 	int pid;
-	int num_pag_memoria;
+	int num_pag;
 	int frame;
-	int num_pag_proceso;
 }struct_adm_memoria;
 
-typedef struct
-{
-
-}tabla_procesos;
+char* bitMap;
 
 //--------------------Funciones Conexiones----------------------------//
 int crear_socket_servidor(char *ip, char *puerto);
@@ -73,19 +59,37 @@ char nuevaOrdenDeAccion(int puertoCliente);
 void *get_in_addr(struct sockaddr *sa);
 
 void leerConfiguracion(char* ruta);
-void inicializarMemoria(char* ruta);//Falta codificar
+void inicializarMemoriaAdm();//Falta codificar
+
+int main_inicializarPrograma();//Falta codificar
+int main_solicitarBytesPagina();//Falta codificar
+int main_almacenarBytesPagina();//Falta codificar
+int main_asignarPaginaAProceso();//Falta codificar
+int main_finalizarPrograma();//Falta codificar
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
-void inicializarPrograma(int pid, int cantPaginas);//Falta codificar
+int inicializarPrograma(int pid, int cantPaginas);//Falta codificar
 int solicitarBytesPagina(int pid,int pagina, int offset, int size);//Falta codificar
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);//Falta codificar
 int asignarPaginaAProceso(int pid, int cantPaginas);//Falta codificar
 int finalizarPrograma(int pid);//Falta codificar
 //------------------------------------------------------------------//
 
+void liberarBitMap(int pos, int size);
+void ocuparBitMap(int pos, int size);
+int verificarEspacio(int size);
+void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas);
+
 int main(void)
 {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/config_Memoria");
+
+	bitMap = string_repeat('0',marcos);
+
+	char *frame_Memoria= malloc(marco_size*marcos);
+
+	inicializarMemoriaAdm();
+
 	printf("IP=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
 	int socket_cliente = recibirConexion(socket_servidor);
@@ -95,19 +99,19 @@ int main(void)
 		switch(nuevaOrdenDeAccion(socket_cliente))
 		{
 		case 'I':
-			inicializarPrograma(1,1);
+			main_inicializarPrograma();
 			break;
 		case 'S':
-			solicitarBytesPagina(1,1,1,1);
+			main_solicitarBytesPagina();
 			break;
 		case 'A':
-			almacenarBytesPagina(1,1,1,1,"A");
+			main_almacenarBytesPagina();
 			break;
 		case 'G':
-			asignarPaginaAProceso(1,1);
+			main_asignarPaginaAProceso();
 			break;
 		case 'F':
-			finalizarPrograma(1);
+			main_finalizarPrograma();
 			break;
 		default:
 			printf("Error\n");
@@ -129,14 +133,25 @@ void leerConfiguracion(char* ruta)
 	retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA");
 }
 
-void inicializarMemoria(char* ruta)
+void inicializarMemoriaAdm()
 {
+	int sizeMemoriaAdm = ((sizeof(int)*3*marcos)+marco_size-1)/marco_size;
+	printf("El tamaño a reservar es de %i\n",sizeMemoriaAdm);
+	ocuparBitMap(0,sizeMemoriaAdm);
 
 }
 
-void inicializarPrograma(int pid, int cantPaginas)
+int inicializarPrograma(int pid, int cantPaginas)
 {
 	printf("Inicializar Programa\n");
+	int posicionFrame = verificarEspacio(cantPaginas);
+	if(posicionFrame >= 0)
+	{
+		ocuparBitMap(posicionFrame,cantPaginas);
+		asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+	}
+
+	return posicionFrame;
 }
 
 int solicitarBytesPagina(int pid,int pagina, int offset, int size)
@@ -384,4 +399,82 @@ char nuevaOrdenDeAccion(int puertoCliente)
 	buffer = recibir(puertoCliente);
 	printf("Orden %c\n",*buffer);
 	return *buffer;
+}
+
+int main_inicializarPrograma()
+{
+	return 0;
+}
+int main_solicitarBytesPagina()
+{
+	return 0;
+}
+int main_almacenarBytesPagina()
+{
+	return 0;
+}
+int main_asignarPaginaAProceso()
+{
+	return 0;
+}
+int main_finalizarPrograma()
+{
+	return 0;
+}
+
+void liberarBitMap(int pos, int size)
+{
+	int i;
+	for (i=0; i< size; i++)
+	{
+		bitMap[pos+i] = (char) '0';
+	}
+}
+
+void ocuparBitMap(int pos, int size)
+{
+	int i;
+	for (i=0; i< size; i++)
+	{
+		bitMap[pos+i] = (char) '1';
+	}
+}
+
+int verificarEspacio(int size)
+{
+	int pos = 0, i = 0, espacioLibre = 0;
+	while((espacioLibre < size) && (i < marcos))
+	{
+		if(bitMap[i] == '0')
+		{
+			if(pos != i)
+			{
+				espacioLibre ++;
+			}
+			else
+			{
+				pos =i;
+				espacioLibre ++;
+			}
+		}
+		else
+		{
+			espacioLibre = 0;
+			pos = i +1;
+		}
+		i++;
+	}
+	if(espacioLibre == size)
+	{
+		return pos;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
+{
+
 }
