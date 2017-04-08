@@ -74,8 +74,6 @@ int main(void)
 	//int socket_servidor1 = crear_socket_servidor(ipMemoria,puertoCPU);
 	//recibirConexion(socket_servidor1);
 
-	int socket_servidorP = crear_socket_servidor(ipProg,puertoProg);
-		recibirConexion(socket_servidorP);
 
 
     if( pthread_create( &thread_id , NULL ,  sock_CPU , (void*) NULL) < 0)
@@ -100,6 +98,9 @@ int main(void)
         perror("could not create thread");
         return 1;
     }
+	int socket_servidorP = crear_socket_servidor(ipProg,puertoProg);
+		recibirConexion(socket_servidorP);
+
 
 
 /*	while(1)
@@ -128,16 +129,16 @@ void* sock_Prog(){
 
 
 void* sock_FS(){
-	//char orden;
-//	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
-	/*int socket_FS = crear_socket_cliente(ipFileSys,puertoFileSys);
+	char orden;
+	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
+	int socket_FS = crear_socket_cliente("127.0.0.1","5001");
 	while(orden != 'Q')
 	{
 		scanf(" %c", &orden);
 		enviar(socket_FS,(void*) &orden,sizeof(char));
-	}*/
-	int socket_servidorFS = crear_socket_servidor(ipFileSys,puertoFileSys);
-	recibirConexion(socket_servidorFS);
+	}
+	//int socket_servidorFS = crear_socket_servidor(ipFileSys,puertoFileSys);
+	//recibirConexion(socket_servidorFS);
 }
 
 void* sock_Memoria(){
@@ -146,7 +147,7 @@ void* sock_Memoria(){
 	int socket_Mem = crear_socket_cliente(ipMemoria,puertoMemoria);
 	while(orden != 'Q')
 	{
-		scanf(" %c", &orden);
+		scanf("%c", &orden);
 		enviar(socket_Mem,(void*) &orden,sizeof(char));
 	}
 }

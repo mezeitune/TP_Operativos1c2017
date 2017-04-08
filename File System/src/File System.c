@@ -44,14 +44,14 @@ char nuevaOrdenDeAccion(int puertoCliente);
 void leerConfiguracion(char* ruta);
 
 int main(void){
-	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File System/config_FileSys");
+	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File System/config_FileSys");
 
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\ System/config_FileSys");
 
-	int socket_servidor = crear_socket_servidor(ipKernel,puerto);
+	int socket_servidor = crear_socket_servidor("127.0.0.1","5001");
 
-		recibirConexion(socket_servidor);
-return 0;
+	recibirConexion(socket_servidor);
+	return 0;
 }
 int crear_socket_servidor(char *ip, char *puerto){
     int descriptorArchivo, estado;
