@@ -21,23 +21,26 @@
 #include <commons/string.h>
 #include <commons/config.h>
 
-
 t_config* configuracion_FS;
 char *ipKernel;
 char *puerto;
 char *puntoMontaje;
 
 
-//------------------Configs----------------------//
 int crear_socket_cliente(char * ip, char * puerto);
+char* recibir_string(int socket_aceptado);
+void enviar_string(int socket, char * mensaje);
+void* recibir(int socket);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
+
+//------------------Configs----------------------//
 void leerConfiguracion(char* ruta);
 //-----------------------------------------------//
 
 
 int main(void){
 	char orden;
-	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/\"File System\"/config_FileSys");
+	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File System/config_FileSys");
 
 	int socket_Kernel = crear_socket_cliente("127.0.0.1","5002"); //Variable definidas
 		while(1)
@@ -48,12 +51,10 @@ int main(void){
 		return 0;
 	}
 
+
 int crear_socket_cliente(char * ip, char * puerto){
     int descriptorArchivo, estado;
     struct addrinfo hints, *infoServer, *n;
-
-	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/\"File System\"/config_FileSys");
-	//printf("CONFIGURACIONES\nPuerto=%s\nPunto Montaje=%s\n",puerto,puntoMontaje);
 
     memset(&hints,0,sizeof (struct addrinfo));
     hints.ai_family = AF_UNSPEC;
@@ -78,19 +79,26 @@ int crear_socket_cliente(char * ip, char * puerto){
 
     estado = connect(descriptorArchivo, n->ai_addr, n->ai_addrlen);
 
-
     if (estado == -1){
         perror("Error conectando el socket");
         freeaddrinfo(infoServer);
         return -1;
     }
 
-	puerto = config_get_string_value(configuracion_FS,"PUERTO");
-	puntoMontaje = config_get_string_value(configuracion_FS,"PUNTO_MONTAJE");
-
     freeaddrinfo(infoServer);
 
     return descriptorArchivo;
+}
+
+char* recibir_string(int socket_aceptado)
+{
+	return (char*) recibir(socket_aceptado);
+}
+
+void enviar_string(int socket, char* mensaje){
+	int tamanio = string_length(mensaje) + 1;
+
+	enviar(socket, (void*) mensaje, tamanio);
 }
 
 void enviar(int socket, void* cosaAEnviar, int tamanio){
@@ -103,6 +111,32 @@ void enviar(int socket, void* cosaAEnviar, int tamanio){
 	send(socket, mensaje, sizeof(int) + tamanio, 0);
 	free(mensaje);
 }
+
+void* recibir(int socket){
+	int checkSocket = -1;
+
+	void* recibido = malloc(sizeof(int));
+
+	checkSocket = read(socket, recibido, sizeof(int));
+
+	int tamanioDelMensaje = *((int*)recibido);
+
+	free(recibido);
+
+	if(!checkSocket) return NULL;
+
+	recibido = malloc(tamanioDelMensaje);
+
+	int bytesRecibidos = 0;
+
+	while(bytesRecibidos < tamanioDelMensaje && checkSocket){
+		checkSocket = read(socket, (recibido + bytesRecibidos), (tamanioDelMensaje - bytesRecibidos));
+		bytesRecibidos += checkSocket;
+	}
+
+	return !checkSocket ? NULL:recibido;
+}
+
 void leerConfiguracion(char* ruta){
 
 	puerto = config_get_string_value(configuracion_FS,"PUERTO_KERNEL");

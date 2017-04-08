@@ -58,7 +58,7 @@ int main(void)
 
 
 	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
-	int socket_servidor = crear_socket_servidor(ipMemoria,puertoCPU);
+	int socket_servidor = crear_socket_servidor(ipMemoria,puertoFileSys);
 	recibirConexion(socket_servidor);
 /*	while(1)
 
