@@ -94,8 +94,9 @@ int main(void)
 
 	inicializarMemoriaAdm();
 
-	printf("IP=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
+
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
+	printf("CONFIGURACIONES\nIP=%s\nPuerto=%s\nMarcos=%d\nTamano Marco=%d\nEntradas Cache=%d\nCache por procesos=%d\nRetardo Memoria=%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
 	recibirConexion(socket_servidor);
 
 
@@ -112,7 +113,7 @@ void leerConfiguracion(char* ruta)
 	marco_size = config_get_int_value(configuracion_memoria,"MARCO_SIZE");
 	entradas_cache = config_get_int_value(configuracion_memoria,"ENTRADAS_CACHE");
 	cache_x_proc = config_get_int_value(configuracion_memoria,"CACHE_X_PROC");
-	retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA");
+	printf("%d",retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA"));
 }
 
 void inicializarMemoriaAdm()
@@ -328,7 +329,8 @@ char nuevaOrdenDeAccion(int puertoCliente)
         return 'X';
     	//perror("recv failed");
     }
-	printf("Orden %c\n",*buffer);
+    printf("El cliente %d envio el comando:",puertoCliente);
+	printf("%c\n",*buffer);
 	return *buffer;
 }
 
@@ -414,6 +416,7 @@ void *connection_handler(void *socket_desc)
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
     char orden = 'F';
+
 	while(orden != 'Q')
 	{
 		orden = nuevaOrdenDeAccion(sock);
@@ -435,7 +438,7 @@ void *connection_handler(void *socket_desc)
 			main_finalizarPrograma();
 			break;
 		case 'Q':
-			puts("Cliente desconectado");
+			printf("Cliente %d desconectado",sock);
 			fflush(stdout);
 			break;
 		case 'X':

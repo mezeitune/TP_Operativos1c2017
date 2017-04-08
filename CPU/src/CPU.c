@@ -37,7 +37,7 @@ char* ipMemoria;
 int main(void)
 {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
-	printf("IP=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
+	printf("CONFIGURACIONES\n=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
 	char orden;
 	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 	while(1)

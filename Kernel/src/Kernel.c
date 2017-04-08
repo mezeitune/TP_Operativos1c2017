@@ -41,11 +41,15 @@ char *semIds;
 char *semInit;
 char *sharedVars;
 
+
+
 int main(void)
 {
 	char orden;
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
+
+	printf("CONFIGURACIONES\nipMemoria=%s\npuertoProg=%s\npuertoCPU=%s\npuertoMemoria=%s\nipFileSys=%s\npuertoFileSys=%s\nquantum=%s\nquantumSleep=%s\nalgoritmo=%s\ngradoMultiProg=%s\nsemIds=%s\nsemInit=%s\nsharedVars=%s\n",ipMemoria,puertoProg,puertoCPU,puertoMemoria,ipFileSys,puertoFileSys,quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars);
 
 	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
 	while(1)
