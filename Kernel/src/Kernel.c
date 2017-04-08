@@ -44,9 +44,10 @@ char *sharedVars;
 int main(void)
 {
 	char orden;
-	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
-	int socket_Memoria = crear_socket_cliente("127.0.0.1","4040"); //Variable definidas
 
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
+
+	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
 	while(1)
 		{
 			scanf(" %c", &orden);
@@ -100,22 +101,23 @@ void enviar(int socket, void* cosaAEnviar, int tamanio){
 
 	send(socket, mensaje, sizeof(int) + tamanio, 0);
 	free(mensaje);
+}
 
 void leerConfiguracion(char* ruta){
 
 	configuracion_kernel = config_create(ruta);
-	puertoProg = config_get_int_value(configuracion_kernel,"PUERTO_PROG");
-	puertoCPU = config_get_int_value(configuracion_kernel,"IP_CPU");
+	puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG");
+	puertoCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
 	ipMemoria = config_get_string_value(configuracion_kernel,"IP_MEMORIA");
-	puertoMemoria = config_get_int_value(configuracion_kernel,"PUERTO_MEMORIA");
+	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
 	ipFileSys = config_get_string_value(configuracion_kernel,"IP_FS");
-	puertoFileSys = config_get_int_value(configuracion_kernel,"PUERTO_FS");
+	puertoFileSys = config_get_string_value(configuracion_kernel,"PUERTO_FS");
 	quantum = config_get_string_value(configuracion_kernel,"QUANTUM");
-	quantumSleep = config_get_int_value(configuracion_kernel,"QUANTUM_SLEEP");
+	quantumSleep = config_get_string_value(configuracion_kernel,"QUANTUM_SLEEP");
 	algoritmo = config_get_string_value(configuracion_kernel,"ALGORTIMO");
-	gradoMultiProg = config_get_int_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION");
-	semIds = config_get_array_value(configuracion_kernel,"SEM_IDS");
-	semInit = config_get_array_value(configuracion_kernel,"SEM_INIT");
-	sharedVars = config_get_array_value(configuracion_kernel,"SHARED_VARS");
+	gradoMultiProg = config_get_string_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION");
+	semIds = config_get_string_value(configuracion_kernel,"SEM_IDS");
+	semInit = config_get_string_value(configuracion_kernel,"SEM_INIT");
+	sharedVars = config_get_string_value(configuracion_kernel,"SHARED_VARS");
 
 }
