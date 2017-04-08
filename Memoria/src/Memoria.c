@@ -25,7 +25,7 @@
 //#define RUTA_LOG "/home/utnso/memoria.log"
 
 t_config* configuracion_memoria;
-char* puertoMemoria;
+char* puertoMemoria;//4000
 char* ipMemoria;
 int marcos;
 int marco_size;
