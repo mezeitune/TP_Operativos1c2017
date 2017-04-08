@@ -61,43 +61,39 @@ char nuevaOrdenDeAccion(int puertoCliente);
 void *get_in_addr(struct sockaddr *sa);
 
 void leerConfiguracion(char* ruta);
-void inicializarMemoriaAdm(void* frame_Memoria);//Falta codificar
+void inicializarMemoriaAdm();
 
 int main_inicializarPrograma();//Falta codificar
 int main_solicitarBytesPagina();//Falta codificar
 int main_almacenarBytesPagina();//Falta codificar
-int main_asignarPaginaAProceso();//Falta codificar
+int main_asignarPaginasAProceso();
 int main_finalizarPrograma();//Falta codificar
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
 int inicializarPrograma(int pid, int cantPaginas);//Falta codificar
 int solicitarBytesPagina(int pid,int pagina, int offset, int size);//Falta codificar
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);//Falta codificar
-int asignarPaginaAProceso(int pid, int cantPaginas);//Falta codificar
+int asignarPaginasAProceso(int pid, int cantPaginas, int frame);//Falta codificar
 int finalizarPrograma(int pid);//Falta codificar
 //------------------------------------------------------------------//
 
 void liberarBitMap(int pos, int size);
 void ocuparBitMap(int pos, int size);
 int verificarEspacio(int size);
-void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas);
+void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas);
 
 int main(void)
 {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/config_Memoria");
-
+	printf("CONFIGURACIONES\nIP=%s\nPuerto=%s\nMarcos=%d\nTamano Marco=%d\nEntradas Cache=%d\nCache por procesos=%d\nRetardo Memoria=%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
 	bitMap = string_repeat('0',marcos);
 
-	void *frame_Memoria= malloc(marco_size*marcos);
+	frame_Memoria= malloc(marco_size*marcos);
 
-	inicializarMemoriaAdm(frame_Memoria);
-
+	inicializarMemoriaAdm();
 
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
-	printf("CONFIGURACIONES\nIP=%s\nPuerto=%s\nMarcos=%d\nTamano Marco=%d\nEntradas Cache=%d\nCache por procesos=%d\nRetardo Memoria=%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
 	recibirConexion(socket_servidor);
-
-
 
 	return EXIT_SUCCESS;
 }
@@ -111,10 +107,10 @@ void leerConfiguracion(char* ruta)
 	marco_size = config_get_int_value(configuracion_memoria,"MARCO_SIZE");
 	entradas_cache = config_get_int_value(configuracion_memoria,"ENTRADAS_CACHE");
 	cache_x_proc = config_get_int_value(configuracion_memoria,"CACHE_X_PROC");
-	printf("%d",retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA"));
+	retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA");
 }
 
-void inicializarMemoriaAdm(void* frame_Memoria)
+void inicializarMemoriaAdm()
 {
 	int sizeMemoriaAdm = ((sizeof(int)*3*marcos)+marco_size-1)/marco_size;
 	printf("Las estructuras administrativas ocupan %i paginas\n",sizeMemoriaAdm);
@@ -142,7 +138,7 @@ int inicializarPrograma(int pid, int cantPaginas)
 	if(posicionFrame >= 0)
 	{
 		ocuparBitMap(posicionFrame,cantPaginas);
-		asignarPaginasAProceso(pid,posicionFrame,cantPaginas);
+		asignarPaginasAProceso(pid,cantPaginas,posicionFrame);
 	}
 
 	return posicionFrame;
@@ -160,9 +156,10 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 	return EXIT_SUCCESS;
 }
 
-int asignarPaginaAProceso(int pid, int cantPaginas)
+int asignarPaginasAProceso(int pid, int cantPaginas, int posicionFrame)
 {
 	printf("Asignar Pagina A Proceso\n");
+	escribirEstructuraAdmAMemoria(pid,posicionFrame,cantPaginas);
 	return EXIT_SUCCESS;
 }
 
@@ -261,9 +258,6 @@ int recibirConexion(int socket_servidor){
             perror("could not create thread");
             return 1;
         }
-
-        //Now join the thread , so that we dont terminate before the thread
-        //pthread_join( thread_id , NULL);
         puts("Handler assigned");
     }
 
@@ -345,23 +339,31 @@ char nuevaOrdenDeAccion(int puertoCliente)
 	return *buffer;
 }
 
-int main_inicializarPrograma()
+int main_inicializarPrograma(int sock)
 {
 	return 0;
 }
-int main_solicitarBytesPagina()
+int main_solicitarBytesPagina(int sock)
 {
 	return 0;
 }
-int main_almacenarBytesPagina()
+int main_almacenarBytesPagina(int sock)
 {
 	return 0;
 }
-int main_asignarPaginaAProceso()
+int main_asignarPaginasAProceso(int sock)
 {
+	int pid = (int) recibir(sock);
+	int cantPaginas = (int) recibir(sock);
+	int posicionFrame = verificarEspacio(cantPaginas);
+	if(posicionFrame > 0)
+	{
+		asignarPaginasAProceso(pid,cantPaginas,posicionFrame);
+	}
 	return 0;
+
 }
-int main_finalizarPrograma()
+int main_finalizarPrograma(int sock)
 {
 	return 0;
 }
@@ -434,19 +436,19 @@ void *connection_handler(void *socket_desc)
 		switch(orden)
 		{
 		case 'I':
-			main_inicializarPrograma();
+			main_inicializarPrograma(sock);
 			break;
 		case 'S':
-			main_solicitarBytesPagina();
+			main_solicitarBytesPagina(sock);
 			break;
 		case 'A':
-			main_almacenarBytesPagina();
+			main_almacenarBytesPagina(sock);
 			break;
 		case 'G':
-			main_asignarPaginaAProceso();
+			main_asignarPaginasAProceso(sock);
 			break;
 		case 'F':
-			main_finalizarPrograma();
+			main_finalizarPrograma(sock);
 			break;
 		case 'Q':
 			printf("Cliente %d desconectado",sock);
@@ -463,7 +465,24 @@ void *connection_handler(void *socket_desc)
     return 0;
 }
 
-void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
+void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas)
 {
-
+	struct_adm_memoria aux;
+	int i = 0;
+	int desplazamiento = sizeof(struct_adm_memoria);
+	aux.pid=pid;
+	aux.num_pag=0;
+	aux.frame = frame;
+	frame_Memoria = frame_Memoria + desplazamiento*frame;
+	while(i < cantPaginas)
+	{
+		memcpy(frame_Memoria, &aux, sizeof(struct_adm_memoria));
+		aux.num_pag++;
+		aux.frame++;
+		frame_Memoria = frame_Memoria + desplazamiento;
+		i++;
+	}
+	frame_Memoria = frame_Memoria - desplazamiento*frame;
+	frame_Memoria = frame_Memoria - desplazamiento*cantPaginas;
 }
+
