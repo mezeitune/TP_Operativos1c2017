@@ -70,11 +70,12 @@ int main(void)
 
 
 	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
-<<<<<<< HEAD
-	int socket_servidor = crear_socket_servidor(ipMemoria,puertoFileSys);
-=======
+	//int socket_servidor = crear_socket_servidor(ipMemoria,puertoFileSys);
 	//int socket_servidor1 = crear_socket_servidor(ipMemoria,puertoCPU);
 	//recibirConexion(socket_servidor1);
+
+	int socket_servidorP = crear_socket_servidor(ipProg,puertoProg);
+		recibirConexion(socket_servidorP);
 
 
     if( pthread_create( &thread_id , NULL ,  sock_CPU , (void*) NULL) < 0)
@@ -100,9 +101,7 @@ int main(void)
         return 1;
     }
 
-	int socket_servidor = crear_socket_servidor(ipProg,puertoProg);
->>>>>>> f9d8845b534f54a4eada1c31eb794ede526113b9
-	recibirConexion(socket_servidor);
+
 /*	while(1)
 
 	printf("CONFIGURACIONES\nipMemoria=%s\npuertoProg=%s\npuertoCPU=%s\npuertoMemoria=%s\nipFileSys=%s\npuertoFileSys=%s\nquantum=%s\nquantumSleep=%s\nalgoritmo=%s\ngradoMultiProg=%s\nsemIds=%s\nsemInit=%s\nsharedVars=%s\n",ipMemoria,puertoProg,puertoCPU,puertoMemoria,ipFileSys,puertoFileSys,quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars);
