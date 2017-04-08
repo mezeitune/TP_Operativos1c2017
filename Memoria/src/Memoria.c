@@ -22,17 +22,17 @@
 #include <commons/string.h>
 #include <commons/config.h>
 #include <malloc.h>
-
-//#define RUTA_LOG "/home/utnso/memoria.log"
-
+#include <arpa/inet.h>
+#include <pthread.h>
 t_config* configuracion_memoria;
-char* puertoMemoria;
+char* puertoMemoria;//4000
 char* ipMemoria;
 int marcos;
 int marco_size;
 int entradas_cache;
 int cache_x_proc;
 int retardo_memoria;
+pthread_t thread_id;
 
 typedef struct
 {
@@ -43,6 +43,9 @@ typedef struct
 
 char* bitMap;
 void* frame_Memoria;
+
+//the thread function
+void *connection_handler(void *);
 
 //--------------------Funciones Conexiones----------------------------//
 int crear_socket_servidor(char *ip, char *puerto);
@@ -55,6 +58,7 @@ void enviar(int socket, void* cosaAEnviar, int tamanio);
 
 char nuevaOrdenDeAccion(int puertoCliente);
 
+void *get_in_addr(struct sockaddr *sa);
 
 void leerConfiguracion(char* ruta);
 void inicializarMemoriaAdm(void* frame_Memoria);//Falta codificar
@@ -88,34 +92,13 @@ int main(void)
 
 	inicializarMemoriaAdm(frame_Memoria);
 
-	printf("IP=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
-	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
-	int socket_cliente = recibirConexion(socket_servidor);
 
-	while(1)
-	{
-		switch(nuevaOrdenDeAccion(socket_cliente))
-		{
-		case 'I':
-			main_inicializarPrograma();
-			break;
-		case 'S':
-			main_solicitarBytesPagina();
-			break;
-		case 'A':
-			main_almacenarBytesPagina();
-			break;
-		case 'G':
-			main_asignarPaginaAProceso();
-			break;
-		case 'F':
-			main_finalizarPrograma();
-			break;
-		default:
-			printf("Error\n");
-			break;
-		}
-	}
+	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
+	printf("CONFIGURACIONES\nIP=%s\nPuerto=%s\nMarcos=%d\nTamano Marco=%d\nEntradas Cache=%d\nCache por procesos=%d\nRetardo Memoria=%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
+	recibirConexion(socket_servidor);
+
+
+
 	return EXIT_SUCCESS;
 }
 
@@ -128,7 +111,7 @@ void leerConfiguracion(char* ruta)
 	marco_size = config_get_int_value(configuracion_memoria,"MARCO_SIZE");
 	entradas_cache = config_get_int_value(configuracion_memoria,"ENTRADAS_CACHE");
 	cache_x_proc = config_get_int_value(configuracion_memoria,"CACHE_X_PROC");
-	retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA");
+	printf("%d",retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA"));
 }
 
 void inicializarMemoriaAdm(void* frame_Memoria)
@@ -220,7 +203,7 @@ int crear_socket_servidor(char *ip, char *puerto){
 
     if(setsockopt(descriptorArchivo,SOL_SOCKET,SO_REUSEADDR,&si,sizeof(int)) == -1){
     	perror("Error en setsockopt");
-        close(descriptorArchivo);
+     //   close(descriptorArchivo);
         freeaddrinfo(infoServer);
 
         return -1;
@@ -228,7 +211,7 @@ int crear_socket_servidor(char *ip, char *puerto){
 
     if (bind(descriptorArchivo, n->ai_addr, n->ai_addrlen) == -1){
     	perror("Error bindeando el socket");
-        close(descriptorArchivo);
+     //   close(descriptorArchivo);
         freeaddrinfo(infoServer);
 
         return -1;
@@ -239,10 +222,19 @@ int crear_socket_servidor(char *ip, char *puerto){
     return descriptorArchivo;
 }
 
+void *get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 int recibirConexion(int socket_servidor){
 	struct sockaddr_storage their_addr;
+	 socklen_t addr_size;
 
-	socklen_t addr_size;
 
 	int estado = listen(socket_servidor, 5);
 
@@ -252,12 +244,29 @@ int recibirConexion(int socket_servidor){
 		return 1;
 	}
 
+
 	if(estado == 0){
 		printf("Se puso el socket en listen\n");
 	}
 
 	addr_size = sizeof(their_addr);
-	int socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
+
+	int socket_aceptado;
+    while( (socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size)) )
+    {
+        puts("Connection accepted");
+
+        if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &socket_aceptado) < 0)
+        {
+            perror("could not create thread");
+            return 1;
+        }
+
+        //Now join the thread , so that we dont terminate before the thread
+        //pthread_join( thread_id , NULL);
+        puts("Handler assigned");
+    }
+
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
@@ -319,7 +328,20 @@ char nuevaOrdenDeAccion(int puertoCliente)
 	char *buffer;
 	printf("Esperando Orden del Cliente\n");
 	buffer = recibir(puertoCliente);
-	printf("Orden %c\n",*buffer);
+	//int size_mensaje = sizeof(buffer);
+    if(buffer == NULL)
+    {
+        return 'Q';
+    	//puts("Client disconnected");
+        //fflush(stdout);
+    }
+    else if(buffer == NULL)
+    {
+        return 'X';
+    	//perror("recv failed");
+    }
+    printf("El cliente %d envio el comando:",puertoCliente);
+	printf("%c\n",*buffer);
 	return *buffer;
 }
 
@@ -394,6 +416,51 @@ int verificarEspacio(int size)
 	{
 		return -1;
 	}
+}
+
+
+/*
+ * This will handle connection for each client
+ * */
+void *connection_handler(void *socket_desc)
+{
+    //Get the socket descriptor
+    int sock = *(int*)socket_desc;
+    char orden = 'F';
+
+	while(orden != 'Q')
+	{
+		orden = nuevaOrdenDeAccion(sock);
+		switch(orden)
+		{
+		case 'I':
+			main_inicializarPrograma();
+			break;
+		case 'S':
+			main_solicitarBytesPagina();
+			break;
+		case 'A':
+			main_almacenarBytesPagina();
+			break;
+		case 'G':
+			main_asignarPaginaAProceso();
+			break;
+		case 'F':
+			main_finalizarPrograma();
+			break;
+		case 'Q':
+			printf("Cliente %d desconectado",sock);
+			fflush(stdout);
+			break;
+		case 'X':
+			perror("recv failed");
+			break;
+		default:
+			printf("Error\n");
+			break;
+		}
+	}
+    return 0;
 }
 
 void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)

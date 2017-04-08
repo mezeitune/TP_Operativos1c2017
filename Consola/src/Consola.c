@@ -15,19 +15,22 @@
 #include <commons/bitarray.h>
 
 t_config* configuracion_Consola;
-char* ip_Kernel;
-int puerto_Kernel;
+char* ipKernel;
+char* puertoKernel;
 
 void leerConfiguracion(char* ruta);
-
 int main(void)
 {
+
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
+
+
 	return EXIT_SUCCESS;
 }
 
 void leerConfiguracion(char* ruta)
 {
-	configuracion_Consola= config_create(ruta);
-	ip_Kernel= config_get_string_value(configuracion_Consola,"IP_KERNEL");
-	puerto_Kernel = config_get_int_value(configuracion_Consola,"PUERTO_KERNEL");
+	configuracion_Consola = config_create(ruta);
+	printf("%s",ipKernel = config_get_string_value(configuracion_Consola,"IP_KERNEL"));
+	puertoKernel = config_get_string_value(configuracion_Consola,"PUERTO_KERNEL");
 }
