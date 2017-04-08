@@ -21,18 +21,24 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
+<<<<<<< HEAD
 #include <arpa/inet.h>
+=======
+#include<arpa/inet.h> //inet_addr
+#include<pthread.h> //for threading , link with lpthread
+>>>>>>> 69145a13b3545aa0a85823560dbb3829f93f2067
 
 
 //#define RUTA_LOG "/home/utnso/memoria.log"
 t_config* configuracion_memoria;
-char* puertoMemoria;
+char* puertoMemoria;//4000
 char* ipMemoria;
 int marcos;
 int marco_size;
 int entradas_cache;
 int cache_x_proc;
 int retardo_memoria;
+pthread_t thread_id;
 
 //Revisar y discutir estructuras
 
@@ -44,6 +50,9 @@ typedef struct
 }struct_adm_memoria;
 
 char* bitMap;
+
+//the thread function
+void *connection_handler(void *);
 
 //--------------------Funciones Conexiones----------------------------//
 int crear_socket_servidor(char *ip, char *puerto);
@@ -92,32 +101,10 @@ int main(void)
 
 	printf("IP=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
-	int socket_cliente = recibirConexion(socket_servidor);
+	recibirConexion(socket_servidor);
 
-	while(1)
-	{
-		switch(nuevaOrdenDeAccion(socket_cliente))
-		{
-		case 'I':
-			main_inicializarPrograma();
-			break;
-		case 'S':
-			main_solicitarBytesPagina();
-			break;
-		case 'A':
-			main_almacenarBytesPagina();
-			break;
-		case 'G':
-			main_asignarPaginaAProceso();
-			break;
-		case 'F':
-			main_finalizarPrograma();
-			break;
-		default:
-			printf("Error\n");
-			break;
-		}
-	}
+
+
 	return EXIT_SUCCESS;
 }
 
@@ -241,6 +228,7 @@ int recibirConexion(int socket_servidor){
 	struct sockaddr_storage their_addr;
 	 socklen_t addr_size;
 
+
 	int estado = listen(socket_servidor, 5);
 
 	if(estado == -1){
@@ -255,7 +243,23 @@ int recibirConexion(int socket_servidor){
 	}
 
 	addr_size = sizeof(their_addr);
-	int socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
+
+	int socket_aceptado;
+    while( (socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size)) )
+    {
+        puts("Connection accepted");
+
+        if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &socket_aceptado) < 0)
+        {
+            perror("could not create thread");
+            return 1;
+        }
+
+        //Now join the thread , so that we dont terminate before the thread
+        //pthread_join( thread_id , NULL);
+        puts("Handler assigned");
+    }
+
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
@@ -317,6 +321,18 @@ char nuevaOrdenDeAccion(int puertoCliente)
 	char *buffer;
 	printf("Esperando Orden del Cliente\n");
 	buffer = recibir(puertoCliente);
+	//int size_mensaje = sizeof(buffer);
+    if(buffer == NULL)
+    {
+        return 'Q';
+    	//puts("Client disconnected");
+        //fflush(stdout);
+    }
+    else if(buffer == -1)
+    {
+        return 'X';
+    	//perror("recv failed");
+    }
 	printf("Orden %c\n",*buffer);
 	return *buffer;
 }
@@ -392,6 +408,50 @@ int verificarEspacio(int size)
 	{
 		return -1;
 	}
+}
+
+
+/*
+ * This will handle connection for each client
+ * */
+void *connection_handler(void *socket_desc)
+{
+    //Get the socket descriptor
+    int sock = *(int*)socket_desc;
+    char orden = 'F';
+	while(orden != 'Q')
+	{
+		orden = nuevaOrdenDeAccion(sock);
+		switch(orden)
+		{
+		case 'I':
+			main_inicializarPrograma();
+			break;
+		case 'S':
+			main_solicitarBytesPagina();
+			break;
+		case 'A':
+			main_almacenarBytesPagina();
+			break;
+		case 'G':
+			main_asignarPaginaAProceso();
+			break;
+		case 'F':
+			main_finalizarPrograma();
+			break;
+		case 'Q':
+			puts("Cliente desconectado");
+			fflush(stdout);
+			break;
+		case 'X':
+			perror("recv failed");
+			break;
+		default:
+			printf("Error\n");
+			break;
+		}
+	}
+    return 0;
 }
 
 void asignarPaginasAProceso(int pid,int posicionFrame,int cantPaginas)
