@@ -209,7 +209,7 @@ int crear_socket_servidor(char *ip, char *puerto){
 
     if(setsockopt(descriptorArchivo,SOL_SOCKET,SO_REUSEADDR,&si,sizeof(int)) == -1){
     	perror("Error en setsockopt");
-        close(descriptorArchivo);
+     //   close(descriptorArchivo);
         freeaddrinfo(infoServer);
 
         return -1;
@@ -217,7 +217,7 @@ int crear_socket_servidor(char *ip, char *puerto){
 
     if (bind(descriptorArchivo, n->ai_addr, n->ai_addrlen) == -1){
     	perror("Error bindeando el socket");
-        close(descriptorArchivo);
+     //   close(descriptorArchivo);
         freeaddrinfo(infoServer);
 
         return -1;
@@ -239,15 +239,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int recibirConexion(int socket_servidor){
 	struct sockaddr_storage their_addr;
-	 fd_set master;
-	 fd_set read_fds;
-	 int fdmax;
-	 int i,j;
-	 int newfd;
 	 socklen_t addr_size;
-	 char remoteIP[INET6_ADDRSTRLEN];
-	 char buf[256];    // buffer for client data
-	 int nbytes;
 
 	int estado = listen(socket_servidor, 5);
 
@@ -262,76 +254,6 @@ int recibirConexion(int socket_servidor){
 		printf("Se puso el socket en listen\n");
 	}
 
-	FD_SET(socket_servidor,&master);
-
-	fdmax=socket_servidor;
-
-	for(;;) {
-	        read_fds = master; // copy it
-	        if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
-	            close(socket_servidor);
-	        	perror("select");
-	            return 1;
-	        }
-	 /////////////////////////////////////////////////////////////////////
-	 // run through the existing connections looking for data to read
-	  for(i = 0; i <= fdmax; i++) {
-	       if (FD_ISSET(i, &read_fds)) { // we got one!!
-	                if (i == socket_servidor) {
-	                           // handle new connections
-	                          addr_size = sizeof their_addr;
-	                           newfd = accept(socket_servidor,(struct sockaddr *)&their_addr,&addr_size);
-	                           	   	 if (newfd == -1) {
-	                           	   		 	 perror("accept");
-	                           	   	 	 } else {
-	                           	   	 		 FD_SET(newfd, &master); // add to master set
-	                           	   	 		 	 if (newfd > fdmax) {    // keep track of the max
-	                           	   	 		 		 fdmax = newfd;
-	                           	   	 		 	 }
-	               printf("selectserver: new connection from %s on ""socket %d\n",
-	                                       inet_ntop(their_addr.ss_family,
-	                                       get_in_addr((struct sockaddr*)&their_addr),
-	                                       remoteIP, INET6_ADDRSTRLEN),
-	                                       newfd);
-	                                             }
-	                       	   	   	   	   	   } else {
-	                           // handle data from a client
-	                           if ((nbytes = recv(i, buf, sizeof buf, 0)) <= 0) {
-	                               // got error or connection closed by client
-	                               if (nbytes == 0) {
-	                                   // connection closed
-	                                   printf("selectserver: socket %d hung up\n", i);
-	                               } else {
-	                                   perror("recv");
-	                               }
-	                               close(i); // bye!
-	                               FD_CLR(i, &master); // remove from master set
-	                           } else {
-	                               // we got some data from a client
-	                               //for(j = 0; j <= fdmax; j++) {
-	                                   // send to everyone!
-	                                   if (FD_ISSET(j, &master)) {
-	                                       // except the listener and ourselves
-	                                       if (j != socket_servidor && j != i) {
-	                                           if (send(j, buf, nbytes, 0) == -1) {
-	                                        	perror("send");
-	                                           }
-	                                       }
-	                                   }
-	                               //}
-	                           }
-	                       } // END handle data from client
-	                   } // END got new incoming connection
-	               } // END looping through file descriptors
-	           } // END for(;;)--and you thought it would never end!
-
-	           return 0;
-	       }
-
-
-			///////////////////////////
-
-/*
 	addr_size = sizeof(their_addr);
 	int socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
 
@@ -341,10 +263,8 @@ int recibirConexion(int socket_servidor){
 		return 1;
 	}
 
-
-
 	return socket_aceptado;
-	*/
+}
 
 char* recibir_string(int socket_aceptado){
 	return (char*) recibir(socket_aceptado);
