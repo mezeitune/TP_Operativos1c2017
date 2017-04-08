@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <malloc.h>
 
 //#define RUTA_LOG "/home/utnso/memoria.log"
 
@@ -33,16 +34,15 @@ int entradas_cache;
 int cache_x_proc;
 int retardo_memoria;
 
-//Revisar y discutir estructuras
-
 typedef struct
 {
+	int frame;
 	int pid;
 	int num_pag;
-	int frame;
 }struct_adm_memoria;
 
 char* bitMap;
+void* frame_Memoria;
 
 //--------------------Funciones Conexiones----------------------------//
 int crear_socket_servidor(char *ip, char *puerto);
@@ -57,7 +57,7 @@ char nuevaOrdenDeAccion(int puertoCliente);
 
 
 void leerConfiguracion(char* ruta);
-void inicializarMemoriaAdm();//Falta codificar
+void inicializarMemoriaAdm(void* frame_Memoria);//Falta codificar
 
 int main_inicializarPrograma();//Falta codificar
 int main_solicitarBytesPagina();//Falta codificar
@@ -84,9 +84,9 @@ int main(void)
 
 	bitMap = string_repeat('0',marcos);
 
-	char *frame_Memoria= malloc(marco_size*marcos);
+	void *frame_Memoria= malloc(marco_size*marcos);
 
-	inicializarMemoriaAdm();
+	inicializarMemoriaAdm(frame_Memoria);
 
 	printf("IP=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
@@ -131,12 +131,25 @@ void leerConfiguracion(char* ruta)
 	retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA");
 }
 
-void inicializarMemoriaAdm()
+void inicializarMemoriaAdm(void* frame_Memoria)
 {
 	int sizeMemoriaAdm = ((sizeof(int)*3*marcos)+marco_size-1)/marco_size;
-	printf("El tamaño a reservar es de %i\n",sizeMemoriaAdm);
+	printf("Las estructuras administrativas ocupan %i paginas\n",sizeMemoriaAdm);
 	ocuparBitMap(0,sizeMemoriaAdm);
-
+	struct_adm_memoria aux;
+	int i = 0;
+	int desplazamiento = sizeof(struct_adm_memoria);
+	aux.pid=-1;
+	aux.num_pag=-1;
+	aux.frame = i;
+	while(i < marcos)
+	{
+		memcpy(frame_Memoria, &aux, sizeof(struct_adm_memoria));
+		i++;
+		aux.frame = i;
+		frame_Memoria = frame_Memoria + desplazamiento;
+	}
+	frame_Memoria = (frame_Memoria - desplazamiento*marcos);
 }
 
 int inicializarPrograma(int pid, int cantPaginas)
