@@ -21,11 +21,10 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <arpa/inet.h>
 #include<arpa/inet.h> //inet_addr
 #include<pthread.h> //for threading , link with lpthread
-
 //#define RUTA_LOG "/home/utnso/memoria.log"
-
 t_config* configuracion_memoria;
 char* puertoMemoria;//4000
 char* ipMemoria;
@@ -61,6 +60,7 @@ void enviar(int socket, void* cosaAEnviar, int tamanio);
 
 char nuevaOrdenDeAccion(int puertoCliente);
 
+void *get_in_addr(struct sockaddr *sa);
 
 void leerConfiguracion(char* ruta);
 void inicializarMemoriaAdm();//Falta codificar
@@ -94,8 +94,9 @@ int main(void)
 
 	inicializarMemoriaAdm();
 
-	printf("IP=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
+
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
+	printf("CONFIGURACIONES\nIP=%s\nPuerto=%s\nMarcos=%d\nTamano Marco=%d\nEntradas Cache=%d\nCache por procesos=%d\nRetardo Memoria=%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
 	recibirConexion(socket_servidor);
 
 
@@ -112,7 +113,7 @@ void leerConfiguracion(char* ruta)
 	marco_size = config_get_int_value(configuracion_memoria,"MARCO_SIZE");
 	entradas_cache = config_get_int_value(configuracion_memoria,"ENTRADAS_CACHE");
 	cache_x_proc = config_get_int_value(configuracion_memoria,"CACHE_X_PROC");
-	retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA");
+	printf("%d",retardo_memoria = config_get_int_value(configuracion_memoria,"RETARDO_MEMORIA"));
 }
 
 void inicializarMemoriaAdm()
@@ -191,7 +192,7 @@ int crear_socket_servidor(char *ip, char *puerto){
 
     if(setsockopt(descriptorArchivo,SOL_SOCKET,SO_REUSEADDR,&si,sizeof(int)) == -1){
     	perror("Error en setsockopt");
-        close(descriptorArchivo);
+     //   close(descriptorArchivo);
         freeaddrinfo(infoServer);
 
         return -1;
@@ -199,7 +200,7 @@ int crear_socket_servidor(char *ip, char *puerto){
 
     if (bind(descriptorArchivo, n->ai_addr, n->ai_addrlen) == -1){
     	perror("Error bindeando el socket");
-        close(descriptorArchivo);
+     //   close(descriptorArchivo);
         freeaddrinfo(infoServer);
 
         return -1;
@@ -210,10 +211,18 @@ int crear_socket_servidor(char *ip, char *puerto){
     return descriptorArchivo;
 }
 
+void *get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 int recibirConexion(int socket_servidor){
 	struct sockaddr_storage their_addr;
-
-	socklen_t addr_size;
+	 socklen_t addr_size;
 
 
 	int estado = listen(socket_servidor, 5);
@@ -223,6 +232,7 @@ int recibirConexion(int socket_servidor){
 		close(socket_servidor);
 		return 1;
 	}
+
 
 	if(estado == 0){
 		printf("Se puso el socket en listen\n");
@@ -319,7 +329,8 @@ char nuevaOrdenDeAccion(int puertoCliente)
         return 'X';
     	//perror("recv failed");
     }
-	printf("Orden %c\n",*buffer);
+    printf("El cliente %d envio el comando:",puertoCliente);
+	printf("%c\n",*buffer);
 	return *buffer;
 }
 
@@ -405,6 +416,7 @@ void *connection_handler(void *socket_desc)
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
     char orden = 'F';
+
 	while(orden != 'Q')
 	{
 		orden = nuevaOrdenDeAccion(sock);
@@ -426,7 +438,7 @@ void *connection_handler(void *socket_desc)
 			main_finalizarPrograma();
 			break;
 		case 'Q':
-			puts("Cliente desconectado");
+			printf("Cliente %d desconectado",sock);
 			fflush(stdout);
 			break;
 		case 'X':

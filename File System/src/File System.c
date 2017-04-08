@@ -29,15 +29,15 @@ int main(void)
 {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/\"File System\"/config_FileSys");
-
+	//printf("CONFIGURACIONES\nPuerto=%s\nPunto Montaje=%s\n",puerto,puntoMontaje);
 
 	return EXIT_SUCCESS;
 }
 
 void leerConfiguracion(char* ruta){
 
-	puerto = config_get_int_value(configuracion_kernel,"PUERTO");
-	puntoMontaje = config_get_string_value(configuracion_kernel,"PUNTO_MENSAJE");
+	puerto = config_get_string_value(configuracion_kernel,"PUERTO");
+	puntoMontaje = config_get_string_value(configuracion_kernel,"PUNTO_MONTAJE");
 
 
 
