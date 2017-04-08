@@ -353,13 +353,16 @@ int main_almacenarBytesPagina(int sock)
 }
 int main_asignarPaginasAProceso(int sock)
 {
-	int pid = (int) recibir(sock);
-	int cantPaginas = (int) recibir(sock);
+	int pid;
+	int cantPaginas;
+	pid=atoi((char*)recibir(sock));
+	printf("PID:%d\n",pid);
+	cantPaginas=atoi((char*)recibir(sock));
+	printf("CantPaginas:%d\n",cantPaginas);
 	int posicionFrame = verificarEspacio(cantPaginas);
-	if(posicionFrame > 0)
-	{
-		asignarPaginasAProceso(pid,cantPaginas,posicionFrame);
-	}
+	printf("Posicion Frame: %d\n",posicionFrame);
+	printf("Bitmap:%s\n",bitMap);
+	asignarPaginasAProceso(pid,cantPaginas,posicionFrame);
 	return 0;
 
 }
