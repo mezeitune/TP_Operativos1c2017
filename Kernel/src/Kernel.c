@@ -38,6 +38,8 @@ char *ipMemoria;
 char *puertoProg;//2001
 char *puertoCPU;//3001
 char *puertoMemoria;//4040s
+char *puertoConsola;
+char *ipProg;
 char *ipFileSys;
 char *puertoFileSys;
 char *quantum;
@@ -47,7 +49,17 @@ char *gradoMultiProg;
 char *semIds;
 char *semInit;
 char *sharedVars;
+pthread_t thread_id;
 
+
+//the thread function
+void *sock_Prog();
+//the thread function
+void *sock_CPU();
+//the thread function
+void *sock_FS();
+//the thread function
+void *sock_Memoria();
 
 
 int main(void)
@@ -58,7 +70,38 @@ int main(void)
 
 
 	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
+<<<<<<< HEAD
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoFileSys);
+=======
+	//int socket_servidor1 = crear_socket_servidor(ipMemoria,puertoCPU);
+	//recibirConexion(socket_servidor1);
+
+
+    if( pthread_create( &thread_id , NULL ,  sock_CPU , (void*) NULL) < 0)
+    {
+        perror("could not create thread");
+        return 1;
+    }
+    if( pthread_create( &thread_id , NULL ,  sock_Prog , (void*) NULL) < 0)
+    {
+        perror("could not create thread");
+        return 1;
+    }
+
+    if( pthread_create( &thread_id , NULL ,  sock_FS , (void*) NULL) < 0)
+    {
+        perror("could not create thread");
+        return 1;
+    }
+
+    if( pthread_create( &thread_id , NULL ,  sock_Memoria , (void*) NULL) < 0)
+    {
+        perror("could not create thread");
+        return 1;
+    }
+
+	int socket_servidor = crear_socket_servidor(ipProg,puertoProg);
+>>>>>>> f9d8845b534f54a4eada1c31eb794ede526113b9
 	recibirConexion(socket_servidor);
 /*	while(1)
 
@@ -76,6 +119,45 @@ int main(void)
 
 		return 0;
 }
+
+void* sock_Prog(){
+	int socket_servidorProg = crear_socket_servidor(ipProg,puertoProg);
+	recibirConexion(socket_servidorProg);
+}
+
+
+
+
+void* sock_FS(){
+	//char orden;
+//	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
+	/*int socket_FS = crear_socket_cliente(ipFileSys,puertoFileSys);
+	while(orden != 'Q')
+	{
+		scanf(" %c", &orden);
+		enviar(socket_FS,(void*) &orden,sizeof(char));
+	}*/
+	int socket_servidorFS = crear_socket_servidor(ipFileSys,puertoFileSys);
+	recibirConexion(socket_servidorFS);
+}
+
+void* sock_Memoria(){
+	char orden;
+	//	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
+	int socket_Mem = crear_socket_cliente(ipMemoria,puertoMemoria);
+	while(orden != 'Q')
+	{
+		scanf(" %c", &orden);
+		enviar(socket_Mem,(void*) &orden,sizeof(char));
+	}
+}
+
+
+void* sock_CPU(){
+	int socket_servidor = crear_socket_servidor("127.0.0.1",puertoCPU);
+	recibirConexion(socket_servidor);
+}
+
 int crear_socket_cliente(char * ip, char * puerto){
 
     int descriptorArchivo, estado;
@@ -311,7 +393,8 @@ void* recibir(int socket){
 void leerConfiguracion(char* ruta){
 
 	configuracion_kernel = config_create(ruta);
-	puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG");
+	printf("%s",puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG"));
+	printf("%s",ipProg = config_get_string_value(configuracion_kernel,"IP_PROG"));
 	puertoCPU = config_get_string_value(configuracion_kernel,"PUERTO_CPU");
 	ipMemoria = config_get_string_value(configuracion_kernel,"IP_MEMORIA");
 	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");

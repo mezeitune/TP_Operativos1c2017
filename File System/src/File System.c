@@ -40,7 +40,11 @@ void leerConfiguracion(char* ruta);
 
 int main(void){
 	char orden;
+<<<<<<< HEAD
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File System/config_FileSys");
+=======
+	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\ System/config_FileSys");
+>>>>>>> f9d8845b534f54a4eada1c31eb794ede526113b9
 
 	int socket_Kernel = crear_socket_cliente("127.0.0.1","5002"); //Variable definidas
 		while(1)
@@ -56,6 +60,11 @@ int crear_socket_cliente(char * ip, char * puerto){
     int descriptorArchivo, estado;
     struct addrinfo hints, *infoServer, *n;
 
+<<<<<<< HEAD
+=======
+	//printf("CONFIGURACIONES\nPuerto=%s\nPunto Montaje=%s\n",puerto,puntoMontaje);
+
+>>>>>>> f9d8845b534f54a4eada1c31eb794ede526113b9
     memset(&hints,0,sizeof (struct addrinfo));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
