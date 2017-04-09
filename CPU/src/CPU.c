@@ -41,7 +41,7 @@ int main(void)
 	printf("CONFIGURACIONES\n=%s\nPuerto=%s\n",ipMemoria,puertoMemoria);
 	char orden;
 //	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
-	int socket_Kernel = crear_socket_cliente(ipMemoria,puertoKernel);
+	int socket_Kernel = crear_socket_cliente(ipMemoria,"4040");
 	while(orden != 'Q')
 	{
 		scanf(" %c", &orden);

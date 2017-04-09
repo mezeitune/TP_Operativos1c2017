@@ -4022,3 +4022,1331 @@ make: No se hace nada para «all».
 23:30:22 **** Incremental Build of configuration Debug for project Memoria ****
 make all 
 make: No se hace nada para «all».
+00:14:28 **** Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+Finished building: ../src/CPU.c
+ 
+Building target: CPU
+Invoking: Cross GCC Linker
+gcc  -o "CPU"  ./src/CPU.o   -lcommons
+Finished building target: CPU
+ 
+00:14:29 **** Build of configuration Debug for project Consola ****
+make all 
+Building file: ../src/Consola.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Consola.d" -MT"src/Consola.d" -o "src/Consola.o" "../src/Consola.c"
+Finished building: ../src/Consola.c
+ 
+Building target: Consola
+Invoking: Cross GCC Linker
+gcc  -o "Consola"  ./src/Consola.o   -lcommons
+Finished building target: Consola
+ 
+00:14:29 **** Build of configuration Debug for project File System ****
+make all 
+Building file: ../src/File System.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/File System.d" -MT"src/File\ System.d" -o "src/File System.o" "../src/File System.c"
+Finished building: ../src/File System.c
+ 
+Building target: File System
+Invoking: Cross GCC Linker
+gcc  -o "File System"  ./src/File\ System.o   -lcommons -lpthread
+Finished building target: File System
+ 
+00:14:30 **** Build of configuration Debug for project Kernel ****
+make all 
+Building file: ../src/Kernel.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Kernel.d" -MT"src/Kernel.d" -o "src/Kernel.o" "../src/Kernel.c"
+../src/Kernel.c: In function ‘nuevaOrdenDeAccion’:
+../src/Kernel.c:360:20: warning: comparison between pointer and integer [enabled by default]
+     else if(buffer == -1)
+                    ^
+../src/Kernel.c: In function ‘sock_Prog’:
+../src/Kernel.c:126:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+../src/Kernel.c: In function ‘sock_FS’:
+../src/Kernel.c:142:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+../src/Kernel.c: In function ‘sock_Memoria’:
+../src/Kernel.c:153:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+../src/Kernel.c: In function ‘sock_CPU’:
+../src/Kernel.c:159:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+Finished building: ../src/Kernel.c
+ 
+Building target: Kernel
+Invoking: Cross GCC Linker
+gcc  -o "Kernel"  ./src/Kernel.o   -lcommons -lpthread
+Finished building target: Kernel
+ 
+00:14:30 **** Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+00:17:44 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+Finished building: ../src/CPU.c
+ 
+Building target: CPU
+Invoking: Cross GCC Linker
+gcc  -o "CPU"  ./src/CPU.o   -lcommons
+Finished building target: CPU
+ 
+00:17:44 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+00:17:44 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+00:17:44 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+00:17:44 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
+00:20:11 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+00:20:11 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+00:20:11 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+00:20:12 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+00:20:12 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+00:20:21 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+00:20:22 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+00:20:22 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+00:20:22 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+00:20:22 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     13:52:30 **** Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+13:52:30 **** Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+13:52:30 **** Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+13:52:30 **** Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+13:52:31 **** Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+13:55:15 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+13:55:15 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+13:55:15 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+13:55:16 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+13:55:16 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘borrarProgramDeStructAdms’:
+../src/Memoria.c:507:3: error: incompatible type for argument 1 of ‘memcpy’
+   memcpy(aux,frame_Memoria,sizeof(struct_adm_memoria));
+   ^
+In file included from ../src/Memoria.c:18:0:
+/usr/include/string.h:46:14: note: expected ‘void * __restrict__’ but argument is of type ‘struct_adm_memoria’
+ extern void *memcpy (void *__restrict __dest, const void *__restrict __src,
+              ^
+make: *** [src/Memoria.o] Error 1
+13:55:23 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+13:55:24 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+13:55:24 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+13:55:24 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+13:55:24 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+13:58:19 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+13:58:19 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+13:58:19 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+13:58:19 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+13:58:20 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘borrarProgramDeStructAdms’:
+../src/Memoria.c:504:6: warning: unused variable ‘desplazamiento’ [-Wunused-variable]
+  int desplazamiento = sizeof(struct_adm_memoria);
+      ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+13:58:53 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+13:58:53 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+13:58:53 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+13:58:53 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+13:58:53 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘borrarProgramDeStructAdms’:
+../src/Memoria.c:504:6: warning: unused variable ‘desplazamiento’ [-Wunused-variable]
+  int desplazamiento = sizeof(struct_adm_memoria);
+      ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+13:59:25 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+13:59:25 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+13:59:25 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+13:59:25 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+13:59:26 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+13:59:53 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+13:59:53 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+13:59:53 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+13:59:54 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+13:59:54 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:01:59 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:02:00 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:02:00 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:02:00 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:02:00 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:02:49 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:02:49 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:02:50 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:02:50 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:02:50 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘finalizarPrograma’:
+../src/Memoria.c:169:2: warning: implicit declaration of function ‘borrarProgramaDeStructsAdm’ [-Wimplicit-function-declaration]
+  borrarProgramaDeStructsAdm(pid);
+  ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+./src/Memoria.o: En la función `finalizarPrograma':
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:169: referencia a `borrarProgramaDeStructsAdm' sin definir
+collect2: error: ld returned 1 exit status
+make: *** [Memoria] Error 1
+14:03:08 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:03:08 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:03:08 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:03:09 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:03:09 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘finalizarPrograma’:
+../src/Memoria.c:169:2: warning: implicit declaration of function ‘borrarProgramaDeStructAdms’ [-Wimplicit-function-declaration]
+  borrarProgramaDeStructAdms(pid);
+  ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+./src/Memoria.o: En la función `finalizarPrograma':
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:169: referencia a `borrarProgramaDeStructAdms' sin definir
+collect2: error: ld returned 1 exit status
+make: *** [Memoria] Error 1
+14:03:25 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:03:25 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:03:26 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:03:26 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:03:26 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘finalizarPrograma’:
+../src/Memoria.c:170:2: warning: implicit declaration of function ‘borrarProgramaDeStructAdms’ [-Wimplicit-function-declaration]
+  borrarProgramaDeStructAdms(pid);
+  ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+./src/Memoria.o: En la función `finalizarPrograma':
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:170: referencia a `borrarProgramaDeStructAdms' sin definir
+collect2: error: ld returned 1 exit status
+make: *** [Memoria] Error 1
+14:03:36 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:03:36 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:03:36 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:03:37 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:03:37 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:04:21 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:04:21 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:04:21 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:04:22 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:04:22 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:06:05 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:06:05 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:06:06 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:06:06 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:06:06 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘connection_handler’:
+../src/Memoria.c:449:9: warning: variable ‘resultadoDeEjecucion’ set but not used [-Wunused-but-set-variable]
+     int resultadoDeEjecucion;
+         ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:07:35 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:07:35 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:07:35 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:07:35 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:07:35 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘connection_handler’:
+../src/Memoria.c:449:9: warning: variable ‘resultadoDeEjecucion’ set but not used [-Wunused-but-set-variable]
+     int resultadoDeEjecucion;
+         ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:08:33 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:08:33 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:08:33 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:08:33 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:08:33 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:09:44 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:09:44 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:09:45 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:09:45 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:09:45 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main_inicializarPrograma’:
+../src/Memoria.c:347:2: warning: implicit declaration of function ‘main_AsignarPaginasAProceso’ [-Wimplicit-function-declaration]
+  return main_AsignarPaginasAProceso(sock);
+  ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+./src/Memoria.o: En la función `main_inicializarPrograma':
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:347: referencia a `main_AsignarPaginasAProceso' sin definir
+collect2: error: ld returned 1 exit status
+make: *** [Memoria] Error 1
+14:10:12 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:10:12 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:10:12 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:10:12 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:10:12 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main_inicializarPrograma’:
+../src/Memoria.c:347:2: warning: implicit declaration of function ‘main_AsignarPaginasAProceso’ [-Wimplicit-function-declaration]
+  main_AsignarPaginasAProceso(sock)
+  ^
+../src/Memoria.c:348:2: error: expected ‘;’ before ‘return’
+  return 0;
+  ^
+../src/Memoria.c:349:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+make: *** [src/Memoria.o] Error 1
+14:10:14 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:10:14 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:10:14 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:10:14 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:10:14 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main_inicializarPrograma’:
+../src/Memoria.c:347:2: warning: implicit declaration of function ‘main_AsignarPaginasAProceso’ [-Wimplicit-function-declaration]
+  main_AsignarPaginasAProceso(sock);
+  ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+./src/Memoria.o: En la función `main_inicializarPrograma':
+/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/Debug/../src/Memoria.c:347: referencia a `main_AsignarPaginasAProceso' sin definir
+collect2: error: ld returned 1 exit status
+make: *** [Memoria] Error 1
+14:10:27 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:10:27 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:10:27 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:10:27 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:10:27 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:10:35 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:10:35 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:10:35 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:10:35 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:10:35 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:20:24 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:20:25 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:20:25 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:20:25 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:20:25 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:22:00 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:22:00 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:22:00 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:22:00 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:22:00 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:25:25 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:25:25 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:25:25 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:25:26 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:25:26 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘buscarFrameDePaginaDeProceso’:
+../src/Memoria.c:547:2: error: expected expression before ‘int’
+  int frame = -1;
+  ^
+../src/Memoria.c:552:4: error: ‘frame’ undeclared (first use in this function)
+    frame = aux.frame;
+    ^
+../src/Memoria.c:552:4: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:559:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+make: *** [src/Memoria.o] Error 1
+14:25:56 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:25:56 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:25:56 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:25:56 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:25:56 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘buscarFrameDePaginaDeProceso’:
+../src/Memoria.c:547:2: error: expected expression before ‘int’
+  int frameP = -1;
+  ^
+../src/Memoria.c:552:4: error: ‘frameP’ undeclared (first use in this function)
+    frameP = aux.frame;
+    ^
+../src/Memoria.c:552:4: note: each undeclared identifier is reported only once for each function it appears in
+../src/Memoria.c:559:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+make: *** [src/Memoria.o] Error 1
+14:26:20 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:26:20 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:26:20 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:26:20 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:26:20 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘buscarFrameDePaginaDeProceso’:
+../src/Memoria.c:546:6: warning: variable ‘frame’ set but not used [-Wunused-but-set-variable]
+  int frame = -1;
+      ^
+../src/Memoria.c:559:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:26:47 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:26:47 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:26:47 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:26:47 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:26:47 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:27:35 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:27:35 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:27:35 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:27:35 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:27:35 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘solicitarBytesPagina’:
+../src/Memoria.c:152:43: error: expected expression before ‘int’
+  int frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+                                           ^
+../src/Memoria.c:152:43: error: too few arguments to function ‘buscarFrameDePaginaDeProceso’
+../src/Memoria.c:85:5: note: declared here
+ int buscarFrameDePaginaDeProceso(int pid, int pagina);
+     ^
+../src/Memoria.c:152:6: warning: unused variable ‘frame’ [-Wunused-variable]
+  int frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+      ^
+make: *** [src/Memoria.o] Error 1
+14:27:50 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:27:50 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:27:50 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:27:50 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:27:51 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘solicitarBytesPagina’:
+../src/Memoria.c:152:43: error: expected expression before ‘int’
+  int frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+                                           ^
+../src/Memoria.c:152:43: error: too few arguments to function ‘buscarFrameDePaginaDeProceso’
+../src/Memoria.c:85:5: note: declared here
+ int buscarFrameDePaginaDeProceso(int pid, int pagina);
+     ^
+../src/Memoria.c:152:6: warning: unused variable ‘frame’ [-Wunused-variable]
+  int frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+      ^
+make: *** [src/Memoria.o] Error 1
+14:28:25 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:28:25 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:28:25 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:28:25 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:28:25 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘solicitarBytesPagina’:
+../src/Memoria.c:152:43: error: expected expression before ‘int’
+  int frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+                                           ^
+../src/Memoria.c:152:43: error: too few arguments to function ‘buscarFrameDePaginaDeProceso’
+../src/Memoria.c:85:5: note: declared here
+ int buscarFrameDePaginaDeProceso(int pid, int pagina);
+     ^
+../src/Memoria.c:152:6: warning: unused variable ‘frame’ [-Wunused-variable]
+  int frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+      ^
+make: *** [src/Memoria.o] Error 1
+14:28:47 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:28:47 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:28:47 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:28:47 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:28:48 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘solicitarBytesPagina’:
+../src/Memoria.c:152:43: error: expected expression before ‘int’
+  int frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+                                           ^
+../src/Memoria.c:152:43: error: too few arguments to function ‘buscarFrameDePaginaDeProceso’
+../src/Memoria.c:85:5: note: declared here
+ int buscarFrameDePaginaDeProceso(int pid, int pagina);
+     ^
+../src/Memoria.c:152:6: warning: unused variable ‘frame’ [-Wunused-variable]
+  int frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+      ^
+make: *** [src/Memoria.o] Error 1
+14:29:08 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:29:09 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:29:09 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:29:09 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:29:09 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘solicitarBytesPagina’:
+../src/Memoria.c:153:39: error: expected expression before ‘int’
+  frame = buscarFrameDePaginaDeProceso(int pid, int pagina);
+                                       ^
+../src/Memoria.c:153:39: error: too few arguments to function ‘buscarFrameDePaginaDeProceso’
+../src/Memoria.c:85:5: note: declared here
+ int buscarFrameDePaginaDeProceso(int pid, int pagina);
+     ^
+../src/Memoria.c:152:6: warning: variable ‘frame’ set but not used [-Wunused-but-set-variable]
+  int frame;
+      ^
+make: *** [src/Memoria.o] Error 1
+14:29:31 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:29:31 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:29:31 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:29:31 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:29:31 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘solicitarBytesPagina’:
+../src/Memoria.c:152:6: warning: variable ‘frame’ set but not used [-Wunused-but-set-variable]
+  int frame;
+      ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:29:36 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:29:36 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:29:36 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:29:37 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:29:37 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘solicitarBytesPagina’:
+../src/Memoria.c:152:6: warning: unused variable ‘frame’ [-Wunused-variable]
+  int frame = buscarFrameDePaginaDeProceso(pid,pagina);
+      ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:30:47 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:30:47 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:30:47 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:30:47 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:30:47 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘solicitarBytesPagina’:
+../src/Memoria.c:153:8: warning: unused variable ‘buffer’ [-Wunused-variable]
+  char* buffer;
+        ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:31:13 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:31:13 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:31:13 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:31:13 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:31:14 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:31:56 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:31:56 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:31:56 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:31:56 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:31:56 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:32:15 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:32:16 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:32:16 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:32:16 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:32:16 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘main_solicitarBytesPagina’:
+../src/Memoria.c:369:8: warning: unused variable ‘mensaje’ [-Wunused-variable]
+  char *mensaje = solicitarBytesPagina(pid,pagina,offset,size);
+        ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:32:26 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:32:26 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:32:26 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:32:26 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:32:26 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:34:00 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:34:00 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:34:00 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:34:00 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:34:01 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:35:21 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:35:21 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:35:21 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:35:21 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:35:22 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘almacenarBytesPagina’:
+../src/Memoria.c:163:6: warning: unused variable ‘frame’ [-Wunused-variable]
+  int frame = buscarFrameDePaginaDeProceso(pid,pagina);
+      ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:36:16 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:36:16 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:36:16 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:36:16 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:36:16 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:36:19 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:36:20 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:36:20 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:36:20 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:36:20 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+14:36:40 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:36:40 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:36:40 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:36:40 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:36:41 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».
+14:38:53 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+make: No se hace nada para «all».
+14:38:53 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+make: No se hace nada para «all».
+14:38:53 **** Incremental Build of configuration Debug for project File System ****
+make all 
+make: No se hace nada para «all».
+14:38:54 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+make: No se hace nada para «all».
+14:38:54 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+make: No se hace nada para «all».

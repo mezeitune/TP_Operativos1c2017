@@ -71,7 +71,7 @@ int main_finalizarPrograma();//Falta codificar
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
 int inicializarPrograma(int pid, int cantPaginas);//Falta codificar
-int solicitarBytesPagina(int pid,int pagina, int offset, int size);//Falta codificar
+char* solicitarBytesPagina(int pid,int pagina, int offset, int size);//Falta codificar
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);//Falta codificar
 int asignarPaginasAProceso(int pid, int cantPaginas, int frame);//Falta codificar
 int finalizarPrograma(int pid);//Falta codificar
@@ -81,6 +81,8 @@ void liberarBitMap(int pos, int size);
 void ocuparBitMap(int pos, int size);
 int verificarEspacio(int size);
 void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas);
+void borrarProgramDeStructAdms(int pid);
+int buscarFrameDePaginaDeProceso(int pid, int pagina);
 
 int main(void)
 {
@@ -133,7 +135,7 @@ void inicializarMemoriaAdm()
 
 int inicializarPrograma(int pid, int cantPaginas)
 {
-	printf("Inicializar Programa\n");
+	printf("Inicializar Programa %d\n",pid);
 	int posicionFrame = verificarEspacio(cantPaginas);
 	if(posicionFrame >= 0)
 	{
@@ -144,28 +146,38 @@ int inicializarPrograma(int pid, int cantPaginas)
 	return posicionFrame;
 }
 
-int solicitarBytesPagina(int pid,int pagina, int offset, int size)
+char* solicitarBytesPagina(int pid,int pagina, int offset, int size)
 {
-	printf("Solicitar Bytes Pagina\n");
-	return EXIT_SUCCESS;
+	printf("Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
+	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
+	char* buffer;
+	frame_Memoria = frame_Memoria + frame*sizeof(marco_size)+offset;
+	memcpy(&buffer,frame_Memoria,size);
+
+	return buffer;
 }
 
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 {
-	printf("Almacenar Bytes Pagina\n");
+	printf("Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
+	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
+	frame_Memoria = frame_Memoria + frame*sizeof(marco_size)+offset;
+	memcpy(frame_Memoria,&buffer,size);
 	return EXIT_SUCCESS;
 }
 
 int asignarPaginasAProceso(int pid, int cantPaginas, int posicionFrame)
 {
-	printf("Asignar Pagina A Proceso\n");
+	printf("Asignar Paginas A Proceso\n");
 	escribirEstructuraAdmAMemoria(pid,posicionFrame,cantPaginas);
 	return EXIT_SUCCESS;
 }
 
 int finalizarPrograma(int pid)
 {
-	printf("Finalizar Programa\n");
+	printf("Finalizar Programa:%d\n",pid);
+	borrarProgramDeStructAdms(pid);
+
 	return EXIT_SUCCESS;
 }
 
@@ -341,14 +353,42 @@ char nuevaOrdenDeAccion(int puertoCliente)
 
 int main_inicializarPrograma(int sock)
 {
-	return 0;
+	return main_asignarPaginasAProceso(sock);
 }
 int main_solicitarBytesPagina(int sock)
 {
+	int pid;
+	int pagina;
+	pid=atoi((char*)recibir(sock));
+	printf("PID:%d\n",pid);
+	pagina=atoi((char*)recibir(sock));
+	printf("Pagina:%d\n",pagina);
+	int offset;
+	int size;
+	offset=atoi((char*)recibir(sock));
+	printf("Offset:%d\n",offset);
+	size=atoi((char*)recibir(sock));
+	printf("Size:%d\n",size);
+	char *mensaje = solicitarBytesPagina(pid,pagina,offset,size);
+	enviar_string(sock, mensaje);
 	return 0;
 }
 int main_almacenarBytesPagina(int sock)
 {
+	int pid;
+	int pagina;
+	pid=atoi((char*)recibir(sock));
+	printf("PID:%d\n",pid);
+	pagina=atoi((char*)recibir(sock));
+	printf("Pagina:%d\n",pagina);
+	int offset;
+	int size;
+	offset=atoi((char*)recibir(sock));
+	printf("Offset:%d\n",offset);
+	size=atoi((char*)recibir(sock));
+	printf("Size:%d\n",size);
+	char* bytes = recibir_string(sock);
+	almacenarBytesPagina(pid,pagina,offset,size,bytes);
 	return 0;
 }
 int main_asignarPaginasAProceso(int sock)
@@ -362,12 +402,23 @@ int main_asignarPaginasAProceso(int sock)
 	int posicionFrame = verificarEspacio(cantPaginas);
 	printf("Posicion Frame: %d\n",posicionFrame);
 	printf("Bitmap:%s\n",bitMap);
-	asignarPaginasAProceso(pid,cantPaginas,posicionFrame);
-	return 0;
-
+	if(posicionFrame >= 0)
+	{
+		ocuparBitMap(posicionFrame,cantPaginas);
+		asignarPaginasAProceso(pid,cantPaginas,posicionFrame);
+		return 0;
+	}
+	else
+	{
+		printf("No hay espacio suficiente en la memoria\n");
+		return -1;
+	}
 }
 int main_finalizarPrograma(int sock)
 {
+	int pid;
+	pid=atoi((char*)recibir(sock));
+	finalizarPrograma(pid);
 	return 0;
 }
 
@@ -432,26 +483,26 @@ void *connection_handler(void *socket_desc)
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
     char orden = 'F';
-
+    int resultadoDeEjecucion;
 	while(orden != 'Q')
 	{
 		orden = nuevaOrdenDeAccion(sock);
 		switch(orden)
 		{
 		case 'I':
-			main_inicializarPrograma(sock);
+			resultadoDeEjecucion = main_inicializarPrograma(sock);
 			break;
 		case 'S':
-			main_solicitarBytesPagina(sock);
+			resultadoDeEjecucion = main_solicitarBytesPagina(sock);
 			break;
 		case 'A':
-			main_almacenarBytesPagina(sock);
+			resultadoDeEjecucion = main_almacenarBytesPagina(sock);
 			break;
 		case 'G':
-			main_asignarPaginasAProceso(sock);
+			resultadoDeEjecucion = main_asignarPaginasAProceso(sock);
 			break;
 		case 'F':
-			main_finalizarPrograma(sock);
+			resultadoDeEjecucion = main_finalizarPrograma(sock);
 			break;
 		case 'Q':
 			printf("Cliente %d desconectado",sock);
@@ -461,9 +512,10 @@ void *connection_handler(void *socket_desc)
 			perror("recv failed");
 			break;
 		default:
-			printf("Error\n");
+			printf("Error: Orden %c no definida\n",orden);
 			break;
 		}
+		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
 	}
     return 0;
 }
@@ -489,3 +541,43 @@ void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas)
 	frame_Memoria = frame_Memoria - desplazamiento*cantPaginas;
 }
 
+void borrarProgramDeStructAdms(int pid)
+{
+	int i = 0;
+	int desplazamiento = sizeof(struct_adm_memoria);
+	struct_adm_memoria aux;
+	while(i<marcos)
+	{
+		memcpy(&aux,frame_Memoria,sizeof(struct_adm_memoria)); //Revisar si esto funciona
+		if(aux.pid == pid) //Si el PID del programa en mi estructura Aadministrativa es igual al del programa que quiero borrar
+		{
+			liberarBitMap(aux.frame,1); //Marco la posición del frame que me ocupa esa página en particular de ese programa como vacía
+			aux.num_pag = -1;
+			aux.pid = -1;
+			memcpy(frame_Memoria,&aux,sizeof(struct_adm_memoria)); //Marco que en ese frame no tengo un programa asignado
+		}
+		i++;
+		frame_Memoria = frame_Memoria + desplazamiento; //Muevo el puntero de frame_Memoria
+	}
+	frame_Memoria = frame_Memoria - desplazamiento*marcos; //Coloco el puntero de mi frame_Memoria al inicio
+}
+
+int buscarFrameDePaginaDeProceso(int pid, int pagina)
+{
+	int i = 0;
+	int desplazamiento = sizeof(struct_adm_memoria);
+	struct_adm_memoria aux;
+	int frame = -1;
+	while(i<marcos)
+	{
+		memcpy(&aux,frame_Memoria,sizeof(struct_adm_memoria)); //Revisar si esto funciona
+		if(aux.pid == pid && aux.num_pag == pagina) //Si el PID del programa en mi estructura Aadministrativa es igual al del programa que quiero borrar
+		{
+			frame = aux.frame;
+		}
+		i++;
+		frame_Memoria = frame_Memoria + desplazamiento; //Muevo el puntero de frame_Memoria
+	}
+	frame_Memoria = frame_Memoria - desplazamiento*marcos; //Coloco el puntero de mi frame_Memoria al inicio
+	return frame;
+}
