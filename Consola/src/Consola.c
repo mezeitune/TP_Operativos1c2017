@@ -38,7 +38,9 @@ int main(void)
 {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
-	printf("CONFIGURACIONES\n=%s\nPuerto=%s\n",ipKernel,puertoKernel);
+	printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nIP KERNEL:%s\nPUERTO KERNEL:%s\n",ipKernel,puertoKernel);
+	printf("---------------------------------------------------\n");
 	char orden;
 //	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 	int socket_Kernel = crear_socket_cliente(ipKernel,puertoKernel);
@@ -54,8 +56,8 @@ int main(void)
 void leerConfiguracion(char* ruta)
 {
 	configuracion_Consola = config_create(ruta);
-	printf("%s",ipKernel = config_get_string_value(configuracion_Consola,"IP_KERNEL"));
-	printf("%s",puertoKernel = config_get_string_value(configuracion_Consola,"PUERTO_KERNEL"));
+	ipKernel = config_get_string_value(configuracion_Consola,"IP_KERNEL");
+	puertoKernel = config_get_string_value(configuracion_Consola,"PUERTO_KERNEL");
 }
 
 

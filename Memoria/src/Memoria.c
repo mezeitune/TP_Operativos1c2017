@@ -87,7 +87,10 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina);
 int main(void)
 {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/config_Memoria");
-	printf("CONFIGURACIONES\nIP=%s\nPuerto=%s\nMarcos=%d\nTamano Marco=%d\nEntradas Cache=%d\nCache por procesos=%d\nRetardo Memoria=%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
+
+	printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nIP:%s\nPUERTO:%s\nMARCOS:%d\nTAMAÑO MARCO:%d\nENTRADAS CACHE:%d\nCACHE POR PROCESOS:%d\nRETARDO MEMORIA:%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
+	printf("---------------------------------------------------\n");
 	bitMap = string_repeat('0',marcos);
 
 	frame_Memoria= malloc(marco_size*marcos);
@@ -116,6 +119,7 @@ void inicializarMemoriaAdm()
 {
 	int sizeMemoriaAdm = ((sizeof(int)*3*marcos)+marco_size-1)/marco_size;
 	printf("Las estructuras administrativas ocupan %i paginas\n",sizeMemoriaAdm);
+	printf("---------------------------------------------------\n");
 	ocuparBitMap(0,sizeMemoriaAdm);
 	struct_adm_memoria aux;
 	int i = 0;
@@ -256,6 +260,7 @@ int recibirConexion(int socket_servidor){
 
 	if(estado == 0){
 		printf("Se puso el socket en listen\n");
+		printf("---------------------------------------------------\n");
 	}
 
 	addr_size = sizeof(their_addr);
@@ -270,7 +275,7 @@ int recibirConexion(int socket_servidor){
             perror("could not create thread");
             return 1;
         }
-        puts("Handler assigned");
+        puts("Handler asignado\n");
     }
 
 

@@ -38,7 +38,6 @@ char *ipMemoria;
 char *puertoProg;//2001
 char *puertoCPU;//3001
 char *puertoMemoria;//4040s
-char *puertoConsola;
 char *ipProg;
 char *ipFileSys;
 char *puertoFileSys;
@@ -49,7 +48,15 @@ char *gradoMultiProg;
 char *semIds;
 char *semInit;
 char *sharedVars;
+char *ipCPU;
+char *stackSize;
 pthread_t thread_id;
+
+
+
+
+
+
 
 
 //the thread function
@@ -68,6 +75,11 @@ int main(void)
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 
+	printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipProg,puertoProg,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
+	printf("---------------------------------------------------\n");
+	printf("QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%s\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars,stackSize);
+	printf("---------------------------------------------------\n");
 
 	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
 	//int socket_servidor = crear_socket_servidor(ipMemoria,puertoFileSys);
@@ -393,9 +405,10 @@ void* recibir(int socket){
 void leerConfiguracion(char* ruta){
 
 	configuracion_kernel = config_create(ruta);
-	printf("%s",puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG"));
-	printf("%s",ipProg = config_get_string_value(configuracion_kernel,"IP_PROG"));
+	puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG");
+	ipProg = config_get_string_value(configuracion_kernel,"IP_PROG");
 	puertoCPU = config_get_string_value(configuracion_kernel,"PUERTO_CPU");
+	ipCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
 	ipMemoria = config_get_string_value(configuracion_kernel,"IP_MEMORIA");
 	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
 	ipFileSys = config_get_string_value(configuracion_kernel,"IP_FS");
@@ -407,5 +420,6 @@ void leerConfiguracion(char* ruta){
 	semIds = config_get_string_value(configuracion_kernel,"SEM_IDS");
 	semInit = config_get_string_value(configuracion_kernel,"SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel,"SHARED_VARS");
+	stackSize= config_get_string_value(configuracion_kernel,"STACK_SIZE");
 
 }
