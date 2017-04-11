@@ -47,7 +47,7 @@ char *semIds;
 char *semInit;
 char *sharedVars;
 char *stackSize;
-pthread_t thread_id;
+pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
 t_config* configuracion_kernel;
 
 //the thread function
@@ -61,45 +61,35 @@ void *sock_Memoria();
 
 int main(void)
 {
-	char orden;
-
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
 
-	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
-	//int socket_servidor = crear_socket_servidor(ipMemoria,puertoFileSys);
-	//int socket_servidor1 = crear_socket_servidor(ipMemoria,puertoCPU);
-	//recibirConexion(socket_servidor1);
+	if (pthread_create(&threadCPU, NULL, sock_CPU, (void*) NULL) < 0) {
+			perror("could not create thread");
+			return 1;
+		}
 
-	if (pthread_create(&thread_id, NULL, sock_CPU, (void*) NULL) < 0) {
-		perror("could not create thread");
-		return 1;
-	}
-	if (pthread_create(&thread_id, NULL, sock_Consola, (void*) NULL) < 0) {
+	if (pthread_create(&threadConsola, NULL, sock_Consola, (void*) NULL) < 0) {
 		perror("could not create thread");
 		return 1;
 	}
 
-	if (pthread_create(&thread_id, NULL, sock_FS, (void*) NULL) < 0) {
+	if (pthread_create(&threadFS, NULL, sock_FS, (void*) NULL) < 0) {
 		perror("could not create thread");
 		return 1;
 	}
 
-	if (pthread_create(&thread_id, NULL, sock_Memoria, (void*) NULL) < 0) {
+	if (pthread_create(&threadMemoria, NULL, sock_Memoria, (void*) NULL) < 0) {
 		perror("could not create thread");
 		return 1;
 	}
-	int socket_servidorP = crear_socket_servidor(ipConsola, puertoConsola);
-	/*recibirConexion(socket_servidorP);
-	char *buffer = recibir_string(socket_servidorP);*/
-	//printf("\n%s\n", buffer);
+
+	pthread_join( threadMemoria, NULL);
+	pthread_join( threadFS, NULL);
+	pthread_join( threadCPU, NULL);
+	pthread_join( threadConsola, NULL);
 
 
-	 int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
-	 while(1) {
-	 scanf(" %c", &orden);
-	 enviar(socket_Memoria,(void*) &orden,sizeof(char));
-	 }
 	 return 0;
 }
 
@@ -159,7 +149,7 @@ int recibirConexion(int socket_servidor) {
 		}
 
 		//Now join the thread , so that we dont terminate before the thread
-		//pthread_join( thread_id , NULL);
+	    //pthread_join( thread_id , NULL);
 		puts("Handler assigned");
 	}
 

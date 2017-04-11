@@ -43,7 +43,7 @@ int main(void){
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\ System/config_FileSys");
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
 
-	int socket_servidor = crear_socket_servidor("127.0.0.1","5001");
+	int socket_servidor = crear_socket_servidor("127.0.0.1","5002");
 
 	recibirConexion(socket_servidor);
 	return 0;

@@ -37,7 +37,7 @@ int main(void) {
 	imprimirConfiguraciones();
 
 	char orden;
-	int socket_Kernel = crear_socket_cliente(ipMemoria, "4040");
+	int socket_Kernel = crear_socket_cliente(ipMemoria, puertoKernel);
 	while (orden != 'Q') {
 		scanf(" %c", &orden);
 		enviar(socket_Kernel, (void*) &orden, sizeof(char));
@@ -48,18 +48,10 @@ int main(void) {
 
 void leerConfiguracion(char* ruta) {
 	configuracion_memoria = config_create(ruta);
-
-	puertoKernel = config_get_string_value(configuracion_memoria,
-			"PUERTO_KERNEL");
-	puertoMemoria = config_get_string_value(configuracion_memoria,
-			"PUERTO_MEMORIA");
 	ipMemoria = config_get_string_value(configuracion_memoria, "IP_MEMORIA");
-
 	puertoKernel= config_get_string_value(configuracion_memoria, "PUERTO_KERNEL");
 	puertoMemoria = config_get_string_value(configuracion_memoria,"PUERTO_MEMORIA");
-	ipMemoria = config_get_string_value(configuracion_memoria,"IP_MEMORIA");
 	ipKernel = config_get_string_value(configuracion_memoria,"IP_KERNEL");
-
 }
 
 void imprimirConfiguraciones(){
