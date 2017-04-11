@@ -8,7 +8,6 @@
  ============================================================================
  */
 
-
 #include <sys/epoll.h>
 #include <stdio.h>
 #include <errno.h>
@@ -22,96 +21,151 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <pthread.h>
+
 
 int crear_socket_cliente(char * ip, char * puerto);
 char* recibir_string(int socket_aceptado);
 void enviar_string(int socket, char * mensaje);
 void* recibir(int socket);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
+char* lecturaDeArchivo(char *ruta);
+void enviarLecturaArchivo(void *ruta);
 
 void leerConfiguracion(char* ruta);
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
-
-int main(void)
-{
+pthread_t thread_id;
+// /home/utnso/Escritorio/archivoPrueba
+int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
-	printf("CONFIGURACIONES\n=%s\nPuerto=%s\n",ipKernel,puertoKernel);
+	printf("CONFIGURACIONES\n=%s\nPuerto=%s\n", ipKernel, puertoKernel);
 	char orden;
-//	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
-	int socket_Kernel = crear_socket_cliente(ipKernel,puertoKernel);
-	while(orden != 'Q')
-	{
-		scanf(" %c", &orden);
-		enviar(socket_Kernel,(void*) &orden,sizeof(char));
-	}
+	char *ruta = (char*) malloc(200*sizeof(char));
 
+
+
+
+	int socket_Kernel = crear_socket_cliente(ipKernel, puertoKernel);
+	printf("Indicar la ruta del archivo que se quiere ejecutar\n");
+	scanf("%s", ruta);
+	enviarLecturaArchivo(ruta);
+
+	while (orden != 'Q') {
+		scanf(" %c", &orden);
+		enviar(socket_Kernel, (void*) &orden, sizeof(char));
+		}
+
+
+	free(ruta);
 	return EXIT_SUCCESS;
 }
 
-void leerConfiguracion(char* ruta)
-{
+void enviarLecturaArchivo(void *rut){
+
+	FILE *f;
+	char *buffer;
+	unsigned int tamanioArchivo;
+	char *ruta = (char *)rut;
+
+	int socket_Kernel = crear_socket_cliente(ipKernel,puertoKernel);
+
+
+
+	if ((f = fopen(ruta, "r+")) == NULL) {
+			fputs("Archivo inexistente\n", stderr);
+			exit(1);
+		}
+
+	fseek(f, 0, SEEK_END);
+	tamanioArchivo = ftell(f);
+	rewind(f);
+
+	buffer = (char*) malloc(sizeof(char) * tamanioArchivo);
+
+
+	if (buffer == NULL) {
+		fputs("No se pudo conseguir memoria\n", stderr);
+		free(buffer);
+		exit(2);
+	}
+
+	fread(buffer, sizeof(buffer), tamanioArchivo, f);
+
+	//printf("%s",buffer);
+	enviar_string(socket_Kernel, (void*)buffer);
+
+
+	free(buffer);
+
+
+	//return buffer;
+	//return *buffer;
+}
+
+
+
+void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);
 	printf("%s",ipKernel = config_get_string_value(configuracion_Consola,"IP_KERNEL"));
 	printf("%s",puertoKernel = config_get_string_value(configuracion_Consola,"PUERTO_KERNEL"));
 }
 
+int crear_socket_cliente(char * ip, char * puerto) {
+	int descriptorArchivo, estado;
+	struct addrinfo hints, *infoServer, *n;
 
-int crear_socket_cliente(char * ip, char * puerto){
-    int descriptorArchivo, estado;
-    struct addrinfo hints, *infoServer, *n;
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
 
-    memset(&hints,0,sizeof (struct addrinfo));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
+	if ((estado = getaddrinfo(ip, puerto, &hints, &infoServer)) != 0) {
+		fprintf(stderr, "Error en getaddrinfo: %s", gai_strerror(estado));
+		return -1;
+	}
 
-    if ((estado = getaddrinfo(ip, puerto, &hints, &infoServer)) != 0){
-        fprintf(stderr, "Error en getaddrinfo: %s", gai_strerror(estado));
-        return -1;
-    }
+	for (n = infoServer; n != NULL; n = n->ai_next) {
+		descriptorArchivo = socket(n->ai_family, n->ai_socktype,
+				n->ai_protocol);
+		if (descriptorArchivo != -1)
+			break;
+	}
 
-    for(n = infoServer; n != NULL; n = n->ai_next){
-        descriptorArchivo = socket(n->ai_family, n->ai_socktype, n->ai_protocol);
-        if(descriptorArchivo != -1)
-            break;
-    }
+	if (descriptorArchivo == -1) {
+		perror("Error al crear el socket");
+		freeaddrinfo(infoServer);
+		return -1;
+	}
 
-    if(descriptorArchivo == -1){
-        perror("Error al crear el socket");
-        freeaddrinfo(infoServer);
-        return -1;
-    }
+	estado = connect(descriptorArchivo, n->ai_addr, n->ai_addrlen);
 
-    estado = connect(descriptorArchivo, n->ai_addr, n->ai_addrlen);
+	if (estado == -1) {
+		perror("Error conectando el socket");
+		freeaddrinfo(infoServer);
+		return -1;
+	}
 
-    if (estado == -1){
-        perror("Error conectando el socket");
-        freeaddrinfo(infoServer);
-        return -1;
-    }
+	freeaddrinfo(infoServer);
 
-    freeaddrinfo(infoServer);
-
-    return descriptorArchivo;
+	return descriptorArchivo;
 }
 
-char* recibir_string(int socket_aceptado)
-{
+char* recibir_string(int socket_aceptado) {
 	return (char*) recibir(socket_aceptado);
 }
 
-void enviar_string(int socket, char* mensaje){
+void enviar_string(int socket, char* mensaje) {
 	int tamanio = string_length(mensaje) + 1;
 
 	enviar(socket, (void*) mensaje, tamanio);
 }
 
-void enviar(int socket, void* cosaAEnviar, int tamanio){
+void enviar(int socket, void* cosaAEnviar, int tamanio) {
 	void* mensaje = malloc(sizeof(int) + tamanio);
 	void* aux = mensaje;
-	*((int*)aux) = tamanio;
+	*((int*) aux) = tamanio;
 	aux += sizeof(int);
 	memcpy(aux, cosaAEnviar, tamanio);
 
@@ -119,28 +173,29 @@ void enviar(int socket, void* cosaAEnviar, int tamanio){
 	free(mensaje);
 }
 
-void* recibir(int socket){
+void* recibir(int socket) {
 	int checkSocket = -1;
 
 	void* recibido = malloc(sizeof(int));
 
 	checkSocket = read(socket, recibido, sizeof(int));
 
-	int tamanioDelMensaje = *((int*)recibido);
+	int tamanioDelMensaje = *((int*) recibido);
 
 	free(recibido);
 
-	if(!checkSocket) return NULL;
+	if (!checkSocket)
+		return NULL;
 
 	recibido = malloc(tamanioDelMensaje);
 
 	int bytesRecibidos = 0;
 
-	while(bytesRecibidos < tamanioDelMensaje && checkSocket){
-		checkSocket = read(socket, (recibido + bytesRecibidos), (tamanioDelMensaje - bytesRecibidos));
+	while (bytesRecibidos < tamanioDelMensaje && checkSocket) {
+		checkSocket = read(socket, (recibido + bytesRecibidos),	(tamanioDelMensaje - bytesRecibidos));
 		bytesRecibidos += checkSocket;
 	}
 
-	return !checkSocket ? NULL:recibido;
+	return !checkSocket ? NULL : recibido;
 }
 
