@@ -25,9 +25,9 @@
 #include <pthread.h>
 
 t_config* configuracion_FS;
-char* ipKernel;
-char* puerto;
-char* puntoMontaje;
+char *ipKernel;
+char *puertoKernel;
+char *puntoMontaje;
 pthread_t  thread_id;
 
 //the thread function
@@ -45,8 +45,10 @@ void leerConfiguracion(char* ruta);
 
 int main(void){
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File System/config_FileSys");
-
-	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\ System/config_FileSys");
+	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
+	printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nIP KERNEL:%s\nPUERTO KERNEL:%s\nPUNTO MONTAJE:%s\n",ipKernel,puertoKernel,puntoMontaje);
+	printf("---------------------------------------------------\n");
 
 	int socket_servidor = crear_socket_servidor("127.0.0.1","5001");
 
@@ -258,7 +260,7 @@ void *connection_handler(void *socket_desc)
 
 void leerConfiguracion(char* ruta){
 
-	puerto= config_get_string_value(configuracion_FS,"PUERTO_KERNEL");
+	puertoKernel= config_get_string_value(configuracion_FS,"PUERTO_KERNEL");
 	ipKernel= config_get_string_value(configuracion_FS, "IP_KERNEL");
 	puntoMontaje = config_get_string_value(configuracion_FS,"PUNTO_MONTAJE");
 

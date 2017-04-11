@@ -36,10 +36,16 @@ void* recibir(int socket);
 char* recibir_string(int socket_aceptado);
 
 char *ipMemoria;
+
 char *puertoProg; //2001
 char *puertoCPU; //3001
 char *puertoMemoria; //4040s
 char *puertoConsola;
+
+char *puertoProg;//2001
+char *puertoCPU;//3001
+char *puertoMemoria;//4040s
+
 char *ipProg;
 char *ipFileSys;
 char *puertoFileSys;
@@ -50,6 +56,8 @@ char *gradoMultiProg;
 char *semIds;
 char *semInit;
 char *sharedVars;
+char *ipCPU;
+char *stackSize;
 pthread_t thread_id;
 
 //the thread function
@@ -61,11 +69,20 @@ void *sock_FS();
 //the thread function
 void *sock_Memoria();
 
-int main(void) {
+
+
+int main(void)
+{
 	char orden;
 
-	leerConfiguracion(
-			"/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
+
+	printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipProg,puertoProg,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
+	printf("---------------------------------------------------\n");
+	printf("QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%s\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars,stackSize);
+	printf("---------------------------------------------------\n");
+
 
 	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
 	//int socket_servidor = crear_socket_servidor(ipMemoria,puertoFileSys);
@@ -98,9 +115,7 @@ int main(void) {
 	 printf("CONFIGURACIONES\nipMemoria=%s\npuertoProg=%s\npuertoCPU=%s\npuertoMemoria=%s\nipFileSys=%s\npuertoFileSys=%s\nquantum=%s\nquantumSleep=%s\nalgoritmo=%s\ngradoMultiProg=%s\nsemIds=%s\nsemInit=%s\nsharedVars=%s\n",ipMemoria,puertoProg,puertoCPU,puertoMemoria,ipFileSys,puertoFileSys,quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars);
 
 	 int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
-	 while(1)
-
-	 {
+	 while(1) {
 	 scanf(" %c", &orden);
 	 enviar(socket_Memoria,(void*) &orden,sizeof(char));
 	 }
@@ -388,25 +403,27 @@ void* recibir(int socket) {
 void leerConfiguracion(char* ruta) {
 
 	configuracion_kernel = config_create(ruta);
-	printf("%s",
-			puertoProg = config_get_string_value(configuracion_kernel,
-					"PUERTO_PROG"));
-	printf("%s",
-			ipProg = config_get_string_value(configuracion_kernel, "IP_PROG"));
+
+	printf("%s",puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG"));
+	printf("%s",ipProg = config_get_string_value(configuracion_kernel, "IP_PROG"));
 	puertoCPU = config_get_string_value(configuracion_kernel, "PUERTO_CPU");
 	ipMemoria = config_get_string_value(configuracion_kernel, "IP_MEMORIA");
-	puertoMemoria = config_get_string_value(configuracion_kernel,
-			"PUERTO_MEMORIA");
+	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
 	ipFileSys = config_get_string_value(configuracion_kernel, "IP_FS");
 	puertoFileSys = config_get_string_value(configuracion_kernel, "PUERTO_FS");
 	quantum = config_get_string_value(configuracion_kernel, "QUANTUM");
-	quantumSleep = config_get_string_value(configuracion_kernel,
-			"QUANTUM_SLEEP");
+	quantumSleep = config_get_string_value(configuracion_kernel,"QUANTUM_SLEEP");
 	algoritmo = config_get_string_value(configuracion_kernel, "ALGORTIMO");
-	gradoMultiProg = config_get_string_value(configuracion_kernel,
-			"GRADO_MULTIPROGRAMACION");
+	gradoMultiProg = config_get_string_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION");
 	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
 
+	puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG");
+	ipProg = config_get_string_value(configuracion_kernel,"IP_PROG");
+
+	ipCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
+
+
+	stackSize = config_get_string_value(configuracion_kernel,"STACK_SIZE");
 }
