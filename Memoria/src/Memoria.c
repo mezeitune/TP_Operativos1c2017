@@ -55,6 +55,7 @@ int recibirConexion(int socket_servidor);
 
 char nuevaOrdenDeAccion(int puertoCliente);
 
+void imprimirConfiguraciones();
 void leerConfiguracion(char* ruta);
 void inicializarMemoriaAdm();
 
@@ -82,10 +83,8 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina);
 int main(void)
 {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/config_Memoria");
+	imprimirConfiguraciones();
 
-	printf("---------------------------------------------------\n");
-	printf("CONFIGURACIONES\nIP:%s\nPUERTO:%s\nMARCOS:%d\nTAMAÑO MARCO:%d\nENTRADAS CACHE:%d\nCACHE POR PROCESOS:%d\nRETARDO MEMORIA:%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
-	printf("---------------------------------------------------\n");
 	bitMap = string_repeat('0',marcos);
 
 	frame_Memoria= malloc(marco_size*marcos);
@@ -475,4 +474,10 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 	}
 	frame_Memoria = frame_Memoria - desplazamiento*marcos; //Coloco el puntero de mi frame_Memoria al inicio
 	return frame;
+}
+
+void imprimirConfiguraciones(){
+		printf("---------------------------------------------------\n");
+		printf("CONFIGURACIONES\nIP:%s\nPUERTO:%s\nMARCOS:%d\nTAMAÑO MARCO:%d\nENTRADAS CACHE:%d\nCACHE POR PROCESOS:%d\nRETARDO MEMORIA:%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
+		printf("---------------------------------------------------\n");
 }

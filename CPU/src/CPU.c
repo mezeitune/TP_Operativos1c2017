@@ -24,6 +24,7 @@
 #include <commons/conexiones.h>
 
 void leerConfiguracion(char* ruta);
+void imprimirConfiguraciones();
 
 t_config* configuracion_memoria;
 char* puertoKernel;
@@ -33,12 +34,8 @@ char* ipKernel;
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
+	imprimirConfiguraciones();
 
-	printf("CONFIGURACIONES\n=%s\nPuerto=%s\n", ipMemoria, puertoMemoria);
-
-	printf("---------------------------------------------------\n");
-	printf("CONFIGURACIONES\nPUERTO KERNEL:%s\nIP KERNEL:%s\nPUERTO MEMORIA:%s\nIP MEMORIA:%s\n",puertoKernel,ipKernel,puertoMemoria,ipMemoria);
-	printf("---------------------------------------------------\n");
 	char orden;
 	int socket_Kernel = crear_socket_cliente(ipMemoria, "4040");
 	while (orden != 'Q') {
@@ -65,4 +62,9 @@ void leerConfiguracion(char* ruta) {
 
 }
 
+void imprimirConfiguraciones(){
+	printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nPUERTO KERNEL:%s\nIP KERNEL:%s\nPUERTO MEMORIA:%s\nIP MEMORIA:%s\n",puertoKernel,ipKernel,puertoMemoria,ipMemoria);
+	printf("---------------------------------------------------\n");
+}
 

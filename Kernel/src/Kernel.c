@@ -25,23 +25,20 @@
 
 int recibirConexion(int socket_servidor);
 void leerConfiguracion(char* ruta);
+void imprimirConfiguraciones();
 void *connection_handler(void *socket_desc);
 char nuevaOrdenDeAccion(int puertoCliente);
 
+char *ipCPU;
 char *ipMemoria;
-
-char *puertoProg; //2001
-char *puertoCPU; //3001
-char *puertoMemoria; //4040s
-char *puertoConsola;
-
-char *puertoProg;//2001
-char *puertoCPU;//3001
-char *puertoMemoria;//4040s
-
-char *ipProg;
+char *ipConsola;
 char *ipFileSys;
+
+char *puertoCPU; //3001
+char *puertoMemoria; //4040
+char *puertoConsola; //2001
 char *puertoFileSys;
+
 char *quantum;
 char *quantumSleep;
 char *algoritmo;
@@ -49,13 +46,12 @@ char *gradoMultiProg;
 char *semIds;
 char *semInit;
 char *sharedVars;
-char *ipCPU;
 char *stackSize;
 pthread_t thread_id;
 t_config* configuracion_kernel;
 
 //the thread function
-void *sock_Prog();
+void *sock_Consola();
 //the thread function
 void *sock_CPU();
 //the thread function
@@ -68,13 +64,7 @@ int main(void)
 	char orden;
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
-
-	printf("---------------------------------------------------\n");
-	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipProg,puertoProg,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
-	printf("---------------------------------------------------\n");
-	printf("QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%s\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars,stackSize);
-	printf("---------------------------------------------------\n");
-
+	imprimirConfiguraciones();
 
 	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
 	//int socket_servidor = crear_socket_servidor(ipMemoria,puertoFileSys);
@@ -85,7 +75,7 @@ int main(void)
 		perror("could not create thread");
 		return 1;
 	}
-	if (pthread_create(&thread_id, NULL, sock_Prog, (void*) NULL) < 0) {
+	if (pthread_create(&thread_id, NULL, sock_Consola, (void*) NULL) < 0) {
 		perror("could not create thread");
 		return 1;
 	}
@@ -99,12 +89,11 @@ int main(void)
 		perror("could not create thread");
 		return 1;
 	}
-	int socket_servidorP = crear_socket_servidor(ipProg, puertoProg);
+	int socket_servidorP = crear_socket_servidor(ipConsola, puertoConsola);
 	/*recibirConexion(socket_servidorP);
 	char *buffer = recibir_string(socket_servidorP);*/
 	//printf("\n%s\n", buffer);
 
-	 printf("CONFIGURACIONES\nipMemoria=%s\npuertoProg=%s\npuertoCPU=%s\npuertoMemoria=%s\nipFileSys=%s\npuertoFileSys=%s\nquantum=%s\nquantumSleep=%s\nalgoritmo=%s\ngradoMultiProg=%s\nsemIds=%s\nsemInit=%s\nsharedVars=%s\n",ipMemoria,puertoProg,puertoCPU,puertoMemoria,ipFileSys,puertoFileSys,quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars);
 
 	 int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria); //Variable definidas
 	 while(1) {
@@ -114,8 +103,8 @@ int main(void)
 	 return 0;
 }
 
-void* sock_Prog() {
-	int socket_servidorProg = crear_socket_servidor(ipProg, puertoProg);
+void* sock_Consola() {
+	int socket_servidorProg = crear_socket_servidor(ipConsola, puertoConsola);
 	recibirConexion(socket_servidorProg);
 }
 
@@ -258,8 +247,6 @@ void leerConfiguracion(char* ruta) {
 
 	configuracion_kernel = config_create(ruta);
 
-	printf("%s",puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG"));
-	printf("%s",ipProg = config_get_string_value(configuracion_kernel, "IP_PROG"));
 	puertoCPU = config_get_string_value(configuracion_kernel, "PUERTO_CPU");
 	ipMemoria = config_get_string_value(configuracion_kernel, "IP_MEMORIA");
 	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
@@ -272,12 +259,17 @@ void leerConfiguracion(char* ruta) {
 	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
-
-	puertoProg = config_get_string_value(configuracion_kernel,"PUERTO_PROG");
-	ipProg = config_get_string_value(configuracion_kernel,"IP_PROG");
-
+	puertoConsola = config_get_string_value(configuracion_kernel,"PUERTO_CONSOLA");
+	ipConsola = config_get_string_value(configuracion_kernel,"IP_CONSOLA");
 	ipCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
-
-
 	stackSize = config_get_string_value(configuracion_kernel,"STACK_SIZE");
+}
+
+void imprimirConfiguraciones(){
+	printf("---------------------------------------------------\n");
+		printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipConsola,puertoConsola,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
+		printf("---------------------------------------------------\n");
+		printf("QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%s\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars,stackSize);
+		printf("---------------------------------------------------\n");
+
 }

@@ -29,6 +29,7 @@ char* lecturaDeArchivo(char *ruta);
 void enviarLecturaArchivo(void *ruta);
 
 void leerConfiguracion(char* ruta);
+void imprimirConfiguraciones();
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
@@ -37,12 +38,7 @@ pthread_t thread_id;
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
-
-	printf("CONFIGURACIONES\n=%s\nPuerto=%s\n", ipKernel, puertoKernel);
-
-	printf("---------------------------------------------------\n");
-	printf("CONFIGURACIONES\nIP KERNEL:%s\nPUERTO KERNEL:%s\n",ipKernel,puertoKernel);
-	printf("---------------------------------------------------\n");
+	imprimirConfiguraciones();
 
 	char orden;
 	char *ruta = (char*) malloc(200*sizeof(char));
@@ -115,4 +111,10 @@ void leerConfiguracion(char* ruta) {
 	puertoKernel = config_get_string_value(configuracion_Consola,"PUERTO_KERNEL");
 }
 
+void imprimirConfiguraciones(){
+
+	printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nIP KERNEL:%s\nPUERTO KERNEL:%s\n",ipKernel,puertoKernel);
+	printf("---------------------------------------------------\n");
+}
 

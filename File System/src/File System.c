@@ -34,19 +34,14 @@ t_config* configuracion_FS;
 //the thread function
 void *connection_handler(void *);
 
-//--------------------Funciones Conexiones----------------------------//
 int recibirConexion(int socket_servidor);
-//----------------------Funciones Conexiones----------------------------//
-
 char nuevaOrdenDeAccion(int puertoCliente);
 void leerConfiguracion(char* ruta);
+void imprimirConfiguraciones();
 
 int main(void){
-	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File System/config_FileSys");
+	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\ System/config_FileSys");
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
-	printf("---------------------------------------------------\n");
-	printf("CONFIGURACIONES\nIP KERNEL:%s\nPUERTO KERNEL:%s\nPUNTO MONTAJE:%s\n",ipKernel,puertoKernel,puntoMontaje);
-	printf("---------------------------------------------------\n");
 
 	int socket_servidor = crear_socket_servidor("127.0.0.1","5001");
 
@@ -169,3 +164,8 @@ void leerConfiguracion(char* ruta){
 
 }
 
+void imprimirConfiguraciones(){
+		printf("---------------------------------------------------\n");
+		printf("CONFIGURACIONES\nIP KERNEL:%s\nPUERTO KERNEL:%s\nPUNTO MONTAJE:%s\n",ipKernel,puertoKernel,puntoMontaje);
+		printf("---------------------------------------------------\n");
+}
