@@ -110,19 +110,15 @@ void* sock_Consola() {
 
 void* sock_FS() {
 	char orden;
-	//int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
-	int socket_FS = crear_socket_cliente("127.0.0.1", "5001");
+	int socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);
 	while (orden != 'Q') {
 		scanf(" %c", &orden);
 		enviar(socket_FS, (void*) &orden, sizeof(char));
 	}
-	//int socket_servidorFS = crear_socket_servidor(ipFileSys,puertoFileSys);
-	//recibirConexion(socket_servidorFS);
 }
 
 void* sock_Memoria() {
 	char orden;
-	//	int socket_Memoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 	int socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);
 	while (orden != 'Q') {
 		scanf("%c", &orden);
@@ -131,7 +127,7 @@ void* sock_Memoria() {
 }
 
 void* sock_CPU() {
-	int socket_servidor = crear_socket_servidor("127.0.0.1", puertoCPU);
+	int socket_servidor = crear_socket_servidor(ipCPU, puertoCPU);
 	recibirConexion(socket_servidor);
 }
 
@@ -183,46 +179,6 @@ void *connection_handler(void *socket_desc) {
 	char * buffer = recibir_string(sock);
 	printf("\n%s\n", buffer);
 
-	/*char orden = 'F';
-	char *buffer = malloc(sizeof(char) * 200);
-	while (orden != 'Q') {
-		orden = nuevaOrdenDeAccion(sock);
-		switch (orden) {
-		case 'I':
-			printf("/nI");
-			//main_inicializarPrograma();
-			break;
-		case 'S':
-			//main_solicitarBytesPagina();
-			break;
-		case 'A':
-			//main_almacenarBytesPagina();
-			break;
-		case 'G':
-			//main_asignarPaginaAProceso();
-			break;
-		case 'F':
-			//main_finalizarPrograma();
-			break;
-		case 'Q':
-			puts("Cliente desconectado");
-			fflush(stdout);
-			break;
-		case 'X':
-			perror("recv failed");
-			break;
-		case 'J':
-			printf("Esperando String\n");
-			buffer = recibir_string(sock);
-			puts(buffer);
-
-			free(buffer);
-			break;
-		default:
-			printf("Error\n");
-			break;
-		}
-	}*/
 	return 0;
 }
 
