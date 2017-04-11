@@ -28,6 +28,7 @@ void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void *connection_handler(void *socket_desc);
 char nuevaOrdenDeAccion(int puertoCliente);
+int contadorConexiones=0;
 
 char *ipCPU;
 char *ipMemoria;
@@ -84,10 +85,13 @@ int main(void)
 		return 1;
 	}
 
+
 	pthread_join( threadMemoria, NULL);
 	pthread_join( threadFS, NULL);
 	pthread_join( threadCPU, NULL);
 	pthread_join( threadConsola, NULL);
+
+
 
 
 	 return 0;
@@ -119,11 +123,14 @@ void* sock_Memoria() {
 void* sock_CPU() {
 	int socket_servidor = crear_socket_servidor(ipCPU, puertoCPU);
 	recibirConexion(socket_servidor);
+
 }
 
 int recibirConexion(int socket_servidor) {
 	struct sockaddr_storage their_addr;
 	socklen_t addr_size;
+	addr_size = sizeof(their_addr);
+	int socket_aceptado;
 
 	int estado = listen(socket_servidor, 5);
 
@@ -139,42 +146,62 @@ int recibirConexion(int socket_servidor) {
 
 	addr_size = sizeof(their_addr);
 
-	int socket_aceptado;
 	while ((socket_aceptado = accept(socket_servidor,(struct sockaddr *) &their_addr, &addr_size))) {
-		puts("Connection accepted");
+		contadorConexiones ++;
+		printf("\n----------Nueva Conexion!---------\nConexion aceptada numero: %d\n",contadorConexiones);
 
 		if (pthread_create(&thread_id, NULL, connection_handler,(void*) &socket_aceptado) < 0) {
 			perror("could not create thread");
 			return 1;
 		}
+		printf("Handler asignado a (%d) \n",contadorConexiones);
+			}
+
+		if (socket_aceptado == -1) {
+				close(socket_servidor);
+				printf("Error al aceptar conexion\n");
+				return 1;
+			}
+
+		return socket_aceptado;
 
 		//Now join the thread , so that we dont terminate before the thread
 	    //pthread_join( thread_id , NULL);
-		puts("Handler assigned");
-	}
-
-	if (socket_aceptado == -1) {
-		close(socket_servidor);
-		printf("Error al aceptar conexion\n");
-		return 1;
-	}
-
-	return socket_aceptado;
 }
 
-// Misma funcion que en Memoria. Solo para testear
 void *connection_handler(void *socket_desc) {
 	//Get the socket descriptor
 	int sock = *(int*) socket_desc;
-	char * buffer = recibir_string(sock);
-	printf("\n%s\n", buffer);
+	char buffer;
+	//char buffer = recibirString(sock);
+	//printf("\n%s\n", buffer);
 
+	while((buffer=nuevaOrdenDeAccion(sock)) != 'Q')
+		{
+			switch(buffer)
+			{
+			case 'I': printf("/////USTED MARCO LA I\\\\\\\n");
+				break;
+			case 'S': printf("Sugar, we are going down\n");
+				break;
+			case 'A': printf("Avalanche\n");
+				break;
+			case 'G': printf("Gaturro\n");
+				break;
+			default:
+				printf("ERROR: Orden %c no definida\n",buffer);
+				break;
+			}
+		}
+	printf("\nUn Cliente se ha desconectado\n");
+	fflush(stdout);
 	return 0;
+
 }
 
 char nuevaOrdenDeAccion(int puertoCliente) {
 	char *buffer;
-	printf("Esperando Orden del Cliente\n");
+	printf("\n--Esperando una orden del cliente-- \n");
 	buffer = recibir(puertoCliente);
 	//int size_mensaje = sizeof(buffer);
 	if (buffer == NULL) {
@@ -183,9 +210,9 @@ char nuevaOrdenDeAccion(int puertoCliente) {
 		//fflush(stdout);
 	} else if (buffer == -1) {
 		return 'X';
-		//perror("recv failed");
+		perror("recv failed");
 	}
-	printf("Orden %c\n", *buffer);
+	printf("El cliente ha enviado la orden: %c\n", *buffer);
 	return *buffer;
 }
 
