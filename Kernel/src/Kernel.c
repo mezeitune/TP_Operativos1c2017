@@ -4,7 +4,7 @@
  Author      : Servomotor
  Version     :
  Copyright   : Your copyright notice
- Description : Hello World in C, Ansi-style
+ Description : Kernel Module
  ============================================================================
  */
 #include <sys/epoll.h>
@@ -154,8 +154,9 @@ int recibirConexion(int socket_servidor) {
 			perror("could not create thread");
 			return 1;
 		}
+
 		printf("Handler asignado a (%d) \n",contadorConexiones);
-			}
+	}
 
 		if (socket_aceptado == -1) {
 				close(socket_servidor);
@@ -172,13 +173,13 @@ int recibirConexion(int socket_servidor) {
 void *connection_handler(void *socket_desc) {
 	//Get the socket descriptor
 	int sock = *(int*) socket_desc;
-	char buffer;
-	//char buffer = recibirString(sock);
-	//printf("\n%s\n", buffer);
+	char *buffer;
+	char orden;
 
-	while((buffer=nuevaOrdenDeAccion(sock)) != 'Q')
+
+	while((orden=nuevaOrdenDeAccion(sock)) != 'Q')
 		{
-			switch(buffer)
+			switch(orden)
 			{
 			case 'I': printf("/////USTED MARCO LA I\\\\\\\n");
 				break;
@@ -188,10 +189,31 @@ void *connection_handler(void *socket_desc) {
 				break;
 			case 'G': printf("Gaturro\n");
 				break;
+			case 'C':
+					printf("Esperando mensaje\n");
+
+					int socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);//Crea socket para FS
+					int socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);//Crea socket para Memoria
+					//int socket_CPU = crear_socket_servidor(ipCPU, puertoCPU);//Crea socket para CPU No funca
+
+					//enviar(socket_CPU, (void*) &orden, sizeof(char));//Le avisa a la CPU que le va a mandar un string No funca
+					enviar(socket_FS, (void*) &orden, sizeof(char));//Le avisa al FS que le va a mandar un string
+					enviar(socket_Mem, (void*) &orden, sizeof(char));//Le avisa a la memoria que le va a mandar un string
+
+					buffer = recibir_string(sock);//Espera y recibe string desde la consola
+
+					enviar_string(socket_FS, buffer);//envia mensaje al FS
+					enviar_string(socket_Mem, buffer);//envia mensaje a la Memoria
+					//enviar_string(socket_CPU, buffer);//envia mensaje a la CPU No funca
+
+					printf("\nEl mensaje es: \"%s\"\n", buffer);
+					free(buffer);
+					break;
 			default:
-				printf("ERROR: Orden %c no definida\n",buffer);
+				printf("ERROR: Orden %c no definida\n",orden);
 				break;
 			}
+
 		}
 	printf("\nUn Cliente se ha desconectado\n");
 	fflush(stdout);
@@ -212,6 +234,7 @@ char nuevaOrdenDeAccion(int puertoCliente) {
 		return 'X';
 		perror("recv failed");
 	}
+
 	printf("El cliente ha enviado la orden: %c\n", *buffer);
 	return *buffer;
 }

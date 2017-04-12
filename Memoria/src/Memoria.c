@@ -378,12 +378,17 @@ void *connection_handler(void *socket_desc)
     int sock = *(int*)socket_desc;
     char orden = 'F';
     int resultadoDeEjecucion;
+    char *buffer;
 	while(orden != 'Q')
 	{
 		orden = nuevaOrdenDeAccion(sock);
 		switch(orden)
 		{
-		case 'I':
+		case 'C':
+			printf("Esperando mensaje\n");
+			buffer = recibir_string(sock);
+			printf("\nEl mensaje es: \"%s\"\n", buffer);
+
 			resultadoDeEjecucion = main_inicializarPrograma(sock);
 			break;
 		case 'S':

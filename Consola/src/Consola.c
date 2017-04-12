@@ -25,8 +25,8 @@
 #include <commons/conexiones.h>
 
 
-char* lecturaDeArchivo(char *ruta);
-void enviarLecturaArchivo(void *ruta);
+
+void enviarLecturaArchivo(void *ruta, int socket);
 
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
@@ -34,6 +34,7 @@ t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
 pthread_t thread_id;
+
 // /home/utnso/Escritorio/archivoPrueba
 int main(void) {
 
@@ -43,34 +44,38 @@ int main(void) {
 	char orden;
 	char *ruta = (char*) malloc(200*sizeof(char));
 
-
-
-
 	int socket_Kernel = crear_socket_cliente(ipKernel, puertoKernel);
-	printf("Indicar la ruta del archivo que se quiere ejecutar\n");
-	scanf("%s", ruta);
-	enviarLecturaArchivo(ruta);
 
-	while (orden != 'Q') {
+	while(orden != 'Q'){
+		printf("Ingresar orden:\n");
 		scanf(" %c", &orden);
 		enviar(socket_Kernel, (void*) &orden, sizeof(char));
+
+		switch(orden){
+			case 'C'://Envia a FS mediante Kernel
+				printf("Indicar la ruta del archivo que se quiere ejecutar\n");
+				scanf("%s", ruta);
+				enviarLecturaArchivo(ruta, socket_Kernel);
+				break;
+			case 'I':
+				printf("te mande una I\n");
+				break;
+			default:
+				printf("no me gusta la letra %c\n", orden);
+				break;
+
 		}
-
-
+	}
 	free(ruta);
 	return EXIT_SUCCESS;
 }
 
-void enviarLecturaArchivo(void *rut){
+void enviarLecturaArchivo(void *rut, int socket){
 
 	FILE *f;
 	char *buffer;
 	unsigned int tamanioArchivo;
 	char *ruta = (char *)rut;
-
-	int socket_Kernel = crear_socket_cliente(ipKernel,puertoKernel);
-
-
 
 	if ((f = fopen(ruta, "r+")) == NULL) {
 			fputs("Archivo inexistente\n", stderr);
@@ -93,7 +98,7 @@ void enviarLecturaArchivo(void *rut){
 	fread(buffer, sizeof(buffer), tamanioArchivo, f);
 
 	//printf("%s",buffer);
-	enviar_string(socket_Kernel, (void*)buffer);
+	enviar_string(socket, (void*)buffer);
 
 
 	free(buffer);

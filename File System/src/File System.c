@@ -125,13 +125,18 @@ void *connection_handler(void *socket_desc)
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
     char orden = 'F';
+    char *buffer;
 
 	while(orden != 'Q')
 	{
 		orden = nuevaOrdenDeAccion(sock);
 		switch(orden)
 		{
-		case 'I':
+		case 'C':
+			printf("Esperando mensaje\n");
+			buffer = recibir_string(sock);
+			printf("\nEl mensaje es: \"%s\"\n", buffer);
+
 			break;
 		case 'S':
 			break;
