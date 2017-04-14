@@ -28,6 +28,7 @@
 char *ipKernel;
 char *puertoKernel;
 char *puntoMontaje;
+int contadorConexiones=0;
 pthread_t  thread_id;
 t_config* configuracion_FS;
 
@@ -72,7 +73,8 @@ int recibirConexion(int socket_servidor){
 	int socket_aceptado;
     while( (socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size)) )
     {
-        puts("Connection accepted");
+    	contadorConexiones ++;
+    	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
 
         if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &socket_aceptado) < 0)
         {
@@ -82,7 +84,7 @@ int recibirConexion(int socket_servidor){
 
         //Now join the thread , so that we dont terminate before the thread
         //pthread_join( thread_id , NULL);
-        puts("Handler assigned");
+        printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
     }
 
 
@@ -98,7 +100,7 @@ int recibirConexion(int socket_servidor){
 char nuevaOrdenDeAccion(int puertoCliente)
 {
 	char *buffer;
-	printf("Esperando Orden del Cliente\n");
+	printf("\n--Esperando una orden del cliente-- \n");
 	buffer = recibir(puertoCliente);
 	//int size_mensaje = sizeof(buffer);
     if(buffer == NULL)
@@ -112,8 +114,8 @@ char nuevaOrdenDeAccion(int puertoCliente)
         return 'X';
     	//perror("recv failed");
     }
-    printf("El cliente %d envio el comando:",puertoCliente);
-	printf("%c\n",*buffer);
+    printf("El cliente %d envio la orden: %c \n",puertoCliente, *buffer);
+	//printf("%c\n",*buffer);
 	return *buffer;
 }
 

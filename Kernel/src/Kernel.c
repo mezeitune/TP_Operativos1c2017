@@ -148,14 +148,13 @@ int recibirConexion(int socket_servidor) {
 
 	while ((socket_aceptado = accept(socket_servidor,(struct sockaddr *) &their_addr, &addr_size))) {
 		contadorConexiones ++;
-		printf("\n----------Nueva Conexion!---------\nConexion aceptada numero: %d\n",contadorConexiones);
+		printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
 
 		if (pthread_create(&thread_id, NULL, connection_handler,(void*) &socket_aceptado) < 0) {
 			perror("could not create thread");
 			return 1;
 		}
-
-		printf("Handler asignado a (%d) \n",contadorConexiones);
+		printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
 	}
 
 		if (socket_aceptado == -1) {
@@ -175,26 +174,25 @@ void *connection_handler(void *socket_desc) {
 	int sock = *(int*) socket_desc;
 	char *buffer;
 	char orden;
+	int socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);//Crea socket para FS
+	int socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);//Crea socket para Memoria
+	//int socket_CPU = crear_socket_servidor(ipCPU, puertoCPU);//Crea socket para CPU No funca
 
 
 	while((orden=nuevaOrdenDeAccion(sock)) != 'Q')
 		{
 			switch(orden)
 			{
-			case 'I': printf("/////USTED MARCO LA I\\\\\\\n");
+			case 'I': printf("Usted marco la I\n");
 				break;
-			case 'S': printf("Sugar, we are going down\n");
+			case 'S': printf("Usted marco al S\n");
 				break;
-			case 'A': printf("Avalanche\n");
+			case 'A': printf("Usted marco la A\n");
 				break;
-			case 'G': printf("Gaturro\n");
+			case 'G': printf("Usted marco la G\n");
 				break;
 			case 'C':
 					printf("Esperando mensaje\n");
-
-					int socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);//Crea socket para FS
-					int socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);//Crea socket para Memoria
-					//int socket_CPU = crear_socket_servidor(ipCPU, puertoCPU);//Crea socket para CPU No funca
 
 					//enviar(socket_CPU, (void*) &orden, sizeof(char));//Le avisa a la CPU que le va a mandar un string No funca
 					enviar(socket_FS, (void*) &orden, sizeof(char));//Le avisa al FS que le va a mandar un string
@@ -206,7 +204,7 @@ void *connection_handler(void *socket_desc) {
 					enviar_string(socket_Mem, buffer);//envia mensaje a la Memoria
 					//enviar_string(socket_CPU, buffer);//envia mensaje a la CPU No funca
 
-					printf("\nEl mensaje es: \"%s\"\n", buffer);
+					printf("\nEl mensaje es: \"  %s \"\n", buffer);
 					free(buffer);
 					break;
 			default:

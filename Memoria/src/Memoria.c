@@ -33,6 +33,7 @@ int marco_size;
 int entradas_cache;
 int cache_x_proc;
 int retardo_memoria;
+int contadorConexiones=0;
 pthread_t thread_id;
 t_config* configuracion_memoria;
 
@@ -203,14 +204,15 @@ int recibirConexion(int socket_servidor){
 	int socket_aceptado;
     while( (socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size)) )
     {
-        puts("Connection accepted");
+    	contadorConexiones ++;
+    	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
 
         if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &socket_aceptado) < 0)
         {
             perror("could not create thread");
             return 1;
         }
-        puts("Handler asignado\n");
+        printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
     }
 
 
@@ -226,7 +228,7 @@ int recibirConexion(int socket_servidor){
 char nuevaOrdenDeAccion(int puertoCliente)
 {
 	char *buffer;
-	printf("Esperando Orden del Cliente\n");
+	printf("\n--Esperando una orden del cliente-- \n");
 	buffer = recibir(puertoCliente);
 	//int size_mensaje = sizeof(buffer);
     if(buffer == NULL)
@@ -240,7 +242,7 @@ char nuevaOrdenDeAccion(int puertoCliente)
         return 'X';
     	//perror("recv failed");
     }
-    printf("El cliente %d envio el comando:",puertoCliente);
+    printf("El cliente ha enviado la orden: %c\n",puertoCliente);
 	printf("%c\n",*buffer);
 	return *buffer;
 }
@@ -374,7 +376,6 @@ int verificarEspacio(int size)
  * */
 void *connection_handler(void *socket_desc)
 {
-    //Get the socket descriptor
     int sock = *(int*)socket_desc;
     char orden = 'F';
     int resultadoDeEjecucion;
