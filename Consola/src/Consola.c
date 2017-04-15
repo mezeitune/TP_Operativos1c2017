@@ -24,8 +24,6 @@
 #include <pthread.h>
 #include <commons/conexiones.h>
 
-
-
 void enviarLecturaArchivo(void *ruta, int socket);
 
 void leerConfiguracion(char* ruta);
@@ -100,15 +98,9 @@ void enviarLecturaArchivo(void *rut, int socket){
 	//printf("%s",buffer);
 	enviar_string(socket, (void*)buffer);
 
-
 	free(buffer);
 
-
-	//return buffer;
-	//return *buffer;
 }
-
-
 
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);

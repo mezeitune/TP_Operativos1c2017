@@ -35,9 +35,9 @@ char *ipMemoria;
 char *ipConsola;
 char *ipFileSys;
 
-char *puertoCPU; //3001
-char *puertoMemoria; //4040
-char *puertoConsola; //2001
+char *puertoCPU;
+char *puertoMemoria;
+char *puertoConsola;
 char *puertoFileSys;
 
 char *quantum;
@@ -85,14 +85,10 @@ int main(void)
 		return 1;
 	}
 
-
 	pthread_join( threadMemoria, NULL);
 	pthread_join( threadFS, NULL);
 	pthread_join( threadCPU, NULL);
 	pthread_join( threadConsola, NULL);
-
-
-
 
 	 return 0;
 }
@@ -194,7 +190,7 @@ void *connection_handler(void *socket_desc) {
 			case 'C':
 					printf("Esperando mensaje\n");
 
-					//enviar(socket_CPU, (void*) &orden, sizeof(char));//Le avisa a la CPU que le va a mandar un string No funca
+				//	enviar(socket_CPU, (void*) &orden, sizeof(char));//Le avisa a la CPU que le va a mandar un string No funca
 					enviar(socket_FS, (void*) &orden, sizeof(char));//Le avisa al FS que le va a mandar un string
 					enviar(socket_Mem, (void*) &orden, sizeof(char));//Le avisa a la memoria que le va a mandar un string
 
@@ -219,10 +215,10 @@ void *connection_handler(void *socket_desc) {
 
 }
 
-char nuevaOrdenDeAccion(int puertoCliente) {
+char nuevaOrdenDeAccion(int socketCliente) {
 	char *buffer;
 	printf("\n--Esperando una orden del cliente-- \n");
-	buffer = recibir(puertoCliente);
+	buffer = recibir(socketCliente);
 	//int size_mensaje = sizeof(buffer);
 	if (buffer == NULL) {
 		return 'Q';

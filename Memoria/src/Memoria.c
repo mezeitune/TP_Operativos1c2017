@@ -225,11 +225,11 @@ int recibirConexion(int socket_servidor){
 	return socket_aceptado;
 }
 
-char nuevaOrdenDeAccion(int puertoCliente)
+char nuevaOrdenDeAccion(int socketCliente)
 {
 	char *buffer;
 	printf("\n--Esperando una orden del cliente-- \n");
-	buffer = recibir(puertoCliente);
+	buffer = recibir(socketCliente);
 	//int size_mensaje = sizeof(buffer);
     if(buffer == NULL)
     {
@@ -242,7 +242,7 @@ char nuevaOrdenDeAccion(int puertoCliente)
         return 'X';
     	//perror("recv failed");
     }
-    printf("El cliente ha enviado la orden: %c\n",puertoCliente);
+    printf("El cliente ha enviado la orden: %c\n",*buffer);
 	printf("%c\n",*buffer);
 	return *buffer;
 }
@@ -377,12 +377,11 @@ int verificarEspacio(int size)
 void *connection_handler(void *socket_desc)
 {
     int sock = *(int*)socket_desc;
-    char orden = 'F';
+    char orden;
     int resultadoDeEjecucion;
     char *buffer;
-	while(orden != 'Q')
+	while((orden=nuevaOrdenDeAccion(sock)) != 'Q')
 	{
-		orden = nuevaOrdenDeAccion(sock);
 		switch(orden)
 		{
 		case 'C':
@@ -390,7 +389,7 @@ void *connection_handler(void *socket_desc)
 			buffer = recibir_string(sock);
 			printf("\nEl mensaje es: \"%s\"\n", buffer);
 
-			resultadoDeEjecucion = main_inicializarPrograma(sock);
+			//resultadoDeEjecucion = main_inicializarPrograma(sock);
 			break;
 		case 'S':
 			resultadoDeEjecucion = main_solicitarBytesPagina(sock);

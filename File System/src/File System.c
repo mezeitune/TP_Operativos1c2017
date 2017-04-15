@@ -97,11 +97,11 @@ int recibirConexion(int socket_servidor){
 	return socket_aceptado;
 }
 
-char nuevaOrdenDeAccion(int puertoCliente)
+char nuevaOrdenDeAccion(int socketCliente)
 {
 	char *buffer;
 	printf("\n--Esperando una orden del cliente-- \n");
-	buffer = recibir(puertoCliente);
+	buffer = recibir(socketCliente);
 	//int size_mensaje = sizeof(buffer);
     if(buffer == NULL)
     {
@@ -114,7 +114,7 @@ char nuevaOrdenDeAccion(int puertoCliente)
         return 'X';
     	//perror("recv failed");
     }
-    printf("El cliente %d envio la orden: %c \n",puertoCliente, *buffer);
+    printf("El cliente envio la orden: %c \n",*buffer);
 	//printf("%c\n",*buffer);
 	return *buffer;
 }
