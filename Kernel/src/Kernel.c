@@ -23,22 +23,21 @@
 #include <pthread.h>
 #include <commons/conexiones.h>
 
-int recibirConexion(int socket_servidor); // No se usa en este modulo. Va a servir cuando limpiemos codigo del main y lo pasemos a esta funcion. Habria que cambiarla toda basicamente
+//int recibirConexion(int socket_servidor); // No se usa en este modulo. Va a servir cuando limpiemos codigo del main y lo pasemos a esta funcion. Habria que cambiarla toda basicamente
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
-void *connectionHandler(int socketAceptado);
+void *connectionHandler(int socketAceptado, char primeraOrden);
 void *get_in_addr(struct sockaddr *sa);
-char nuevaOrdenDeAccion(int puertoCliente);
-int contadorConexiones=0;
+void nuevaOrdenDeAccion(int puertoCliente,char* nuevaOrden);
 
-char *ipCPU;
+//char *ipConsola;
+//char *ipCPU;
 char *ipMemoria;
-char *ipConsola;
 char *ipFileSys;
 
-char *puertoCPU;
+//char *puertoCPU;
 char *puertoMemoria;
-char *puertoConsola;
+//char *puertoConsola;
 char *puertoFileSys;
 
 char *puertoServidor;
@@ -77,20 +76,19 @@ int main(void)
      int fdMax;        // Creo que es para un contador de los sockets que hay
      int newfd;        // newly accept()ed socket descriptor
      struct sockaddr_storage remoteaddr; // client address
-     socklen_t addrlen;
-     fd_set master;    // master file descriptor list
-	 fd_set readFds;  // temp file descriptor list for select()
-	 int i, j;        // Contadores para las iteraciones dentro del FDSET
+	 int i;        // Contador para las iteracion dentro del FDSET
 	 int nbytes; // El tamanio de los datos que se recibe por recv
-	 char buffer[256];    // buffer for client data
-
+	 char orden;
 	 char remoteIP[INET6_ADDRSTRLEN];
+
+	 socklen_t addrlen;
+	 fd_set master;    // master file descriptor list
+	 fd_set readFds;  // temp file descriptor list for select()
 
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
 	int socketServidor = crear_socket_servidor(ipServidor ,puertoServidor);
-
 	 // listen
 	 if (listen(socketServidor, 10) == -1) {
 	        perror("listen");
@@ -98,7 +96,6 @@ int main(void)
 	    }
 
 	FD_SET(socketServidor, &master); // add the listener to the master set
-
 	fdMax = socketServidor; // keep track of the biggest file descriptor so far, it's this one
 
 
@@ -132,7 +129,7 @@ int main(void)
 				else {
 					  // handle data from a client
 
-						if ((nbytes = recv(i,buffer,sizeof buffer, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
+						if ((nbytes = recv(i,&orden,sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
 
 							// got error or connection closed by client
 							if (nbytes == 0) {
@@ -145,7 +142,7 @@ int main(void)
 							FD_CLR(i, &master); // remove from master set
 						} else {
 							// we got some data from a client
-							connectionHandler(i);
+							connectionHandler(i,orden);
 
 							// Todo esto esta comentado porque no necesito recorrer la lista de los clientes. Solo quiero atender al cliente que me acaba de mandar datos.
 
@@ -177,31 +174,21 @@ int main(void)
 			    return 0;
 }
 
-
-
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
-
-void *connectionHandler(int socketAceptado) {
+void *connectionHandler(int socketAceptado, char primeraOrden) {
 	//Get the socket descriptor
-	char orden;
+	char orden = primeraOrden;
+	printf("El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, orden);
 	char *buffer;
-	orden=nuevaOrdenDeAccion(socketAceptado);
 	while(orden != 'Q')
 		{
 			switch(orden)
 			{
 			case 'A':
 				printf("Se ha avisado que un archivo esta por enviarse\n");
-				buffer = recibir_string(socketAceptado);
+				if((buffer = recibir_string(socketAceptado)) == NULL){ // Por si la consola se sale justo aca, asi no rompe todo el Kernel
+					printf("ERROR: La consola se ha desconectado\n");
+					return 0;
+				}
 				printf("\nEl mensaje es: \"  %s \"\n", buffer);
 				free(buffer);
 				break;
@@ -228,19 +215,53 @@ void *connectionHandler(int socketAceptado) {
 				printf("ERROR: Orden %c no definida\n",orden);
 				break;
 			}
-			orden=nuevaOrdenDeAccion(socketAceptado);
+			nuevaOrdenDeAccion(socketAceptado,&orden);
 		}
 
 	return 0;
 
 }
 
-char nuevaOrdenDeAccion(int socketCliente) {
-	char* orden;
+void nuevaOrdenDeAccion(int socketCliente,char* nuevaOrden) {
 	printf("\n--Esperando una orden del cliente-- \n");
-	orden = recibir(socketCliente);
-	printf("El cliente ha enviado la orden: %c\n", *orden);
-	return *orden;
+	recv(socketCliente,nuevaOrden,sizeof nuevaOrden, 0);
+	printf("El cliente ha enviado la orden: %c\n", *nuevaOrden);
+}
+
+
+
+
+
+
+
+
+/*
+ * ((nbytes = recv(i,&orden,sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
+
+							// got error or connection closed by client
+							if (nbytes == 0) {
+								// connection closed
+								printf("selectserver: socket %d hung up\n", i);
+							} else {
+								perror("recv");
+							}
+ */
+
+
+
+
+
+
+
+
+// get sockaddr, IPv4 or IPv6:
+void *get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
 void leerConfiguracion(char* ruta) {
@@ -249,7 +270,7 @@ void leerConfiguracion(char* ruta) {
 
 	ipServidor=config_get_string_value(configuracion_kernel,"IP_SERVIDOR");
 	puertoServidor=config_get_string_value(configuracion_kernel, "PUERTO_SERVIDOR");
-	puertoCPU = config_get_string_value(configuracion_kernel, "PUERTO_CPU");
+//	puertoCPU = config_get_string_value(configuracion_kernel, "PUERTO_CPU");
 	ipMemoria = config_get_string_value(configuracion_kernel, "IP_MEMORIA");
 	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
 	ipFileSys = config_get_string_value(configuracion_kernel, "IP_FS");
@@ -261,15 +282,15 @@ void leerConfiguracion(char* ruta) {
 	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
-	puertoConsola = config_get_string_value(configuracion_kernel,"PUERTO_CONSOLA");
-	ipConsola = config_get_string_value(configuracion_kernel,"IP_CONSOLA");
-	ipCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
+//	puertoConsola = config_get_string_value(configuracion_kernel,"PUERTO_CONSOLA");
+	//ipConsola = config_get_string_value(configuracion_kernel,"IP_CONSOLA");
+	//ipCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
 	stackSize = config_get_string_value(configuracion_kernel,"STACK_SIZE");
 }
 
 void imprimirConfiguraciones(){
 	printf("---------------------------------------------------\n");
-		printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipConsola,puertoConsola,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
+	//	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipConsola,puertoConsola,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
 		printf("---------------------------------------------------\n");
 		printf("QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%s\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars,stackSize);
 		printf("---------------------------------------------------\n");

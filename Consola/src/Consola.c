@@ -44,11 +44,12 @@ int main(void) {
 
 	int socket_Kernel = crear_socket_cliente(ipKernel, puertoKernel);
 
+
 	while(orden != 'Q'){
+
 		printf("Ingresar orden:\n");
 		scanf(" %c", &orden);
-
-		enviar(socket_Kernel, (void*) &orden, sizeof(char));
+		send(socket_Kernel, &orden, sizeof(char),0);
 
 		switch(orden){
 			case 'A'://Envia a FS mediante Kernel
@@ -56,14 +57,13 @@ int main(void) {
 				scanf("%s", ruta);
 				enviarLecturaArchivo(ruta, socket_Kernel);
 				break;
-			case 'I':
-				printf("te mande una I\n");
-				break;
 			default:
-				printf("no me gusta la letra %c\n", orden);
+				printf("ERROR, Orden %c no definida\n", orden);
 				break;
 
 		}
+
+
 	}
 
 	free(ruta);

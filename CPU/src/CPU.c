@@ -36,14 +36,14 @@ int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
 
-	char orden='A';
+	char orden;
 	int socket_Kernel = crear_socket_cliente(ipKernel,puertoKernel);
 
 while(1){
 
 	printf("Ingrese Orden\n");
-		scanf(" %c", &orden);
-		enviar_string(socket_Kernel,&orden);
+	scanf(" %c", &orden);
+	send(socket_Kernel,&orden,sizeof orden,0);
 
 	if(orden == 'Q') printf("Se ha sacado a un cliente del modulo Connection Handler\nAhora ya puede apretar CTRL + C si desea desconectar al cliente\n");
 
