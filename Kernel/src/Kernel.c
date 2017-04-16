@@ -145,6 +145,11 @@ int main(void)
 							FD_CLR(i, &master); // remove from master set
 						} else {
 							// we got some data from a client
+							connectionHandler(i);
+
+							// Todo esto esta comentado porque no necesito recorrer la lista de los clientes. Solo quiero atender al cliente que me acaba de mandar datos.
+
+							/*
 							for(j = 0; j <= fdMax; j++) { // Con este for se recorre la lista de sockets qe se conectaron al Kernel.
 								// send to everyone!
 								if (FD_ISSET(j, &master)) {
@@ -154,13 +159,15 @@ int main(void)
 
 										connectionHandler(j);
 
-										/*if (send(j, buffer, nbytes, 0) == -1) { //Esto es para mandarle el msj recibido a todo mis clientes. Era terrible idea para el check 1
-											perror("send");
+										//if (send(j, buffer, nbytes, 0) == -1) { //Esto es para mandarle el msj recibido a todo mis clientes. Era terrible idea para el check 1
+											//perror("send");
 										}
-										*/
+
 									}
+
 								}
 							}
+						*/
 						}
 					} // END handle data from client
 				} // END got new incoming connection
@@ -186,16 +193,17 @@ void *get_in_addr(struct sockaddr *sa)
 void *connectionHandler(int socketAceptado) {
 	//Get the socket descriptor
 	char orden;
+	char *buffer;
 	orden=nuevaOrdenDeAccion(socketAceptado);
 	while(orden != 'Q')
 		{
 			switch(orden)
 			{
-			case 'I': printf("Usted marco la I\n");
-				break;
-			case 'S': printf("Usted marco al S\n");
-				break;
-			case 'A': printf("Usted marco la A\n");
+			case 'A':
+				printf("Se ha avisado que un archivo esta por enviarse\n");
+				buffer = recibir_string(socketAceptado);
+				printf("\nEl mensaje es: \"  %s \"\n", buffer);
+				free(buffer);
 				break;
 			case 'G': printf("Usted marco la G\n");
 				break;

@@ -42,7 +42,7 @@ int main(void) {
 	char orden;
 	char *ruta = (char*) malloc(200*sizeof(char));
 
-	int socket_Kernel = crear_socket_cliente(ipKernel, "6060");
+	int socket_Kernel = crear_socket_cliente(ipKernel, puertoKernel);
 
 	while(orden != 'Q'){
 		printf("Ingresar orden:\n");
@@ -51,7 +51,7 @@ int main(void) {
 		enviar(socket_Kernel, (void*) &orden, sizeof(char));
 
 		switch(orden){
-			case 'C'://Envia a FS mediante Kernel
+			case 'A'://Envia a FS mediante Kernel
 				printf("Indicar la ruta del archivo que se quiere ejecutar\n");
 				scanf("%s", ruta);
 				enviarLecturaArchivo(ruta, socket_Kernel);
