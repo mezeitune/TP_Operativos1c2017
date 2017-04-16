@@ -42,11 +42,12 @@ int main(void) {
 	char orden;
 	char *ruta = (char*) malloc(200*sizeof(char));
 
-	int socket_Kernel = crear_socket_cliente(ipKernel, puertoKernel);
+	int socket_Kernel = crear_socket_cliente(ipKernel, "6060");
 
 	while(orden != 'Q'){
 		printf("Ingresar orden:\n");
 		scanf(" %c", &orden);
+
 		enviar(socket_Kernel, (void*) &orden, sizeof(char));
 
 		switch(orden){
@@ -64,6 +65,7 @@ int main(void) {
 
 		}
 	}
+
 	free(ruta);
 	return EXIT_SUCCESS;
 }

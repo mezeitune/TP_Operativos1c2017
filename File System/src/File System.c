@@ -41,6 +41,8 @@ void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 
 int main(void){
+
+	//TODO:
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\ System/config_FileSys");
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
 

@@ -36,16 +36,32 @@ int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
 
-	char orden;
-	int socket_Kernel = crear_socket_cliente(ipMemoria, puertoKernel);
-	while (orden != 'Q') {
+	char orden='A';
+	int socket_Kernel = crear_socket_cliente(ipKernel,puertoKernel);
+
+while(1){
+
+	printf("Ingrese Orden\n");
 		scanf(" %c", &orden);
-		enviar(socket_Kernel, (void*) &orden, sizeof(char));
+		enviar_string(socket_Kernel,&orden);
+
+	if(orden == 'Q') printf("Se ha sacado a un cliente del modulo Connection Handler\nAhora ya puede apretar CTRL + C si desea desconectar al cliente\n");
+
+}
+
+	/*
+	orden = *(char*)recibir(socket_Kernel);
+	printf("Orden:%c\n",orden);
+	if(orden == 'C'){
+
+
+	char * mensaje = recibir_string(socket_Kernel);
+	printf("%s\n",mensaje);
 	}
+	*/
 
 	return 0;
 }
-
 void leerConfiguracion(char* ruta) {
 	configuracion_memoria = config_create(ruta);
 	ipMemoria = config_get_string_value(configuracion_memoria, "IP_MEMORIA");

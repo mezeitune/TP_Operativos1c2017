@@ -93,6 +93,8 @@ int main(void)
 	inicializarMemoriaAdm();
 
 	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
+
+
 	recibirConexion(socket_servidor);
 
 	return EXIT_SUCCESS;
@@ -414,7 +416,7 @@ void *connection_handler(void *socket_desc)
 			printf("Error: Orden %c no definida\n",orden);
 			break;
 		}
-		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
+		//printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
 	}
     return 0;
 }
