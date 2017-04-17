@@ -25,50 +25,74 @@
 #include <commons/conexiones.h>
 
 void enviarLecturaArchivo(void *ruta, int socket);
-
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
+void connectionHandler(int socket);
+
+
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
 pthread_t thread_id;
 
 // /home/utnso/Escritorio/archivoPrueba
+
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
 
-	char orden;
+
 	char *ruta = (char*) malloc(200*sizeof(char));
 
-	int socket_Kernel = crear_socket_cliente(ipKernel, puertoKernel);
+	int socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 
-
-	while(orden != 'Q'){
-
-		printf("Ingresar orden:\n");
-		scanf(" %c", &orden);
-		send(socket_Kernel, &orden, sizeof(char),0);
-
-		switch(orden){
-			case 'A'://Envia a FS mediante Kernel
-				printf("Indicar la ruta del archivo que se quiere ejecutar\n");
-				scanf("%s", ruta);
-				enviarLecturaArchivo(ruta, socket_Kernel);
-				break;
-			default:
-				printf("ERROR, Orden %c no definida\n", orden);
-				break;
-
-		}
-
-
-	}
+	connectionHandler(socketKernel);
 
 	free(ruta);
 	return EXIT_SUCCESS;
 }
+
+
+
+
+void connectionHandler(int socket){
+
+	char orden;
+	char *ruta = (char*) malloc(200*sizeof(char));;
+
+	while(1){
+		while(orden != 'Q'){
+
+			printf("Ingresar orden:\n");
+			scanf(" %c", &orden);
+			enviar(socket, &orden, sizeof(char));
+
+			switch(orden){
+				case 'A':
+					printf("Indicar la ruta del archivo que se quiere ejecutar\n");
+					scanf("%s", ruta);
+					enviarLecturaArchivo(ruta, socket);
+					break;
+				case 'Q':
+					printf("Se ha desconectado el cliente\n");
+					exit(1);
+					break;
+				default:
+					printf("ERROR, Orden %c no definida\n", orden);
+					break;
+			}
+		}
+			orden = '\0';
+
+	}
+}
+
+
+
+
+
+
 
 void enviarLecturaArchivo(void *rut, int socket){
 

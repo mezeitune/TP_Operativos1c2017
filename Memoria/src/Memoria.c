@@ -386,17 +386,17 @@ void *connection_handler(void *socket_desc)
 	{
 		switch(orden)
 		{
-		case 'C':
+		case 'A':
 			printf("Esperando mensaje\n");
 			buffer = recibir_string(sock);
 			printf("\nEl mensaje es: \"%s\"\n", buffer);
 
-			//resultadoDeEjecucion = main_inicializarPrograma(sock);
+			resultadoDeEjecucion = main_inicializarPrograma(sock);
 			break;
 		case 'S':
 			resultadoDeEjecucion = main_solicitarBytesPagina(sock);
 			break;
-		case 'A':
+		case 'C':
 			resultadoDeEjecucion = main_almacenarBytesPagina(sock);
 			break;
 		case 'G':

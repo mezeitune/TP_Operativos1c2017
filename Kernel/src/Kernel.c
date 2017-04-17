@@ -28,16 +28,18 @@ void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void *connectionHandler(int socketAceptado, char primeraOrden);
 void *get_in_addr(struct sockaddr *sa);
-void nuevaOrdenDeAccion(int puertoCliente,char* nuevaOrden);
+void nuevaOrdenDeAccion(int puertoCliente, char* nuevaOrden);
+void selectorConexiones(int socket);
 
-//char *ipConsola;
-//char *ipCPU;
+
+char *ipConsola;
+char *ipCPU;
 char *ipMemoria;
 char *ipFileSys;
 
-//char *puertoCPU;
+char *puertoCPU;
 char *puertoMemoria;
-//char *puertoConsola;
+char *puertoConsola;
 char *puertoFileSys;
 
 char *puertoServidor;
@@ -54,223 +56,198 @@ char *stackSize;
 pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
 t_config* configuracion_kernel;
 
-
 /*
-//the thread function
-void *sock_Consola();
-//the thread function
-void *sock_CPU();
-//the thread function
-void *sock_FS();
-//the thread function
-void *sock_Memoria();
+ //the thread function
+ void *sock_Consola();
+ //the thread function
+ void *sock_CPU();
+ //the thread function
+ void *sock_FS();
+ //the thread function
+ void *sock_Memoria();
 
-int socket_FS;
-int socket_Mem;
-int socket_CPU;
-int socket_Consola;
-*/
+ int socket_FS;
+ int socket_Mem;
+ int socket_CPU;
+ int socket_Consola;
+ */
 
-int main(void)
-{
-     int fdMax;        // Creo que es para un contador de los sockets que hay
-     int newfd;        // newly accept()ed socket descriptor
-     struct sockaddr_storage remoteaddr; // client address
-	 int i;        // Contador para las iteracion dentro del FDSET
-	 int nbytes; // El tamanio de los datos que se recibe por recv
-	 char orden;
-	 char remoteIP[INET6_ADDRSTRLEN];
+//------------Sockets unicos globales--------------------//
+int socketMemoria;
+int socketFyleSys;
+//------------------------------------------------------//
 
-	 socklen_t addrlen;
-	 fd_set master;    // master file descriptor list
-	 fd_set readFds;  // temp file descriptor list for select()
-
+int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
-	int socketServidor = crear_socket_servidor(ipServidor ,puertoServidor);
-	 // listen
-	 if (listen(socketServidor, 10) == -1) {
-	        perror("listen");
-	        exit(1);
-	    }
-
-	FD_SET(socketServidor, &master); // add the listener to the master set
-	fdMax = socketServidor; // keep track of the biggest file descriptor so far, it's this one
 
 
-    // main loop
-    for(;;) {
-        readFds = master; // copy it
-        if (select(fdMax+1, &readFds, NULL, NULL, NULL) == -1) {
-            perror("select");
-            exit(2);
-        }
+	int socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
+	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
+	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
-        // run through the existing connections looking for data to read
-		for(i = 0; i <= fdMax; i++) {
-			if (FD_ISSET(i, &readFds)) { // we got one!!
-				if (i == socketServidor) {
-					// handle new connections
-					addrlen = sizeof remoteaddr;
-					newfd = accept(socketServidor,(struct sockaddr *)&remoteaddr,&addrlen);
+	selectorConexiones(socketServidor);
 
-					 if (newfd == -1) {
-					                   perror("accept");
-					                    } else {
-					                        FD_SET(newfd, &master); // add to master set
-					                        if (newfd > fdMax) {    // keep track of the max
-					                            fdMax = newfd;
-					                        }
-					                        printf("selectserver: new connection from %s on ""socket %d\n",inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*)&remoteaddr),remoteIP, INET6_ADDRSTRLEN),newfd);
-					                    	}
-				}
-
-				else {
-					  // handle data from a client
-
-						if ((nbytes = recv(i,&orden,sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
-
-							// got error or connection closed by client
-							if (nbytes == 0) {
-								// connection closed
-								printf("selectserver: socket %d hung up\n", i);
-							} else {
-								perror("recv");
-							}
-							close(i); // bye!
-							FD_CLR(i, &master); // remove from master set
-						} else {
-							// we got some data from a client
-							connectionHandler(i,orden);
-
-							// Todo esto esta comentado porque no necesito recorrer la lista de los clientes. Solo quiero atender al cliente que me acaba de mandar datos.
-
-							/*
-							for(j = 0; j <= fdMax; j++) { // Con este for se recorre la lista de sockets qe se conectaron al Kernel.
-								// send to everyone!
-								if (FD_ISSET(j, &master)) {
-									// except the listener and ourselves
-									if (j != socketServidor) {
-										printf("\n----connectionHandler assigned to socket %d----\n",j);
-
-										connectionHandler(j);
-
-										//if (send(j, buffer, nbytes, 0) == -1) { //Esto es para mandarle el msj recibido a todo mis clientes. Era terrible idea para el check 1
-											//perror("send");
-										}
-
-									}
-
-								}
-							}
-						*/
-						}
-					} // END handle data from client
-				} // END got new incoming connection
-			} // END looping through file descriptors
-		} // END for(;;)--and you thought it would never end!
-
-			    return 0;
+	return 0;
 }
+
 
 void *connectionHandler(int socketAceptado, char primeraOrden) {
 	//Get the socket descriptor
 	char orden = primeraOrden;
-	printf("El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, orden);
+	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado,
+			orden);
 	char *buffer;
-	while(orden != 'Q')
-		{
-			switch(orden)
-			{
-			case 'A':
-				printf("Se ha avisado que un archivo esta por enviarse\n");
-				if((buffer = recibir_string(socketAceptado)) == NULL){ // Por si la consola se sale justo aca, asi no rompe todo el Kernel
-					printf("ERROR: La consola se ha desconectado\n");
-					return 0;
-				}
-				printf("\nEl mensaje es: \"  %s \"\n", buffer);
-				free(buffer);
-				break;
-			case 'G': printf("Usted marco la G\n");
-				break;
-			/*case 'C':
-					printf("Esperando mensaje\n");
+	while (orden != 'Q') {
+		switch (orden) {
+		case 'A':
 
-					enviar(socket_CPU, (void*) &orden, sizeof(char));//Le avisa a la CPU que le va a mandar un string
-					enviar(socket_FS, (void*) &orden, sizeof(char));//Le avisa al FS que le va a mandar un string
-					enviar(socket_Mem, (void*) &orden, sizeof(char));//Le avisa a la memoria que le va a mandar un string
+			//enviar(socketMemoria, (void*)&orden, sizeof(char)); solo de prueba para ver si el FS y la memoria reciben del Kernel
+			//enviar(socketFyleSys, (void*)&orden, sizeof(char));
 
-					buffer = recibir_string(sock);//Espera y recibe string desde la consola
+			printf("Se ha avisado que un archivo esta por enviarse\n");
 
-					enviar_string(socket_FS, buffer);//envia mensaje al FS
-					enviar_string(socket_Mem, buffer);//envia mensaje a la Memoria
-					enviar_string(socket_CPU, buffer);//envia mensaje a la CPU
-
-					printf("\nEl mensaje es: \"  %s \"\n", buffer);
-					free(buffer);
-					break;
-					*/
-			default:
-				printf("ERROR: Orden %c no definida\n",orden);
-				break;
+			if ((buffer = recibir_string(socketAceptado)) == NULL) { // Por si la consola se sale justo aca, asi no rompe todo el Kernel
+				printf("ERROR: La consola se ha desconectado\n");
+				return 0;
 			}
-			nuevaOrdenDeAccion(socketAceptado,&orden);
+
+			printf("\nEl mensaje es: \"  %s \"\n", buffer);
+
+			//enviar_string(socketMemoria, buffer);solo de prueba para ver si el FS y la memoria reciben del Kernel
+			//enviar_string(socketFyleSys, buffer);
+
+			free(buffer);
+			break;
+		case 'G':
+			printf("Usted marco la G\n");
+			break;
+		default:
+			printf("ERROR: Orden %c no definida\n", orden);
+			break;
 		}
+		nuevaOrdenDeAccion(socketAceptado, &orden);
+	}
 
 	return 0;
 
 }
 
-void nuevaOrdenDeAccion(int socketCliente,char* nuevaOrden) {
+void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
 	printf("\n--Esperando una orden del cliente-- \n");
-	recv(socketCliente,nuevaOrden,sizeof nuevaOrden, 0);
+	recv(socketCliente, nuevaOrden, sizeof nuevaOrden, 0);
 	printf("El cliente ha enviado la orden: %c\n", *nuevaOrden);
 }
 
+void selectorConexiones(int socket) {
 
+	int fdMax;        // Creo que es para un contador de los sockets que hay
+	int newfd;        // newly accept()ed socket descriptor
+	struct sockaddr_storage remoteaddr; // client address
+	int i, j;        // Contador para las iteracion dentro del FDSET
+	int nbytes; // El tamanio de los datos que se recibe por recv
+	char orden;
+	char remoteIP[INET6_ADDRSTRLEN];
 
+	socklen_t addrlen;
+	fd_set master;    // master file descriptor list
+	fd_set readFds;  // temp file descriptor list for select()
 
+	// listen
+	if (listen(socket, 10) == -1) {
+		perror("listen");
+		exit(1);
+	}
 
+	FD_SET(socket, &master); // add the listener to the master set
+	fdMax = socket; // keep track of the biggest file descriptor so far, it's this one
 
+	// main loop
+	for (;;) {
+		readFds = master; // copy it
+		if (select(fdMax + 1, &readFds, NULL, NULL, NULL) == -1) {
+			perror("select");
+			exit(2);
+		}
 
+		// run through the existing connections looking for data to read
+		for (i = 0; i <= fdMax; i++) {
+			if (FD_ISSET(i, &readFds)) { // we got one!!
+				if (i == socket) {
+					// handle new connections
+					addrlen = sizeof remoteaddr;
+					newfd = accept(socket, (struct sockaddr *) &remoteaddr,
+							&addrlen);
 
-/*
- * ((nbytes = recv(i,&orden,sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
+					if (newfd == -1) {
+						perror("accept");
+					} else {
+						FD_SET(newfd, &master); // add to master set
+						if (newfd > fdMax) {    // keep track of the max
+							fdMax = newfd;
+						}
+						printf("selectserver: new connection from %s on " "socket %d\n",inet_ntop(remoteaddr.ss_family,	get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
+					}
+				}
 
-							// got error or connection closed by client
-							if (nbytes == 0) {
-								// connection closed
-								printf("selectserver: socket %d hung up\n", i);
-							} else {
-								perror("recv");
+				else {
+					// handle data from a client
+
+					if ((nbytes = recv(i, &orden, sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
+
+						// got error or connection closed by client
+						if (nbytes == 0) {
+							// connection closed
+							printf("selectserver: socket %d hung up\n", i);
+						} else {
+							perror("recv");
+						}
+						close(i); // bye!
+						FD_CLR(i, &master); // remove from master set
+					} else {
+						// we got some data from a client
+						connectionHandler(i, orden);
+
+						// Todo esto esta comentado porque no necesito recorrer la lista de los clientes. Solo quiero atender al cliente que me acaba de mandar datos, IMPORTANTE: TAMBIEN ROMPE TODO, ASI COMO ESTA FUNCIONA PERFECTO.
+
+						/*for (j = 0; j <= fdMax; j++) { // Con este for se recorre la lista de sockets qe se conectaron al Kernel.
+							// send to everyone!
+							if (FD_ISSET(j, &master)) {
+								// except the listener and ourselves
+								if (j != socket) {
+									printf("\n----connectionHandler assigned to socket %d----\n",j);
+
+									connectionHandler(j, orden);
+
+									if (send(j, buffer, nbytes, 0) == -1) { //Esto es para mandarle el msj recibido a todo mis clientes. Era terrible idea para el check 1
+									perror("send");
+								}
 							}
- */
-
-
-
-
-
-
-
+						}*/
+					}
+				}
+			} // END handle data from client
+		} // END got new incoming connection
+	} // END looping through file descriptors
+}
 
 // get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
+void *get_in_addr(struct sockaddr *sa) {
+	if (sa->sa_family == AF_INET) {
+		return &(((struct sockaddr_in*) sa)->sin_addr);
+	}
 
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+	return &(((struct sockaddr_in6*) sa)->sin6_addr);
 }
 
 void leerConfiguracion(char* ruta) {
 
 	configuracion_kernel = config_create(ruta);
 
-	ipServidor=config_get_string_value(configuracion_kernel,"IP_SERVIDOR");
-	puertoServidor=config_get_string_value(configuracion_kernel, "PUERTO_SERVIDOR");
-//	puertoCPU = config_get_string_value(configuracion_kernel, "PUERTO_CPU");
+	ipServidor = config_get_string_value(configuracion_kernel, "IP_SERVIDOR");
+	puertoServidor = config_get_string_value(configuracion_kernel,"PUERTO_SERVIDOR");
+	puertoCPU = config_get_string_value(configuracion_kernel, "PUERTO_CPU");
 	ipMemoria = config_get_string_value(configuracion_kernel, "IP_MEMORIA");
 	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
 	ipFileSys = config_get_string_value(configuracion_kernel, "IP_FS");
@@ -282,118 +259,116 @@ void leerConfiguracion(char* ruta) {
 	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
-//	puertoConsola = config_get_string_value(configuracion_kernel,"PUERTO_CONSOLA");
-	//ipConsola = config_get_string_value(configuracion_kernel,"IP_CONSOLA");
-	//ipCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
-	stackSize = config_get_string_value(configuracion_kernel,"STACK_SIZE");
+	puertoConsola = config_get_string_value(configuracion_kernel,"PUERTO_CONSOLA");
+	ipConsola = config_get_string_value(configuracion_kernel,"IP_CONSOLA");
+	ipCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
+	stackSize = config_get_string_value(configuracion_kernel, "STACK_SIZE");
 }
 
-void imprimirConfiguraciones(){
+void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
-	//	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipConsola,puertoConsola,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
-		printf("---------------------------------------------------\n");
-		printf("QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%s\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",quantum,quantumSleep,algoritmo,gradoMultiProg,semIds,semInit,sharedVars,stackSize);
-		printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipConsola,puertoConsola,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
+	printf("---------------------------------------------------\n");
+	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%s\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",	quantum, quantumSleep, algoritmo, gradoMultiProg, semIds, semInit, sharedVars, stackSize);
+	printf("---------------------------------------------------\n");
 
 }
-
-
 
 // MAIN CON HILOS DE EJECUCION
 /*
-socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);
-socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);
+ socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);
+ socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);
 
-if (pthread_create(&threadCPU, NULL, sock_CPU, (void*) NULL) < 0) {
-		perror("could not create thread");
-		return 1;
-}
+ if (pthread_create(&threadCPU, NULL, sock_CPU, (void*) NULL) < 0) {
+ perror("could not create thread");
+ return 1;
+ }
 
-if (pthread_create(&threadConsola, NULL, sock_Consola, (void*) NULL) < 0) {
-	perror("could not create thread");
-	return 1;
-}
+ if (pthread_create(&threadConsola, NULL, sock_Consola, (void*) NULL) < 0) {
+ perror("could not create thread");
+ return 1;
+ }
 
-pthread_join( threadCPU, NULL);
-pthread_join( threadConsola, NULL);
+ pthread_join( threadCPU, NULL);
+ pthread_join( threadConsola, NULL);
 
-*/
+ */
 
 /*
-void* sock_Consola() {
-int socket_servidorConsola = crear_socket_servidor(ipConsola, puertoConsola);
-while(1)
-{
-	socket_Consola = recibirConexion(socket_servidorConsola);
+ void* sock_Consola() {
+ int socket_servidorConsola = crear_socket_servidor(ipConsola, puertoConsola);
+ while(1)
+ {
+ socket_Consola = recibirConexion(socket_servidorConsola);
 
-	if (pthread_create(&thread_id, NULL, connection_handler,(void*) &socket_Consola) < 0) {
-		perror("could not create thread");
-	}
-}
-}
+ if (pthread_create(&thread_id, NULL, connection_handler,(void*) &socket_Consola) < 0) {
+ perror("could not create thread");
+ }
+ }
+ }
 
-void* sock_FS() {
-char orden;
-int socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);
-while (orden != 'Q') {
-	scanf(" %c", &orden);
-	enviar(socket_FS, (void*) &orden, sizeof(char));
-}
-}
+ void* sock_FS() {
+ char orden;
+ int socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);
+ while (orden != 'Q') {
+ scanf(" %c", &orden);
+ enviar(socket_FS, (void*) &orden, sizeof(char));
+ }
+ }
 
-void* sock_Memoria() {
-char orden;
-int socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);
-while (orden != 'Q') {
-	scanf("%c", &orden);
-	enviar(socket_Mem, (void*) &orden, sizeof(char));
-}
-}
+ void* sock_Memoria() {
+ char orden;
+ int socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);
+ while (orden != 'Q') {
+ scanf("%c", &orden);
+ enviar(socket_Mem, (void*) &orden, sizeof(char));
+ }
+ }
 
-void* sock_CPU() {
+ void* sock_CPU() {
 
-int socket_servidorCPU = crear_socket_servidor(ipCPU, puertoCPU);
+ int socket_servidorCPU = crear_socket_servidor(ipCPU, puertoCPU);
 
-while(1)
-{
-	socket_CPU = recibirConexion(socket_servidorCPU);
-	if (pthread_create(&thread_id, NULL, connection_handler,(void*) &socket_CPU) < 0) {
-		perror("could not create thread");
-	}
-}
-}
+ while(1)
+ {
+ socket_CPU = recibirConexion(socket_servidorCPU);
+ if (pthread_create(&thread_id, NULL, connection_handler,(void*) &socket_CPU) < 0) {
+ perror("could not create thread");
+ }
+ }
+ }
 
-int recibirConexion(int socket_servidor) {
-struct sockaddr_storage their_addr;
-socklen_t addr_size;
-addr_size = sizeof(their_addr);
-int socket_aceptado;
+ int recibirConexion(int socket_servidor) {
+ struct sockaddr_storage their_addr;
+ socklen_t addr_size;
+ addr_size = sizeof(their_addr);
+ int socket_aceptado;
 
-int estado = listen(socket_servidor, 5);
+ int estado = listen(socket_servidor, 5);
 
-if (estado == -1) {
-	printf("Error al poner el servidor en listen\n");
-	close(socket_servidor);
-	return 1;
-}
+ if (estado == -1) {
+ printf("Error al poner el servidor en listen\n");
+ close(socket_servidor);
+ return 1;
+ }
 
-if (estado == 0) {
-	printf("Se puso el socket en listen\n");
-}
+ if (estado == 0) {
+ printf("Se puso el socket en listen\n");
+ }
 
-addr_size = sizeof(their_addr);
+ addr_size = sizeof(their_addr);
 
-socket_aceptado = accept(socket_servidor,(struct sockaddr *) &their_addr, &addr_size);
-contadorConexiones ++;
-printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
+ socket_aceptado = accept(socket_servidor,(struct sockaddr *) &their_addr, &addr_size);
+ contadorConexiones ++;
+ printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
 
 
-if (socket_aceptado == -1) {
-		close(socket_servidor);
-		printf("Error al aceptar conexion\n");
-		return 1;
-	}
+ if (socket_aceptado == -1) {
+ close(socket_servidor);
+ printf("Error al aceptar conexion\n");
+ return 1;
+ }
 
-	return socket_aceptado;
-}
-*/
+ return socket_aceptado;
+ }
+ */

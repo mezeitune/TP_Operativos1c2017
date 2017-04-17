@@ -25,6 +25,7 @@
 
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
+void connectionHandler(int socketKernel);
 
 t_config* configuracion_memoria;
 char* puertoKernel;
@@ -32,36 +33,53 @@ char* puertoMemoria;
 char* ipMemoria;
 char* ipKernel;
 
+//------------------Sockets Globales-------//
+int socketMemoria;
+int socketKernel;
+//-----------------------------------------//
+
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
 
-	char orden;
-	int socket_Kernel = crear_socket_cliente(ipKernel,puertoKernel);
-
-while(1){
-
-	printf("Ingrese Orden\n");
-	scanf(" %c", &orden);
-	send(socket_Kernel,&orden,sizeof orden,0);
-
-	if(orden == 'Q') printf("Se ha sacado a un cliente del modulo Connection Handler\nAhora ya puede apretar CTRL + C si desea desconectar al cliente\n");
-
-}
-
-	/*
-	orden = *(char*)recibir(socket_Kernel);
-	printf("Orden:%c\n",orden);
-	if(orden == 'C'){
+	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
+	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 
-	char * mensaje = recibir_string(socket_Kernel);
-	printf("%s\n",mensaje);
-	}
-	*/
+	connectionHandler(socketKernel);
 
 	return 0;
 }
+
+
+void connectionHandler(int socket){
+
+	char orden;
+
+	while(1){
+		while(orden != 'Q'){
+
+			printf("Ingresar orden:\n");
+			scanf(" %c", &orden);
+			enviar(socket, (void*)&orden, sizeof(char));
+
+			switch(orden){
+				case 'A':
+					printf("Mande %c\n", orden);
+					break;
+				case 'Q':
+					printf("Se ha desconectado el cliente\n");
+					exit(1);
+					break;
+				default:
+					printf("ERROR, Orden %c no definida\n", orden);
+					break;
+			}
+		}
+			orden = '\0';
+	}
+}
+
 void leerConfiguracion(char* ruta) {
 	configuracion_memoria = config_create(ruta);
 	ipMemoria = config_get_string_value(configuracion_memoria, "IP_MEMORIA");

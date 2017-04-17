@@ -45,8 +45,10 @@ int main(void){
 	//TODO:
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\ System/config_FileSys");
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
+	imprimirConfiguraciones();
 
 	int socket_servidor = crear_socket_servidor("127.0.0.1","5002");
+	//int socket_servidor = crear_socket_servidor(ipKernel,puertoKernel);
 
 	recibirConexion(socket_servidor);
 	return 0;
@@ -121,9 +123,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 	return *buffer;
 }
 
-/*
- * This will handle connection for each client
- * */
+
 void *connection_handler(void *socket_desc)
 {
     //Get the socket descriptor
@@ -136,7 +136,7 @@ void *connection_handler(void *socket_desc)
 		orden = nuevaOrdenDeAccion(sock);
 		switch(orden)
 		{
-		case 'C':
+		case 'A':
 			printf("Esperando mensaje\n");
 			buffer = recibir_string(sock);
 			printf("\nEl mensaje es: \"%s\"\n", buffer);
@@ -144,7 +144,7 @@ void *connection_handler(void *socket_desc)
 			break;
 		case 'S':
 			break;
-		case 'A':
+		case 'C':
 			break;
 		case 'G':
 			break;
