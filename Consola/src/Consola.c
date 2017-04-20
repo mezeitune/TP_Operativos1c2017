@@ -28,7 +28,8 @@ void enviarLecturaArchivo(void *ruta, int socket);
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void connectionHandler(int socket);
-
+//void inicializarPID(int pid);
+//void enviarPIDAEliminar(int pidAFinalizar,int socket);
 
 t_config* configuracion_Consola;
 char* ipKernel;
@@ -60,19 +61,35 @@ void connectionHandler(int socket){
 
 	char orden;
 	char *ruta = (char*) malloc(200*sizeof(char));;
+	int pid;
+	int *pidAEliminar= (int*) malloc(4*sizeof(int));;
 
 	while(1){
 		while(orden != 'Q'){
 
-			printf("Ingresar orden:\n");
+			printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
 			scanf(" %c", &orden);
-			send(socket, &orden, sizeof(char),0);
+			send(socket, (void*)&orden, sizeof(char),0);
 
 			switch(orden){
-				case 'A':
-					printf("Indicar la ruta del archivo que se quiere ejecutar\n");
+			case 'I':
+					printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
 					scanf("%s", ruta);
 					enviarLecturaArchivo(ruta, socket);
+					pid=0;
+
+					break;
+			case 'F':
+					printf("Ingresar el PID del programa a finalizar\n");
+					scanf("%d", pidAEliminar);
+					//enviarPIDAEliminar(pidAEliminar,socket);
+						if(pid == *pidAEliminar)
+							printf("El programa AnSISOP de PID : %d  ha finalizado\n",*pidAEliminar);
+								else
+									printf("PID incorrecto\n");
+					break;
+				case 'C':
+					system("clear");
 					break;
 				case 'Q':
 					printf("Se ha desconectado el cliente\n");
@@ -80,6 +97,7 @@ void connectionHandler(int socket){
 					break;
 				default:
 					printf("ERROR, Orden %c no definida\n", orden);
+					exit(1);
 					break;
 			}
 		}
@@ -87,7 +105,6 @@ void connectionHandler(int socket){
 
 	}
 }
-
 
 
 
@@ -127,6 +144,16 @@ void enviarLecturaArchivo(void *rut, int socket){
 	free(buffer);
 
 }
+
+/*void enviarPIDAEliminar(int pidAFinalizar, int socket){
+
+	enviar_string(socket, pidAFinalizar);
+
+
+}*/
+
+
+
 
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);

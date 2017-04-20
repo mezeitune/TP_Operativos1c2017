@@ -100,7 +100,7 @@ void *connectionHandler(int socketAceptado, char primeraOrden) {
 	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado,orden);
 	while (orden != 'Q') {
 		switch (orden) {
-		case 'A':
+		case 'I':
 
 			/* Solo de prueba para ver si el FS y la memoria reciben del Kernel
 			//enviar(socketMemoria, (void*)&orden, sizeof(char));
