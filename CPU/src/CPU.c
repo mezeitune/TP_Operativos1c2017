@@ -61,7 +61,7 @@ void connectionHandler(int socket){
 
 			printf("Ingresar orden:\n");
 			scanf(" %c", &orden);
-			enviar(socket, (void*)&orden, sizeof(char));
+			send(socket, (void*)&orden, sizeof(char),0);
 
 			switch(orden){
 				case 'A':

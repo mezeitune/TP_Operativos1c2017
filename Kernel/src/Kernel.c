@@ -75,6 +75,7 @@ t_config* configuracion_kernel;
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
 int socketFyleSys;
+int socketServidor; // Para CPUs y Consolas
 //------------------------------------------------------//
 
 int main(void) {
@@ -82,11 +83,11 @@ int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
 
-
-	int socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
+	socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
+	//Multiplexa las conexiones.
 	selectorConexiones(socketServidor);
 
 	return 0;
@@ -94,17 +95,17 @@ int main(void) {
 
 
 void *connectionHandler(int socketAceptado, char primeraOrden) {
-	//Get the socket descriptor
-	char orden = primeraOrden;
-	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado,
-			orden);
 	char *buffer;
+	char orden = primeraOrden;
+	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado,orden);
 	while (orden != 'Q') {
 		switch (orden) {
 		case 'A':
 
-			//enviar(socketMemoria, (void*)&orden, sizeof(char)); solo de prueba para ver si el FS y la memoria reciben del Kernel
+			/* Solo de prueba para ver si el FS y la memoria reciben del Kernel
+			//enviar(socketMemoria, (void*)&orden, sizeof(char));
 			//enviar(socketFyleSys, (void*)&orden, sizeof(char));
+			  */
 
 			printf("Se ha avisado que un archivo esta por enviarse\n");
 
@@ -115,13 +116,7 @@ void *connectionHandler(int socketAceptado, char primeraOrden) {
 
 			printf("\nEl mensaje es: \"  %s \"\n", buffer);
 
-			//enviar_string(socketMemoria, buffer);solo de prueba para ver si el FS y la memoria reciben del Kernel
-			//enviar_string(socketFyleSys, buffer);
-
 			free(buffer);
-			break;
-		case 'G':
-			printf("Usted marco la G\n");
 			break;
 		default:
 			printf("ERROR: Orden %c no definida\n", orden);
@@ -135,9 +130,9 @@ void *connectionHandler(int socketAceptado, char primeraOrden) {
 }
 
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
-	printf("\n--Esperando una orden del cliente-- \n");
+	printf("\n--Esperando una orden del cliente %d-- \n", socketCliente);
 	recv(socketCliente, nuevaOrden, sizeof nuevaOrden, 0);
-	printf("El cliente ha enviado la orden: %c\n", *nuevaOrden);
+	printf("El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
 }
 
 void selectorConexiones(int socket) {
@@ -145,7 +140,7 @@ void selectorConexiones(int socket) {
 	int fdMax;        // Creo que es para un contador de los sockets que hay
 	int newfd;        // newly accept()ed socket descriptor
 	struct sockaddr_storage remoteaddr; // client address
-	int i, j;        // Contador para las iteracion dentro del FDSET
+	int i;        // Contador para las iteracion dentro del FDSET
 	int nbytes; // El tamanio de los datos que se recibe por recv
 	char orden;
 	char remoteIP[INET6_ADDRSTRLEN];
@@ -177,8 +172,7 @@ void selectorConexiones(int socket) {
 				if (i == socket) {
 					// handle new connections
 					addrlen = sizeof remoteaddr;
-					newfd = accept(socket, (struct sockaddr *) &remoteaddr,
-							&addrlen);
+					newfd = accept(socket, (struct sockaddr *) &remoteaddr,&addrlen);
 
 					if (newfd == -1) {
 						perror("accept");
@@ -187,7 +181,7 @@ void selectorConexiones(int socket) {
 						if (newfd > fdMax) {    // keep track of the max
 							fdMax = newfd;
 						}
-						printf("selectserver: new connection from %s on " "socket %d\n",inet_ntop(remoteaddr.ss_family,	get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
+						printf("selectserver: new connection from %s on " "socket %d\n\n",inet_ntop(remoteaddr.ss_family,	get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
 					}
 				}
 
@@ -208,23 +202,6 @@ void selectorConexiones(int socket) {
 					} else {
 						// we got some data from a client
 						connectionHandler(i, orden);
-
-						// Todo esto esta comentado porque no necesito recorrer la lista de los clientes. Solo quiero atender al cliente que me acaba de mandar datos, IMPORTANTE: TAMBIEN ROMPE TODO, ASI COMO ESTA FUNCIONA PERFECTO.
-
-						/*for (j = 0; j <= fdMax; j++) { // Con este for se recorre la lista de sockets qe se conectaron al Kernel.
-							// send to everyone!
-							if (FD_ISSET(j, &master)) {
-								// except the listener and ourselves
-								if (j != socket) {
-									printf("\n----connectionHandler assigned to socket %d----\n",j);
-
-									connectionHandler(j, orden);
-
-									if (send(j, buffer, nbytes, 0) == -1) { //Esto es para mandarle el msj recibido a todo mis clientes. Era terrible idea para el check 1
-									perror("send");
-								}
-							}
-						}*/
 					}
 				}
 			} // END handle data from client
