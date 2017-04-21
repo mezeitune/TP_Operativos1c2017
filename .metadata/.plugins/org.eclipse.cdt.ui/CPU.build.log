@@ -1,6 +1,13 @@
-14:38:53 **** Incremental Build of configuration Debug for project CPU ****
+22:43:03 **** Incremental Build of configuration Debug for project CPU ****
 make all 
-make: No se hace nada para «all».
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+../src/CPU.c:24:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/CPU.o] Error 1
 
-14:38:53 Build Finished (took 65ms)
+22:43:03 Build Finished (took 114ms)
 

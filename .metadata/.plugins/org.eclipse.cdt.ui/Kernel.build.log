@@ -1,6 +1,13 @@
-14:38:54 **** Incremental Build of configuration Debug for project Kernel ****
+22:43:04 **** Incremental Build of configuration Debug for project Kernel ****
 make all 
-make: No se hace nada para «all».
+Building file: ../src/Kernel.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Kernel.d" -MT"src/Kernel.d" -o "src/Kernel.o" "../src/Kernel.c"
+../src/Kernel.c:24:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/Kernel.o] Error 1
 
-14:38:54 Build Finished (took 68ms)
+22:43:04 Build Finished (took 228ms)
 

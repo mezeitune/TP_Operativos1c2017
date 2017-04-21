@@ -1,6 +1,13 @@
-14:38:53 **** Incremental Build of configuration Debug for project File System ****
+22:43:03 **** Incremental Build of configuration Debug for project File System ****
 make all 
-make: No se hace nada para «all».
+Building file: ../src/File System.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/File System.d" -MT"src/File\ System.d" -o "src/File System.o" "../src/File System.c"
+../src/File System.c:26:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/File System.o] Error 1
 
-14:38:53 Build Finished (took 64ms)
+22:43:04 Build Finished (took 225ms)
 

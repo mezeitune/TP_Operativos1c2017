@@ -24,7 +24,7 @@
 #include <malloc.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <commons/conexiones.h>
+#include "conexiones.h"
 
 char* puertoMemoria;//4000
 char* ipMemoria;
@@ -47,8 +47,11 @@ typedef struct
 char* bitMap;
 void* frame_Memoria;
 
+int socket_servidor;
+
 //the thread function
 void *connection_handler(void *);
+void connection_Listener(int socket_desc);
 
 //--------------------Funciones Conexiones----------------------------//
 int recibirConexion(int socket_servidor);
@@ -67,11 +70,11 @@ int main_asignarPaginasAProceso();
 int main_finalizarPrograma();//Falta codificar
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
-int inicializarPrograma(int pid, int cantPaginas);//Falta codificar
-char* solicitarBytesPagina(int pid,int pagina, int offset, int size);//Falta codificar
-int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);//Falta codificar
-int asignarPaginasAProceso(int pid, int cantPaginas, int frame);//Falta codificar
-int finalizarPrograma(int pid);//Falta codificar
+int inicializarPrograma(int pid, int cantPaginas);
+char* solicitarBytesPagina(int pid,int pagina, int offset, int size);
+int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);
+int asignarPaginasAProceso(int pid, int cantPaginas, int frame);
+int finalizarPrograma(int pid);
 //------------------------------------------------------------------//
 
 void liberarBitMap(int pos, int size);
@@ -80,6 +83,9 @@ int verificarEspacio(int size);
 void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas);
 void borrarProgramDeStructAdms(int pid);
 int buscarFrameDePaginaDeProceso(int pid, int pagina);
+
+void imprimirBitMap();
+void imprimirEstructurasAdministrativas();
 
 int main(void)
 {
@@ -92,10 +98,13 @@ int main(void)
 
 	inicializarMemoriaAdm();
 
-	int socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
+	imprimirBitMap();
+	imprimirEstructurasAdministrativas();
 
+	socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
+	int socket_Kernel = recibirConexion(socket_servidor);
 
-	recibirConexion(socket_servidor);
+	connection_Listener(socket_Kernel);
 
 	return EXIT_SUCCESS;
 }
@@ -204,19 +213,11 @@ int recibirConexion(int socket_servidor){
 	addr_size = sizeof(their_addr);
 
 	int socket_aceptado;
-    while( (socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size)) )
-    {
-    	contadorConexiones ++;
-    	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
+    socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
 
-        if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &socket_aceptado) < 0)
-        {
-            perror("could not create thread");
-            return 1;
-        }
-        printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
-    }
-
+	contadorConexiones ++;
+	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
+	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
@@ -416,9 +417,31 @@ void *connection_handler(void *socket_desc)
 			printf("Error: Orden %c no definida\n",orden);
 			break;
 		}
-		//printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
+		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
 	}
     return 0;
+}
+
+void connection_Listener(int socket_desc)
+{
+	//Atiendo al socket del kernel
+	if( pthread_create( &thread_id , NULL , connection_handler , (void*) &socket_desc) < 0)
+	{
+		perror("could not create thread");
+	}
+	int sock;
+
+	while(1)
+	{
+		//Quedo a la espera de CPUs y las atiendo
+		sock = recibirConexion(socket_servidor);
+		if( pthread_create( &thread_id , NULL , connection_handler , (void*) &sock) < 0)
+		{
+			perror("could not create thread");
+		}
+	}
+
+
 }
 
 void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas)
@@ -487,4 +510,25 @@ void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
 		printf("CONFIGURACIONES\nIP:%s\nPUERTO:%s\nMARCOS:%d\nTAMAÑO MARCO:%d\nENTRADAS CACHE:%d\nCACHE POR PROCESOS:%d\nRETARDO MEMORIA:%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
 		printf("---------------------------------------------------\n");
+}
+
+void imprimirBitMap()
+{
+	printf("BitMap:%s\n",bitMap);
+}
+
+void imprimirEstructurasAdministrativas()
+{
+	struct_adm_memoria aux;
+	int i = 0;
+	int desplazamiento = sizeof(struct_adm_memoria);
+	printf("Frame/PID/NumPag\n");
+	while(i < marcos)
+	{
+		memcpy(&aux, frame_Memoria, sizeof(struct_adm_memoria));
+		i++;
+		printf("/___%d/__%d/__%d\n",aux.frame,aux.pid,aux.num_pag);
+		frame_Memoria = frame_Memoria + desplazamiento;
+	}
+	frame_Memoria = (frame_Memoria - desplazamiento*marcos);
 }
