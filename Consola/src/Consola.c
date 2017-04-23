@@ -43,15 +43,14 @@ int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
 
-
-	char *ruta = (char*) malloc(200*sizeof(char));
-
 	int socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 
-	connectionHandler(socketKernel);
+	while(1){
+		connectionHandler(socketKernel);
+	}
 
-	free(ruta);
 	return EXIT_SUCCESS;
+
 }
 
 
@@ -61,11 +60,10 @@ void connectionHandler(int socket){
 
 	char orden;
 	char *ruta = (char*) malloc(200*sizeof(char));;
-	int pid;
+	int pid = 0;
 	int *pidAEliminar= (int*) malloc(4*sizeof(int));;
 
-	while(1){
-		while(orden != 'Q'){
+		//while(orden != 'Q'){
 
 			printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
 			scanf(" %c", &orden);
@@ -100,10 +98,7 @@ void connectionHandler(int socket){
 					exit(1);
 					break;
 			}
-		}
-			orden = '\0';
-
-	}
+	//}
 }
 
 
