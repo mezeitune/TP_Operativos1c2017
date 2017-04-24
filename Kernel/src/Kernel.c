@@ -26,7 +26,7 @@
 //int recibirConexion(int socket_servidor); // No se usa en este modulo. Va a servir cuando limpiemos codigo del main y lo pasemos a esta funcion. Habria que cambiarla toda basicamente
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
-void *connectionHandler(int socketAceptado, char primeraOrden);
+void connectionHandler(int socketAceptado, char *orden);
 void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char* nuevaOrden);
 void selectorConexiones(int socket);
@@ -56,22 +56,6 @@ char *stackSize;
 pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
 t_config* configuracion_kernel;
 
-/*
- //the thread function
- void *sock_Consola();
- //the thread function
- void *sock_CPU();
- //the thread function
- void *sock_FS();
- //the thread function
- void *sock_Memoria();
-
- int socket_FS;
- int socket_Mem;
- int socket_CPU;
- int socket_Consola;
- */
-
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
 int socketFyleSys;
@@ -87,60 +71,68 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
+	while(1){
 	//Multiplexa las conexiones.
-	selectorConexiones(socketServidor);
-
+		selectorConexiones(socketServidor);
+	}
 	return 0;
 }
 
 
-void *connectionHandler(int socketAceptado, char primeraOrden) {
+void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para tener la variable modificada cuando vuelva a selectorConexiones()
 	char *buffer;
-	char orden = primeraOrden;
-	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado,orden);
-	while (orden != 'Q') {
-		switch (orden) {
-		case 'I':
+
+
+	if(orden == '\0'){/*Si la orden es '\0' o sea si no fue la PrimerOrden de todas las conexiones, recibe una orden nueva porque la primerorden la seteamos en selectorConexiones(),
+	 	 	 	 	 	 Pero despues sin esto no podemos cambiarla, si es que queremos trabajar con las consolas en forma "paralela"*/
+		nuevaOrdenDeAccion(socketAceptado, orden);
+	}
+
+	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado, *(char*)orden);
+		switch (*(char*)orden) {
+			case 'I':
 
 			/* Solo de prueba para ver si el FS y la memoria reciben del Kernel
 			//enviar(socketMemoria, (void*)&orden, sizeof(char));
 			//enviar(socketFyleSys, (void*)&orden, sizeof(char));
 			  */
 
-			printf("Se ha avisado que un archivo esta por enviarse\n");
+				printf("Se ha avisado que un archivo esta por enviarse\n");
 
-			if ((buffer = recibir_string(socketAceptado)) == NULL) { // Por si la consola se sale justo aca, asi no rompe todo el Kernel
-				printf("ERROR: La consola se ha desconectado\n");
-				return 0;
-			}
+				if ((buffer = recibir_string(socketAceptado)) == NULL) { // Por si la consola se sale justo aca, asi no rompe todo el Kernel
+					printf("ERROR: La consola se ha desconectado\n");
+					return;
+				}
 
-			printf("\nEl mensaje es: \"  %s \"\n", buffer);
+				printf("\nEl mensaje es: \"  %s \"\n", buffer);
 
-			free(buffer);
-			break;
-		default:
-			printf("ERROR: Orden %c no definida\n", orden);
-			break;
+				free(buffer);
+				break;
+
+			default:
+				if(*orden == '\0') break;/*Esta para que no printee cuando se envia la "orden extra", esto de la orden extra es como un bug que no tengo idea de donde sale,
+				 	 	 	 	 	 	 cuando lo prueben comenten esta linea y van a ver lo que digo*/
+
+				printf("ERROR: Orden %c no definida\n", *(char*)orden);
+				break;
 		}
-		nuevaOrdenDeAccion(socketAceptado, &orden);
-	}
-
-	return 0;
+	*orden = '\0';//Sin esto recive una "orden extra" y rompe, agregandolo, me aseguro que esa "orden extra" vaya al default para que todo siga funcionando como deberia
+	return;//Retorna a selectorConexiones() apenas se haya recibido una orden desde la consola para dar lugar a las otras consolas/CPUs
 
 }
 
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
-	printf("\n--Esperando una orden del cliente %d-- \n", socketCliente);
-	recv(socketCliente, nuevaOrden, sizeof nuevaOrden, 0);
-	printf("El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
+		printf("\n--Esperando una orden del cliente %d-- \n", socketCliente);
+		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
+		printf("El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
 }
 
 void selectorConexiones(int socket) {
 
-	int fdMax;        // Creo que es para un contador de los sockets que hay
+	int fdMax;        // es para un contador de los sockets que hay
 	int newfd;        // newly accept()ed socket descriptor
 	struct sockaddr_storage remoteaddr; // client address
-	int i;        // Contador para las iteracion dentro del FDSET
+	int i,j;        // Contador para las iteracion dentro del FDSET
 	int nbytes; // El tamanio de los datos que se recibe por recv
 	char orden;
 	char remoteIP[INET6_ADDRSTRLEN];
@@ -199,9 +191,16 @@ void selectorConexiones(int socket) {
 						}
 						close(i); // bye!
 						FD_CLR(i, &master); // remove from master set
-					} else {
+					}
+					else {
 						// we got some data from a client
-						connectionHandler(i, orden);
+						for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
+							if (FD_ISSET(j, &master)) {
+								if (j != socket && j != i) {
+										connectionHandler(i, &orden);
+						        }
+						    }
+						}
 					}
 				}
 			} // END handle data from client
@@ -250,102 +249,3 @@ void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
 
 }
-
-// MAIN CON HILOS DE EJECUCION
-/*
- socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);
- socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);
-
- if (pthread_create(&threadCPU, NULL, sock_CPU, (void*) NULL) < 0) {
- perror("could not create thread");
- return 1;
- }
-
- if (pthread_create(&threadConsola, NULL, sock_Consola, (void*) NULL) < 0) {
- perror("could not create thread");
- return 1;
- }
-
- pthread_join( threadCPU, NULL);
- pthread_join( threadConsola, NULL);
-
- */
-
-/*
- void* sock_Consola() {
- int socket_servidorConsola = crear_socket_servidor(ipConsola, puertoConsola);
- while(1)
- {
- socket_Consola = recibirConexion(socket_servidorConsola);
-
- if (pthread_create(&thread_id, NULL, connection_handler,(void*) &socket_Consola) < 0) {
- perror("could not create thread");
- }
- }
- }
-
- void* sock_FS() {
- char orden;
- int socket_FS = crear_socket_cliente(ipFileSys, puertoFileSys);
- while (orden != 'Q') {
- scanf(" %c", &orden);
- enviar(socket_FS, (void*) &orden, sizeof(char));
- }
- }
-
- void* sock_Memoria() {
- char orden;
- int socket_Mem = crear_socket_cliente(ipMemoria, puertoMemoria);
- while (orden != 'Q') {
- scanf("%c", &orden);
- enviar(socket_Mem, (void*) &orden, sizeof(char));
- }
- }
-
- void* sock_CPU() {
-
- int socket_servidorCPU = crear_socket_servidor(ipCPU, puertoCPU);
-
- while(1)
- {
- socket_CPU = recibirConexion(socket_servidorCPU);
- if (pthread_create(&thread_id, NULL, connection_handler,(void*) &socket_CPU) < 0) {
- perror("could not create thread");
- }
- }
- }
-
- int recibirConexion(int socket_servidor) {
- struct sockaddr_storage their_addr;
- socklen_t addr_size;
- addr_size = sizeof(their_addr);
- int socket_aceptado;
-
- int estado = listen(socket_servidor, 5);
-
- if (estado == -1) {
- printf("Error al poner el servidor en listen\n");
- close(socket_servidor);
- return 1;
- }
-
- if (estado == 0) {
- printf("Se puso el socket en listen\n");
- }
-
- addr_size = sizeof(their_addr);
-
- socket_aceptado = accept(socket_servidor,(struct sockaddr *) &their_addr, &addr_size);
- contadorConexiones ++;
- printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
-
-
- if (socket_aceptado == -1) {
- close(socket_servidor);
- printf("Error al aceptar conexion\n");
- return 1;
- }
-
- return socket_aceptado;
- }
- */
