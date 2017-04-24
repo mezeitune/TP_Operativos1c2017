@@ -1,4 +1,4 @@
-22:43:03 **** Incremental Build of configuration Debug for project File System ****
+20:22:10 **** Incremental Build of configuration Debug for project File System ****
 make all 
 Building file: ../src/File System.c
 Invoking: Cross GCC Compiler
@@ -9,5 +9,5 @@ gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/File System.d" -MT"src/
 compilation terminated.
 make: *** [src/File System.o] Error 1
 
-22:43:04 Build Finished (took 225ms)
+20:22:10 Build Finished (took 232ms)
 

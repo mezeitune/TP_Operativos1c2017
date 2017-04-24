@@ -1,4 +1,4 @@
-22:43:03 **** Incremental Build of configuration Debug for project CPU ****
+20:22:10 **** Incremental Build of configuration Debug for project CPU ****
 make all 
 Building file: ../src/CPU.c
 Invoking: Cross GCC Compiler
@@ -9,5 +9,5 @@ gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -
 compilation terminated.
 make: *** [src/CPU.o] Error 1
 
-22:43:03 Build Finished (took 114ms)
+20:22:10 Build Finished (took 111ms)
 

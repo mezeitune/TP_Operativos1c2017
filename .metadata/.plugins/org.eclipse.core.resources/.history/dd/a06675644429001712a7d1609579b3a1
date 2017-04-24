@@ -135,10 +135,12 @@ void inicializarMemoriaAdm()
 	aux.frame = i;
 	while(i < marcos)
 	{
-		memcpy(frame_Memoria + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
+		memcpy(frame_Memoria, &aux, sizeof(struct_adm_memoria));
 		i++;
 		aux.frame = i;
+		frame_Memoria = frame_Memoria + desplazamiento;
 	}
+	frame_Memoria = (frame_Memoria - desplazamiento*marcos);
 }
 
 int inicializarPrograma(int pid, int cantPaginas)
@@ -159,7 +161,8 @@ char* solicitarBytesPagina(int pid,int pagina, int offset, int size)
 	printf("Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 	char* buffer;
-	memcpy(&buffer,frame_Memoria + frame*sizeof(marco_size)+offset,size);
+	frame_Memoria = frame_Memoria + frame*sizeof(marco_size)+offset;
+	memcpy(&buffer,frame_Memoria,size);
 
 	return buffer;
 }
@@ -168,7 +171,8 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 {
 	printf("Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
-	memcpy(frame_Memoria + frame*sizeof(marco_size)+offset,&buffer,size);
+	frame_Memoria = frame_Memoria + frame*sizeof(marco_size)+offset;
+	memcpy(frame_Memoria,&buffer,size);
 	return EXIT_SUCCESS;
 }
 
@@ -448,13 +452,17 @@ void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas)
 	aux.pid=pid;
 	aux.num_pag=0;
 	aux.frame = frame;
+	frame_Memoria = frame_Memoria + desplazamiento*frame;
 	while(i < cantPaginas)
 	{
-		memcpy(frame_Memoria + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
+		memcpy(frame_Memoria, &aux, sizeof(struct_adm_memoria));
 		aux.num_pag++;
 		aux.frame++;
+		frame_Memoria = frame_Memoria + desplazamiento;
 		i++;
 	}
+	frame_Memoria = frame_Memoria - desplazamiento*frame;
+	frame_Memoria = frame_Memoria - desplazamiento*cantPaginas;
 }
 
 void borrarProgramDeStructAdms(int pid)
@@ -470,7 +478,7 @@ void borrarProgramDeStructAdms(int pid)
 			liberarBitMap(aux.frame,1); //Marco la posición del frame que me ocupa esa página en particular de ese programa como vacía
 			aux.num_pag = -1;
 			aux.pid = -1;
-			memcpy(frame_Memoria + i*desplazamiento,&aux,sizeof(struct_adm_memoria)); //Marco que en ese frame no tengo un programa asignado
+			memcpy(frame_Memoria,&aux,sizeof(struct_adm_memoria)); //Marco que en ese frame no tengo un programa asignado
 		}
 		i++;
 	}

@@ -1,4 +1,4 @@
-22:43:03 **** Incremental Build of configuration Debug for project Consola ****
+20:22:10 **** Incremental Build of configuration Debug for project Consola ****
 make all 
 Building file: ../src/Consola.c
 Invoking: Cross GCC Compiler
@@ -9,5 +9,5 @@ gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Consola.d" -MT"src/Cons
 compilation terminated.
 make: *** [src/Consola.o] Error 1
 
-22:43:03 Build Finished (took 113ms)
+20:22:10 Build Finished (took 113ms)
 

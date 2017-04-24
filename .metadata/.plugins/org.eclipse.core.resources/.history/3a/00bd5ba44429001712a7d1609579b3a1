@@ -135,10 +135,12 @@ void inicializarMemoriaAdm()
 	aux.frame = i;
 	while(i < marcos)
 	{
-		memcpy(frame_Memoria + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
+		memcpy(frame_Memoria, &aux, sizeof(struct_adm_memoria));
 		i++;
 		aux.frame = i;
+		frame_Memoria = frame_Memoria + desplazamiento;
 	}
+	frame_Memoria = (frame_Memoria - desplazamiento*marcos);
 }
 
 int inicializarPrograma(int pid, int cantPaginas)
