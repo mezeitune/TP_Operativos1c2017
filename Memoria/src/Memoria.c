@@ -45,7 +45,7 @@ typedef struct
 }struct_adm_memoria;
 
 char* bitMap;
-void* frame_Memoria;
+void* frame_Memoria; //Corregir movimiento de punteros
 
 int socket_servidor;
 
@@ -525,10 +525,10 @@ void imprimirEstructurasAdministrativas()
 	printf("Frame/PID/NumPag\n");
 	while(i < marcos)
 	{
-		memcpy(&aux, frame_Memoria, sizeof(struct_adm_memoria));
+		memcpy(&aux, frame_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
 		i++;
 		printf("/___%d/__%d/__%d\n",aux.frame,aux.pid,aux.num_pag);
-		frame_Memoria = frame_Memoria + desplazamiento;
+		//frame_Memoria2 = frame_Memoria + desplazamiento;
 	}
-	frame_Memoria = (frame_Memoria - desplazamiento*marcos);
+
 }
