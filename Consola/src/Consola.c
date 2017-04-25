@@ -109,9 +109,10 @@ void connectionHandler(int socket){
 void enviarLecturaArchivo(void *rut, int socket){
 
 	FILE *f;
-	char *buffer;
-	unsigned int tamanioArchivo;
+	void *buffer;
+	int tamanioArchivo;
 	char *ruta = (char *)rut;
+
 
 	if ((f = fopen(ruta, "r+")) == NULL) {
 			fputs("Archivo inexistente\n", stderr);
@@ -122,8 +123,7 @@ void enviarLecturaArchivo(void *rut, int socket){
 	tamanioArchivo = ftell(f);
 	rewind(f);
 
-	buffer = (char*) malloc(sizeof(char) * tamanioArchivo);
-
+	buffer = malloc(sizeof(int)); // Pido memoria para mandar la cantidad de Bytes que se va a mandar.
 
 	if (buffer == NULL) {
 		fputs("No se pudo conseguir memoria\n", stderr);
@@ -131,13 +131,34 @@ void enviarLecturaArchivo(void *rut, int socket){
 		exit(2);
 	}
 
-	fread(buffer, sizeof(buffer), tamanioArchivo, f);
+	send(socket,&tamanioArchivo,sizeof(int),0); //Mando la cantidad de bytes que se van a mandar. El tamano del archivo.
+	free(buffer);
 
-	//printf("%s",buffer);
-	enviar_string(socket, (void*)buffer);
+	buffer = malloc(tamanioArchivo); // Libero y pido memoria devuelta. Ahora para mandar el contenido del archivo
+
+	if (buffer == NULL) {
+				fputs("No se pudo conseguir memoria\n", stderr);
+				free(buffer);
+				exit(2);
+		}
+
+	fread(buffer, sizeof(buffer), tamanioArchivo, f); // Leo el contenido del archivo
+	printf("El contenido del archivo que se va a enviar es: \" %s \" \n", buffer);
+	printf("El tamano del archivo a enviar es: %d\n", tamanioArchivo);
+	send(socket,buffer,tamanioArchivo,0);
+	printf("El Mensaje ha sido enviado \n");
 
 	free(buffer);
 
+	//memcpy(buffer, tamanioArchivo, sizeof(int));
+	//printf("%d\n", buffer);
+
+	//send(socket,buffer,sizeof(int),0);
+	//printf("%d\n", buffer);
+
+	//memcpy(buffer,bufferArchivo,tamanioArchivo);
+
+	//printf("%d \n", buffer);
 }
 
 /*void enviarPIDAEliminar(int pidAFinalizar, int socket){
@@ -146,9 +167,6 @@ void enviarLecturaArchivo(void *rut, int socket){
 
 
 }*/
-
-
-
 
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);

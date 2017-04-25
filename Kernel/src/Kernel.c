@@ -80,8 +80,8 @@ int main(void) {
 
 
 void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para tener la variable modificada cuando vuelva a selectorConexiones()
-	char *buffer;
-
+	void *buffer;
+	int bytesARecibir=0;
 
 	if(orden == '\0'){/*Si la orden es '\0' o sea si no fue la PrimerOrden de todas las conexiones, recibe una orden nueva porque la primerorden la seteamos en selectorConexiones(),
 	 	 	 	 	 	 Pero despues sin esto no podemos cambiarla, si es que queremos trabajar con las consolas en forma "paralela"*/
@@ -89,22 +89,23 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 	}
 
 	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado, *(char*)orden);
-		switch (*(char*)orden) {
-			case 'I':
 
-			/* Solo de prueba para ver si el FS y la memoria reciben del Kernel
-			//enviar(socketMemoria, (void*)&orden, sizeof(char));
-			//enviar(socketFyleSys, (void*)&orden, sizeof(char));
-			  */
+	switch (*(char*)orden) {
+			case 'I':
 
 				printf("Se ha avisado que un archivo esta por enviarse\n");
 
-				if ((buffer = recibir_string(socketAceptado)) == NULL) { // Por si la consola se sale justo aca, asi no rompe todo el Kernel
-					printf("ERROR: La consola se ha desconectado\n");
-					return;
-				}
+				recv(socketAceptado,&bytesARecibir, sizeof(int),0); //
+				printf("Los bytes a recibir son: %d \n", bytesARecibir);
 
-				printf("\nEl mensaje es: \"  %s \"\n", buffer);
+				buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
+				recv(socketAceptado,buffer,bytesARecibir ,0);
+				printf("\n El mensaje recibido es: \" %s \" \n", buffer);
+
+				/*
+				 * El Kernel hasta ahora recibe el contenido del archivo y lo tiene en el buffer. El archivo puede ser variable
+				 * La idea ahora es mandar ese buffer a la memoria, y que la memoria lo almacene.
+				 */
 
 				free(buffer);
 				break;
