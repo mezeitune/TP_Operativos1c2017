@@ -109,7 +109,8 @@ void connectionHandler(int socket){
 void enviarLecturaArchivo(void *rut, int socket){
 
 	FILE *f;
-	void *buffer;
+	void *mensaje;
+	void *bufferArchivo;
 	int tamanioArchivo;
 	char *ruta = (char *)rut;
 
@@ -123,42 +124,35 @@ void enviarLecturaArchivo(void *rut, int socket){
 	tamanioArchivo = ftell(f);
 	rewind(f);
 
-	buffer = malloc(sizeof(int)); // Pido memoria para mandar la cantidad de Bytes que se va a mandar.
-
-	if (buffer == NULL) {
-		fputs("No se pudo conseguir memoria\n", stderr);
-		free(buffer);
-		exit(2);
-	}
-
-	send(socket,&tamanioArchivo,sizeof(int),0); //Mando la cantidad de bytes que se van a mandar. El tamano del archivo.
-	free(buffer);
-
-	buffer = malloc(tamanioArchivo); // Libero y pido memoria devuelta. Ahora para mandar el contenido del archivo
-
-	if (buffer == NULL) {
-				fputs("No se pudo conseguir memoria\n", stderr);
-				free(buffer);
-				exit(2);
+	bufferArchivo=malloc(tamanioArchivo); // Pido memoria para leer el contenido del archivo
+		if (bufferArchivo == NULL) {
+			fputs("No se pudo conseguir memoria\n", stderr);
+			free(bufferArchivo);
+			exit(2);
 		}
 
-	fread(buffer, sizeof(buffer), tamanioArchivo, f); // Leo el contenido del archivo
-	printf("El contenido del archivo que se va a enviar es: \" %s \" \n", buffer);
+	mensaje= malloc(sizeof(int) + tamanioArchivo); // Pido memoria para el mensaje EMPAQUETADO que voy a mandar
+
+		if (mensaje == NULL) {
+					fputs("No se pudo conseguir memoria\n", stderr);
+					free(mensaje);
+					free(bufferArchivo);
+					exit(2);
+			}
+
+	fread(bufferArchivo,sizeof(bufferArchivo),tamanioArchivo,f); // Paso a memoria ( al bufferARchivo) el contenido del archivo.
+	printf("El contenido del archivo que se va a enviar es: \" %s \" \n", bufferArchivo);
 	printf("El tamano del archivo a enviar es: %d\n", tamanioArchivo);
-	send(socket,buffer,tamanioArchivo,0);
-	printf("El Mensaje ha sido enviado \n");
 
-	free(buffer);
+	memcpy(mensaje,&tamanioArchivo,sizeof(int)); // Empaqueto en el mensaje el tamano del archivo a enviar.
+	memcpy(mensaje + sizeof(int),bufferArchivo,tamanioArchivo); // Empaqueto en el mensjae, el contenido del archivo.
 
-	//memcpy(buffer, tamanioArchivo, sizeof(int));
-	//printf("%d\n", buffer);
+	send(socket,mensaje,tamanioArchivo + sizeof(int),0); // Mando el mensjae empaquetado.
+	printf("El mensaje ha sido enviado \n");
 
-	//send(socket,buffer,sizeof(int),0);
-	//printf("%d\n", buffer);
+	free(bufferArchivo);
+	free(mensaje);
 
-	//memcpy(buffer,bufferArchivo,tamanioArchivo);
-
-	//printf("%d \n", buffer);
 }
 
 /*void enviarPIDAEliminar(int pidAFinalizar, int socket){

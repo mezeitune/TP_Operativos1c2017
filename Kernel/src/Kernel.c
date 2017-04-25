@@ -91,24 +91,25 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado, *(char*)orden);
 
 	switch (*(char*)orden) {
-			case 'I':
 
-				printf("Se ha avisado que un archivo esta por enviarse\n");
+		/*Caso en el que se quiere recibir un archivo empaquetado */
+		case 'I':
+						printf("Se ha avisado que un archivo esta por enviarse\n");
 
-				recv(socketAceptado,&bytesARecibir, sizeof(int),0); //
-				printf("Los bytes a recibir son: %d \n", bytesARecibir);
+						recv(socketAceptado,&bytesARecibir, sizeof(int),0); //
+						printf("Los bytes a recibir son: %d \n", bytesARecibir);
 
-				buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
-				recv(socketAceptado,buffer,bytesARecibir ,0);
-				printf("\n El mensaje recibido es: \" %s \" \n", buffer);
+						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
+						recv(socketAceptado,buffer,bytesARecibir  ,0);
+						printf("\n El mensaje recibido es: \" %s \" \n", buffer);
 
 				/*
 				 * El Kernel hasta ahora recibe el contenido del archivo y lo tiene en el buffer. El archivo puede ser variable
 				 * La idea ahora es mandar ese buffer a la memoria, y que la memoria lo almacene.
 				 */
 
-				free(buffer);
-				break;
+						free(buffer);
+						break;
 
 			default:
 				if(*orden == '\0') break;/*Esta para que no printee cuando se envia la "orden extra", esto de la orden extra es como un bug que no tengo idea de donde sale,
@@ -116,7 +117,8 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 				printf("ERROR: Orden %c no definida\n", *(char*)orden);
 				break;
-		}
+		} // END switch.
+
 	*orden = '\0';//Sin esto recive una "orden extra" y rompe, agregandolo, me aseguro que esa "orden extra" vaya al default para que todo siga funcionando como deberia
 	return;//Retorna a selectorConexiones() apenas se haya recibido una orden desde la consola para dar lugar a las otras consolas/CPUs
 
