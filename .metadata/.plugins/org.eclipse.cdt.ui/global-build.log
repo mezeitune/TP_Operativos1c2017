@@ -9486,3 +9486,170 @@ make: *** [src/Kernel.o] Error 1
 19:38:16 **** Incremental Build of configuration Debug for project Memoria ****
 make all 
 make: No se hace nada para «all».
+19:45:58 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+../src/CPU.c:24:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/CPU.o] Error 1
+19:45:58 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+Building file: ../src/Consola.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Consola.d" -MT"src/Consola.d" -o "src/Consola.o" "../src/Consola.c"
+../src/Consola.c:25:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/Consola.o] Error 1
+19:45:59 **** Incremental Build of configuration Debug for project File System ****
+make all 
+Building file: ../src/File System.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/File System.d" -MT"src/File\ System.d" -o "src/File System.o" "../src/File System.c"
+../src/File System.c:26:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/File System.o] Error 1
+19:45:59 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+Building file: ../src/Kernel.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Kernel.d" -MT"src/Kernel.d" -o "src/Kernel.o" "../src/Kernel.c"
+../src/Kernel.c:24:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/Kernel.o] Error 1
+19:45:59 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+19:48:16 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+../src/CPU.c:24:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/CPU.o] Error 1
+19:48:16 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+Building file: ../src/Consola.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Consola.d" -MT"src/Consola.d" -o "src/Consola.o" "../src/Consola.c"
+../src/Consola.c:25:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/Consola.o] Error 1
+19:48:17 **** Incremental Build of configuration Debug for project File System ****
+make all 
+Building file: ../src/File System.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/File System.d" -MT"src/File\ System.d" -o "src/File System.o" "../src/File System.c"
+../src/File System.c:26:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/File System.o] Error 1
+19:48:17 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+Building file: ../src/Kernel.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Kernel.d" -MT"src/Kernel.d" -o "src/Kernel.o" "../src/Kernel.c"
+../src/Kernel.c:24:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/Kernel.o] Error 1
+19:48:17 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘buscarFrameDePaginaDeProceso’:
+../src/Memoria.c:502:6: warning: unused variable ‘frame’ [-Wunused-variable]
+  int frame = -1;
+      ^
+../src/Memoria.c:512:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
+19:48:23 **** Incremental Build of configuration Debug for project CPU ****
+make all 
+Building file: ../src/CPU.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/CPU.d" -MT"src/CPU.d" -o "src/CPU.o" "../src/CPU.c"
+../src/CPU.c:24:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/CPU.o] Error 1
+19:48:23 **** Incremental Build of configuration Debug for project Consola ****
+make all 
+Building file: ../src/Consola.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Consola.d" -MT"src/Consola.d" -o "src/Consola.o" "../src/Consola.c"
+../src/Consola.c:25:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/Consola.o] Error 1
+19:48:23 **** Incremental Build of configuration Debug for project File System ****
+make all 
+Building file: ../src/File System.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/File System.d" -MT"src/File\ System.d" -o "src/File System.o" "../src/File System.c"
+../src/File System.c:26:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/File System.o] Error 1
+19:48:24 **** Incremental Build of configuration Debug for project Kernel ****
+make all 
+Building file: ../src/Kernel.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Kernel.d" -MT"src/Kernel.d" -o "src/Kernel.o" "../src/Kernel.c"
+../src/Kernel.c:24:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
+ #include <commons/conexiones.h>
+                                ^
+compilation terminated.
+make: *** [src/Kernel.o] Error 1
+19:48:24 **** Incremental Build of configuration Debug for project Memoria ****
+make all 
+Building file: ../src/Memoria.c
+Invoking: Cross GCC Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘buscarFrameDePaginaDeProceso’:
+../src/Memoria.c:511:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+Finished building: ../src/Memoria.c
+ 
+Building target: Memoria
+Invoking: Cross GCC Linker
+gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
+Finished building target: Memoria
+ 
