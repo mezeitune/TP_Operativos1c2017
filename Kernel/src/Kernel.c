@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <commons/collections/list.h>
 #include <pthread.h>
 #include <commons/conexiones.h>
 
@@ -68,8 +69,11 @@ t_config* configuracion_kernel;
 int contadorPid=0;
 
 void crearNuevoProceso(char* buffer,int size);
-void encolarProcesoListo(t_pcb procesoListo);
-t_pcb * colaListos;
+void encolarProcesoListo(t_pcb *procesoListo);
+void inicializarColaListos();
+t_list* colaListos;
+
+
 
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
@@ -86,6 +90,7 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
+	inicializarColaListos();
 
 	while(1){
 	/*Multiplexor de conexiones. */
@@ -161,16 +166,26 @@ void crearNuevoProceso(char*buffer,int size){
 	send(socketMemoria,&size,sizeof(int),0);
 	enviar_string(socketMemoria,buffer);
 
+	/*Aca se podria crear el pcb y encolarlo */
+
 	printf("Ya almacene el buffer en la memoria \n");
-	/*
-	t_pcb procesoListo; // creo el pcb
-	procesoListo.pid = pidActual; // le seteo el pid.
+
+
+
+	/* Creacion del pcb y lo encola
+	t_pcb* procesoListo; // creo el pcb
+	procesoListo->pid = pidActual; // le seteo el pid.
 	encolarProcesoListo(procesoListo); // lo encolo en ready
 	*/
 }
 
-void encolarProcesoListo(t_pcb procesoListo){
+void encolarProcesoListo(t_pcb *pcbProcesoListo){
 //	colaListos
+	list_add(colaListos,pcbProcesoListo); // Agrega un pcb en la cola de listos. Al final
+}
+
+void inicializarColaListos(){
+	colaListos= list_create();
 }
 
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
