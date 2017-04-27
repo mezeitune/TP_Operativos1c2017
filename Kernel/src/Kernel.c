@@ -23,6 +23,18 @@
 #include <pthread.h>
 #include <commons/conexiones.h>
 
+typedef struct PCB {
+	int pid;
+	int* programCounter;
+	int cantidadPaginas;
+	int indiceCodigo[2];
+	//Indice de etiquetas
+	//Indice del Stack
+	int exitCode;
+}t_pcb;
+
+
+
 //int recibirConexion(int socket_servidor); // No se usa en este modulo. Va a servir cuando limpiemos codigo del main y lo pasemos a esta funcion. Habria que cambiarla toda basicamente
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
@@ -56,6 +68,9 @@ char *stackSize;
 pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
 t_config* configuracion_kernel;
 
+int contadorPid=0;
+
+void encolarProceso(char* buffer);
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
 int socketFyleSys;
@@ -103,14 +118,14 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 						recv(socketAceptado,buffer,bytesARecibir  ,0);
 						printf("\n El mensaje recibido es: \" %s \" \n", buffer);
 
+						contadorPid++; // Para representar temporalmente el PID.
+						encolarProceso(buffer); // aca naceria el planificador de procesos.
+						free(buffer);
 				/*
 				 * El Kernel hasta ahora recibe el contenido del archivo y lo tiene en el buffer. El archivo puede ser variable
 				 * La idea ahora es mandar ese buffer a la memoria, y que la memoria lo almacene.
 				 */
-
-						free(buffer);
 						break;
-
 			default:
 				if(*orden == '\0') break;/*Esta para que no printee cuando se envia la "orden extra", esto de la orden extra es como un bug que no tengo idea de donde sale,
 				 	 	 	 	 	 	 cuando lo prueben comenten esta linea y van a ver lo que digo*/
@@ -124,11 +139,28 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 }
 
+void encolarProceso(char*buffer){
+	char comandoPrincipal = 'A';
+	int  paginas =1;
+	int pidActual= contadorPid;
+	send(socketMemoria,&comandoPrincipal,sizeof(char),0);
+	enviar_string(socketMemoria,buffer);
+	send(socketMemoria,&pidActual,sizeof(int),0);
+	send(socketMemoria,&paginas,sizeof(int),0);
+
+}
+
+
+
+
+
+
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
 		printf("\n--Esperando una orden del cliente %d-- \n", socketCliente);
 		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
 		printf("El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
 }
+
 
 void selectorConexiones(int socket) {
 

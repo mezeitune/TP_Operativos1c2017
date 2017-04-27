@@ -228,7 +228,9 @@ char nuevaOrdenDeAccion(int socketCliente)
 {
 	char *buffer;
 	printf("\n--Esperando una orden del cliente-- \n");
-	buffer = recibir(socketCliente);
+
+	//buffer = recibir(socketCliente);  ESTO ESTABA ASI
+	recv(socketCliente,buffer,sizeof(char),0);
 	//int size_mensaje = sizeof(buffer);
     if(buffer == NULL)
     {
@@ -290,9 +292,11 @@ int main_asignarPaginasAProceso(int sock)
 {
 	int pid;
 	int cantPaginas;
-	pid=atoi((char*)recibir(sock));
-	printf("PID:%d\n",pid);
-	cantPaginas=atoi((char*)recibir(sock));
+	recv(sock,&pid,sizeof(int),0);
+		//pid=atoi((char*)recibir(sock));
+		printf("PID:%d\n",pid);
+	recv(sock,&cantPaginas,sizeof(int),0);
+	//cantPaginas=atoi((char*)recibir(sock));
 	printf("CantPaginas:%d\n",cantPaginas);
 	int posicionFrame = verificarEspacio(cantPaginas);
 	printf("Posicion Frame: %d\n",posicionFrame);
@@ -389,6 +393,8 @@ void *connection_handler(void *socket_desc)
 			printf("\nEl mensaje es: \"%s\"\n", buffer);
 
 			resultadoDeEjecucion = main_inicializarPrograma(sock);
+			imprimirBitMap();
+			imprimirEstructurasAdministrativas();
 			break;
 		case 'S':
 			resultadoDeEjecucion = main_solicitarBytesPagina(sock);
