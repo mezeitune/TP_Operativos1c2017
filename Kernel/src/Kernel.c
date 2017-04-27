@@ -33,9 +33,6 @@ typedef struct PCB {
 	int exitCode;
 }t_pcb;
 
-
-
-//int recibirConexion(int socket_servidor); // No se usa en este modulo. Va a servir cuando limpiemos codigo del main y lo pasemos a esta funcion. Habria que cambiarla toda basicamente
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void connectionHandler(int socketAceptado, char *orden);
@@ -70,7 +67,10 @@ t_config* configuracion_kernel;
 
 int contadorPid=0;
 
-void encolarProceso(char* buffer);
+void crearNuevoProceso(char* buffer,int size);
+void encolarProcesoListo(t_pcb procesoListo);
+t_pcb * colaListos;
+
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
 int socketFyleSys;
@@ -87,7 +87,7 @@ int main(void) {
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
 	while(1){
-	//Multiplexa las conexiones.
+	/*Multiplexor de conexiones. */
 		selectorConexiones(socketServidor);
 	}
 	return 0;
@@ -119,7 +119,7 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 						printf("\n El mensaje recibido es: \" %s \" \n", buffer);
 
 						contadorPid++; // Para representar temporalmente el PID.
-						encolarProceso(buffer); // aca naceria el planificador de procesos.
+						crearNuevoProceso(buffer,bytesARecibir); // aca naceria el planificador de procesos.
 						free(buffer);
 				/*
 				 * El Kernel hasta ahora recibe el contenido del archivo y lo tiene en el buffer. El archivo puede ser variable
@@ -139,21 +139,38 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 }
 
-void encolarProceso(char*buffer){
-	char comandoPrincipal = 'A';
-	int  paginas =1;
+void crearNuevoProceso(char*buffer,int size){
+	char comandoInicializacion = 'A';
+	char comandoAlmacenar = 'C';
+	int  paginas =5; // A modo de ejemplo
 	int pidActual= contadorPid;
-	send(socketMemoria,&comandoPrincipal,sizeof(char),0);
-	enviar_string(socketMemoria,buffer);
+	//Le pide memoria a Memoria
+	send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
+	enviar_string(socketMemoria,buffer); // Le manda el contenido
 	send(socketMemoria,&pidActual,sizeof(int),0);
 	send(socketMemoria,&paginas,sizeof(int),0);
 
+	printf("Ya Inicializo programa\n");
+	int offset=1; // valor arbitrario
+	// Ahora pido almacenar contenido en memoria.
+	send(socketMemoria,&comandoAlmacenar,sizeof(char),0); // Inicializa el handler connection de la memoria
+	send(socketMemoria,&pidActual,sizeof(int),0);
+	send(socketMemoria,&paginas,sizeof(int),0);
+	send(socketMemoria,&offset,sizeof(int),0);
+	send(socketMemoria,&size,sizeof(int),0);
+	enviar_string(socketMemoria,buffer);
+
+	printf("Ya almacene el buffer en la memoria \n");
+	/*
+	t_pcb procesoListo; // creo el pcb
+	procesoListo.pid = pidActual; // le seteo el pid.
+	encolarProcesoListo(procesoListo); // lo encolo en ready
+	*/
 }
 
+void encolarProcesoListo(t_pcb procesoListo){
 
-
-
-
+}
 
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
 		printf("\n--Esperando una orden del cliente %d-- \n", socketCliente);

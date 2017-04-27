@@ -236,13 +236,16 @@ int recibirConexion(int socket_servidor){
 
 char nuevaOrdenDeAccion(int socketCliente)
 {
-	char *buffer;
+	char* buffer=malloc(sizeof(char));
+	char bufferRecibido;
 	printf("\n--Esperando una orden del cliente-- \n");
 
 	//buffer = recibir(socketCliente);  ESTO ESTABA ASI
 	recv(socketCliente,buffer,sizeof(char),0);
 	//int size_mensaje = sizeof(buffer);
-    if(buffer == NULL)
+
+	/*
+	if(buffer == NULL)
     {
         return 'Q';
     	//puts("Client disconnected");
@@ -253,9 +256,12 @@ char nuevaOrdenDeAccion(int socketCliente)
         return 'X';
     	//perror("recv failed");
     }
-    printf("El cliente ha enviado la orden: %c\n",*buffer);
-	printf("%c\n",*buffer);
-	return *buffer;
+    */
+	bufferRecibido = *buffer;
+	free(buffer);
+    printf("El cliente ha enviado la orden: %c\n",bufferRecibido);
+	printf("%c\n",bufferRecibido);
+	return bufferRecibido;
 }
 
 int main_inicializarPrograma(int sock)
@@ -284,15 +290,19 @@ int main_almacenarBytesPagina(int sock)
 {
 	int pid;
 	int pagina;
-	pid=atoi((char*)recibir(sock));
+	recv(sock,&pid,sizeof(int),0);
+	//pid=atoi((char*)recibir(sock));
 	printf("PID:%d\n",pid);
-	pagina=atoi((char*)recibir(sock));
+	recv(sock,&pagina,sizeof(int),0);
+	//pagina=atoi((char*)recibir(sock));
 	printf("Pagina:%d\n",pagina);
 	int offset;
 	int size;
-	offset=atoi((char*)recibir(sock));
+	//offset=atoi((char*)recibir(sock));
+	recv(sock,&offset,sizeof(int),0);
 	printf("Offset:%d\n",offset);
-	size=atoi((char*)recibir(sock));
+	//size=atoi((char*)recibir(sock));
+	recv(sock,&size,sizeof(int),0);
 	printf("Size:%d\n",size);
 	char* bytes = recibir_string(sock);
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
@@ -303,8 +313,8 @@ int main_asignarPaginasAProceso(int sock)
 	int pid;
 	int cantPaginas;
 	recv(sock,&pid,sizeof(int),0);
-		//pid=atoi((char*)recibir(sock));
-		printf("PID:%d\n",pid);
+	//pid=atoi((char*)recibir(sock));
+	printf("PID:%d\n",pid);
 	recv(sock,&cantPaginas,sizeof(int),0);
 	//cantPaginas=atoi((char*)recibir(sock));
 	printf("CantPaginas:%d\n",cantPaginas);
@@ -411,6 +421,8 @@ void *connection_handler(void *socket_desc)
 			break;
 		case 'C':
 			resultadoDeEjecucion = main_almacenarBytesPagina(sock);
+			imprimirBitMap();
+			imprimirEstructurasAdministrativas();
 			break;
 		case 'G':
 			resultadoDeEjecucion = main_asignarPaginasAProceso(sock);
