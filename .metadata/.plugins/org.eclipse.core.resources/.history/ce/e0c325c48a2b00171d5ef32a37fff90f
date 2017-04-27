@@ -238,9 +238,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 {
 	char *buffer;
 	printf("\n--Esperando una orden del cliente-- \n");
-
-	//buffer = recibir(socketCliente);  ESTO ESTABA ASI
-	recv(socketCliente,buffer,sizeof(char),0);
+	buffer = recibir(socketCliente);
 	//int size_mensaje = sizeof(buffer);
     if(buffer == NULL)
     {
@@ -302,11 +300,9 @@ int main_asignarPaginasAProceso(int sock)
 {
 	int pid;
 	int cantPaginas;
-	recv(sock,&pid,sizeof(int),0);
-		//pid=atoi((char*)recibir(sock));
-		printf("PID:%d\n",pid);
-	recv(sock,&cantPaginas,sizeof(int),0);
-	//cantPaginas=atoi((char*)recibir(sock));
+	pid=atoi((char*)recibir(sock));
+	printf("PID:%d\n",pid);
+	cantPaginas=atoi((char*)recibir(sock));
 	printf("CantPaginas:%d\n",cantPaginas);
 	int posicionFrame = verificarEspacio(cantPaginas);
 	printf("Posicion Frame: %d\n",posicionFrame);
@@ -403,8 +399,6 @@ void *connection_handler(void *socket_desc)
 			printf("\nEl mensaje es: \"%s\"\n", buffer);
 
 			resultadoDeEjecucion = main_inicializarPrograma(sock);
-			imprimirBitMap();
-			imprimirEstructurasAdministrativas();
 			break;
 		case 'S':
 			resultadoDeEjecucion = main_solicitarBytesPagina(sock);
@@ -466,7 +460,7 @@ void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas)
 	aux.frame = frame;
 	while(i < cantPaginas)
 	{
-		memcpy(frame_Memoria + frame*desplazamiento + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
+		memcpy(frame_Memoria + frame*desplazamiento  + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
 		aux.num_pag++;
 		aux.frame++;
 		i++;
