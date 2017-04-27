@@ -499,17 +499,15 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 	int i = 0;
 	int desplazamiento = sizeof(struct_adm_memoria);
 	struct_adm_memoria aux;
-	int frame = -1;
 	while(i<marcos)
 	{
 		memcpy(&aux, frame_Memoria + i*desplazamiento,sizeof(struct_adm_memoria));
 		if(aux.pid == pid && aux.num_pag == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
 		{
-			frame = aux.frame;
+			return aux.frame;
 		}
 		i++;
 	}
-	return frame;
 }
 
 void imprimirConfiguraciones(){

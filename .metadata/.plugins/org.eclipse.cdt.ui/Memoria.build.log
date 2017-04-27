@@ -1,8 +1,12 @@
-19:45:59 **** Incremental Build of configuration Debug for project Memoria ****
+19:48:24 **** Incremental Build of configuration Debug for project Memoria ****
 make all 
 Building file: ../src/Memoria.c
 Invoking: Cross GCC Compiler
 gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
+../src/Memoria.c: In function ‘buscarFrameDePaginaDeProceso’:
+../src/Memoria.c:511:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
 Finished building: ../src/Memoria.c
  
 Building target: Memoria
@@ -11,5 +15,5 @@ gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
 Finished building target: Memoria
  
 
-19:46:00 Build Finished (took 286ms)
+19:48:24 Build Finished (took 322ms)
 

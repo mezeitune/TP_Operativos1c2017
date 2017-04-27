@@ -1,4 +1,4 @@
-19:45:59 **** Incremental Build of configuration Debug for project Kernel ****
+19:48:24 **** Incremental Build of configuration Debug for project Kernel ****
 make all 
 Building file: ../src/Kernel.c
 Invoking: Cross GCC Compiler
@@ -9,5 +9,5 @@ gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Kernel.d" -MT"src/Kerne
 compilation terminated.
 make: *** [src/Kernel.o] Error 1
 
-19:45:59 Build Finished (took 224ms)
+19:48:24 Build Finished (took 274ms)
 
