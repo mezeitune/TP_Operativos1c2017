@@ -137,7 +137,7 @@ void inicializarMemoriaAdm()
 	{
 		if(i<sizeMemoriaAdm)
 		{
-			aux.pid = -9;
+			aux.pid = i;
 			aux.num_pag=i;
 		}
 		else
