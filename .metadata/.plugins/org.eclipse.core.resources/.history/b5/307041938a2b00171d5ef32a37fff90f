@@ -460,7 +460,7 @@ void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas)
 	aux.frame = frame;
 	while(i < cantPaginas)
 	{
-		memcpy(frame_Memoria + frame*desplazamiento + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
+		memcpy(frame_Memoria + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
 		aux.num_pag++;
 		aux.frame++;
 		i++;

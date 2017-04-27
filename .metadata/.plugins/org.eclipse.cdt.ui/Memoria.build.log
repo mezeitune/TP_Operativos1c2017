@@ -1,4 +1,4 @@
-17:44:21 **** Incremental Build of configuration Debug for project Memoria ****
+17:47:47 **** Incremental Build of configuration Debug for project Memoria ****
 make all 
 Building file: ../src/Memoria.c
 Invoking: Cross GCC Compiler
@@ -11,5 +11,5 @@ gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
 Finished building target: Memoria
  
 
-17:44:21 Build Finished (took 275ms)
+17:47:47 Build Finished (took 276ms)
 
