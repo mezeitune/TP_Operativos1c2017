@@ -1,15 +1,6 @@
-17:47:47 **** Incremental Build of configuration Debug for project Memoria ****
+19:38:16 **** Incremental Build of configuration Debug for project Memoria ****
 make all 
-Building file: ../src/Memoria.c
-Invoking: Cross GCC Compiler
-gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Memoria.d" -MT"src/Memoria.d" -o "src/Memoria.o" "../src/Memoria.c"
-Finished building: ../src/Memoria.c
- 
-Building target: Memoria
-Invoking: Cross GCC Linker
-gcc  -o "Memoria"  ./src/Memoria.o   -lcommons -lpthread
-Finished building target: Memoria
- 
+make: No se hace nada para «all».
 
-17:47:47 Build Finished (took 276ms)
+19:38:16 Build Finished (took 78ms)
 
