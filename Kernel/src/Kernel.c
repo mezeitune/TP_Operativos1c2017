@@ -86,6 +86,7 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
+
 	while(1){
 	/*Multiplexor de conexiones. */
 		selectorConexiones(socketServidor);
@@ -169,7 +170,7 @@ void crearNuevoProceso(char*buffer,int size){
 }
 
 void encolarProcesoListo(t_pcb procesoListo){
-
+//	colaListos
 }
 
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
