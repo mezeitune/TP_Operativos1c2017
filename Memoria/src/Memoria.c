@@ -179,7 +179,14 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 	printf("Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 	printf("Frame:%d\n",frame);
-	memcpy(frame_Memoria + frame*sizeof(marco_size)+offset,&buffer,size);
+	if(frame != -1)
+	{
+		memcpy(frame_Memoria + frame*sizeof(marco_size)+offset,&buffer,size);
+	}
+	else
+	{
+		printf("No se encontró el PID/Pagina del programa\n");
+	}
 	return EXIT_SUCCESS;
 }
 
