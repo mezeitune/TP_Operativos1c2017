@@ -45,7 +45,9 @@ int main(void) {
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
-
+	/*
+	 * Crear un hilo para comunicarme con la Memoria
+	 */
 	connectionHandler(socketKernel);
 
 	return 0;

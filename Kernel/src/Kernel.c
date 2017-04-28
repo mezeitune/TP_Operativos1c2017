@@ -20,10 +20,20 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <commons/collections/list.h>
 #include <pthread.h>
 #include <commons/conexiones.h>
 
-//int recibirConexion(int socket_servidor); // No se usa en este modulo. Va a servir cuando limpiemos codigo del main y lo pasemos a esta funcion. Habria que cambiarla toda basicamente
+typedef struct PCB {
+	int pid;
+	int* programCounter;
+	int cantidadPaginas;
+	int indiceCodigo[2];
+	//Indice de etiquetas
+	//Indice del Stack
+	int exitCode;
+}t_pcb;
+
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void connectionHandler(int socketAceptado, char *orden);
@@ -56,6 +66,15 @@ char *stackSize;
 pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
 t_config* configuracion_kernel;
 
+int contadorPid=0;
+
+void crearNuevoProceso(char* buffer,int size);
+void encolarProcesoListo(t_pcb *procesoListo);
+void inicializarColaListos();
+t_list* colaListos;
+
+
+
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
 int socketFyleSys;
@@ -71,8 +90,10 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
+	inicializarColaListos();
+
 	while(1){
-	//Multiplexa las conexiones.
+	/*Multiplexor de conexiones. */
 		selectorConexiones(socketServidor);
 	}
 	return 0;
@@ -103,14 +124,14 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 						recv(socketAceptado,buffer,bytesARecibir  ,0);
 						printf("\n El mensaje recibido es: \" %s \" \n", buffer);
 
+						contadorPid++; // Para representar temporalmente el PID.
+						crearNuevoProceso(buffer,bytesARecibir); // aca naceria el planificador de procesos.
+						free(buffer);
 				/*
 				 * El Kernel hasta ahora recibe el contenido del archivo y lo tiene en el buffer. El archivo puede ser variable
 				 * La idea ahora es mandar ese buffer a la memoria, y que la memoria lo almacene.
 				 */
-
-						free(buffer);
 						break;
-
 			default:
 				if(*orden == '\0') break;/*Esta para que no printee cuando se envia la "orden extra", esto de la orden extra es como un bug que no tengo idea de donde sale,
 				 	 	 	 	 	 	 cuando lo prueben comenten esta linea y van a ver lo que digo*/
@@ -124,11 +145,55 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 }
 
+void crearNuevoProceso(char*buffer,int size){
+	char comandoInicializacion = 'A';
+	char comandoAlmacenar = 'C';
+	int  paginas =5; // A modo de ejemplo
+	int pidActual= contadorPid;
+	//Le pide memoria a Memoria
+	send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
+	enviar_string(socketMemoria,buffer); // Le manda el contenido
+	send(socketMemoria,&pidActual,sizeof(int),0);
+	send(socketMemoria,&paginas,sizeof(int),0);
+
+	printf("Ya Inicializo programa\n");
+	int offset=1; // valor arbitrario
+	// Ahora pido almacenar contenido en memoria.
+	send(socketMemoria,&comandoAlmacenar,sizeof(char),0); // Inicializa el handler connection de la memoria
+	send(socketMemoria,&pidActual,sizeof(int),0);
+	send(socketMemoria,&paginas,sizeof(int),0);
+	send(socketMemoria,&offset,sizeof(int),0);
+	send(socketMemoria,&size,sizeof(int),0);
+	enviar_string(socketMemoria,buffer);
+
+	/*Aca se podria crear el pcb y encolarlo */
+
+	printf("Ya almacene el buffer en la memoria \n");
+
+
+
+	/* Creacion del pcb y lo encola
+	t_pcb* procesoListo; // creo el pcb
+	procesoListo->pid = pidActual; // le seteo el pid.
+	encolarProcesoListo(procesoListo); // lo encolo en ready
+	*/
+}
+
+void encolarProcesoListo(t_pcb *pcbProcesoListo){
+//	colaListos
+	list_add(colaListos,pcbProcesoListo); // Agrega un pcb en la cola de listos. Al final
+}
+
+void inicializarColaListos(){
+	colaListos= list_create();
+}
+
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
 		printf("\n--Esperando una orden del cliente %d-- \n", socketCliente);
 		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
 		printf("El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
 }
+
 
 void selectorConexiones(int socket) {
 
