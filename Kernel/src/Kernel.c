@@ -26,20 +26,18 @@
 
 typedef struct PCB {
 	int pid;
-	int* programCounter;
 	int cantidadPaginas;
-	int indiceCodigo[2];
+	//int* programCounter;
+	//int indiceCodigo[2];
 	//Indice de etiquetas
 	//Indice del Stack
-	int exitCode;
+	//int exitCode;
 }t_pcb;
 
-void leerConfiguracion(char* ruta);
-void imprimirConfiguraciones();
-void connectionHandler(int socketAceptado, char *orden);
-void *get_in_addr(struct sockaddr *sa);
-void nuevaOrdenDeAccion(int puertoCliente, char* nuevaOrden);
-void selectorConexiones(int socket);
+typedef struct CONSOLA{
+	int pid;
+	int consolaId;
+}t_consola;
 
 
 char *ipConsola;
@@ -58,7 +56,7 @@ char *ipServidor;
 char *quantum;
 char *quantumSleep;
 char *algoritmo;
-char *gradoMultiProg;
+int gradoMultiProg;
 char *semIds;
 char *semInit;
 char *sharedVars;
@@ -66,14 +64,31 @@ char *stackSize;
 pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
 t_config* configuracion_kernel;
 
-int contadorPid=0;
+void inicializarLog();
+void escribirLog(char* mensaje);
+FILE * logFile;
 
-void crearNuevoProceso(char* buffer,int size);
+
+
+//----------Planificacion----------//
+int crearNuevoProceso(char* buffer,int size);
 void encolarProcesoListo(t_pcb *procesoListo);
 void inicializarColaListos();
 t_list* colaListos;
+t_list* colaTerminados;
+t_list* listaConsolas;
+int contadorPid=0;
+//---------PLanificacion-----------//
 
+//---------Conexiones---------------//
 
+void leerConfiguracion(char* ruta);
+void imprimirConfiguraciones();
+void connectionHandler(int socketAceptado, char *orden);
+void *get_in_addr(struct sockaddr *sa);
+void nuevaOrdenDeAccion(int puertoCliente, char* nuevaOrden);
+void selectorConexiones(int socket);
+//-----------Conexiones------------------//
 
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
@@ -85,24 +100,28 @@ int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
+	inicializarLog();
+	inicializarColaListos();
+	listaConsolas = list_create();
 
 	socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
-	inicializarColaListos();
-
 	while(1){
 	/*Multiplexor de conexiones. */
 		selectorConexiones(socketServidor);
 	}
+
+
+	//Hay que cerrar el log para que lo escriba.
 	return 0;
 }
-
 
 void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para tener la variable modificada cuando vuelva a selectorConexiones()
 	void *buffer;
 	int bytesARecibir=0;
+	int consolaId=0;
 
 	if(orden == '\0'){/*Si la orden es '\0' o sea si no fue la PrimerOrden de todas las conexiones, recibe una orden nueva porque la primerorden la seteamos en selectorConexiones(),
 	 	 	 	 	 	 Pero despues sin esto no podemos cambiarla, si es que queremos trabajar con las consolas en forma "paralela"*/
@@ -124,13 +143,28 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 						recv(socketAceptado,buffer,bytesARecibir  ,0);
 						printf("\n El mensaje recibido es: \" %s \" \n", buffer);
 
-						contadorPid++; // Para representar temporalmente el PID.
-						crearNuevoProceso(buffer,bytesARecibir); // aca naceria el planificador de procesos.
+						contadorPid++; // Valor temporal del pid.
+						send(socketAceptado,&contadorPid,sizeof(int),0);
+
+						t_consola *infoConsola = malloc(sizeof(t_consola));
+						infoConsola->pid=contadorPid;
+						infoConsola->consolaId=consolaId;
+
+
+						if((crearNuevoProceso(buffer,bytesARecibir))<0){ // Aca naceria el planificador de procesos.
+							printf("No se puede crear un nuevo proceso en el sistema");
+						}
+						else {
+							list_add(listaConsolas,infoConsola);
+						}
+						free(infoConsola);
 						free(buffer);
-				/*
-				 * El Kernel hasta ahora recibe el contenido del archivo y lo tiene en el buffer. El archivo puede ser variable
-				 * La idea ahora es mandar ese buffer a la memoria, y que la memoria lo almacene.
-				 */
+
+						break;
+		case 'Q' :
+						printf("Se ha solicitado cerrar la consola\n");
+						fclose(logFile);
+						exit(1);
 						break;
 			default:
 				if(*orden == '\0') break;/*Esta para que no printee cuando se envia la "orden extra", esto de la orden extra es como un bug que no tengo idea de donde sale,
@@ -145,38 +179,49 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 }
 
-void crearNuevoProceso(char*buffer,int size){
+int crearNuevoProceso(char*buffer,int size){
+
+	printf("%d\n\n",list_size(colaListos));
+
+	if(list_size(colaListos) >= gradoMultiProg){ /*Checkeo el grado de multiprogramacion*/
+		printf("ERROR:Capacidad limite de procesos en sistema\n");
+		return -1;
+	}
+
+
+	t_pcb* procesoListo = malloc(sizeof(t_pcb));
+	procesoListo->pid = contadorPid;
+	procesoListo->cantidadPaginas=1; // Es arbitrario. Hay que hacer un analisis antes de esto.
+
 	char comandoInicializacion = 'A';
 	char comandoAlmacenar = 'C';
-	int  paginas =5; // A modo de ejemplo
-	int pidActual= contadorPid;
-	//Le pide memoria a Memoria
+
+
+	//Pide Memoria
 	send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
 	enviar_string(socketMemoria,buffer); // Le manda el contenido
-	send(socketMemoria,&pidActual,sizeof(int),0);
-	send(socketMemoria,&paginas,sizeof(int),0);
-
+	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
+	send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
 	printf("Ya Inicializo programa\n");
+
+
 	int offset=1; // valor arbitrario
 	// Ahora pido almacenar contenido en memoria.
 	send(socketMemoria,&comandoAlmacenar,sizeof(char),0); // Inicializa el handler connection de la memoria
-	send(socketMemoria,&pidActual,sizeof(int),0);
-	send(socketMemoria,&paginas,sizeof(int),0);
+	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
+	send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
 	send(socketMemoria,&offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
 	enviar_string(socketMemoria,buffer);
 
-	/*Aca se podria crear el pcb y encolarlo */
+	/*Aca se podria crear el pcb y encolarlo
+
+		encolarProcesoListo(procesoListo); // lo encolo en ready
+		una vez encolado, se lo manda a la lista consolas
+		*/
 
 	printf("Ya almacene el buffer en la memoria \n");
-
-
-
-	/* Creacion del pcb y lo encola
-	t_pcb* procesoListo; // creo el pcb
-	procesoListo->pid = pidActual; // le seteo el pid.
-	encolarProcesoListo(procesoListo); // lo encolo en ready
-	*/
+	return 0;
 }
 
 void encolarProcesoListo(t_pcb *pcbProcesoListo){
@@ -193,7 +238,6 @@ void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
 		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
 		printf("El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
 }
-
 
 void selectorConexiones(int socket) {
 
@@ -299,7 +343,7 @@ void leerConfiguracion(char* ruta) {
 	quantum = config_get_string_value(configuracion_kernel, "QUANTUM");
 	quantumSleep = config_get_string_value(configuracion_kernel,"QUANTUM_SLEEP");
 	algoritmo = config_get_string_value(configuracion_kernel, "ALGORTIMO");
-	gradoMultiProg = config_get_string_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION");
+	gradoMultiProg = atoi(config_get_string_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION"));
 	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
@@ -313,7 +357,14 @@ void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
 	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipConsola,puertoConsola,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
 	printf("---------------------------------------------------\n");
-	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%s\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",	quantum, quantumSleep, algoritmo, gradoMultiProg, semIds, semInit, sharedVars, stackSize);
+	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",	quantum, quantumSleep, algoritmo, gradoMultiProg, semIds, semInit, sharedVars, stackSize);
 	printf("---------------------------------------------------\n");
 
+}
+
+void escribirLog(char* mensaje){
+	fwrite(mensaje,1,sizeof(mensaje),logFile);
+}
+void inicializarLog(){
+	logFile=fopen("logKernel.txt","w");
 }
