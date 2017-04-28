@@ -290,18 +290,26 @@ int main_almacenarBytesPagina(int sock)
 {
 	int pid;
 	int pagina;
-	pid=atoi((char*)recibir(sock));
-	printf("PID:%d\n",pid);
-	pagina=atoi((char*)recibir(sock));
-	printf("Pagina:%d\n",pagina);
 	int offset;
 	int size;
-	offset=atoi((char*)recibir(sock));
+	char *bytes;
+	recv(sock,&pid,sizeof(int),0);
+	//pid=atoi((char*)recibir(sock));
+	printf("PID:%d\n",pid);
+	recv(sock,&pagina,sizeof(int),0);
+	//pagina=atoi((char*)recibir(sock));
+	printf("Pagina:%d\n",pagina);
+	recv(sock,&offset,sizeof(int),0);
+	//offset=atoi((char*)recibir(sock));
 	printf("Offset:%d\n",offset);
-	size=atoi((char*)recibir(sock));
+	recv(sock,&size,sizeof(int),0);
+	//size=atoi((char*)recibir(sock));
 	printf("Size:%d\n",size);
-	char* bytes = recibir_string(sock);
+	bytes = malloc(size);
+	recv(sock,&bytes,size,MSG_WAITALL);
+	//bytes = recibir_string(sock);
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
+	free(bytes);
 	return 0;
 }
 int main_asignarPaginasAProceso(int sock)
@@ -508,6 +516,7 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 		}
 		i++;
 	}
+	return -1;
 }
 
 void imprimirConfiguraciones(){
