@@ -71,7 +71,7 @@ int main_finalizarPrograma();
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
 int inicializarPrograma(int pid, int cantPaginas);
-char* solicitarBytesPagina(int pid,int pagina, int offset, int size);
+char* solicitarBytesPagina(int pid,int pagina, int offset, int size,char** buffer);
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);
 int asignarPaginasAProceso(int pid, int cantPaginas, int frame);
 int finalizarPrograma(int pid);
@@ -165,19 +165,17 @@ int inicializarPrograma(int pid, int cantPaginas)
 	return posicionFrame;
 }
 
-char* solicitarBytesPagina(int pid,int pagina, int offset, int size)
+char* solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffer)
 {
 	printf("Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 	printf("El frame es : %d\n",frame);
 
-	char* buffer=malloc(size);
-	memcpy(buffer,frame_Memoria + frame*marco_size+offset,size);
+	memcpy(*buffer,frame_Memoria + frame*marco_size+offset,size);
 
-	printf("%s\n",buffer);
+	printf("%s\n",*buffer);
 
-
-	return buffer;
+	return *buffer;
 }
 
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
@@ -316,7 +314,8 @@ int main_solicitarBytesPagina(int sock)
 	printf("Offset:%d\n",offset);
 	printf("Size:%d\n",size);
 
-	bufferAEnviar= solicitarBytesPagina(pid,pagina,offset,size);
+	bufferAEnviar=malloc(size);
+	solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
 	enviar_string(sock,bufferAEnviar);
 	//send(sock,bufferAEnviar,size,0);
 
@@ -330,23 +329,16 @@ int main_almacenarBytesPagina(int sock)
 	int offset;
 	int size;
 	char *bytes;
-
 	recv(sock,&pid,sizeof(int),0);
 	recv(sock,&pagina,sizeof(int),0);
 	recv(sock,&offset,sizeof(int),0);
 	recv(sock,&size,sizeof(int),0);
-
 	bytes=malloc(size);
-
 	recv(sock,bytes,size,MSG_WAITALL);
-
-
-
 	printf("PID:%d\n",pid);
 	printf("Pagina:%d\n",pagina);
 	printf("Offset:%d\n",offset);
 	printf("Size:%d\n",size);
-
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
 	printf("Sali de almacenar \n");
 	free(bytes);

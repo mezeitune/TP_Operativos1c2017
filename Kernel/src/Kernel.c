@@ -142,14 +142,12 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 						printf("Se ha avisado que un archivo esta por enviarse\n");
 
 						recv(socketAceptado,&bytesARecibir, sizeof(int),0); //
-						//printf("Los bytes a recibir son: %d \n", bytesARecibir);
 						log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
 
 						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
 						recv(socketAceptado,buffer,bytesARecibir  ,0);
 
 						log_info(loggerConPantalla, "\n El mensaje recibido es: \" %s \" \n", buffer);
-
 
 						contadorPid++; // Valor temporal del pid.
 						send(socketAceptado,&contadorPid,sizeof(int),0);
@@ -211,11 +209,6 @@ int crearNuevoProceso(char*buffer,int size){
 	char comandoSolicitar = 'S';
 
 	//Pide Memoria
-
-	//send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
-	//send(socketMemoria,&procesoListo->pid,sizeof(int),0);
-	//send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
-
 	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
 	memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
@@ -227,8 +220,10 @@ int crearNuevoProceso(char*buffer,int size){
 		free(procesoListo);
 		free(mensajeAMemoria);
 	}
+	else{
+		printf("Ya Inicializo programa\n");
+	}
 
-	printf("Ya Inicializo programa\n");
 	//free(mensajeAMemoria);
 
 	//mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
@@ -245,17 +240,14 @@ int crearNuevoProceso(char*buffer,int size){
 	send(socketMemoria,&size,sizeof(int),0);
 	send(socketMemoria,buffer,size,0);
 
-
 	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
 	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
 	send(socketMemoria,&paginaAPedir,sizeof(int),0);
 	send(socketMemoria,&offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
 
-	//mensajeRecibido=malloc(size);
 
 	mensajeRecibido = recibir_string(socketMemoria);
-	//recv(socketMemoria,mensajeRecibido,size,MSG_WAITALL);
 	printf("El mensale recibido de la Memoria es : %s\n" , mensajeRecibido);
 
 	/*Aca se podria crear el pcb y encolarlo*/
@@ -263,8 +255,6 @@ int crearNuevoProceso(char*buffer,int size){
 	encolarProcesoListo(procesoListo);
 	free(procesoListo); //No se si esta bien el free.
 
-
-	printf("Ya almacene el buffer en la memoria \n");
 	return 0;
 }
 
