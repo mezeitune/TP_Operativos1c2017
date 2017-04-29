@@ -23,7 +23,8 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
-#include <commons/conexiones.h>
+//#include <commons/conexiones.h>
+#include "conexiones.h"
 
 int enviarLecturaArchivo(void *ruta, int socket);
 void leerConfiguracion(char* ruta);

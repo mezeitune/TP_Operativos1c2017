@@ -22,7 +22,8 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
-#include <commons/conexiones.h>
+//#include <commons/conexiones.h>
+#include "conexiones.h"
 
 typedef struct PCB {
 	int pid;

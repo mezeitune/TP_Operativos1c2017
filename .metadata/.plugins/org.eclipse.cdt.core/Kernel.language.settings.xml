@@ -2147,6 +2147,9 @@
 					<entry kind="macro" name="__linux__" value="1">
 						<flag value="BUILTIN|READONLY"/>
 					</entry>
+					<entry kind="macro" name="__pentiumpro" value="1">
+						<flag value="BUILTIN|READONLY"/>
+					</entry>
 					<entry kind="macro" name="__pentiumpro__" value="1">
 						<flag value="BUILTIN|READONLY"/>
 					</entry>

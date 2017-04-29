@@ -1,13 +1,6 @@
-22:39:15 **** Incremental Build of configuration Debug for project Consola ****
+22:05:31 **** Incremental Build of configuration Debug for project Consola ****
 make all 
-Building file: ../src/Consola.c
-Invoking: Cross GCC Compiler
-gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/Consola.d" -MT"src/Consola.d" -o "src/Consola.o" "../src/Consola.c"
-../src/Consola.c:25:32: fatal error: commons/conexiones.h: No existe el archivo o el directorio
- #include <commons/conexiones.h>
-                                ^
-compilation terminated.
-make: *** [src/Consola.o] Error 1
+make: No se hace nada para «all».
 
-22:39:16 Build Finished (took 332ms)
+22:05:31 Build Finished (took 61ms)
 
