@@ -200,7 +200,6 @@ int crearNuevoProceso(char*buffer,int size){
 
 	//Pide Memoria
 	send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
-	enviar_string(socketMemoria,buffer); // Le manda el contenido
 	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
 	send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
 	printf("Ya Inicializo programa\n");
