@@ -22,11 +22,13 @@
 #include <commons/string.h>
 #include <commons/config.h>
 #include <commons/conexiones.h>
+#include <parser/metadata_program.h>
+#include <pthread.h>
 
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void connectionHandler(int socketKernel);
-
+void* conexionMemoria (int socketMemoria);
 t_config* configuracion_memoria;
 char* puertoKernel;
 char* puertoMemoria;
@@ -38,6 +40,8 @@ int socketMemoria;
 int socketKernel;
 //-----------------------------------------//
 
+pthread_t HiloConexionMemoria;
+
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
@@ -45,12 +49,25 @@ int main(void) {
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
-	/*
-	 * Crear un hilo para comunicarme con la Memoria
-	 */
+	int err = pthread_create(&HiloConexionMemoria, NULL, &conexionMemoria,	(void*) socketMemoria);
+		if (err != 0)
+			printf("\ncan't create thread :[%s]", strerror(err));
+		else
+			printf("\n Thread created successfully\n");
+
+	(void) pthread_join(HiloConexionMemoria, NULL);
+
+
 	connectionHandler(socketKernel);
 
 	return 0;
+}
+
+void* conexionMemoria (int socketMemoria){
+
+	//analizadorLinea("a = b + 3", AnSISOP_funciones *AnSISOP_funciones, AnSISOP_kernel *AnSISOP_funciones_kernel);
+
+
 }
 
 

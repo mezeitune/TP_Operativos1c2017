@@ -218,13 +218,13 @@ int crearNuevoProceso(char*buffer,int size){
 		free(mensajeAMemoria);
 	}
 	printf("Ya Inicializo programa\n");
-	free(mensajeAMemoria);
+	//free(mensajeAMemoria);
 
-	mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
+	//mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
 
-	memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
-	memcpy(mensajeAMemoria,&procesoListo->pid,sizeof(int));
-	memcpy(mensajeAMemoria,&paginaAPedir,sizeof(int));
+	//memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
+	//memcpy(mensajeAMemoria,&procesoListo->pid,sizeof(int));
+	//memcpy(mensajeAMemoria,&paginaAPedir,sizeof(int));
 
 	// Ahora pido almacenar contenido en memoria.
 	send(socketMemoria,&comandoAlmacenar,sizeof(char),0); // Inicializa el handler connection de la memoria
