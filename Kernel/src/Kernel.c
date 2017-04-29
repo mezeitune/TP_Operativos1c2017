@@ -24,6 +24,7 @@
 #include <pthread.h>
 //#include <commons/conexiones.h>
 #include "conexiones.h"
+#include <commons/log.h>
 
 typedef struct PCB {
 	int pid;
@@ -39,6 +40,10 @@ typedef struct CONSOLA{
 	int pid;
 	int consolaId;
 }t_consola;
+
+
+t_log *loggerSinPantalla;
+t_log *loggerConPantalla;
 
 
 char *ipConsola;
@@ -65,10 +70,7 @@ char *stackSize;
 pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
 t_config* configuracion_kernel;
 
-void inicializarLog();
-void escribirLog(char* mensaje);
-FILE * logFile;
-
+void inicializarLog(char *ruta);
 
 
 //----------Planificacion----------//
@@ -100,8 +102,10 @@ int socketServidor; // Para CPUs y Consolas
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
+	inicializarLog("/home/utnso/Escritorio/logKernel.txt");
+
+
 	imprimirConfiguraciones();
-	inicializarLog();
 	inicializarColaListos();
 	listaConsolas = list_create();
 
@@ -129,7 +133,7 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 		nuevaOrdenDeAccion(socketAceptado, orden);
 	}
 
-	printf("El nuevo cliente %d ha enviado la orden: %c\n", socketAceptado, *(char*)orden);
+	log_info(loggerConPantalla, "El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, *(char*)orden);
 
 	switch (*(char*)orden) {
 
@@ -138,11 +142,14 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 						printf("Se ha avisado que un archivo esta por enviarse\n");
 
 						recv(socketAceptado,&bytesARecibir, sizeof(int),0); //
-						printf("Los bytes a recibir son: %d \n", bytesARecibir);
+						//printf("Los bytes a recibir son: %d \n", bytesARecibir);
+						log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
 
 						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
 						recv(socketAceptado,buffer,bytesARecibir  ,0);
-						printf("\n El mensaje recibido es: \" %s \" \n", buffer);
+
+						log_info(loggerConPantalla, "\n El mensaje recibido es: \" %s \" \n", buffer);
+
 
 						contadorPid++; // Valor temporal del pid.
 						send(socketAceptado,&contadorPid,sizeof(int),0);
@@ -153,7 +160,7 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 
 						if((crearNuevoProceso(buffer,bytesARecibir))<0){ // Aca naceria el planificador de procesos.
-							printf("No se puede crear un nuevo proceso en el sistema");
+							log_error(loggerConPantalla, "No se puede crear un nuevo proceso en el sistema");
 						}
 						else {
 							list_add(listaConsolas,infoConsola);
@@ -163,15 +170,14 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 						break;
 		case 'Q' :
-						printf("Se ha solicitado cerrar la consola\n");
-						fclose(logFile);
+
+						log_info(loggerConPantalla,"Se ha solicitado cerrar la consola\n");
 						exit(1);
 						break;
 			default:
 				if(*orden == '\0') break;/*Esta para que no printee cuando se envia la "orden extra", esto de la orden extra es como un bug que no tengo idea de donde sale,
 				 	 	 	 	 	 	 cuando lo prueben comenten esta linea y van a ver lo que digo*/
-
-				printf("ERROR: Orden %c no definida\n", *(char*)orden);
+				log_error(loggerConPantalla,"Orden %c no definida\n", *(char*)orden);
 				break;
 		} // END switch.
 
@@ -192,7 +198,7 @@ int crearNuevoProceso(char*buffer,int size){
 
 
 	if(list_size(colaListos) >= gradoMultiProg){ /*Checkeo el grado de multiprogramacion*/
-		printf("ERROR:Capacidad limite de procesos en sistema\n");
+		log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
 		return -1;
 	}
 
@@ -206,6 +212,11 @@ int crearNuevoProceso(char*buffer,int size){
 
 
 	//Pide Memoria
+
+	send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
+	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
+	send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
+
 	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
 	memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
@@ -217,6 +228,7 @@ int crearNuevoProceso(char*buffer,int size){
 		free(procesoListo);
 		free(mensajeAMemoria);
 	}
+
 	printf("Ya Inicializo programa\n");
 	//free(mensajeAMemoria);
 
@@ -395,9 +407,68 @@ void imprimirConfiguraciones() {
 
 }
 
-void escribirLog(char* mensaje){
-	fwrite(mensaje,1,sizeof(mensaje),logFile);
+void inicializarLog(char *rutaDeLog){
+
+	loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
+	loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
+
 }
-void inicializarLog(){
-	logFile=fopen("logKernel.txt","w");
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

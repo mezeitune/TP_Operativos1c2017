@@ -21,9 +21,9 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
-#include <commons/conexiones.h>
 #include <parser/metadata_program.h>
 #include <pthread.h>
+#include "conexiones.h"
 
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();

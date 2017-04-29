@@ -79,7 +79,7 @@ int finalizarPrograma(int pid);
 
 void liberarBitMap(int pos, int size);
 void ocuparBitMap(int pos, int size);
-int verificarEspacio(int size);
+int verificarEspacio();
 void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas, int cantPaginasAnteriores);
 void borrarProgramDeStructAdms(int pid);
 int buscarFrameDePaginaDeProceso(int pid, int pagina);
@@ -155,7 +155,7 @@ void inicializarMemoriaAdm()
 int inicializarPrograma(int pid, int cantPaginas)
 {
 	printf("Inicializar Programa %d\n",pid);
-	int posicionFrame = verificarEspacio(cantPaginas);
+	int posicionFrame = verificarEspacio();
 	if(posicionFrame >= 0)
 	{
 		ocuparBitMap(posicionFrame,cantPaginas);
@@ -252,10 +252,14 @@ char nuevaOrdenDeAccion(int socketCliente)
 {
 	char* buffer=malloc(sizeof(char));
 	char bufferRecibido;
+
 	printf("\n--Esperando una orden del cliente-- \n");
+
 	recv(socketCliente,buffer,sizeof(char),0);
 	bufferRecibido = *buffer;
+
 	free(buffer);
+
     printf("El cliente ha enviado la orden: %c\n",bufferRecibido);
 	printf("%c\n",bufferRecibido);
 	return bufferRecibido;
@@ -265,11 +269,15 @@ int main_inicializarPrograma(int sock)
 {
 	int pid;
 	int cantPaginas;
+
 	recv(sock,&pid,sizeof(int),0);
-	printf("PID:%d\n",pid);
 	recv(sock,&cantPaginas,sizeof(int),0);
+
+	printf("PID:%d\n",pid);
 	printf("CantPaginas:%d\n",cantPaginas);
-	int espacioLibre = verificarEspacio(cantPaginas);
+
+	int espacioLibre = verificarEspacio();
+
 	printf("Bitmap:%s\n",bitMap);
 	if(espacioLibre >= cantPaginas)
 	{
@@ -299,18 +307,17 @@ int main_solicitarBytesPagina(int sock)
 	char*bufferAEnviar;
 
 	recv(sock,&pid,sizeof(int),0);
-	printf("PID:%d\n",pid);
 	recv(sock,&pagina,sizeof(int),0);
-	printf("Pagina:%d\n",pagina);
 	recv(sock,&offset,sizeof(int),0);
-	printf("Offset:%d\n",offset);
 	recv(sock,&size,sizeof(int),0);
+
+	printf("PID:%d\n",pid);
+	printf("Pagina:%d\n",pagina);
+	printf("Offset:%d\n",offset);
 	printf("Size:%d\n",size);
 
 	bufferAEnviar= solicitarBytesPagina(pid,pagina,offset,size);
-
 	enviar_string(sock,bufferAEnviar);
-
 	//send(sock,bufferAEnviar,size,0);
 
 	free(bufferAEnviar);
@@ -323,17 +330,20 @@ int main_almacenarBytesPagina(int sock)
 	int offset;
 	int size;
 	char *bytes;
+
 	recv(sock,&pid,sizeof(int),0);
-	printf("PID:%d\n",pid);
 	recv(sock,&pagina,sizeof(int),0);
-	printf("Pagina:%d\n",pagina);
 	recv(sock,&offset,sizeof(int),0);
-	printf("Offset:%d\n",offset);
 	recv(sock,&size,sizeof(int),0);
-	printf("Size:%d\n",size);
-	bytes=malloc(size);
 	recv(sock,bytes,size,MSG_WAITALL);
-	printf("%s\n",bytes);
+
+	bytes=malloc(size);
+
+	printf("PID:%d\n",pid);
+	printf("Pagina:%d\n",pagina);
+	printf("Offset:%d\n",offset);
+	printf("Size:%d\n",size);
+
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
 	printf("Sali de almacenar \n");
 	free(bytes);
@@ -343,12 +353,16 @@ int main_asignarPaginasAProceso(int sock)
 {
 	int pid;
 	int cantPaginas;
+
 	recv(sock,&pid,sizeof(int),0);
-	printf("PID:%d\n",pid);
 	recv(sock,&cantPaginas,sizeof(int),0);
+
+	printf("PID:%d\n",pid);
 	printf("CantPaginas:%d\n",cantPaginas);
-	int espacioLibre = verificarEspacio(cantPaginas);
 	printf("Bitmap:%s\n",bitMap);
+
+	int espacioLibre = verificarEspacio();
+
 	if(espacioLibre >= cantPaginas)
 	{
 		int posicionFrame;
@@ -370,7 +384,9 @@ int main_asignarPaginasAProceso(int sock)
 int main_finalizarPrograma(int sock)
 {
 	int pid;
-	pid=atoi((char*)recibir(sock));
+
+	recv(sock,&pid,sizeof(int),0);
+
 	finalizarPrograma(pid);
 	return 0;
 }
@@ -393,15 +409,15 @@ void ocuparBitMap(int pos, int size)
 	}
 }
 
-int verificarEspacio(int size)
+int verificarEspacio()
 {
 	int i = 0, espacioLibre = 0;
 	while(i < marcos)
 	{
 		if(bitMap[i] == '0')
 		{
-		espacioLibre ++;
-		i++;
+			espacioLibre ++;
+			i++;
 		}
 		i++;
 	}
@@ -417,7 +433,6 @@ void *connection_handler(void *socket_desc)
     int sock = *(int*)socket_desc;
     char orden;
     int resultadoDeEjecucion;
-    char *buffer;
 	while((orden=nuevaOrdenDeAccion(sock)) != 'Q')
 	{
 		switch(orden)
@@ -558,7 +573,7 @@ void imprimirEstructurasAdministrativas()
 
 int buscarFrameVacio()
 {
-	int i = -1;
+	int i = 0;
 	while(i < marcos)
 	{
 		if(bitMap[i] == '0')
@@ -567,11 +582,12 @@ int buscarFrameVacio()
 		}
 		i++;
 	}
-	return i;
+	return -1;
 }
 
 int cantPaginasDeProceso(int pid)
 {
+
 	struct_adm_memoria aux;
 	int i = 0;
 	int desplazamiento = sizeof(struct_adm_memoria);
