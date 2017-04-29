@@ -23,7 +23,7 @@
 #include <malloc.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <commons/conexiones.h>
+#include "conexiones.h"
 
 char *ipKernel;
 char *puertoKernel;
