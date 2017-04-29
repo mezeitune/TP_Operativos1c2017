@@ -182,13 +182,19 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 int crearNuevoProceso(char*buffer,int size){
 
-	printf("%d\n\n",list_size(colaListos));
+	void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
+	int resultadoEjecucion;
+	int offset=0; // valor arbitrario
+	int paginaAPedir = 0;
+
+
+	char* mensajeRecibido;
+
 
 	if(list_size(colaListos) >= gradoMultiProg){ /*Checkeo el grado de multiprogramacion*/
 		printf("ERROR:Capacidad limite de procesos en sistema\n");
 		return -1;
 	}
-
 
 	t_pcb* procesoListo = malloc(sizeof(t_pcb));
 	procesoListo->pid = contadorPid;
@@ -196,29 +202,62 @@ int crearNuevoProceso(char*buffer,int size){
 
 	char comandoInicializacion = 'A';
 	char comandoAlmacenar = 'C';
+	char comandoSolicitar = 'S';
 
 
 	//Pide Memoria
+<<<<<<< HEAD
 	send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
 	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
 	send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
+=======
+	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
+	memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
+	memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
+	send(socketMemoria,mensajeAMemoria,sizeof(int)*2 + sizeof(char),0);
+	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+
+	if(resultadoEjecucion < 0){
+		/* no se puede inicializar*/
+		free(procesoListo);
+		free(mensajeAMemoria);
+	}
+>>>>>>> d2e2d7fe64a0ea24826a9aada72e51b4ce0a42e7
 	printf("Ya Inicializo programa\n");
+	free(mensajeAMemoria);
 
+	mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
 
-	int offset=1; // valor arbitrario
+	memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
+	memcpy(mensajeAMemoria,&procesoListo->pid,sizeof(int));
+	memcpy(mensajeAMemoria,&paginaAPedir,sizeof(int));
+
 	// Ahora pido almacenar contenido en memoria.
 	send(socketMemoria,&comandoAlmacenar,sizeof(char),0); // Inicializa el handler connection de la memoria
 	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
-	send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
+	send(socketMemoria,&paginaAPedir,sizeof(int),0);
 	send(socketMemoria,&offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
-	enviar_string(socketMemoria,buffer);
+	send(socketMemoria,buffer,size,0);
 
-	/*Aca se podria crear el pcb y encolarlo
 
-		encolarProcesoListo(procesoListo); // lo encolo en ready
-		una vez encolado, se lo manda a la lista consolas
-		*/
+	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
+	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
+	send(socketMemoria,&paginaAPedir,sizeof(int),0);
+	send(socketMemoria,&offset,sizeof(int),0);
+	send(socketMemoria,&size,sizeof(int),0);
+
+	//mensajeRecibido=malloc(size);
+
+	mensajeRecibido = recibir_string(socketMemoria);
+	//recv(socketMemoria,mensajeRecibido,size,MSG_WAITALL);
+	printf("El mensale recibido de la Memoria es : %s\n" , mensajeRecibido);
+
+	/*Aca se podria crear el pcb y encolarlo*/
+
+	encolarProcesoListo(procesoListo);
+	free(procesoListo); //No se si esta bien el free.
+
 
 	printf("Ya almacene el buffer en la memoria \n");
 	return 0;
