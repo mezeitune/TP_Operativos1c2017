@@ -36,6 +36,13 @@ typedef struct PCB {
 	//int exitCode;
 }t_pcb;
 
+typedef struct HiloMemoria {
+	int socket;
+	char *orden;
+}hilo_t;
+
+
+
 typedef struct CONSOLA{
 	int pid;
 	int consolaId;
@@ -44,7 +51,7 @@ typedef struct CONSOLA{
 
 t_log *loggerSinPantalla;
 t_log *loggerConPantalla;
-
+pthread_t threadId;
 
 char *ipConsola;
 char *ipCPU;
@@ -67,7 +74,7 @@ char *semIds;
 char *semInit;
 char *sharedVars;
 char *stackSize;
-pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
+pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS, interfazUsID;
 t_config* configuracion_kernel;
 
 void inicializarLog(char *ruta);
@@ -91,6 +98,7 @@ void connectionHandler(int socketAceptado, char *orden);
 void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char* nuevaOrden);
 void selectorConexiones(int socket);
+void interfazHandler();
 //-----------Conexiones------------------//
 
 //------------Sockets unicos globales--------------------//
@@ -99,11 +107,11 @@ int socketFyleSys;
 int socketServidor; // Para CPUs y Consolas
 //------------------------------------------------------//
 
+
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	inicializarLog("/home/utnso/Escritorio/logKernel.txt");
-
 
 	imprimirConfiguraciones();
 	inicializarColaListos();
@@ -113,15 +121,65 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
+	/*if(pthread_create(&interfazUsID, NULL, (void*)interfazHandler, NULL)){
+		log_error(loggerConPantalla, "Error al crear el hilo\n");
+	}*/
+
+
 	while(1){
 	/*Multiplexor de conexiones. */
 		selectorConexiones(socketServidor);
 	}
 
-
+	pthread_join(interfazUsID, NULL);
 	//Hay que cerrar el log para que lo escriba.
 	return 0;
 }
+
+void interfazHandler(){
+
+	char *orden = malloc(sizeof(char));
+	int pid;
+
+
+		printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
+
+		printf("\n\nhola\n");
+
+		scanf("%c", orden);
+
+
+		switch(*orden){
+			case 'O':
+				/*obtenerListadoProgramas(); TODO HAY QUE IMPLEMENTAR*/
+				break;
+			case 'P':
+				printf("Ingresar PID del proceso");
+				scanf("%d", pid);
+				/*obtenerProcesoDato(int pid); TOOD HAY QUE IMPLEMENTAR*/
+				break;
+			case 'G':
+				/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
+				break;
+			case 'M':
+				printf("\n\nhola2\n");
+
+				/*modificarGradoMultiProg(int grado) TODO HAY QUE IMPLEMETAR*/
+				break;
+			case 'K':
+				/*finalizarProceso(int pid) TODO HAY QUE IMPLEMENTAR*/
+				break;
+			case 'D':
+				/*pausarPlanificacion() TODO HAY QUE IMPLEMENTAR*/
+				break;
+			default:
+				log_error(loggerConPantalla, "Orden no reconocida\n");
+				break;
+		}
+		return;
+}
+
+
 
 void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para tener la variable modificada cuando vuelva a selectorConexiones()
 	void *buffer;
@@ -304,6 +362,7 @@ void selectorConexiones(int socket) {
 	}
 
 	FD_SET(socket, &master); // add the listener to the master set
+	FD_SET(0, &master); /*************************AGREGADO*************************/
 	fdMax = socket; // keep track of the biggest file descriptor so far, it's this one
 
 	// main loop
@@ -317,6 +376,11 @@ void selectorConexiones(int socket) {
 		// run through the existing connections looking for data to read
 		for (i = 0; i <= fdMax; i++) {
 			if (FD_ISSET(i, &readFds)) { // we got one!!
+
+				/**********************************************************/
+				if(i == 0)interfazHandler();//Recibe a si mismo
+				/************************************************************/
+
 				if (i == socket) {
 					// handle new connections
 					addrlen = sizeof remoteaddr;
@@ -333,9 +397,8 @@ void selectorConexiones(int socket) {
 					}
 				}
 
-				else {
+				else if(i!=0) {
 					// handle data from a client
-
 					if ((nbytes = recv(i, &orden, sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
 
 						// got error or connection closed by client
@@ -348,12 +411,13 @@ void selectorConexiones(int socket) {
 						close(i); // bye!
 						FD_CLR(i, &master); // remove from master set
 					}
+
 					else {
 						// we got some data from a client
 						for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
 							if (FD_ISSET(j, &master)) {
 								if (j != socket && j != i) {
-										connectionHandler(i, &orden);
+									connectionHandler(i, &orden);
 						        }
 						    }
 						}
