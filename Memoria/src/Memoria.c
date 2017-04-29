@@ -169,8 +169,13 @@ char* solicitarBytesPagina(int pid,int pagina, int offset, int size)
 {
 	printf("Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
-	char* buffer;
-	memcpy(&buffer,frame_Memoria + frame*sizeof(marco_size)+offset,size);
+	printf("El frame es : %d\n",frame);
+
+	char* buffer=malloc(size);
+	memcpy(buffer,frame_Memoria + frame*marco_size+offset,size);
+
+	printf("%s\n",buffer);
+
 
 	return buffer;
 }
@@ -182,7 +187,7 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 	printf("Frame:%d\n",frame);
 	if(frame >= 0)
 	{
-		memcpy(frame_Memoria + frame*sizeof(marco_size)+offset,&buffer,size);
+		memcpy(frame_Memoria + frame*marco_size+offset,buffer,size);
 	}
 	else
 	{
@@ -248,24 +253,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 	char* buffer=malloc(sizeof(char));
 	char bufferRecibido;
 	printf("\n--Esperando una orden del cliente-- \n");
-
-	//buffer = recibir(socketCliente);  ESTO ESTABA ASI
 	recv(socketCliente,buffer,sizeof(char),0);
-	//int size_mensaje = sizeof(buffer);
-
-	/*
-	if(buffer == NULL)
-    {
-        return 'Q';
-    	//puts("Client disconnected");
-        //fflush(stdout);
-    }
-    else if(buffer == NULL)
-    {
-        return 'X';
-    	//perror("recv failed");
-    }
-    */
 	bufferRecibido = *buffer;
 	free(buffer);
     printf("El cliente ha enviado la orden: %c\n",bufferRecibido);
@@ -278,10 +266,8 @@ int main_inicializarPrograma(int sock)
 	int pid;
 	int cantPaginas;
 	recv(sock,&pid,sizeof(int),0);
-	//pid=atoi((char*)recibir(sock));
 	printf("PID:%d\n",pid);
 	recv(sock,&cantPaginas,sizeof(int),0);
-	//cantPaginas=atoi((char*)recibir(sock));
 	printf("CantPaginas:%d\n",cantPaginas);
 	int espacioLibre = verificarEspacio(cantPaginas);
 	printf("Bitmap:%s\n",bitMap);
@@ -294,6 +280,7 @@ int main_inicializarPrograma(int sock)
 			posicionFrame = buscarFrameVacio();
 			ocuparBitMap(posicionFrame,1);
 			asignarPaginasAProceso(pid,1,posicionFrame);
+			i++;
 		}
 		return 0;
 	}
@@ -307,18 +294,26 @@ int main_solicitarBytesPagina(int sock)
 {
 	int pid;
 	int pagina;
-	pid=atoi((char*)recibir(sock));
-	printf("PID:%d\n",pid);
-	pagina=atoi((char*)recibir(sock));
-	printf("Pagina:%d\n",pagina);
 	int offset;
 	int size;
-	offset=atoi((char*)recibir(sock));
+	char*bufferAEnviar;
+
+	recv(sock,&pid,sizeof(int),0);
+	printf("PID:%d\n",pid);
+	recv(sock,&pagina,sizeof(int),0);
+	printf("Pagina:%d\n",pagina);
+	recv(sock,&offset,sizeof(int),0);
 	printf("Offset:%d\n",offset);
-	size=atoi((char*)recibir(sock));
+	recv(sock,&size,sizeof(int),0);
 	printf("Size:%d\n",size);
-	char *mensaje = solicitarBytesPagina(pid,pagina,offset,size);
-	enviar_string(sock, mensaje);
+
+	bufferAEnviar= solicitarBytesPagina(pid,pagina,offset,size);
+
+	enviar_string(sock,bufferAEnviar);
+
+	//send(sock,bufferAEnviar,size,0);
+
+	free(bufferAEnviar);
 	return 0;
 }
 int main_almacenarBytesPagina(int sock)
@@ -329,21 +324,18 @@ int main_almacenarBytesPagina(int sock)
 	int size;
 	char *bytes;
 	recv(sock,&pid,sizeof(int),0);
-	//pid=atoi((char*)recibir(sock));
 	printf("PID:%d\n",pid);
 	recv(sock,&pagina,sizeof(int),0);
-	//pagina=atoi((char*)recibir(sock));
 	printf("Pagina:%d\n",pagina);
 	recv(sock,&offset,sizeof(int),0);
-	//offset=atoi((char*)recibir(sock));
 	printf("Offset:%d\n",offset);
 	recv(sock,&size,sizeof(int),0);
-	//size=atoi((char*)recibir(sock));
 	printf("Size:%d\n",size);
-	bytes = malloc(size);
-	recv(sock,&bytes,size,MSG_WAITALL);
-	//bytes = recibir_string(sock);
+	bytes=malloc(size);
+	recv(sock,bytes,size,MSG_WAITALL);
+	printf("%s\n",bytes);
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
+	printf("Sali de almacenar \n");
 	free(bytes);
 	return 0;
 }
@@ -352,10 +344,8 @@ int main_asignarPaginasAProceso(int sock)
 	int pid;
 	int cantPaginas;
 	recv(sock,&pid,sizeof(int),0);
-	//pid=atoi((char*)recibir(sock));
 	printf("PID:%d\n",pid);
 	recv(sock,&cantPaginas,sizeof(int),0);
-	//cantPaginas=atoi((char*)recibir(sock));
 	printf("CantPaginas:%d\n",cantPaginas);
 	int espacioLibre = verificarEspacio(cantPaginas);
 	printf("Bitmap:%s\n",bitMap);
@@ -413,6 +403,7 @@ int verificarEspacio(int size)
 		espacioLibre ++;
 		i++;
 		}
+		i++;
 	}
 	return espacioLibre;
 }
@@ -432,10 +423,8 @@ void *connection_handler(void *socket_desc)
 		switch(orden)
 		{
 		case 'A':
-			printf("Esperando mensaje\n");
-			buffer = recibir_string(sock);
-			printf("\nEl mensaje es: \"%s\"\n", buffer);
 			resultadoDeEjecucion = main_inicializarPrograma(sock);
+			send(sock,&resultadoDeEjecucion,sizeof(int),0);
 			break;
 		case 'S':
 			resultadoDeEjecucion = main_solicitarBytesPagina(sock);
@@ -594,6 +583,7 @@ int cantPaginasDeProceso(int pid)
 		{
 			cantPaginas ++;
 		}
+		i++;
 	}
 	return cantPaginas;
 }
