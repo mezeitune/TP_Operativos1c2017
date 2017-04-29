@@ -335,9 +335,12 @@ int main_almacenarBytesPagina(int sock)
 	recv(sock,&pagina,sizeof(int),0);
 	recv(sock,&offset,sizeof(int),0);
 	recv(sock,&size,sizeof(int),0);
-	recv(sock,bytes,size,MSG_WAITALL);
 
 	bytes=malloc(size);
+
+	recv(sock,bytes,size,MSG_WAITALL);
+
+
 
 	printf("PID:%d\n",pid);
 	printf("Pagina:%d\n",pagina);

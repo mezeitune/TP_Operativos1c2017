@@ -213,9 +213,9 @@ int crearNuevoProceso(char*buffer,int size){
 
 	//Pide Memoria
 
-	send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
-	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
-	send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
+	//send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
+	//send(socketMemoria,&procesoListo->pid,sizeof(int),0);
+	//send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
 
 	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
