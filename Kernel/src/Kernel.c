@@ -143,12 +143,12 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 						recv(socketAceptado,&bytesARecibir, sizeof(int),0); //
 						//printf("Los bytes a recibir son: %d \n", bytesARecibir);
-						log_info(loggerSinPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
+						log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
 
 						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
 						recv(socketAceptado,buffer,bytesARecibir  ,0);
 
-						log_info(loggerSinPantalla, "\n El mensaje recibido es: \" %s \" \n", buffer);
+						log_info(loggerConPantalla, "\n El mensaje recibido es: \" %s \" \n", buffer);
 
 
 						contadorPid++; // Valor temporal del pid.
@@ -212,11 +212,11 @@ int crearNuevoProceso(char*buffer,int size){
 
 
 	//Pide Memoria
-<<<<<<< HEAD
+
 	send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
 	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
 	send(socketMemoria,&procesoListo->cantidadPaginas,sizeof(int),0);
-=======
+
 	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
 	memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
@@ -228,7 +228,7 @@ int crearNuevoProceso(char*buffer,int size){
 		free(procesoListo);
 		free(mensajeAMemoria);
 	}
->>>>>>> d2e2d7fe64a0ea24826a9aada72e51b4ce0a42e7
+
 	printf("Ya Inicializo programa\n");
 	free(mensajeAMemoria);
 
