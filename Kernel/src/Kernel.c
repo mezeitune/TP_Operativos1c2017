@@ -210,7 +210,6 @@ int crearNuevoProceso(char*buffer,int size){
 	char comandoAlmacenar = 'C';
 	char comandoSolicitar = 'S';
 
-
 	//Pide Memoria
 
 	//send(socketMemoria,&comandoInicializacion,sizeof(char),0); // Inicializa el handler connection de la memoria
