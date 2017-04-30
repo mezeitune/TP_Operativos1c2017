@@ -132,7 +132,7 @@ int main(void) {
 	}
 
 	pthread_join(interfazUsID, NULL);
-	//Hay que cerrar el log para que lo escriba.
+
 	return 0;
 }
 
@@ -140,11 +140,11 @@ void interfazHandler(){
 
 	char *orden = malloc(sizeof(char));
 	int pid;
-
+	int paginaSolicitada;
+	int offset;
+	int size;
 
 		printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
-
-		printf("\n\nhola\n");
 
 		scanf("%c", orden);
 
@@ -155,15 +155,13 @@ void interfazHandler(){
 				break;
 			case 'P':
 				printf("Ingresar PID del proceso");
-				scanf("%d", pid);
-				/*obtenerProcesoDato(int pid); TOOD HAY QUE IMPLEMENTAR*/
+				//scanf("%d", pid);
+				/*obtenerProcesoDato(int pid); TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'G':
 				/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'M':
-				printf("\n\nhola2\n");
-
 				/*modificarGradoMultiProg(int grado) TODO HAY QUE IMPLEMETAR*/
 				break;
 			case 'K':
@@ -171,6 +169,25 @@ void interfazHandler(){
 				break;
 			case 'D':
 				/*pausarPlanificacion() TODO HAY QUE IMPLEMENTAR*/
+				break;
+			case 'S':
+				printf("Se inicializa una peticion de consulta\n");
+				send(socketMemoria,orden,sizeof(char),0);
+				printf("Ingrese el pid del proceso solicitado\n");
+				scanf("%d",&pid);
+				printf("Ingrese la pagina solicitada\n");
+				scanf("%d",&paginaSolicitada);
+				printf("Ingrese el offset \n");
+				scanf("%d",&offset);
+				printf("Ingrese el tamano del proceso\n");
+				scanf("%d",&size);
+
+				send(socketMemoria,&pid,sizeof(int),0);
+				send(socketMemoria,&paginaSolicitada,sizeof(int),0);
+				send(socketMemoria,&offset,sizeof(int),0);
+				send(socketMemoria,&size,sizeof(int),0);
+				char * mensajeRecibido = recibir_string(socketMemoria);
+				printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
 				break;
 			default:
 				log_error(loggerConPantalla, "Orden no reconocida\n");
@@ -197,11 +214,16 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 		/*Caso en el que se quiere recibir un archivo empaquetado */
 		case 'I':
-						printf("Se ha avisado que un archivo esta por enviarse\n");
+						printf("---------- Peticion de inicializar programa --------- \n");
 
+						if(list_size(colaListos) >= gradoMultiProg){ /*Checkeo el grado de multiprogramacion*/
+								log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
+								break;
+							}
+
+						printf("Se ha avisado que un archivo esta por enviarse\n");
 						recv(socketAceptado,&bytesARecibir, sizeof(int),0); //
 						log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
-
 						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
 						recv(socketAceptado,buffer,bytesARecibir  ,0);
 
@@ -247,16 +269,7 @@ int crearNuevoProceso(char*buffer,int size){
 	void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
 	int resultadoEjecucion;
 	int offset=0; // valor arbitrario
-	int paginaAPedir = 0;
-
-
-	char* mensajeRecibido;
-
-
-	if(list_size(colaListos) >= gradoMultiProg){ /*Checkeo el grado de multiprogramacion*/
-		log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
-		return -1;
-	}
+	int paginaAPedir = 0; // valor arbitrario
 
 	t_pcb* procesoListo = malloc(sizeof(t_pcb));
 	procesoListo->pid = contadorPid;
@@ -264,7 +277,6 @@ int crearNuevoProceso(char*buffer,int size){
 
 	char comandoInicializacion = 'A';
 	char comandoAlmacenar = 'C';
-	char comandoSolicitar = 'S';
 
 	//Pide Memoria
 	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
@@ -274,45 +286,37 @@ int crearNuevoProceso(char*buffer,int size){
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 
 	if(resultadoEjecucion < 0){
-		/* no se puede inicializar*/
+		/* No se puede inicializar*/
 		free(procesoListo);
 		free(mensajeAMemoria);
+		return -1;
 	}
 	else{
-		printf("Ya Inicializo programa\n");
+		printf("Se inicializo el programa correctamente\n");
 	}
+	free(mensajeAMemoria);
 
-	//free(mensajeAMemoria);
-
-	//mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
-
-	//memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
-	//memcpy(mensajeAMemoria,&procesoListo->pid,sizeof(int));
-	//memcpy(mensajeAMemoria,&paginaAPedir,sizeof(int));
-
-	// Ahora pido almacenar contenido en memoria.
-	send(socketMemoria,&comandoAlmacenar,sizeof(char),0); // Inicializa el handler connection de la memoria
-	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
-	send(socketMemoria,&paginaAPedir,sizeof(int),0);
-	send(socketMemoria,&offset,sizeof(int),0);
-	send(socketMemoria,&size,sizeof(int),0);
-	send(socketMemoria,buffer,size,0);
-
-	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
-	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
-	send(socketMemoria,&paginaAPedir,sizeof(int),0);
-	send(socketMemoria,&offset,sizeof(int),0);
-	send(socketMemoria,&size,sizeof(int),0);
-
-
-	mensajeRecibido = recibir_string(socketMemoria);
-	printf("El mensale recibido de la Memoria es : %s\n" , mensajeRecibido);
-
-	/*Aca se podria crear el pcb y encolarlo*/
-
+	mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
+	memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
+	memcpy(mensajeAMemoria + sizeof(char),&procesoListo->pid,sizeof(int));
+	memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&paginaAPedir,sizeof(int));
+	memcpy(mensajeAMemoria + sizeof(int)*2 + sizeof(char),&offset,sizeof(int));
+	memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&size,sizeof(int));
+	memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),buffer,size);
+	send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + size,0);
+	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion < 0){
+		/*No pudo almacenar datos en memoria */
+		free(mensajeAMemoria);
+		free(procesoListo);
+		return -2;
+	}
+	else {
+		printf("Se almaceno datos en memoria correctamente\n");
+	}
+	free(mensajeAMemoria);
 	encolarProcesoListo(procesoListo);
-	free(procesoListo); //No se si esta bien el free.
-
+	free(procesoListo);
 	return 0;
 }
 

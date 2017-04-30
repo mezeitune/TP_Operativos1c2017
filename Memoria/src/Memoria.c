@@ -441,6 +441,7 @@ void *connection_handler(void *socket_desc)
 			break;
 		case 'C':
 			resultadoDeEjecucion = main_almacenarBytesPagina(sock);
+			send(sock,&resultadoDeEjecucion,sizeof(int),0);
 			break;
 		case 'G':
 			resultadoDeEjecucion = main_asignarPaginasAProceso(sock);
