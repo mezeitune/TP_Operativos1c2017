@@ -22,6 +22,7 @@
 #include <commons/string.h>
 #include <commons/config.h>
 //#include <parser/metadata_program.h>
+#include <commons/log.h>
 #include <pthread.h>
 #include "conexiones.h"
 #include <arpa/inet.h>
@@ -36,6 +37,18 @@ char* puertoMemoria;
 char* ipMemoria;
 char* ipKernel;
 
+
+//--------LOG----------------//
+void inicializarLog(char *rutaDeLog);
+
+
+
+t_log *loggerSinPantalla;
+t_log *loggerConPantalla;
+//----------------------------//
+
+
+
 //------------------Sockets Globales-------//
 int socketMemoria;
 int socketKernel;
@@ -47,14 +60,17 @@ int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
 
+	inicializarLog("/home/utnso/Log/logCPU.txt");
+
+
+
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 	int err = pthread_create(&HiloConexionMemoria, NULL, &conexionMemoria,(void*) socketMemoria);
-		if (err != 0)
-			printf("\ncan't create thread :[%s]", strerror(err));
-		else
-			printf("\n Thread created successfully\n");
+
+	if (err != 0) log_error(loggerConPantalla,"\nNo se pudo crear el hilo :[%s]", strerror(err));
+
 
 	pthread_join(HiloConexionMemoria, NULL);
 
@@ -104,15 +120,15 @@ void connectionHandler(int socket){
 					send(socketMemoria,&size,sizeof(int),0);
 
 					mensajeRecibido = recibir_string(socketMemoria);
-					printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
+					log_info(loggerSinPantalla,"\nEl mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
 
 					break;
 				case 'Q':
-					printf("Se ha desconectado el cliente\n");
+					log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
 					exit(1);
 					break;
 				default:
-					printf("ERROR, Orden %c no definida\n", orden);
+					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 					break;
 			}
 		}
@@ -133,4 +149,21 @@ void imprimirConfiguraciones(){
 	printf("CONFIGURACIONES\nPUERTO KERNEL:%s\nIP KERNEL:%s\nPUERTO MEMORIA:%s\nIP MEMORIA:%s\n",puertoKernel,ipKernel,puertoMemoria,ipMemoria);
 	printf("---------------------------------------------------\n");
 }
+
+
+
+void inicializarLog(char *rutaDeLog){
+
+
+		mkdir("/home/utnso/Log",0755);
+
+		loggerSinPantalla = log_create(rutaDeLog,"CPU", false, LOG_LEVEL_INFO);
+		loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
+
+}
+
+
+
+
+
 

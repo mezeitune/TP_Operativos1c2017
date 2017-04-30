@@ -22,9 +22,9 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
-//#include <commons/conexiones.h>
 #include "conexiones.h"
 #include <commons/log.h>
+
 
 typedef struct PCB {
 	int pid;
@@ -36,22 +36,13 @@ typedef struct PCB {
 	//int exitCode;
 }t_pcb;
 
-typedef struct HiloMemoria {
-	int socket;
-	char *orden;
-}hilo_t;
-
-
-
 typedef struct CONSOLA{
 	int pid;
 	int consolaId;
 }t_consola;
 
 
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
-pthread_t threadId;
+
 
 char *ipConsola;
 char *ipCPU;
@@ -74,10 +65,15 @@ char *semIds;
 char *semInit;
 char *sharedVars;
 char *stackSize;
-pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS, interfazUsID;
+pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
 t_config* configuracion_kernel;
 
-void inicializarLog(char *ruta);
+
+
+void inicializarLog(char *rutaDeLog);
+
+t_log *loggerSinPantalla;
+t_log *loggerConPantalla;
 
 
 //----------Planificacion----------//
@@ -88,7 +84,7 @@ t_list* colaListos;
 t_list* colaTerminados;
 t_list* listaConsolas;
 int contadorPid=0;
-//---------PLanificacion-----------//
+//---------------------------------//
 
 //---------Conexiones---------------//
 
@@ -99,7 +95,7 @@ void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char* nuevaOrden);
 void selectorConexiones(int socket);
 void interfazHandler();
-//-----------Conexiones------------------//
+//-----------------------------------//
 
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
@@ -110,20 +106,32 @@ int socketServidor; // Para CPUs y Consolas
 
 int main(void) {
 
-	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
-	inicializarLog("/home/utnso/Escritorio/logKernel.txt");
 
+
+
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
+
+	inicializarLog("/home/utnso/Log/logKernel.txt");
+
 	inicializarColaListos();
 	listaConsolas = list_create();
+
+
+
+
+	/**************************************Printea interfaz Usuario Kernel*******************************************************/
+
+	printf("\n-----------------------------------------------------------------------------------------------------\n");
+	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
+	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
+	printf("\n-----------------------------------------------------------------------------------------------------\n");
+
+	/****************************************************************************************************************************/
 
 	socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
-
-	/*if(pthread_create(&interfazUsID, NULL, (void*)interfazHandler, NULL)){
-		log_error(loggerConPantalla, "Error al crear el hilo\n");
-	}*/
 
 
 	while(1){
@@ -131,8 +139,6 @@ int main(void) {
 		selectorConexiones(socketServidor);
 	}
 
-	pthread_join(interfazUsID, NULL);
-	//Hay que cerrar el log para que lo escriba.
 	return 0;
 }
 
@@ -141,29 +147,22 @@ void interfazHandler(){
 	char *orden = malloc(sizeof(char));
 	int pid;
 
-
-		printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
-
-		printf("\n\nhola\n");
-
-		scanf("%c", orden);
+	scanf("%c", orden);
 
 
-		switch(*orden){
+	switch(*orden){
 			case 'O':
 				/*obtenerListadoProgramas(); TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'P':
 				printf("Ingresar PID del proceso");
 				scanf("%d", pid);
-				/*obtenerProcesoDato(int pid); TOOD HAY QUE IMPLEMENTAR*/
+				/*obtenerProcesoDato(int pid); TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'G':
 				/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'M':
-				printf("\n\nhola2\n");
-
 				/*modificarGradoMultiProg(int grado) TODO HAY QUE IMPLEMETAR*/
 				break;
 			case 'K':
@@ -173,10 +172,10 @@ void interfazHandler(){
 				/*pausarPlanificacion() TODO HAY QUE IMPLEMENTAR*/
 				break;
 			default:
-				log_error(loggerConPantalla, "Orden no reconocida\n");
+				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
 				break;
-		}
-		return;
+	}
+	return;
 }
 
 
@@ -191,21 +190,21 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 		nuevaOrdenDeAccion(socketAceptado, orden);
 	}
 
-	log_info(loggerConPantalla, "El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, *(char*)orden);
+	//printf( "El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, *(char*)orden);
 
 	switch (*(char*)orden) {
 
 		/*Caso en el que se quiere recibir un archivo empaquetado */
 		case 'I':
-						printf("Se ha avisado que un archivo esta por enviarse\n");
+						log_info(loggerConPantalla,"Se ha avisado que un archivo esta por enviarse\n");
 
 						recv(socketAceptado,&bytesARecibir, sizeof(int),0); //
-						log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
+						printf("Los bytes a recibir son: %d \n", bytesARecibir);
 
 						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
 						recv(socketAceptado,buffer,bytesARecibir  ,0);
 
-						log_info(loggerConPantalla, "\n El mensaje recibido es: \" %s \" \n", buffer);
+						log_info(loggerConPantalla ,"\nEl mensaje recibido es: \" %s \" \n", buffer);
 
 						contadorPid++; // Valor temporal del pid.
 						send(socketAceptado,&contadorPid,sizeof(int),0);
@@ -216,7 +215,7 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 
 						if((crearNuevoProceso(buffer,bytesARecibir))<0){ // Aca naceria el planificador de procesos.
-							log_error(loggerConPantalla, "No se puede crear un nuevo proceso en el sistema");
+							log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
 						}
 						else {
 							list_add(listaConsolas,infoConsola);
@@ -227,18 +226,17 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 						break;
 		case 'Q' :
 
-						log_info(loggerConPantalla,"Se ha solicitado cerrar la consola\n");
+						log_warning(loggerConPantalla,"\nSe ha solicitado cerrar la consola\n");
 						exit(1);
 						break;
 			default:
-				if(*orden == '\0') break;/*Esta para que no printee cuando se envia la "orden extra", esto de la orden extra es como un bug que no tengo idea de donde sale,
-				 	 	 	 	 	 	 cuando lo prueben comenten esta linea y van a ver lo que digo*/
-				log_error(loggerConPantalla,"Orden %c no definida\n", *(char*)orden);
+				if(*orden == '\0') break;
+				log_warning(loggerConPantalla,"\nOrden %c no definida\n", *(char*)orden);
 				break;
 		} // END switch.
 
-	*orden = '\0';//Sin esto recive una "orden extra" y rompe, agregandolo, me aseguro que esa "orden extra" vaya al default para que todo siga funcionando como deberia
-	return;//Retorna a selectorConexiones() apenas se haya recibido una orden desde la consola para dar lugar a las otras consolas/CPUs
+	*orden = '\0';
+	return;//Retorna a selectorConexiones() apenas se haya recibido una orden desde la consola para dar lugar a las otras consolas/CPUs/InterfazKernel
 
 }
 
@@ -254,7 +252,7 @@ int crearNuevoProceso(char*buffer,int size){
 
 
 	if(list_size(colaListos) >= gradoMultiProg){ /*Checkeo el grado de multiprogramacion*/
-		log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
+		log_error(loggerConPantalla,"\nCapacidad limite de procesos en sistema\n");
 		return -1;
 	}
 
@@ -306,7 +304,7 @@ int crearNuevoProceso(char*buffer,int size){
 
 
 	mensajeRecibido = recibir_string(socketMemoria);
-	printf("El mensale recibido de la Memoria es : %s\n" , mensajeRecibido);
+	log_info(loggerConPantalla,"\nEl mensale recibido de la Memoria es : %s\n" , mensajeRecibido);
 
 	/*Aca se podria crear el pcb y encolarlo*/
 
@@ -326,9 +324,9 @@ void inicializarColaListos(){
 }
 
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
-		printf("\n--Esperando una orden del cliente %d-- \n", socketCliente);
+		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
 		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
-		printf("El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
+		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
 }
 
 void selectorConexiones(int socket) {
@@ -360,6 +358,7 @@ void selectorConexiones(int socket) {
 		readFds = master; // copy it
 		if (select(fdMax + 1, &readFds, NULL, NULL, NULL) == -1) {
 			perror("select");
+			log_error(loggerSinPantalla,"Error en select\n");
 			exit(2);
 		}
 
@@ -383,7 +382,7 @@ void selectorConexiones(int socket) {
 						if (newfd > fdMax) {    // keep track of the max
 							fdMax = newfd;
 						}
-						printf("selectserver: new connection from %s on " "socket %d\n\n",inet_ntop(remoteaddr.ss_family,	get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
+						log_info(loggerConPantalla,"\nselectserver: new connection from %s on " "socket %d\n\n",inet_ntop(remoteaddr.ss_family,	get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
 					}
 				}
 
@@ -394,7 +393,7 @@ void selectorConexiones(int socket) {
 						// got error or connection closed by client
 						if (nbytes == 0) {
 							// connection closed
-							printf("selectserver: socket %d hung up\n", i);
+							log_error(loggerConPantalla,"selectserver: socket %d hung up\n", i);
 						} else {
 							perror("recv");
 						}
@@ -460,14 +459,19 @@ void imprimirConfiguraciones() {
 
 }
 
+
+
+
+
 void inicializarLog(char *rutaDeLog){
 
-	loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-	loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
+
+		mkdir("/home/utnso/Log",0755);
+
+		loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
+		loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
 
 }
-
-
 
 
 

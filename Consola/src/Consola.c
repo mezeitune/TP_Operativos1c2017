@@ -23,8 +23,20 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
-//#include <commons/conexiones.h>
+#include <commons/log.h>
 #include "conexiones.h"
+
+//--------LOG----------------//
+void inicializarLog(char *rutaDeLog);
+
+
+
+t_log *loggerSinPantalla;
+t_log *loggerConPantalla;
+//----------------------------//
+
+
+
 
 int enviarLecturaArchivo(void *ruta, int socket);
 void leerConfiguracion(char* ruta);
@@ -42,19 +54,22 @@ pthread_t HiloId;
 
 int main(void) {
 
-	leerConfiguracion(
-			"/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
+
+	inicializarLog("/home/utnso/Log/logConsola.txt");
+
+
+
 	listaPid = list_create();
 
 	int socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 
-	int err = pthread_create(&HiloId, NULL, &connectionHandler,
-			(void*) socketKernel);
-	if (err != 0)
-		printf("\ncan't create thread :[%s]", strerror(err));
-	else
-		printf("\n Thread created successfully\n");
+	int err = pthread_create(&HiloId, NULL, connectionHandler,	(void*) socketKernel);
+
+	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
+
+	else printf("\n Thread created successfully\n");
 
 	(void) pthread_join(HiloId, NULL);
 
@@ -62,7 +77,7 @@ int main(void) {
 
 }
 
-void* connectionHandler(int socket) {
+void *connectionHandler(int socket) {
 
 	while (1) {
 		char orden;
@@ -73,38 +88,38 @@ void* connectionHandler(int socket) {
 		int *pidAEliminar = (int*) malloc(4 * sizeof(int));
 		;
 
-		printf(
-				"Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
+		printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
 		scanf(" %c", &orden);
 		send(socket, (void*) &orden, sizeof(char), 0);
 
 		switch (orden) {
 		case 'I':
-			printf(
-					"Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
+			printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
 			scanf("%s", ruta);
 			if ((enviarLecturaArchivo(ruta, socket)) < 0) {
-				printf(
-						"La consola se ha desconectado por inconsistencia en el archivo\n");
-				exit(1);
+
+				log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente\n");
 			}
 
 			break;
 		case 'F':
+
 			printf("Ingresar el PID del programa a finalizar\n");
 			scanf("%d", pidAEliminar);
 			//enviarPIDAEliminar(pidAEliminar,socket);
 
 			_Bool verificarPid(int pid){
-				return pid==pidAEliminar;
+				return pid == *pidAEliminar;
 			}
 			t_list* t_listaaa = list_filter(listaPid,verificarPid);
+
 			printf("%d",list_size(t_listaaa));
 			int estaVacia =  list_is_empty(t_listaaa);
 			if (estaVacia==0){
 				list_remove_by_condition(listaPid, verificarPid);
-				printf("El programa AnSISOP de PID : %d  ha finalizado\n",
-						*pidAEliminar);
+
+				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado\n",*pidAEliminar);
+
 			}else{
 				printf("PID incorrecto\n");
 			}
@@ -113,11 +128,11 @@ void* connectionHandler(int socket) {
 			system("clear");
 			break;
 		case 'Q':
-			printf("Se ha desconectado el cliente\n");
+			log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
 			exit(1);
 			break;
 		default:
-			printf("ERROR, Orden %c no definida\n", orden);
+			log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 			break;
 		}
 
@@ -134,18 +149,17 @@ int enviarLecturaArchivo(void *rut, int socket) {
 
 	/* TODO Validar el nombre del archivo */
 
-	if ((f = fopen(ruta, "r+")) == NULL) {
-		printf("El archivo es inexistente\n");
-		return -1;
-	}
+	if ((f = fopen(ruta, "r+")) == NULL)return -1;
 
 	fseek(f, 0, SEEK_END);
 	tamanioArchivo = ftell(f);
 	rewind(f);
 
 	bufferArchivo = malloc(tamanioArchivo); // Pido memoria para leer el contenido del archivo
+
 	if (bufferArchivo == NULL) {
-		fputs("No se pudo conseguir memoria\n", stderr);
+
+		log_error(loggerConPantalla,"\nNo se pudo conseguir memoria\n");
 		free(bufferArchivo);
 		exit(2);
 	}
@@ -153,15 +167,14 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	mensaje = malloc(sizeof(int) * 2 + tamanioArchivo); // Pido memoria para el mensaje EMPAQUETADO que voy a mandar
 
 	if (mensaje == NULL) {
-		fputs("No se pudo conseguir memoria\n", stderr);
+
+		log_error(loggerConPantalla,"\nNo se pudo conseguir memoria\n");
 		free(mensaje);
 		free(bufferArchivo);
 		exit(2);
 	}
 
-	fread(bufferArchivo, sizeof(bufferArchivo), tamanioArchivo, f); // Paso a memoria ( al bufferARchivo) el contenido del archivo.
-	//printf("El contenido del archivo que se va a enviar es: \" %s \" \n", bufferArchivo);
-	//printf("El tamano del archivo a enviar es: %d\n", tamanioArchivo);
+	fread(bufferArchivo, sizeof(bufferArchivo), tamanioArchivo, f);
 
 	memcpy(mensaje, &tamanioArchivo, sizeof(int)); // Empaqueto en el mensaje el tamano del archivo a enviar.
 	memcpy(mensaje + sizeof(int), bufferArchivo, tamanioArchivo); // Empaqueto en el mensjae, el contenido del archivo.
@@ -170,8 +183,10 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	printf("El mensaje ha sido enviado \n");
 
 	recv(socket, &pid, sizeof(int), 0);
-	printf("El socket asignado para el proceso iniciado es: %d \n", pid);
-	printf("El PID asignado es: %d \n", pid);
+
+	log_info(loggerConPantalla,"\nEl socket asignado para el proceso iniciado es: %d \n", pid);
+	log_info(loggerConPantalla,"\nEl PID asignado es: %d \n", pid);
+
 	listaPid = list_create();
 	list_add(listaPid, &pid);
 
@@ -191,8 +206,7 @@ int enviarLecturaArchivo(void *rut, int socket) {
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);
 	ipKernel = config_get_string_value(configuracion_Consola, "IP_KERNEL");
-	puertoKernel = config_get_string_value(configuracion_Consola,
-			"PUERTO_KERNEL");
+	puertoKernel = config_get_string_value(configuracion_Consola,"PUERTO_KERNEL");
 }
 
 void imprimirConfiguraciones() {
@@ -202,4 +216,17 @@ void imprimirConfiguraciones() {
 			puertoKernel);
 	printf("---------------------------------------------------\n");
 }
+
+
+void inicializarLog(char *rutaDeLog){
+
+
+		mkdir("/home/utnso/Log",0755);
+
+		loggerSinPantalla = log_create(rutaDeLog,"Consola", false, LOG_LEVEL_INFO);
+		loggerConPantalla = log_create(rutaDeLog,"Consola", true, LOG_LEVEL_INFO);
+
+}
+
+
 

@@ -25,6 +25,20 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "conexiones.h"
+#include <commons/log.h>
+
+
+
+//--------LOG----------------//
+void inicializarLog(char *rutaDeLog);
+
+
+
+t_log *loggerSinPantalla;
+t_log *loggerConPantalla;
+//----------------------------//
+
+
 
 char* puertoMemoria;//4000
 char* ipMemoria;
@@ -93,6 +107,10 @@ int main(void)
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/config_Memoria");
 	imprimirConfiguraciones();
 
+	inicializarLog("/home/utnso/Log/logMemoria.txt");
+
+
+
 	bitMap = string_repeat('0',marcos);
 
 	frame_Memoria= malloc(marco_size*marcos);
@@ -125,8 +143,11 @@ void leerConfiguracion(char* ruta)
 void inicializarMemoriaAdm()
 {
 	int sizeMemoriaAdm = ((sizeof(int)*3*marcos)+marco_size-1)/marco_size;
-	printf("Las estructuras administrativas ocupan %i paginas\n",sizeMemoriaAdm);
+
+	log_info(loggerConPantalla,"Las estructuras administrativas ocupan %i paginas\n",sizeMemoriaAdm);
+
 	printf("---------------------------------------------------\n");
+
 	ocuparBitMap(0,sizeMemoriaAdm);
 	struct_adm_memoria aux;
 	int i = 0;
@@ -154,7 +175,7 @@ void inicializarMemoriaAdm()
 
 int inicializarPrograma(int pid, int cantPaginas)
 {
-	printf("Inicializar Programa %d\n",pid);
+	log_info(loggerConPantalla,"Inicializar Programa %d\n",pid);
 	int posicionFrame = verificarEspacio();
 	if(posicionFrame >= 0)
 	{
@@ -189,7 +210,7 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 	}
 	else
 	{
-		printf("No se encontró el PID/Pagina del programa\n");
+		log_warning(loggerConPantalla,"No se encontró el PID/Pagina del programa\n");
 	}
 	return EXIT_SUCCESS;
 }
@@ -203,7 +224,7 @@ int asignarPaginasAProceso(int pid, int cantPaginas, int posicionFrame)
 
 int finalizarPrograma(int pid)
 {
-	printf("Finalizar Programa:%d\n",pid);
+	log_info(loggerConPantalla,"\nFinalizar Programa:%d\n",pid);
 	borrarProgramDeStructAdms(pid);
 
 	return EXIT_SUCCESS;
@@ -217,14 +238,14 @@ int recibirConexion(int socket_servidor){
 	int estado = listen(socket_servidor, 5);
 
 	if(estado == -1){
-		printf("Error al poner el servidor en listen\n");
+		log_info(loggerConPantalla,"\nError al poner el servidor en listen\n");
 		close(socket_servidor);
 		return 1;
 	}
 
 
 	if(estado == 0){
-		printf("Se puso el socket en listen\n");
+		log_info(loggerConPantalla,"\nSe puso el socket en listen\n");
 		printf("---------------------------------------------------\n");
 	}
 
@@ -239,7 +260,7 @@ int recibirConexion(int socket_servidor){
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
-		printf("Error al aceptar conexion\n");
+		log_error(loggerConPantalla,"\nError al aceptar conexion\n");
 		return 1;
 	}
 
@@ -456,7 +477,7 @@ void *connection_handler(void *socket_desc)
 			perror("recv failed");
 			break;
 		default:
-			printf("Error: Orden %c no definida\n",orden);
+			log_warning(loggerConPantalla,"\nError: Orden %c no definida\n",orden);
 			break;
 		}
 		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
@@ -598,3 +619,28 @@ int cantPaginasDeProceso(int pid)
 	}
 	return cantPaginas;
 }
+
+
+
+
+
+void inicializarLog(char *rutaDeLog){
+
+
+		mkdir("/home/utnso/Log",0755);
+
+		loggerSinPantalla = log_create(rutaDeLog,"Memoria", false, LOG_LEVEL_INFO);
+		loggerConPantalla = log_create(rutaDeLog,"Memoria", true, LOG_LEVEL_INFO);
+
+}
+
+
+
+
+
+
+
+
+
+
+
