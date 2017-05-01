@@ -459,6 +459,7 @@ void *connection_handler(void *socket_desc)
 			break;
 		case 'S':
 			resultadoDeEjecucion = main_solicitarBytesPagina(sock);
+			send(sock,&resultadoDeEjecucion,sizeof(int),0);
 			break;
 		case 'C':
 			resultadoDeEjecucion = main_almacenarBytesPagina(sock);
@@ -490,15 +491,13 @@ void *connection_handler(void *socket_desc)
 
 void connection_Listener(int socket_desc)
 {
+	int sock;
 	//Atiendo al socket del kernel
 	if( pthread_create( &thread_id , NULL , connection_handler , (void*) &socket_desc) < 0)
 	{
 		perror("could not create thread");
 	}
-	int sock;
-
-	while(1)
-	{
+	while(1){
 		//Quedo a la espera de CPUs y las atiendo
 		sock = recibirConexion(socket_servidor);
 		if( pthread_create( &thread_id , NULL , connection_handler , (void*) &sock) < 0)
@@ -506,8 +505,6 @@ void connection_Listener(int socket_desc)
 			perror("could not create thread");
 		}
 	}
-
-
 }
 
 void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas, int cantPaginasAnteriores)
