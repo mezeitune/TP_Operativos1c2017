@@ -48,9 +48,20 @@ void* connectionHandler(int socket);
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
-t_list * listaPid;
+
 
 pthread_t HiloId;
+
+typedef struct {
+	int pid;
+} Pid ;
+
+void cargarPid(Pid* usr, int pid) {
+	usr->pid = pid;
+
+}
+t_list * listaPid;
+
 
 int main(void) {
 
@@ -58,9 +69,6 @@ int main(void) {
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logConsola.txt");
-
-
-
 	listaPid = list_create();
 
 	int socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
@@ -85,8 +93,8 @@ void *connectionHandler(int socket) {
 		;
 
 
-		int *pidAEliminar = (int*) malloc(4 * sizeof(int));
-		;
+		int pidAEliminar=0;
+
 
 		printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
 		scanf(" %c", &orden);
@@ -105,20 +113,25 @@ void *connectionHandler(int socket) {
 		case 'F':
 
 			printf("Ingresar el PID del programa a finalizar\n");
-			scanf("%d", pidAEliminar);
-			//enviarPIDAEliminar(pidAEliminar,socket);
+			scanf("%d", &pidAEliminar);
 
-			_Bool verificarPid(int pid){
-				return pid == *pidAEliminar;
+
+			_Bool verificarPid(Pid* pidNuevoo){
+
+				return (pidNuevoo->pid== pidAEliminar);
+
 			}
-			t_list* t_listaaa = list_filter(listaPid,verificarPid);
 
-			printf("%d",list_size(t_listaaa));
-			int estaVacia =  list_is_empty(t_listaaa);
-			if (estaVacia==0){
+
+			t_list * listaNueva;
+			listaNueva= list_create();
+			listaNueva= list_filter(listaPid,verificarPid);
+
+			int estaVacia =  list_size(listaNueva);
+			if (estaVacia==1){
 				list_remove_by_condition(listaPid, verificarPid);
 
-				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado\n",*pidAEliminar);
+				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado\n",pidAEliminar);
 
 			}else{
 				printf("PID incorrecto\n");
@@ -144,7 +157,7 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	void *mensaje;
 	void *bufferArchivo;
 	int tamanioArchivo;
-	int pid = 0;
+	int pid=0;
 	char *ruta = (char *) rut;
 
 	/* TODO Validar el nombre del archivo */
@@ -187,8 +200,12 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	log_info(loggerConPantalla,"\nEl socket asignado para el proceso iniciado es: %d \n", pid);
 	log_info(loggerConPantalla,"\nEl PID asignado es: %d \n", pid);
 
-	listaPid = list_create();
-	list_add(listaPid, &pid);
+	//creo lista con el pid
+
+	Pid* pidNuevo = malloc(sizeof(pid));
+	cargarPid(pidNuevo, pid);
+	list_add(listaPid, pidNuevo);
+	//lista con los pid
 
 	free(bufferArchivo);
 	free(mensaje);
@@ -196,12 +213,6 @@ int enviarLecturaArchivo(void *rut, int socket) {
 
 }
 
-/*void enviarPIDAEliminar(int pidAFinalizar, int socket){
-
- enviar_string(socket, pidAFinalizar);
-
-
- }*/
 
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);
