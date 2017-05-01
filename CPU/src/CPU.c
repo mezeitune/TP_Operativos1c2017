@@ -120,7 +120,7 @@ void connectionHandler(int socket){
 					send(socketMemoria,&size,sizeof(int),0);
 
 					mensajeRecibido = recibir_string(socketMemoria);
-					log_info(loggerSinPantalla,"\nEl mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
+					log_info(loggerConPantalla,"\nEl mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
 
 					break;
 				case 'Q':

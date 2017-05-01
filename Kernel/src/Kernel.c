@@ -103,22 +103,20 @@ int socketFyleSys;
 int socketServidor; // Para CPUs y Consolas
 //------------------------------------------------------//
 
+//---------Conexion con memoria--------//
+int solicitarContenidoAMemoria(char** mensajeRecibido);
+
+//---------Conexion con memoria--------//
+
+
 
 int main(void) {
-
-
-
-
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logKernel.txt");
-
 	inicializarColaListos();
 	listaConsolas = list_create();
-
-
-
 
 	/**************************************Printea interfaz Usuario Kernel*******************************************************/
 
@@ -139,35 +137,27 @@ int main(void) {
 		selectorConexiones(socketServidor);
 	}
 
-
 	return 0;
 }
 
 void interfazHandler(){
 
-	char *orden = malloc(sizeof(char));
+	char orden;
 	int pid;
-
-	scanf("%c", orden);
-
-	int paginaSolicitada;
-	int offset;
-	int size;
+	char* mensajeRecibido;
 
 		printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
 
-		scanf("%c", orden);
+		scanf("%c",&orden);
 
-
-
-	switch(*orden){
+	switch(orden){
 			case 'O':
 				/*obtenerListadoProgramas(); TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'P':
 				printf("Ingresar PID del proceso");
 
-				scanf("%d", pid);
+				scanf("%d",&pid);
 
 				/*obtenerProcesoDato(int pid); TODO HAY QUE IMPLEMENTAR*/
 				break;
@@ -184,23 +174,13 @@ void interfazHandler(){
 				/*pausarPlanificacion() TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'S':
-				printf("Se inicializa una peticion de consulta\n");
-				send(socketMemoria,orden,sizeof(char),0);
-				printf("Ingrese el pid del proceso solicitado\n");
-				scanf("%d",&pid);
-				printf("Ingrese la pagina solicitada\n");
-				scanf("%d",&paginaSolicitada);
-				printf("Ingrese el offset \n");
-				scanf("%d",&offset);
-				printf("Ingrese el tamano del proceso\n");
-				scanf("%d",&size);
-
-				send(socketMemoria,&pid,sizeof(int),0);
-				send(socketMemoria,&paginaSolicitada,sizeof(int),0);
-				send(socketMemoria,&offset,sizeof(int),0);
-				send(socketMemoria,&size,sizeof(int),0);
-				char * mensajeRecibido = recibir_string(socketMemoria);
-				printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
+				if((solicitarContenidoAMemoria(&mensajeRecibido))<0){
+					printf("No se pudo solicitar el contenido\n");
+					break;
+				}
+				else{
+					printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
+					}
 				break;
 			default:
 				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
@@ -269,11 +249,6 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 						free(buffer);
 
 						break;
-		case 'Q' :
-
-						log_warning(loggerConPantalla,"\nSe ha solicitado cerrar la consola\n");
-						exit(1);
-						break;
 			default:
 				if(*orden == '\0') break;
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", *(char*)orden);
@@ -288,27 +263,15 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 int crearNuevoProceso(char*buffer,int size){
 
 	void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
-	int resultadoEjecucion;
+	int resultadoEjecucion=1;
 	int offset=0; // valor arbitrario
 	int paginaAPedir = 0; // valor arbitrario
-
-	char* mensajeRecibido;
-
-
-	if(list_size(colaListos) >= gradoMultiProg){ /*Checkeo el grado de multiprogramacion*/
-		log_error(loggerConPantalla,"\nCapacidad limite de procesos en sistema\n");
-		return -1;
-	}
-
-
-	t_pcb* procesoListo = malloc(sizeof(t_pcb));
-	procesoListo->pid = contadorPid;
-	procesoListo->cantidadPaginas=1; // Es arbitrario. Hay que hacer un analisis antes de esto.
-
 	char comandoInicializacion = 'A';
 	char comandoAlmacenar = 'C';
-	char comandoSolicitar = 'S';
+	t_pcb* procesoListo = malloc(sizeof(t_pcb));
 
+	procesoListo->pid = contadorPid;
+	procesoListo->cantidadPaginas=1; // Es arbitrario. Hay que hacer un analisis antes de esto.
 
 	//Pide Memoria
 	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
@@ -316,7 +279,6 @@ int crearNuevoProceso(char*buffer,int size){
 	memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
 	send(socketMemoria,mensajeAMemoria,sizeof(int)*2 + sizeof(char),0);
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
-
 	if(resultadoEjecucion < 0){
 		/* No se puede inicializar*/
 		free(procesoListo);
@@ -326,38 +288,9 @@ int crearNuevoProceso(char*buffer,int size){
 	else{
 		printf("Se inicializo el programa correctamente\n");
 	}
-
-
-	//free(mensajeAMemoria);
-
-	//mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
-
-	//memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
-	//memcpy(mensajeAMemoria,&procesoListo->pid,sizeof(int));
-	//memcpy(mensajeAMemoria,&paginaAPedir,sizeof(int));
-
-	// Ahora pido almacenar contenido en memoria.
-	send(socketMemoria,&comandoAlmacenar,sizeof(char),0); // Inicializa el handler connection de la memoria
-	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
-	send(socketMemoria,&paginaAPedir,sizeof(int),0);
-	send(socketMemoria,&offset,sizeof(int),0);
-	send(socketMemoria,&size,sizeof(int),0);
-	send(socketMemoria,buffer,size,0);
-
-	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
-	send(socketMemoria,&procesoListo->pid,sizeof(int),0);
-	send(socketMemoria,&paginaAPedir,sizeof(int),0);
-	send(socketMemoria,&offset,sizeof(int),0);
-	send(socketMemoria,&size,sizeof(int),0);
-
-
-	mensajeRecibido = recibir_string(socketMemoria);
-	log_info(loggerConPantalla,"\nEl mensale recibido de la Memoria es : %s\n" , mensajeRecibido);
-
-	/*Aca se podria crear el pcb y encolarlo*/
-
 	free(mensajeAMemoria);
 
+	/* Almacena contenido en memoria */
 	mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
 	memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char),&procesoListo->pid,sizeof(int));
@@ -377,7 +310,6 @@ int crearNuevoProceso(char*buffer,int size){
 		printf("Se almaceno datos en memoria correctamente\n");
 	}
 	free(mensajeAMemoria);
-
 	encolarProcesoListo(procesoListo);
 	free(procesoListo);
 	return 0;
@@ -391,6 +323,34 @@ void encolarProcesoListo(t_pcb *pcbProcesoListo){
 void inicializarColaListos(){
 	colaListos= list_create();
 }
+
+int solicitarContenidoAMemoria(char ** mensajeRecibido){
+	char comandoSolicitud= 'S';
+	int pid;
+	int paginaSolicitada;
+	int offset;
+	int size;
+	int resultadoEjecucion;
+	printf("Se inicializa una peticion de consulta\n");
+	send(socketMemoria,&comandoSolicitud,sizeof(char),0);
+	printf("Ingrese el pid del proceso solicitado\n");
+	scanf("%d",&pid);
+	printf("Ingrese la pagina solicitada\n");
+	scanf("%d",&paginaSolicitada);
+	printf("Ingrese el offset \n");
+	scanf("%d",&offset);
+	printf("Ingrese el tamano del proceso\n");
+	scanf("%d",&size);
+
+	send(socketMemoria,&pid,sizeof(int),0);
+	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
+	send(socketMemoria,&offset,sizeof(int),0);
+	send(socketMemoria,&size,sizeof(int),0);
+	*mensajeRecibido = recibir_string(socketMemoria);
+	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+	return resultadoEjecucion;
+}
+
 
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
@@ -528,12 +488,7 @@ void imprimirConfiguraciones() {
 
 }
 
-
-
-
-
 void inicializarLog(char *rutaDeLog){
-
 
 		mkdir("/home/utnso/Log",0755);
 
@@ -541,60 +496,3 @@ void inicializarLog(char *rutaDeLog){
 		loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
