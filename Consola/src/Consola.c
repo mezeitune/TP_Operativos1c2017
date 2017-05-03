@@ -43,34 +43,28 @@ int enviarLecturaArchivo(void *ruta, int socket);
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void* connectionHandler(int socket);
-//void inicializarPID(int pid);
-//void enviarPIDAEliminar(int pidAFinalizar,int socket);
+
 
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
 
-
 pthread_t HiloId;
-
-
-
-typedef struct tm *tlocal;
+t_list * listaPid;
+struct tm *tlocal;
 
 typedef struct {
 	int pid;
-	tlocal tmIniciado;
+	struct tm *tlocal;
 	int cantImpresiones;
 } Pid ;
 
-void cargarPid(Pid* pidEstructura, int pid, tlocal *tlocal) {
-	pidEstructura->pid = pid;
-	pidEstructura->tmIniciado=*tlocal;
+void cargarPid(Pid* pidEstructura, int pid) {
 	pidEstructura->cantImpresiones=0;
-			//printf("now: %d-%d-%d %d:%d:%d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	pidEstructura->pid = pid;
 
 }
-t_list * listaPid;
+
 
 
 int main(void) {
@@ -80,10 +74,9 @@ int main(void) {
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logConsola.txt");
+
 	listaPid = list_create();
-
 	int socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
-
 	int err = pthread_create(&HiloId, NULL, connectionHandler,	(void*) socketKernel);
 
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
@@ -100,12 +93,8 @@ void *connectionHandler(int socket) {
 
 	while (1) {
 		char orden;
-		char *ruta = (char*) malloc(200 * sizeof(char));
-		;
-
-
+		char *ruta = (char*) malloc(200 * sizeof(char));;
 		int pidAEliminar=0;
-
 
 		printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
 		scanf(" %c", &orden);
@@ -127,11 +116,7 @@ void *connectionHandler(int socket) {
 			scanf("%d", &pidAEliminar);
 
 
-			_Bool verificarPid(Pid* pidNuevoo){
-
-				return (pidNuevoo->pid== pidAEliminar);
-
-			}
+			_Bool verificarPid(Pid* pidNuevoo){	return (pidNuevoo->pid == pidAEliminar);}
 
 
 			t_list * listaNueva;
@@ -139,93 +124,22 @@ void *connectionHandler(int socket) {
 			listaNueva= list_filter(listaPid,verificarPid);
 
 			int estaVacia =  list_size(listaNueva);
+
 			if (estaVacia==1){
-				tlocal tiempo = time(0);
-			    struct tm *tlocal = localtime(&tiempo);
-			    char output[128];
-				strftime(output,128,"Fecha y hora Fin de ejecucion : %d/%m/%y %H:%M:%S",tlocal);
-
-				Pid* pidAEliminar=list_get(listaNueva, 0);
-				//tlocal TiempoTotalEjecucion = tiempo - pidAEliminar->tmIniciado;
-				/*typedef struct{
-    int dia;
-    int mes;
-    int anio;
-}Fecha;
-
-int regularBisiesto( int tFecha );
-int numeroBisiestos( int anio );
-int diaDelAnio( Fecha fecha );
-
-// Algoritmo para calcular el número de días entre dos fechas
-// Los cálculos realizados son:
-// Si las fechas son del mismo año se calcula el intervalo:
-//   - fecha1 -> fecha2
-// Si las fechas son de diferentes años se calculan 3 intervalos:
-//   - fecha1 -> fin año fecha1
-//   - días por los años intermedios
-//   - inicio año fecha2 -> fecha2
-int main(void){
-  Fecha fecha1 = { 1,1, 2050 }, fecha2 = { 12,12, 2050 };
-  int difDias = 0;
-
-  // Cálculo del intervalo fecha1 -> fecha2
-  // no se tienen en cuenta los años en este punto porque la corrección se realiza después
-  difDias = diaDelAnio( fecha2 ) - diaDelAnio( fecha1 );
-
-  if( fecha1.anio != fecha2.anio )
-  {
-    // Días por los años completos
-    difDias += (fecha2.anio - fecha1.anio - 1) * 365;
-    difDias += numeroBisiestos(fecha2.anio - 1) - numeroBisiestos(fecha1.anio);
-
-    // Cálculo correspondiente al intervalo fecha1 -> fin año fecha1
-    fecha1.dia = 31;
-    fecha1.mes = 12;
-    difDias += diaDelAnio( fecha1 );
-  }
-
-  printf("\n Del %d/%d/%d al %d/%d/%d hay %d dias", fecha1.dia, fecha1.mes, fecha1.anio,
-            fecha2.dia, fecha2.mes, fecha2.anio, difDias);
-
-  getchar();
-  return 0;
-}
-
-int regularBisiesto( int anio)
-{
-  return ((anio%4 == 0 && anio%100 != 0) || (anio%400) == 0);
-}
-
-int numeroBisiestos( int anio )
-{
-  return anio / 4 - anio / 100 + anio / 400;
-}
-
-int diaDelAnio( Fecha fecha )
-{
-  int tot_dias[] = { 00,31,28,31,30,31,30,31,31,30,31,30,31 };
-
-  int dias = fecha.dia;
-  int mes;
-
-  for( mes = 1; mes < fecha.mes; ++mes )
-    dias += tot_dias[mes];
-
-  if( fecha.mes > 2 )
-    dias += regularBisiesto( fecha.anio );
-
-  return dias;
-}*/
-
-
-
-				printf("%s\nCantidad de impresiones %i",output,pidAEliminar->cantImpresiones);
 
 				list_remove_by_condition(listaPid, verificarPid);
 				send(socket, (void*) &pidAEliminar, sizeof(int), 0);
 
 				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado\n",pidAEliminar);
+
+				Pid* estructuraPidAEliminar=list_get(listaNueva, 0);
+
+				time_t tiempo = time(0);
+				struct tm *tlocal = localtime(&tiempo);
+				char fechaFin[128];
+				strftime(fechaFin,128,"%d/%m/%y %H:%M:%S",tlocal);
+				//falta guardar la fecha de inicializacion y la resta de fechas
+				printf("Fecha y Hora de inicializacion : \nFecha y Hora de finalizacion: %s\nCantidad de impresiones: %i\n",fechaFin,estructuraPidAEliminar->cantImpresiones);
 
 			}else{
 				printf("PID incorrecto\n");
@@ -299,14 +213,14 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	//creo lista con el pid
 
 	Pid* pidNuevo = malloc(sizeof(pid));
-	time_t tiempo = time(0);
-	cargarPid(pidNuevo, pid,localtime(&tiempo) );
+	cargarPid(pidNuevo,pid);
 	list_add(listaPid, pidNuevo);
 	//lista con los pid
 
 	free(bufferArchivo);
 	free(mensaje);
 	return 0;
+
 
 }
 
@@ -335,6 +249,5 @@ void inicializarLog(char *rutaDeLog){
 		loggerConPantalla = log_create(rutaDeLog,"Consola", true, LOG_LEVEL_INFO);
 
 }
-
 
 
