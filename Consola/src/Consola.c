@@ -130,6 +130,7 @@ void *connectionHandler(int socket) {
 			int estaVacia =  list_size(listaNueva);
 			if (estaVacia==1){
 				list_remove_by_condition(listaPid, verificarPid);
+				send(socket, (void*) &pidAEliminar, sizeof(int), 0);
 
 				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado\n",pidAEliminar);
 
@@ -141,6 +142,8 @@ void *connectionHandler(int socket) {
 			system("clear");
 			break;
 		case 'Q':
+
+			list_destroy_and_destroy_elements(listaPid, free);
 			log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
 			exit(1);
 			break;

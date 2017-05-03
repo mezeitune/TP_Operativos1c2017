@@ -140,6 +140,11 @@ int main(void) {
 	return 0;
 }
 
+void cargarConsola(t_consola* consola, int pid, int idConsola) {
+	consola->consolaId=idConsola;
+	consola->pid=pid;
+
+}
 void interfazHandler(){
 
 	char orden;
@@ -194,7 +199,8 @@ void interfazHandler(){
 void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para tener la variable modificada cuando vuelva a selectorConexiones()
 	void *buffer;
 	int bytesARecibir=0;
-	int consolaId=0;
+	int pidARecibir=0;
+
 
 	if(orden == '\0'){/*Si la orden es '\0' o sea si no fue la PrimerOrden de todas las conexiones, recibe una orden nueva porque la primerorden la seteamos en selectorConexiones(),
 	 	 	 	 	 	 Pero despues sin esto no podemos cambiarla, si es que queremos trabajar con las consolas en forma "paralela"*/
@@ -202,7 +208,14 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 	}
 
 	//printf( "El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, *(char*)orden);
+	_Bool verificarPid(t_consola* pidNuevoo){
+		return (pidNuevoo->consolaId == socketAceptado);
+	}
 
+	void verCoincidenciaYEliminar(t_consola* p){
+
+		list_remove_by_condition(listaConsolas, verificarPid);
+	}
 	switch (*(char*)orden) {
 
 		/*Caso en el que se quiere recibir un archivo empaquetado */
@@ -231,24 +244,58 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 						log_info(loggerConPantalla ,"\nEl mensaje recibido es: \" %s \" \n", buffer);
 
-						contadorPid++; // Valor temporal del pid.
+						contadorPid++;
 						send(socketAceptado,&contadorPid,sizeof(int),0);
 
 						t_consola *infoConsola = malloc(sizeof(t_consola));
-						infoConsola->pid=contadorPid;
-						infoConsola->consolaId=consolaId;
 
 
 						if((crearNuevoProceso(buffer,bytesARecibir))<0){ // Aca naceria el planificador de procesos.
 							log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
 						}
 						else {
-							list_add(listaConsolas,infoConsola);
+							cargarConsola(infoConsola,contadorPid,socketAceptado);
+							list_add(listaConsolas,infoConsola);//NO CARGA LA LISTA DE CONSOLAS CON SU PID
+
+
 						}
 						free(infoConsola);
 						free(buffer);
 
 						break;
+
+			case 'F':
+
+				log_info(loggerConPantalla,"Se ha avisado que un proceso se quiere finalizar\n");
+				recv(socketAceptado,&pidARecibir, sizeof(int),0);
+
+				_Bool verificarPid(t_consola* pidNuevoo){
+
+					return (pidNuevoo->pid== pidARecibir);
+
+				}
+
+				//list_remove_by_condition(listaConsolas, verificarPid);
+
+				int totalPids = 0;
+				void sumarPids(t_consola* p){
+					totalPids += p->pid;
+				}
+
+
+				list_iterate(
+						listaConsolas,
+						sumarPids);
+				printf("la suma de los pids es: %d", totalPids);//Para verificar si se elimino el pid deseado de la lista del kernel
+
+
+
+				break;
+
+			case 'Q':
+				list_iterate(listaConsolas,
+						verCoincidenciaYEliminar);
+				break;
 			default:
 				if(*orden == '\0') break;
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", *(char*)orden);
@@ -357,6 +404,8 @@ void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
 		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
 		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
 }
+
+
 
 void selectorConexiones(int socket) {
 
