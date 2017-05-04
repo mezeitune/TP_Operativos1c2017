@@ -26,25 +26,20 @@
 #include <commons/log.h>
 #include "conexiones.h"
 #include <time.h>
-
+#include <signal.h>
 //--------LOG----------------//
 void inicializarLog(char *rutaDeLog);
-
-
-
 t_log *loggerSinPantalla;
 t_log *loggerConPantalla;
 //----------------------------//
-
-
 
 
 int enviarLecturaArchivo(void *ruta, int socket);
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void* connectionHandler(int socket);
-
-
+void imprimirProceso();
+void senialImprimir(int n);
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
@@ -55,13 +50,14 @@ struct tm *tlocal;
 
 typedef struct {
 	int pid;
-	struct tm *tlocal;
+	char fechaInicio;
 	int cantImpresiones;
 } Pid ;
 
 void cargarPid(Pid* pidEstructura, int pid) {
 	pidEstructura->cantImpresiones=0;
 	pidEstructura->pid = pid;
+
 
 }
 
@@ -74,14 +70,14 @@ int main(void) {
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logConsola.txt");
-
+	signal(SIGUSR1, senialImprimir);
 	listaPid = list_create();
 	int socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 	int err = pthread_create(&HiloId, NULL, connectionHandler,	(void*) socketKernel);
 
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
-	else printf("\n Thread created successfully\n");
+	else
 
 	(void) pthread_join(HiloId, NULL);
 
@@ -108,15 +104,18 @@ void *connectionHandler(int socket) {
 
 				log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente\n");
 			}
-
+			free(ruta);
 			break;
+
 		case 'F':
 
 			printf("Ingresar el PID del programa a finalizar\n");
 			scanf("%d", &pidAEliminar);
 
 
-			_Bool verificarPid(Pid* pidNuevoo){	return (pidNuevoo->pid == pidAEliminar);}
+			_Bool verificarPid(Pid* pidNuevoo){
+				return (pidNuevoo->pid == pidAEliminar);
+				}
 
 
 			t_list * listaNueva;
@@ -138,20 +137,24 @@ void *connectionHandler(int socket) {
 				struct tm *tlocal = localtime(&tiempo);
 				char fechaFin[128];
 				strftime(fechaFin,128,"%d/%m/%y %H:%M:%S",tlocal);
-				//falta guardar la fecha de inicializacion y la resta de fechas
+
+
 				printf("Fecha y Hora de inicializacion : \nFecha y Hora de finalizacion: %s\nCantidad de impresiones: %i\n",fechaFin,estructuraPidAEliminar->cantImpresiones);
 
 			}else{
-				printf("PID incorrecto\n");
+				log_info(loggerConPantalla,"\nPID incorrecto\n");
 			}
 			break;
+
 		case 'C':
 			system("clear");
 			break;
+
 		case 'Q':
 
 			list_destroy_and_destroy_elements(listaPid, free);
 			log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
+
 			exit(1);
 			break;
 		default:
@@ -161,6 +164,20 @@ void *connectionHandler(int socket) {
 
 	}
 }
+
+void senialImprimir(int n){
+			if(n == SIGUSR1){
+				int bytesARecibir=0;
+				int socket=socket;
+				char* buffer;
+				recv(socket ,&bytesARecibir, sizeof(int),0); //recibo la cantidad de bytes del mensaje del kernel
+				buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del mensaje con los bytes que recibi antes
+				recv(socket,buffer,bytesARecibir ,0);//recibo el mensaje de la kenrel con el tamaño de bytesArecibir
+
+				printf("%s",buffer);
+			}
+		}
+
 
 int enviarLecturaArchivo(void *rut, int socket) {
 	FILE *f;
@@ -203,16 +220,19 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	memcpy(mensaje + sizeof(int), bufferArchivo, tamanioArchivo); // Empaqueto en el mensjae, el contenido del archivo.
 
 	send(socket, mensaje, tamanioArchivo + sizeof(int), 0); // Mando el mensjae empaquetado.
-	printf("El mensaje ha sido enviado \n");
+	log_info(loggerConPantalla,"\nEl mensaje ha sido enviado al kernel\n");
 
 	recv(socket, &pid, sizeof(int), 0);
 
-	log_info(loggerConPantalla,"\nEl socket asignado para el proceso iniciado es: %d \n", pid);
+	log_info(loggerConPantalla,"\nEl socket asignado para el proceso iniciado es: %d \n", socket);
 	log_info(loggerConPantalla,"\nEl PID asignado es: %d \n", pid);
 
 	//creo lista con el pid
-
 	Pid* pidNuevo = malloc(sizeof(pid));
+	time_t tiempo = time(NULL);
+	struct tm *tlocal = localtime(&tiempo);
+	char fechaInicio[128];
+	strftime(fechaInicio,128,"%d/%m/%y %H:%M:%S",tlocal);
 	cargarPid(pidNuevo,pid);
 	list_add(listaPid, pidNuevo);
 	//lista con los pid
@@ -223,7 +243,9 @@ int enviarLecturaArchivo(void *rut, int socket) {
 
 
 }
-
+void imprimir(char* mensaje){
+	printf("%s\n", mensaje);
+}
 
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);

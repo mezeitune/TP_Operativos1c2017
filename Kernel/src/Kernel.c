@@ -145,6 +145,14 @@ void cargarConsola(t_consola* consola, int pid, int idConsola) {
 	consola->pid=pid;
 
 }
+void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
+	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));
+
+	memcpy(mensajeAConsola,&size, sizeof(char));
+	memcpy(mensajeAConsola + sizeof(int)+ sizeof(char), buffer,size);
+	send(socketConsola,mensajeAConsola,sizeof(char)+ sizeof(int),0);
+}
+
 void interfazHandler(){
 
 	char orden;
@@ -232,22 +240,28 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 							}
 
 						printf("Se ha avisado que un archivo esta por enviarse\n");
-						recv(socketAceptado,&bytesARecibir, sizeof(int),0);
+						recv(socketAceptado,&bytesARecibir, sizeof(int),0); //recibo la cantidad de bytes del mensaje de la consola con tamaño int
 
 						printf("Los bytes a recibir son: %d \n", bytesARecibir);
 
 
 						log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
 
-						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del archivo
-						recv(socketAceptado,buffer,bytesARecibir  ,0);
+						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del mensaje con los bytes que recibi antes
+						recv(socketAceptado,buffer,bytesARecibir  ,0);//recibo el mensaje de la consola con el tamaño de bytesArecibir
 
 						log_info(loggerConPantalla ,"\nEl mensaje recibido es: \" %s \" \n", buffer);
 
+
+
 						contadorPid++;
+
 						send(socketAceptado,&contadorPid,sizeof(int),0);
 
 						t_consola *infoConsola = malloc(sizeof(t_consola));
+
+						enviarAImprimirALaConsola(socketAceptado, buffer, bytesARecibir);
+
 
 
 						if((crearNuevoProceso(buffer,bytesARecibir))<0){ // Aca naceria el planificador de procesos.
@@ -275,7 +289,6 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 
 				}
 
-				//list_remove_by_condition(listaConsolas, verificarPid);
 
 				int totalPids = 0;
 				void sumarPids(t_consola* p){
@@ -300,7 +313,7 @@ void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para
 				if(*orden == '\0') break;
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", *(char*)orden);
 				break;
-		} // END switch.
+		} // END switch de la consola
 
 	*orden = '\0';
 	return;//Retorna a selectorConexiones() apenas se haya recibido una orden desde la consola para dar lugar a las otras consolas/CPUs/InterfazKernel
@@ -397,6 +410,7 @@ int solicitarContenidoAMemoria(char ** mensajeRecibido){
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 	return resultadoEjecucion;
 }
+
 
 
 void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
