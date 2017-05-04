@@ -29,6 +29,28 @@
 #include "conexiones.h"
 #include <arpa/inet.h>
 
+//--------------------------------------------Ejemplo en https://github.com/sisoputnfrba/ansisop-parser/tree/master/dummy-cpu para empezar
+#include "dummy_ansisop.h"
+static const char* PROGRAMA =
+						"begin\n"
+						"variables a, b\n"
+						"a = 3\n"
+						"b = 5\n"
+						"a = b + 12\n"
+						"end\n"
+						"\n";
+AnSISOP_funciones functions = {
+	.AnSISOP_definirVariable	= dummy_definirVariable,
+	.AnSISOP_obtenerPosicionVariable= dummy_obtenerPosicionVariable,
+	.AnSISOP_finalizar = dummy_finalizar,
+	.AnSISOP_dereferenciar	= dummy_dereferenciar,
+	.AnSISOP_asignar	= dummy_asignar,
+};
+
+AnSISOP_kernel kernel_functions = { };
+char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
+
+//-----------------------------------------------------------------------------------------------------------------
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void connectionHandler(int socketKernel);
@@ -97,10 +119,26 @@ int main(void) {
 	//Le pido info a memoria desplazandome en cuanto a sus instrucciones y ejecutando las primitivas necesarias
 	//para responderle al kernel todos los resultados y que se manden a consola
 
+	/* Ejemplo en el dummy sobre como empezar a pedir cosas y leer linea por linea
+	 	char *programa = strdup(PROGRAMA);
+t_metadata_program *metadata = metadata_desde_literal(programa);
+int programCounter = 0;
+while(!terminoElPrograma()){
+char* const linea = conseguirDatosDeLaMemoria(programa,
+metadata->instrucciones_serializado[programCounter].start,
+metadata->instrucciones_serializado[programCounter].offset);
+printf("\t Evaluando -> %s", linea);
+analizadorLinea(linea, &functions, &kernel_functions);
+free(linea);
+programCounter++;
+}
+metadata_destruir(metadata);
+printf("================\n");
+	 */
 
 
-
-	signal(SIGUSR1, signalSigusrHandler);
+	signal(SIGUSR1, signalSigusrHandler);//Para mandar la signal:
+				//htop->pararse sobre el proceso a mandarle signal->k->SIGUSR1->ENTER
 	comenzarEjecucionNuevoPrograma();
 
 	return 0;
@@ -142,9 +180,11 @@ void signalSigusrHandler(int signum)
 {
     if (signum == SIGUSR1)
     {
-        printf("Received SIGUSR1!\n");
+        //printf("Received SIGUSR1!\n");
 
-        //terminar CPU
+    	//hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
+		log_warning(loggerConPantalla,"\nSe ha desconectado CPU con signal SIGUSR1\n");
+		exit(1);
     }
 }
 
