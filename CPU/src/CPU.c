@@ -24,6 +24,7 @@
 //#include <parser/metadata_program.h>
 #include <commons/log.h>
 #include <pthread.h>
+#include <signal.h>
 #include "conexiones.h"
 #include <arpa/inet.h>
 
@@ -37,6 +38,9 @@ void recibirPCByEstablecerloGlobalmente(int socketKernel);//Falta implementar , 
 int counterPCBAsignado=0;//Cuando esto incremente a 1 , significa que ya recibio un PCB correcto
 					//si queda en 0 significa que no hay todavia. Cuando la CPU se libere del PCB actual porque
 					//ya realizo todas sus operaciones correspondientes , entonces se vuelve a setear en 0
+void comenzarEjecucionNuevoPrograma();
+void signalSigusrHandler(int signum);
+
 
 t_config* configuracion_memoria;
 char* puertoKernel;
@@ -93,6 +97,15 @@ int main(void) {
 	//para responderle al kernel todos los resultados y que se manden a consola
 
 
+
+
+	signal(SIGUSR1, signalSigusrHandler);
+	comenzarEjecucionNuevoPrograma();
+
+	return 0;
+}
+
+void comenzarEjecucionNuevoPrograma(){
 	while(counterPCBAsignado==0){//loopear hasta conseguir PCB(queda en espera activa)
 		recibirPCByEstablecerloGlobalmente(socketKernel);
 	}
@@ -103,9 +116,8 @@ int main(void) {
 	pthread_join(HiloConexionMemoria, NULL);
 
 	connectionHandler(socketKernel);
-
-	return 0;
 }
+
 
 void recibirPCByEstablecerloGlobalmente(socketKernel){
 	//logica de serializacion para recibir PCB
@@ -114,7 +126,8 @@ void recibirPCByEstablecerloGlobalmente(socketKernel){
 
 	//si no recibio PCB correcto , incremendo counterPCBnoASignado
 
-	if(){//PCBcorrecto?
+	if(1){//PCBcorrecto?
+		//puse 1 para que no de syntax error momentaneamente
 		counterPCBAsignado++;
 	}
 
@@ -122,6 +135,16 @@ void recibirPCByEstablecerloGlobalmente(socketKernel){
 	if(counterPCBAsignado==0){
 		printf("Todavia no hay ningun PCB para asignar a esta CPU");
 	}
+}
+
+void signalSigusrHandler(int signum)
+{
+    if (signum == SIGUSR1)
+    {
+        printf("Received SIGUSR1!\n");
+
+        //terminar CPU
+    }
 }
 
 void* conexionMemoria (int socketMemoria){
