@@ -31,6 +31,13 @@ void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void connectionHandler(int socketKernel);
 void* conexionMemoria (int socketMemoria);
+void recibirPCByEstablecerloGlobalmente(int socketKernel);//Falta implementar , y que reciba con serializacion desde Kernel
+									//En caso de que el PCB se haya seteado en 0 , deberia quedar a la espera
+									//de nuevos PCB hasta poder ejecutar algo
+int counterPCBAsignado=0;//Cuando esto incremente a 1 , significa que ya recibio un PCB correcto
+					//si queda en 0 significa que no hay todavia. Cuando la CPU se libere del PCB actual porque
+					//ya realizo todas sus operaciones correspondientes , entonces se vuelve a setear en 0
+
 t_config* configuracion_memoria;
 char* puertoKernel;
 char* puertoMemoria;
@@ -56,6 +63,17 @@ int socketKernel;
 
 pthread_t HiloConexionMemoria;
 
+
+typedef struct PCB {
+	int pid;
+	int cantidadPaginas;
+	//int* programCounter;
+	//int indiceCodigo[2];
+	//Indice de etiquetas
+	//Indice del Stack
+	//int exitCode;
+}t_pcb;
+
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
@@ -67,17 +85,43 @@ int main(void) {
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
+	//Lo primero que habria que hacer en realidad es aca pedirle un PCB al kernel
+	//a travez de serializacion y que este me envie uno si es que tiene programas pendientes de CPU
+	//en caso de no tener ningun programa pendiente , simplemente se imprime un mensaje
+	//Cuando ya tengo ese PCB (yo diria que establecido globalmente en CPU)
+	//Le pido info a memoria desplazandome en cuanto a sus instrucciones y ejecutando las primitivas necesarias
+	//para responderle al kernel todos los resultados y que se manden a consola
+
+
+	while(counterPCBAsignado==0){//loopear hasta conseguir PCB(queda en espera activa)
+		recibirPCByEstablecerloGlobalmente(socketKernel);
+	}
+
 	int err = pthread_create(&HiloConexionMemoria, NULL, &conexionMemoria,(void*) socketMemoria);
 
 	if (err != 0) log_error(loggerConPantalla,"\nNo se pudo crear el hilo :[%s]", strerror(err));
-
-
 	pthread_join(HiloConexionMemoria, NULL);
-
 
 	connectionHandler(socketKernel);
 
 	return 0;
+}
+
+void recibirPCByEstablecerloGlobalmente(socketKernel){
+	//logica de serializacion para recibir PCB
+	//si recibio un PCB , se guarda en la estructura
+	//y setea counterPCBnoASignado en 0
+
+	//si no recibio PCB correcto , incremendo counterPCBnoASignado
+
+	if(){//PCBcorrecto?
+		counterPCBAsignado++;
+	}
+
+
+	if(counterPCBAsignado==0){
+		printf("Todavia no hay ningun PCB para asignar a esta CPU");
+	}
 }
 
 void* conexionMemoria (int socketMemoria){
