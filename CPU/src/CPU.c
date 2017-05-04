@@ -25,6 +25,7 @@
 #include <commons/log.h>
 #include <pthread.h>
 #include <signal.h>
+#include <unistd.h>
 #include "conexiones.h"
 #include <arpa/inet.h>
 
