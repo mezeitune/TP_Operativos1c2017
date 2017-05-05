@@ -28,7 +28,8 @@
 #include <unistd.h>
 #include "conexiones.h"
 #include <arpa/inet.h>
-
+#include <parser/parser.h>
+#include <commons/collections/list.h>
 //--------------------------------------------Ejemplo en https://github.com/sisoputnfrba/ansisop-parser/tree/master/dummy-cpu para empezar
 #include "dummy_ansisop.h"
 static const char* PROGRAMA =
@@ -63,7 +64,7 @@ int counterPCBAsignado=0;//Cuando esto incremente a 1 , significa que ya recibio
 					//ya realizo todas sus operaciones correspondientes , entonces se vuelve a setear en 0
 void comenzarEjecucionNuevoPrograma();
 void signalSigusrHandler(int signum);
-
+void finalizar();
 
 t_config* configuracion_memoria;
 char* puertoKernel;
@@ -99,18 +100,26 @@ typedef struct PCB {
 	//Indice de etiquetas
 	//Indice del Stack
 	//int exitCode;
-}t_pcb;
+}pcbAUtilizar;
+t_list* listaPcb;
+
+void cargarPcbActual(pcbAUtilizar* pidEstructura, int pid, int cantidadPaginas) {
+	pidEstructura->pid=pid;
+	pidEstructura->cantidadPaginas =cantidadPaginas;
+}
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logCPU.txt");
-
+	listaPcb = list_create();
 
 
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
+
+
 
 	//Lo primero que habria que hacer en realidad es aca pedirle un PCB al kernel
 	//a travez de serializacion y que este me envie uno si es que tiene programas pendientes de CPU
@@ -159,19 +168,27 @@ void comenzarEjecucionNuevoPrograma(){
 
 
 void recibirPCByEstablecerloGlobalmente(socketKernel){
+
+
 	//logica de serializacion para recibir PCB
 	//si recibio un PCB , se guarda en la estructura
-	//y setea counterPCBnoASignado en 0
+	counterPCBAsignado++;
+	pcbAUtilizar* pcbNuevo = malloc(sizeof(pcbAUtilizar));
+	cargarPcbActual(pcbNuevo,1,2);
+	list_add(listaPcb, pcbNuevo);
 
+
+	//y setea counterPCBnoASignado en 0
+	counterPCBAsignado=0;
 	//si no recibio PCB correcto , incremendo counterPCBnoASignado
 
-	if(1){//PCBcorrecto?
+	if(counterPCBAsignado==0){//PCBcorrecto?
 		//puse 1 para que no de syntax error momentaneamente
-		counterPCBAsignado++;
+		printf("Ya hay un PCB asignado a esta CPU");
 	}
 
 
-	if(counterPCBAsignado==0){
+	if(counterPCBAsignado==1){
 		printf("Todavia no hay ningun PCB para asignar a esta CPU");
 	}
 }
@@ -216,7 +233,7 @@ void connectionHandler(int socket){
 	while(1){
 		while(orden != 'Q'){
 
-			printf("Ingresar orden:\n");
+			printf("\nIngresar orden:\n");
 			scanf(" %c", &orden);
 
 			switch(orden){
@@ -231,6 +248,10 @@ void connectionHandler(int socket){
 					log_info(loggerConPantalla,"\nEl mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
 
 					break;
+				case 'F':
+					finalizar();
+
+					break;
 				case 'Q':
 					log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
 					exit(1);
@@ -243,6 +264,50 @@ void connectionHandler(int socket){
 			orden = '\0';
 	}
 }
+
+void finalizar (){
+
+	//comando para  avisarle al kernel que debe eliminar
+	char comandoInicializacion = 'F';
+
+	void* pcbAEliminar= malloc(sizeof(char) + sizeof(int) * 2); //pido memoria para el comando que deba usar el kernel + los 2 int de la estructura del pcb
+
+	//agarro el pcb que quiero eliminar
+	pcbAUtilizar *unPcbAEliminar = list_get(listaPcb,0);
+
+	//pido memoria para ese pcb
+	pcbAUtilizar *infoPcbAEliminar = malloc(sizeof(pcbAUtilizar));
+
+	//asigno pcb en memoria
+	unPcbAEliminar->pid = infoPcbAEliminar->pid;
+	unPcbAEliminar->cantidadPaginas = infoPcbAEliminar->cantidadPaginas;
+
+	printf("%d%d",infoPcbAEliminar->pid,unPcbAEliminar->cantidadPaginas);
+
+	//aca voy copiando en pcbAEliminar cada cosa que quiero empaquetar memcpy(a donde lo pongo con su posicion, que garcha pongo, tamaño de la garcha que pongo);
+	memcpy(pcbAEliminar,&comandoInicializacion,sizeof(char));
+	memcpy(pcbAEliminar + sizeof(char), &unPcbAEliminar->pid,sizeof(int));
+	memcpy(pcbAEliminar + sizeof(char) + sizeof(int) , &unPcbAEliminar->cantidadPaginas , sizeof(int));
+
+	//envio al kernel lo empaquetado con su tamaño que hice previamente en el malloc
+	send(socketKernel, pcbAEliminar, sizeof(int)*2 + sizeof(char), 0);
+	 //todo eso de antes taria bueno hacerlo en una funcion serializadora :)
+
+	list_destroy_and_destroy_elements(listaPcb, free);
+
+	counterPCBAsignado=1;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 void leerConfiguracion(char* ruta) {
 	configuracion_memoria = config_create(ruta);

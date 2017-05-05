@@ -337,7 +337,12 @@ int crearNuevoProceso(char*buffer,int size){
 	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
 	memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
-	send(socketMemoria,mensajeAMemoria,sizeof(int)*2 + sizeof(char),0);
+	int envio = send(socketMemoria,mensajeAMemoria,sizeof(int)*2 + sizeof(char),0);
+	if(envio==1){
+			printf("\nSe le envio al kernel el pcb a eliminar\n");
+		} else if(envio==-1){
+			printf("\ncarroza la concha de tu madre\n");
+		}
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion < 0){
 		/* No se puede inicializar*/
