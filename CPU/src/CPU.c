@@ -28,6 +28,7 @@
 #include <commons/collections/list.h>
 #include "conexiones.h"
 #include "dummy_ansisop.h"
+#include <parser/metadata_program.h>
 static const char* PROGRAMA =
 						"begin\n"
 						"variables a, b\n"
@@ -59,6 +60,7 @@ void* conexionMemoria (int socketMemoria);
 
 void comenzarEjecucionNuevoPrograma();
 void signalSigusrHandler(int signum);
+
 
 
 t_config* configuracion_memoria;
@@ -136,22 +138,7 @@ int main(void) {
 	//Le pido info a memoria desplazandome en cuanto a sus instrucciones y ejecutando las primitivas necesarias
 	//para responderle al kernel todos los resultados y que se manden a consola
 
-	/* Ejemplo en el dummy sobre como empezar a pedir cosas y leer linea por linea
-	 	char *programa = strdup(PROGRAMA);
-t_metadata_program *metadata = metadata_desde_literal(programa);
-int programCounter = 0;
-while(!terminoElPrograma()){
-char* const linea = conseguirDatosDeLaMemoria(programa,
-metadata->instrucciones_serializado[programCounter].start,
-metadata->instrucciones_serializado[programCounter].offset);
-printf("\t Evaluando -> %s", linea);
-analizadorLinea(linea, &functions, &kernel_functions);
-free(linea);
-programCounter++;
-}
-metadata_destruir(metadata);
-printf("================\n");
-	 */
+
 
 
 	signal(SIGUSR1, signalSigusrHandler);//Para mandar la signal:
@@ -162,43 +149,37 @@ printf("================\n");
 }
 
 
-void finalizar (){
 
-	//comando para  avisarle al kernel que debe eliminar
-	char comandoInicializacion = 'F';
-
-	void* pcbAEliminar= malloc(sizeof(char) + sizeof(int) * 2); //pido memoria para el comando que deba usar el kernel + los 2 int de la estructura del pcb
-
-	//agarro el pcb que quiero eliminar
-	pcbAUtilizar *unPcbAEliminar = list_get(listaPcb,0);
-
-	//pido memoria para ese pcb
-	pcbAUtilizar *infoPcbAEliminar = malloc(sizeof(pcbAUtilizar));
-
-	//asigno pcb en memoria
-	unPcbAEliminar->pid = infoPcbAEliminar->pid;
-	unPcbAEliminar->cantidadPaginas = infoPcbAEliminar->cantidadPaginas;
-
-	printf("%d%d",infoPcbAEliminar->pid,unPcbAEliminar->cantidadPaginas);
-
-	serializarPCByEnviar(socketKernel,comandoInicializacion,&unPcbAEliminar,pcbAEliminar);
-
-	list_destroy_and_destroy_elements(listaPcb, free);
-
-	counterPCBAsignado=0;
-}
 
 void comenzarEjecucionNuevoPrograma(){
 	while(counterPCBAsignado==0){//loopear hasta conseguir PCB(queda en espera activa)
 		recibirPCByEstablecerloGlobalmente(socketKernel);
 	}
 
-	int err = pthread_create(&HiloConexionMemoria, NULL, &conexionMemoria,(void*) socketMemoria);
 
-	if (err != 0) log_error(loggerConPantalla,"\nNo se pudo crear el hilo :[%s]", strerror(err));
-	pthread_join(HiloConexionMemoria, NULL);
+
+	printf("Ejecutando\n");
+		char *programa = strdup(PROGRAMA);
+		t_metadata_program *metadata = metadata_desde_literal(programa);
+		int programCounter = 0;//deberia ser el del PCB
+		while(!terminoElPrograma()){
+			char* const linea = conseguirDatosDeLaMemoria(programa,
+			metadata->instrucciones_serializado[programCounter].start,
+			metadata->instrucciones_serializado[programCounter].offset);
+			printf("\t Evaluando -> %s", linea);
+			analizadorLinea(linea, &functions, &kernel_functions);
+			free(linea);
+			programCounter++;
+		}
+		metadata_destruir(metadata);
+		printf("================\n");
 
 	connectionHandler(socketKernel);
+}
+
+char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i){
+
+
 }
 
 
@@ -240,15 +221,6 @@ void signalSigusrHandler(int signum)
     }
 }
 
-void* conexionMemoria (int socketMemoria){
-
-	//analizadorLinea("a = b + 3", AnSISOP_funciones *AnSISOP_funciones, AnSISOP_kernel *AnSISOP_funciones_kernel);
-	while(1){
-		connectionHandler(socketMemoria);
-	}
-	return 0;
-
-}
 
 
 void connectionHandler(int socket){
@@ -301,6 +273,31 @@ void connectionHandler(int socket){
 }
 
 
+void finalizar (){
+
+	//comando para  avisarle al kernel que debe eliminar
+	char comandoInicializacion = 'F';
+
+	void* pcbAEliminar= malloc(sizeof(char) + sizeof(int) * 2); //pido memoria para el comando que deba usar el kernel + los 2 int de la estructura del pcb
+
+	//agarro el pcb que quiero eliminar
+	pcbAUtilizar *unPcbAEliminar = list_get(listaPcb,0);
+
+	//pido memoria para ese pcb
+	pcbAUtilizar *infoPcbAEliminar = malloc(sizeof(pcbAUtilizar));
+
+	//asigno pcb en memoria
+	infoPcbAEliminar->pid = unPcbAEliminar->pid;
+	infoPcbAEliminar->cantidadPaginas = unPcbAEliminar->cantidadPaginas;
+
+	printf("%d%d",unPcbAEliminar->pid,unPcbAEliminar->cantidadPaginas);
+	serializarPCByEnviar(socketKernel,comandoInicializacion,&infoPcbAEliminar,pcbAEliminar);
+
+	list_destroy_and_destroy_elements(listaPcb, free);
+
+	counterPCBAsignado=0;
+}
+
 
 
 void serializarPCByEnviar(int socket, char comandoInicializacion, pcbAUtilizar *unPcbAEliminar, void* pcbAEliminar){
@@ -314,16 +311,6 @@ void serializarPCByEnviar(int socket, char comandoInicializacion, pcbAUtilizar *
 	 //todo eso de antes taria bueno hacerlo en una funcion serializadora :)
 
 }
-
-
-
-
-
-
-
-
-
-
 
 
 void leerConfiguracion(char* ruta) {
