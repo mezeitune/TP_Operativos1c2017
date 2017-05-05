@@ -51,22 +51,26 @@ int recibirConexion(int socket_servidor);
 char nuevaOrdenDeAccion(int puertoCliente);
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
-
+void connection_handlerR();
 int main(void){
 
 	//TODO:
-	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\ System/config_FileSys");
+	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/'File System'/config_FileSys");
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
-	socket_servidor = crear_socket_servidor("127.0.0.1","5002");
-	//int socket_servidor = crear_socket_servidor(ipKernel,puertoKernel);
+	//socket_servidor = crear_socket_servidor("127.0.0.1","5002");
 
-	int socket_Kernel = recibirConexion(socket_servidor);
+	//int socket_Kernel = recibirConexion(socket_servidor);
 
-	connection_Listener(socket_Kernel);
+	//connection_Listener(socket_Kernel);
+	connection_handlerR();//TODO LO QUE ESTA COMENTADO ARRIBA TENDRIA Q IR DESCOMENTADO , PERO ESTOY USANDO ESTA
+				//FUNCION MOMENTANEAMENTE , POR QUE EL KERNEL TODAVIA NO SE COMUNICA CON FS
+				//ENTONCES LO HAGO PARA TESTEAR , NO BORRAR LAS OTRAS FUNCIONES QUE HAY
+
+
 	return 0;
 }
 
@@ -118,7 +122,13 @@ void *connection_handler(void *socket_desc)
 		{
 
 		case 'V'://validar archivo
-
+			if( access( "alumno.bin", F_OK ) != -1 ) {
+			    // file exists
+				printf("el archivo existe");
+			} else {
+			    // file doesn't exist
+				printf("el archivo no existe");
+			}
 			break;
 		case 'C'://crear archivo
 			break;
@@ -134,6 +144,63 @@ void *connection_handler(void *socket_desc)
 		}
 	}
     return 0;
+}
+
+void connection_handlerR()
+{
+    char orden;
+    FILE *fp;
+    int resultadoDeEjecucion;
+    while(orden != 'Q'){
+
+    			printf("\nIngresar orden:\n");
+    			scanf(" %c", &orden);
+
+    	switch(orden){
+		case 'V'://validar archivo   TERMINADO (FALTA QUE RECIBA EL ARCHIVO QUE SOLICITE DESDE KERNEL)
+			if( access( "../metadata/alumno.bin", F_OK ) != -1 ) {
+			    // file exists
+				printf("el archivo existe");
+			} else {
+			    // file doesn't exist
+				printf("el archivo no existe");
+			}
+			break;
+		case 'C'://crear archivo
+			if( access( "../metadata/nuevo.bin", F_OK ) != -1 ) {
+				//falta ver en este if de arriba tambien si el archivo existe y si esta en modo "c"
+			}else{
+				fp = fopen("../metadata/nuevo.bin", "ab+");//creo el archivo
+				//falta que por default se le asigne un bloque a ese archivo
+			}
+			break;
+		case 'B'://borrar archivo
+
+			   fp = fopen("../metadata/nuevo.bin", "w");
+
+
+			   if(remove("../metadata/nuevo.bin") == 0)
+			   {
+			      printf("File deleted successfully");
+			   }
+			   else
+			   {
+			      printf("Error: unable to delete the file");
+			   }
+
+			   //falta marcar los bloques como libres dentro del bitmap
+			break;
+		case 'O'://obtener datos
+
+
+			break;
+		case 'G'://guardar archivo
+			break;
+		default:
+			log_warning(loggerConPantalla,"\nError: Orden %c no definida\n",orden);
+			break;
+		}
+	}
 }
 
 void leerConfiguracion(char* ruta){
