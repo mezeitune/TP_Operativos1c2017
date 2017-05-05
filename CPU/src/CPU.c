@@ -37,7 +37,7 @@ static const char* PROGRAMA =
 						"a = b + 12\n"
 						"end\n"
 						"\n";
-AnSISOP_funciones functions = {
+AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_definirVariable	= dummy_definirVariable,
 	.AnSISOP_obtenerPosicionVariable= dummy_obtenerPosicionVariable,
 	.AnSISOP_finalizar = dummy_finalizar,
@@ -45,7 +45,7 @@ AnSISOP_funciones functions = {
 	.AnSISOP_asignar	= dummy_asignar,
 };
 
-AnSISOP_kernel kernel_functions = { };
+AnSISOP_kernel kernel_functions = { };//NO SE PARA QUE ES ESTO
 char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
 
 //-----------------------------------------------------------------------------------------------------------------
@@ -159,19 +159,19 @@ void comenzarEjecucionNuevoPrograma(){
 
 
 	printf("Ejecutando\n");
-		char *programa = strdup(PROGRAMA);
-		t_metadata_program *metadata = metadata_desde_literal(programa);
+		char *programa = strdup(PROGRAMA);//copia el programa entero en esa variable
+		t_metadata_program *metadata = metadata_desde_literal(programa);//hacerlo por que si
 		int programCounter = 0;//deberia ser el del PCB
 		while(!terminoElPrograma()){
 			char* const linea = conseguirDatosDeLaMemoria(programa,
 			metadata->instrucciones_serializado[programCounter].start,
-			metadata->instrucciones_serializado[programCounter].offset);
+			metadata->instrucciones_serializado[programCounter].offset);//que me devuelva la siguiente linea la memoria
 			printf("\t Evaluando -> %s", linea);
-			analizadorLinea(linea, &functions, &kernel_functions);
+			analizadorLinea(linea, &functions, &kernel_functions);//que haga lo que tenga q hacer
 			free(linea);
 			programCounter++;
 		}
-		metadata_destruir(metadata);
+		metadata_destruir(metadata);//por que si
 		printf("================\n");
 
 	connectionHandler(socketKernel);
