@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "conexiones.h"
+#include <commons/log.h>
 
 char *ipKernel;
 char *puertoKernel;
@@ -32,8 +33,19 @@ int contadorConexiones=0;
 pthread_t  thread_id;
 t_config* configuracion_FS;
 
+//--------LOG----------------//
+void inicializarLog(char *rutaDeLog);
+
+
+
+t_log *loggerSinPantalla;
+t_log *loggerConPantalla;
+//----------------------------//
+
 //the thread function
 void *connection_handler(void *);
+
+int socket_servidor;
 
 int recibirConexion(int socket_servidor);
 char nuevaOrdenDeAccion(int puertoCliente);
@@ -47,118 +59,77 @@ int main(void){
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
 	imprimirConfiguraciones();
 
-	int socket_servidor = crear_socket_servidor("127.0.0.1","5002");
+	inicializarLog("/home/utnso/Log/logFS.txt");
+
+	socket_servidor = crear_socket_servidor("127.0.0.1","5002");
 	//int socket_servidor = crear_socket_servidor(ipKernel,puertoKernel);
 
-	recibirConexion(socket_servidor);
+	int socket_Kernel = recibirConexion(socket_servidor);
+
+	connection_Listener(socket_Kernel);
 	return 0;
 }
 
-int recibirConexion(int socket_servidor){
-	struct sockaddr_storage their_addr;
-	 socklen_t addr_size;
-
-
-	int estado = listen(socket_servidor, 5);
-
-	if(estado == -1){
-		printf("Error al poner el servidor en listen\n");
-		close(socket_servidor);
-		return 1;
-	}
-
-
-	if(estado == 0){
-		printf("Se puso el socket en listen\n");
-	}
-
-	addr_size = sizeof(their_addr);
-
-	int socket_aceptado;
-    while( (socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size)) )
-    {
-    	contadorConexiones ++;
-    	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
-
-        if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &socket_aceptado) < 0)
-        {
-            perror("could not create thread");
-            return 1;
-        }
-
-        //Now join the thread , so that we dont terminate before the thread
-        //pthread_join( thread_id , NULL);
-        printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
-    }
-
-
-	if (socket_aceptado == -1){
-		close(socket_servidor);
-		printf("Error al aceptar conexion\n");
-		return 1;
-	}
-
-	return socket_aceptado;
-}
 
 char nuevaOrdenDeAccion(int socketCliente)
 {
-	char *buffer;
+	char* buffer=malloc(sizeof(char));
+	char bufferRecibido;
+
 	printf("\n--Esperando una orden del cliente-- \n");
-	buffer = recibir(socketCliente);
-	//int size_mensaje = sizeof(buffer);
-    if(buffer == NULL)
-    {
-        return 'Q';
-    	//puts("Client disconnected");
-        //fflush(stdout);
-    }
-    else if(buffer == NULL)
-    {
-        return 'X';
-    	//perror("recv failed");
-    }
-    printf("El cliente envio la orden: %c \n",*buffer);
-	//printf("%c\n",*buffer);
-	return *buffer;
+
+	recv(socketCliente,buffer,sizeof(char),0);
+	bufferRecibido = *buffer;
+
+	free(buffer);
+
+    printf("El cliente ha enviado la orden: %c\n",bufferRecibido);
+	printf("%c\n",bufferRecibido);
+	return bufferRecibido;
+}
+
+void connection_Listener(int socket_desc)
+{
+	int sock;
+	//Atiendo al socket del kernel
+	if( pthread_create( &thread_id , NULL , connection_handler , (void*) &socket_desc) < 0)
+	{
+		perror("could not create thread");
+	}
+	while(1){
+		//Quedo a la espera de CPUs y las atiendo
+		sock = recibirConexion(socket_servidor);
+		if( pthread_create( &thread_id , NULL , connection_handler , (void*) &sock) < 0)
+		{
+			perror("could not create thread");
+		}
+	}
 }
 
 
 void *connection_handler(void *socket_desc)
 {
-    //Get the socket descriptor
     int sock = *(int*)socket_desc;
-    char orden = 'F';
-    char *buffer;
-
-	while(orden != 'Q')
+    char orden;
+    int resultadoDeEjecucion;
+	while((orden=nuevaOrdenDeAccion(sock)) != 'Q')
 	{
-		orden = nuevaOrdenDeAccion(sock);
 		switch(orden)
 		{
-		case 'A':
-			printf("Esperando mensaje\n");
-			buffer = recibir_string(sock);
-			printf("\nEl mensaje es: \"%s\"\n", buffer);
+
+		case 'V'://validar archivo
 
 			break;
-		case 'S':
+		case 'C'://crear archivo
 			break;
-		case 'C':
+		case 'B'://borrar archivo
 			break;
-		case 'G':
+		case 'O'://obtener datos
 			break;
-		case 'F':
-			break;
-		case 'Q':
-			printf("Cliente %d desconectado",sock);
-			fflush(stdout);
-			break;
-		case 'X':
-			perror("recv failed");
+		case 'G'://guardar archivo
 			break;
 		default:
-			printf("Error\n");
+			log_warning(loggerConPantalla,"\nError: Orden %c no definida\n",orden);
 			break;
 		}
 	}
@@ -178,3 +149,53 @@ void imprimirConfiguraciones(){
 		printf("CONFIGURACIONES\nIP KERNEL:%s\nPUERTO KERNEL:%s\nPUNTO MONTAJE:%s\n",ipKernel,puertoKernel,puntoMontaje);
 		printf("---------------------------------------------------\n");
 }
+
+
+
+int recibirConexion(int socket_servidor){
+	struct sockaddr_storage their_addr;
+	 socklen_t addr_size;
+
+
+	int estado = listen(socket_servidor, 5);
+
+	if(estado == -1){
+		log_info(loggerConPantalla,"\nError al poner el servidor en listen\n");
+		close(socket_servidor);
+		return 1;
+	}
+
+
+	if(estado == 0){
+		log_info(loggerConPantalla,"\nSe puso el socket en listen\n");
+		printf("---------------------------------------------------\n");
+	}
+
+	addr_size = sizeof(their_addr);
+
+	int socket_aceptado;
+    socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
+
+	contadorConexiones ++;
+	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
+	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
+
+	if (socket_aceptado == -1){
+		close(socket_servidor);
+		log_error(loggerConPantalla,"\nError al aceptar conexion\n");
+		return 1;
+	}
+
+	return socket_aceptado;
+}
+
+void inicializarLog(char *rutaDeLog){
+
+
+		mkdir("/home/utnso/Log",0755);
+
+		loggerSinPantalla = log_create(rutaDeLog,"FS", false, LOG_LEVEL_INFO);
+		loggerConPantalla = log_create(rutaDeLog,"FS", true, LOG_LEVEL_INFO);
+
+}
+
