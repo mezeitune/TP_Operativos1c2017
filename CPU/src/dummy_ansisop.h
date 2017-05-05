@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "funcionesComunes.h"
 t_puntero dummy_definirVariable(t_nombre_variable variable);
 t_puntero dummy_obtenerPosicionVariable(t_nombre_variable variable);
 t_valor_variable dummy_dereferenciar(t_puntero puntero);

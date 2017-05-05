@@ -5,18 +5,15 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/CPU.c \
-../src/dummy_ansisop.c \
-../src/funcionesComunes.c 
+../src/dummy_ansisop.c 
 
 OBJS += \
 ./src/CPU.o \
-./src/dummy_ansisop.o \
-./src/funcionesComunes.o 
+./src/dummy_ansisop.o 
 
 C_DEPS += \
 ./src/CPU.d \
-./src/dummy_ansisop.d \
-./src/funcionesComunes.d 
+./src/dummy_ansisop.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
