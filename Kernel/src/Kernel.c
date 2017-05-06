@@ -147,10 +147,11 @@ void cargarConsola(t_consola* consola, int pid, int idConsola) {
 }
 void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));
-
+	char orden = "I";
 	memcpy(mensajeAConsola,&size, sizeof(char));
 	memcpy(mensajeAConsola + sizeof(int)+ sizeof(char), buffer,size);
 	send(socketConsola,mensajeAConsola,sizeof(char)+ sizeof(int),0);
+	send(socket, (void*) &orden, sizeof(char), 0);
 }
 
 void interfazHandler(){
@@ -338,11 +339,7 @@ int crearNuevoProceso(char*buffer,int size){
 	memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
 	memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
 	int envio = send(socketMemoria,mensajeAMemoria,sizeof(int)*2 + sizeof(char),0);
-	if(envio==1){
-			printf("\nSe le envio al kernel el pcb a eliminar\n");
-		} else if(envio==-1){
-			printf("\ncarroza la concha de tu madre\n");
-		}
+
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion < 0){
 		/* No se puede inicializar*/

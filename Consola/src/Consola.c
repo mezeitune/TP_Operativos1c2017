@@ -26,7 +26,7 @@
 #include <commons/log.h>
 #include "conexiones.h"
 #include <time.h>
-#include <signal.h>
+
 //--------LOG----------------//
 void inicializarLog(char *rutaDeLog);
 t_log *loggerSinPantalla;
@@ -38,8 +38,8 @@ int enviarLecturaArchivo(void *ruta, int socket);
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void* connectionHandler(int socket);
-void imprimirProceso();
-void senialImprimir(int n);
+
+void imprimir(int socket);
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
@@ -70,7 +70,7 @@ int main(void) {
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logConsola.txt");
-	signal(SIGUSR1, senialImprimir);
+
 	listaPid = list_create();
 	int socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 	int err = pthread_create(&HiloId, NULL, connectionHandler,	(void*) socketKernel);
@@ -164,19 +164,42 @@ void *connectionHandler(int socket) {
 
 	}
 }
+void imprimirHandler(int socket, char *orden) {// Recibe un char* para tener la variable modificada cuando vuelva a selectorConexiones()
 
-void senialImprimir(int n){
-			if(n == SIGUSR1){
+	recv(socket,orden,sizeof(int)  ,0);
+	//printf( "El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, *(char*)orden);
+
+
+	switch (*(char*)orden) {
+
+		case 'I':
+				imprimir(socket);
+
+		break;
+
+
+		default:
+				if(*orden == '\0') break;
+				log_warning(loggerConPantalla,"\nOrden %c no definida\n", *(char*)orden);
+				break;
+		} // END switch de la consola
+
+	*orden = '\0';
+	return;
+
+}
+void imprimir(int socket){
+
 				int bytesARecibir=0;
-				int socket=socket;
+
 				char* buffer;
 				recv(socket ,&bytesARecibir, sizeof(int),0); //recibo la cantidad de bytes del mensaje del kernel
 				buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del mensaje con los bytes que recibi antes
 				recv(socket,buffer,bytesARecibir ,0);//recibo el mensaje de la kenrel con el tamaño de bytesArecibir
 
 				printf("%s",buffer);
-			}
-		}
+
+}
 
 
 int enviarLecturaArchivo(void *rut, int socket) {
@@ -243,9 +266,7 @@ int enviarLecturaArchivo(void *rut, int socket) {
 
 
 }
-void imprimir(char* mensaje){
-	printf("%s\n", mensaje);
-}
+
 
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);
