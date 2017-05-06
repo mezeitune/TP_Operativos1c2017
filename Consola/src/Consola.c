@@ -153,7 +153,7 @@ void *connectionHandler(int socket) {
 		case 'Q':
 
 			list_destroy_and_destroy_elements(listaPid, free);
-			log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
+			log_warning(loggerConPantalla,"\nSe ha desconectado la consola\n");
 
 			exit(1);
 			break;
@@ -185,6 +185,7 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	void *bufferArchivo;
 	int tamanioArchivo;
 	int pid=0;
+	int socketEnKernel;
 	char *ruta = (char *) rut;
 
 	/* TODO Validar el nombre del archivo */
@@ -223,8 +224,8 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	log_info(loggerConPantalla,"\nEl mensaje ha sido enviado al kernel\n");
 
 	recv(socket, &pid, sizeof(int), 0);
-
-	log_info(loggerConPantalla,"\nEl socket asignado para el proceso iniciado es: %d \n", socket);
+	recv(socket, &socketEnKernel, sizeof(int),0);
+	log_info(loggerConPantalla,"\nEl socket asignado en kernel para el proceso iniciado es: %d \n", socketEnKernel);
 	log_info(loggerConPantalla,"\nEl PID asignado es: %d \n", pid);
 
 	//creo lista con el pid

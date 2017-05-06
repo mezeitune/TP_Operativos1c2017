@@ -41,22 +41,6 @@ typedef struct CONSOLA{
 	int consolaId;
 }t_consola;
 
-
-
-
-char *ipConsola;
-char *ipCPU;
-char *ipMemoria;
-char *ipFileSys;
-
-char *puertoCPU;
-char *puertoMemoria;
-char *puertoConsola;
-char *puertoFileSys;
-
-char *puertoServidor;
-char *ipServidor;
-
 char *quantum;
 char *quantumSleep;
 char *algoritmo;
@@ -65,72 +49,81 @@ char *semIds;
 char *semInit;
 char *sharedVars;
 char *stackSize;
-pthread_t thread_id, threadCPU, threadConsola, threadMemoria, threadFS;
+
+
+//--------Configuraciones--------//
+void leerConfiguracion(char* ruta);
+void imprimirConfiguraciones();
 t_config* configuracion_kernel;
 
-
-
-void inicializarLog(char *rutaDeLog);
-
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
+//--------configuraciones-------//
 
 
 //----------Planificacion----------//
 int crearNuevoProceso(char* buffer,int size);
+int verificarGradoDeMultiprogramacion();
 void encolarProcesoListo(t_pcb *procesoListo);
 void inicializarColaListos();
+void cargarConsola(int pid, int idConsola);
+void inicializarListaConsolas();
 t_list* colaListos;
 t_list* colaTerminados;
 t_list* listaConsolas;
 int contadorPid=0;
-//---------------------------------//
+//---------Planificacion--------//
+
+//--------ConnectionHandler--------//
+void connectionHandler(int socketAceptado, char orden);
+int atenderNuevoPrograma(int socketAceptado);
+//---------ConnectionHandler-------//
+
+//--------InterfazHandler--------//
+void interfazHandler();
+void imprimirInterfazUsuario();
+
+void inicializarLog(char *rutaDeLog);
+t_log *loggerSinPantalla;
+t_log *loggerConPantalla;
+//--------InterfazHandler-------//
+
 
 //---------Conexiones---------------//
-
-void leerConfiguracion(char* ruta);
-void imprimirConfiguraciones();
-void connectionHandler(int socketAceptado, char *orden);
 void *get_in_addr(struct sockaddr *sa);
-void nuevaOrdenDeAccion(int puertoCliente, char* nuevaOrden);
+void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones(int socket);
-void interfazHandler();
-//-----------------------------------//
+char *ipServidor;
+char *ipMemoria;
+char *ipFileSys;
+char *puertoServidor;
+char *puertoMemoria;
+char *puertoFileSys;
+//---------Conexiones-------------//
 
 //------------Sockets unicos globales--------------------//
 int socketMemoria;
 int socketFyleSys;
 int socketServidor; // Para CPUs y Consolas
-//------------------------------------------------------//
+//------------Sockets unicos globales-------------------//
 
 //---------Conexion con memoria--------//
 int solicitarContenidoAMemoria(char** mensajeRecibido);
-
+int pedirMemoria(t_pcb* procesoListo);
+int almacenarEnMemoria(t_pcb* procesoListoAutorizado, char* buffer, int size);
 //---------Conexion con memoria--------//
-
 
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
+	imprimirInterfazUsuario();
 
 	inicializarLog("/home/utnso/Log/logKernel.txt");
 	inicializarColaListos();
-	listaConsolas = list_create();
-
-	/**************************************Printea interfaz Usuario Kernel*******************************************************/
-
-	printf("\n-----------------------------------------------------------------------------------------------------\n");
-	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
-	printf("\n-----------------------------------------------------------------------------------------------------\n");
-
-	/****************************************************************************************************************************/
+	inicializarListaConsolas();
 
 	socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 	socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
-
 
 	while(1){
 	/*Multiplexor de conexiones. */
@@ -140,27 +133,13 @@ int main(void) {
 	return 0;
 }
 
-void cargarConsola(t_consola* consola, int pid, int idConsola) {
-	consola->consolaId=idConsola;
-	consola->pid=pid;
-
-}
-void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
-	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));
-
-	memcpy(mensajeAConsola,&size, sizeof(char));
-	memcpy(mensajeAConsola + sizeof(int)+ sizeof(char), buffer,size);
-	send(socketConsola,mensajeAConsola,sizeof(char)+ sizeof(int),0);
-}
-
 void interfazHandler(){
 
 	char orden;
 	int pid;
 	char* mensajeRecibido;
 
-		printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
-
+		imprimirInterfazUsuario();
 		scanf("%c",&orden);
 
 	switch(orden){
@@ -202,191 +181,167 @@ void interfazHandler(){
 	return;
 }
 
-
-
-void connectionHandler(int socketAceptado, char *orden) {// Recibe un char* para tener la variable modificada cuando vuelva a selectorConexiones()
-	void *buffer;
-	int bytesARecibir=0;
+void connectionHandler(int socketAceptado, char orden) {
 	int pidARecibir=0;
 
+	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 
-	if(orden == '\0'){/*Si la orden es '\0' o sea si no fue la PrimerOrden de todas las conexiones, recibe una orden nueva porque la primerorden la seteamos en selectorConexiones(),
-	 	 	 	 	 	 Pero despues sin esto no podemos cambiarla, si es que queremos trabajar con las consolas en forma "paralela"*/
-		nuevaOrdenDeAccion(socketAceptado, orden);
-	}
-
-	//printf( "El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, *(char*)orden);
-	_Bool verificarPid(t_consola* pidNuevoo){
-		return (pidNuevoo->consolaId == socketAceptado);
+	_Bool verificarPid(t_consola* pidNuevo){
+		return (pidNuevo->consolaId == socketAceptado);
 	}
 
 	void verCoincidenciaYEliminar(t_consola* p){
-
 		list_remove_by_condition(listaConsolas, verificarPid);
 	}
-	switch (*(char*)orden) {
 
-		/*Caso en el que se quiere recibir un archivo empaquetado */
+	switch (orden) {
 		case 'I':
-
-					log_info(loggerConPantalla,"Se ha avisado que un archivo esta por enviarse\n");
-
-					printf("---------- Peticion de inicializar programa --------- \n");
-
-
-						if(list_size(colaListos) >= gradoMultiProg){ /*Checkeo el grado de multiprogramacion*/
-								log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
-								break;
-							}
-
-						printf("Se ha avisado que un archivo esta por enviarse\n");
-						recv(socketAceptado,&bytesARecibir, sizeof(int),0); //recibo la cantidad de bytes del mensaje de la consola con tamaño int
-
-						printf("Los bytes a recibir son: %d \n", bytesARecibir);
-
-
-						log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
-
-						buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del mensaje con los bytes que recibi antes
-						recv(socketAceptado,buffer,bytesARecibir  ,0);//recibo el mensaje de la consola con el tamaño de bytesArecibir
-
-						log_info(loggerConPantalla ,"\nEl mensaje recibido es: \" %s \" \n", buffer);
-
-
-
-						contadorPid++;
-
-						send(socketAceptado,&contadorPid,sizeof(int),0);
-
-						t_consola *infoConsola = malloc(sizeof(t_consola));
-
-						enviarAImprimirALaConsola(socketAceptado, buffer, bytesARecibir);
-
-
-
-						if((crearNuevoProceso(buffer,bytesARecibir))<0){ // Aca naceria el planificador de procesos.
-							log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
-						}
-						else {
-							cargarConsola(infoConsola,contadorPid,socketAceptado);
-							list_add(listaConsolas,infoConsola);//NO CARGA LA LISTA DE CONSOLAS CON SU PID
-
-
-						}
-						free(infoConsola);
-						free(buffer);
-
-						break;
-
-			case 'F':
-
+					atenderNuevoPrograma(socketAceptado);
+					break;
+		case 'F':
 				log_info(loggerConPantalla,"Se ha avisado que un proceso se quiere finalizar\n");
 				recv(socketAceptado,&pidARecibir, sizeof(int),0);
 
-				_Bool verificarPid(t_consola* pidNuevoo){
-
-					return (pidNuevoo->pid== pidARecibir);
-
+				_Bool verificarPid(t_consola* pidNuevo){
+					return (pidNuevo->pid== pidARecibir);
 				}
-
 
 				int totalPids = 0;
 				void sumarPids(t_consola* p){
 					totalPids += p->pid;
 				}
 
-
 				list_iterate(
 						listaConsolas,
 						sumarPids);
 				printf("la suma de los pids es: %d", totalPids);//Para verificar si se elimino el pid deseado de la lista del kernel
 
-
-
 				break;
-
-			case 'Q':
+		case 'Q':
 				list_iterate(listaConsolas,
 						verCoincidenciaYEliminar);
 				break;
 			default:
-				if(*orden == '\0') break;
-				log_warning(loggerConPantalla,"\nOrden %c no definida\n", *(char*)orden);
+				if(orden == '\0') break;
+				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 				break;
 		} // END switch de la consola
 
-	*orden = '\0';
+	orden = '\0';
 	return;//Retorna a selectorConexiones() apenas se haya recibido una orden desde la consola para dar lugar a las otras consolas/CPUs/InterfazKernel
 
 }
 
+
+int atenderNuevoPrograma(int socketAceptado){
+	char* buffer;
+	int bytesARecibir;
+		log_info(loggerConPantalla,"Se ha avisado que un archivo esta por enviarse\n");
+		log_info(loggerConPantalla,"---------- Peticion de inicializar programa --------- \n");
+		if(verificarGradoDeMultiprogramacion() < 0) return -1;
+
+		recv(socketAceptado,&bytesARecibir, sizeof(int),0); //recibo la cantidad de bytes del mensaje de la consola con tamaño int
+		log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
+
+		buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del mensaje con los bytes que recibi antes
+		recv(socketAceptado,buffer,bytesARecibir  ,0);//recibo el mensaje de la consola con el tamaño de bytesArecibir
+
+		log_info(loggerConPantalla ,"\nEl mensaje recibido es: \" %s \" \n", buffer);
+
+		contadorPid++;
+		send(socketAceptado,&contadorPid,sizeof(int),0);
+		send(socketAceptado, &socketAceptado, sizeof(int),0);
+
+		if((crearNuevoProceso(buffer,bytesARecibir))<0) return -2; // Aca naceria el planificador de procesos.
+		cargarConsola(contadorPid,socketAceptado);
+
+		free(buffer);
+		return 0;
+}
+
+void cargarConsola(int pid, int idConsola) {
+	t_consola *infoConsola = malloc(sizeof(t_consola));
+	infoConsola->consolaId=idConsola;
+	infoConsola->pid=pid;
+	list_add(listaConsolas,infoConsola);
+	/*free(infoConsola) ? Creo que hay que liberar ese espacio cuando se mate el proceso */
+}
+void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
+	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));
+
+	memcpy(mensajeAConsola,&size, sizeof(char));
+	memcpy(mensajeAConsola + sizeof(int)+ sizeof(char), buffer,size);
+	send(socketConsola,mensajeAConsola,sizeof(char)+ sizeof(int),0);
+}
+
 int crearNuevoProceso(char*buffer,int size){
 
-	void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
-	int resultadoEjecucion=1;
-	int offset=0; // valor arbitrario
-	int paginaAPedir = 0; // valor arbitrario
-	char comandoInicializacion = 'A';
-	char comandoAlmacenar = 'C';
 	t_pcb* procesoListo = malloc(sizeof(t_pcb));
-
 	procesoListo->pid = contadorPid;
-	procesoListo->cantidadPaginas=1; // Es arbitrario. Hay que hacer un analisis antes de esto.
+	procesoListo->cantidadPaginas=1; // Es arbitrario. Hay que hacer un analisis del buffer antes de esto.
 
-	//Pide Memoria
-	memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
-	memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
-	memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
-	int envio = send(socketMemoria,mensajeAMemoria,sizeof(int)*2 + sizeof(char),0);
-	if(envio==1){
-			printf("\nSe le envio al kernel el pcb a eliminar\n");
-		} else if(envio==-1){
-			printf("\ncarroza la concha de tu madre\n");
+	if((pedirMemoria(procesoListo))< 0){
+			free(procesoListo);
+			log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
+			log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
+			return -1;
 		}
-	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion < 0){
-		/* No se puede inicializar*/
-		free(procesoListo);
-		free(mensajeAMemoria);
-		return -1;
-	}
-	else{
-		printf("Se inicializo el programa correctamente\n");
-	}
-	free(mensajeAMemoria);
+	if((almacenarEnMemoria(procesoListo,buffer,size))< 0){
+				free(procesoListo);
+				log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
+				log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
+				return -2;
+			}
+	log_info(loggerConPantalla ,"Se inicializo el programa correctamente\n");
+	log_info(loggerConPantalla ,"Se almaceno el programa correctamente\n");
 
-	/* Almacena contenido en memoria */
-	mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
-	memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
-	memcpy(mensajeAMemoria + sizeof(char),&procesoListo->pid,sizeof(int));
-	memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&paginaAPedir,sizeof(int));
-	memcpy(mensajeAMemoria + sizeof(int)*2 + sizeof(char),&offset,sizeof(int));
-	memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&size,sizeof(int));
-	memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),buffer,size);
-	send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + size,0);
-	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion < 0){
-		/*No pudo almacenar datos en memoria */
-		free(mensajeAMemoria);
-		free(procesoListo);
-		return -2;
-	}
-	else {
-		printf("Se almaceno datos en memoria correctamente\n");
-	}
-	free(mensajeAMemoria);
 	encolarProcesoListo(procesoListo);
 	free(procesoListo);
 	return 0;
 }
 
-void encolarProcesoListo(t_pcb *pcbProcesoListo){
-//	colaListos
-	list_add(colaListos,pcbProcesoListo); // Agrega un pcb en la cola de listos. Al final
+int pedirMemoria(t_pcb* procesoListo){
+
+		void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
+		int resultadoEjecucion=1;
+		char comandoInicializacion = 'A';
+
+		memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
+		memcpy(mensajeAMemoria + sizeof(char), &procesoListo->pid,sizeof(int));
+		memcpy(mensajeAMemoria + sizeof(char) + sizeof(int) , &procesoListo->cantidadPaginas , sizeof(int));
+		send(socketMemoria,mensajeAMemoria,sizeof(int)*2 + sizeof(char),0);
+		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+
+		free(mensajeAMemoria);
+		return resultadoEjecucion;
 }
 
-void inicializarColaListos(){
-	colaListos= list_create();
+int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* buffer, int size){
+		int resultadoEjecucion=1;
+		int comandoAlmacenar = 'C';
+		int offset=0; // valor arbitrario
+		int paginaSolicitada = 0; // valor arbitrario
+
+		void * mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
+		memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
+		memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
+		memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&paginaSolicitada,sizeof(int));
+		memcpy(mensajeAMemoria + sizeof(int)*2 + sizeof(char),&offset,sizeof(int));
+		memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&size,sizeof(int));
+		memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),buffer,size);
+		send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + size,0);
+		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+		return resultadoEjecucion;
+		free(mensajeAMemoria);
+}
+
+
+int verificarGradoDeMultiprogramacion(){
+	if(list_size(colaListos) >= gradoMultiProg) {
+		log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
+		return -1;
+	}
+	return 0;
 }
 
 int solicitarContenidoAMemoria(char ** mensajeRecibido){
@@ -416,15 +371,24 @@ int solicitarContenidoAMemoria(char ** mensajeRecibido){
 	return resultadoEjecucion;
 }
 
-
-
-void nuevaOrdenDeAccion(int socketCliente, char* nuevaOrden) {
-		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
-		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
-		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, *nuevaOrden);
+void encolarProcesoListo(t_pcb *pcbProcesoListo){
+//	colaListos
+	list_add(colaListos,pcbProcesoListo); // Agrega un pcb en la cola de listos. Al final
 }
 
+void inicializarColaListos(){
+	colaListos= list_create();
+}
 
+void inicializarListaConsolas(){
+	listaConsolas = list_create();
+}
+
+void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
+		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
+		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
+		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, nuevaOrden);
+}
 
 void selectorConexiones(int socket) {
 
@@ -447,7 +411,7 @@ void selectorConexiones(int socket) {
 	}
 
 	FD_SET(socket, &master); // add the listener to the master set
-	FD_SET(0, &master); /*************************AGREGADO*************************/
+	FD_SET(0, &master); // Agrega el fd del teclado.
 	fdMax = socket; // keep track of the biggest file descriptor so far, it's this one
 
 	// main loop
@@ -479,10 +443,9 @@ void selectorConexiones(int socket) {
 						if (newfd > fdMax) {    // keep track of the max
 							fdMax = newfd;
 						}
-						log_info(loggerConPantalla,"\nselectserver: new connection from %s on " "socket %d\n\n",inet_ntop(remoteaddr.ss_family,	get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
+						log_info(loggerConPantalla,"\nSelectserver: nueva conexion desde %s en " "socket %d\n\n",inet_ntop(remoteaddr.ss_family,	get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
 					}
 				}
-
 				else if(i!=0) {
 					// handle data from a client
 					if ((nbytes = recv(i, &orden, sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
@@ -497,13 +460,12 @@ void selectorConexiones(int socket) {
 						close(i); // bye!
 						FD_CLR(i, &master); // remove from master set
 					}
-
 					else {
 						// we got some data from a client
 						for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
 							if (FD_ISSET(j, &master)) {
 								if (j != socket && j != i) {
-									connectionHandler(i, &orden);
+									connectionHandler(i, orden);
 						        }
 						    }
 						}
@@ -529,7 +491,6 @@ void leerConfiguracion(char* ruta) {
 
 	ipServidor = config_get_string_value(configuracion_kernel, "IP_SERVIDOR");
 	puertoServidor = config_get_string_value(configuracion_kernel,"PUERTO_SERVIDOR");
-	puertoCPU = config_get_string_value(configuracion_kernel, "PUERTO_CPU");
 	ipMemoria = config_get_string_value(configuracion_kernel, "IP_MEMORIA");
 	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
 	ipFileSys = config_get_string_value(configuracion_kernel, "IP_FS");
@@ -541,19 +502,26 @@ void leerConfiguracion(char* ruta) {
 	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
-	puertoConsola = config_get_string_value(configuracion_kernel,"PUERTO_CONSOLA");
-	ipConsola = config_get_string_value(configuracion_kernel,"IP_CONSOLA");
-	ipCPU = config_get_string_value(configuracion_kernel,"IP_CPU");
 	stackSize = config_get_string_value(configuracion_kernel, "STACK_SIZE");
 }
 
 void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
-	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP CONSOLA:%s\nPUERTO CONSOLA:%s\nIP CPU:%s\nPUERTO CPU:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipConsola,puertoConsola,ipCPU,puertoCPU,ipFileSys,puertoFileSys);
+	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
 	printf("---------------------------------------------------\n");
 	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%s\n",	quantum, quantumSleep, algoritmo, gradoMultiProg, semIds, semInit, sharedVars, stackSize);
 	printf("---------------------------------------------------\n");
 
+}
+
+void imprimirInterfazUsuario(){
+
+	/**************************************Printea interfaz Usuario Kernel*******************************************************/
+	printf("\n-----------------------------------------------------------------------------------------------------\n");
+	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
+	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
+	printf("\n-----------------------------------------------------------------------------------------------------\n");
+	/****************************************************************************************************************************/
 }
 
 void inicializarLog(char *rutaDeLog){
@@ -562,5 +530,4 @@ void inicializarLog(char *rutaDeLog){
 
 		loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
 		loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
-
 }
