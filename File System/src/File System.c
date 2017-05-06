@@ -65,6 +65,13 @@ int main(void){
 
 	//int socket_Kernel = recibirConexion(socket_servidor);
 
+
+
+
+	//log_info(loggerConPantalla, "File System Conectado");
+
+
+
 	//connection_Listener(socket_Kernel);
 	connection_handlerR();//TODO LO QUE ESTA COMENTADO ARRIBA TENDRIA Q IR DESCOMENTADO , PERO ESTOY USANDO ESTA
 				//FUNCION MOMENTANEAMENTE , POR QUE EL KERNEL TODAVIA NO SE COMUNICA CON FS
@@ -124,19 +131,33 @@ void *connection_handler(void *socket_desc)
 		case 'V'://validar archivo
 			if( access( "alumno.bin", F_OK ) != -1 ) {
 			    // file exists
-				printf("el archivo existe");
+
+				log_info(loggerConPantalla, "El archivo existe");
+
+				//printf("el archivo existe");
 			} else {
 			    // file doesn't exist
-				printf("el archivo no existe");
+
+				log_info(loggerConPantalla, "El archivo no existe");
+
+				//printf("el archivo no existe");
 			}
 			break;
 		case 'C'://crear archivo
+
+			log_info(loggerConPantalla, "El archivo fue creado");
 			break;
 		case 'B'://borrar archivo
+
+			log_info(loggerConPantalla, "El archivo fue borrado");
 			break;
 		case 'O'://obtener datos
+
+			log_info(loggerConPantalla, "Los datos obtenidos son : ");
 			break;
 		case 'G'://guardar archivo
+
+			log_info(loggerConPantalla, "El archivo fue guardado");
 			break;
 		default:
 			log_warning(loggerConPantalla,"\nError: Orden %c no definida\n",orden);

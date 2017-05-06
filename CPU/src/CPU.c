@@ -43,9 +43,30 @@ AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_finalizar = dummy_finalizar,
 	.AnSISOP_dereferenciar	= dummy_dereferenciar,
 	.AnSISOP_asignar	= dummy_asignar,
+	/*
+	 .AnSISOP_obtenerValorCompartida
+	 .AnSISOP_asignarValorCompartida
+	 .AnSISOP_irAlLabel
+	 .AnSISOP_llamarSinRetorno
+	 .AnSISOP_llamarConRetorno
+	 .AnSISOP_retornar
+	 */
 };
 
-AnSISOP_kernel kernel_functions = { };//NO SE PARA QUE ES ESTO
+AnSISOP_kernel kernel_functions = {/*
+		.AnSISOP_wait
+		.AnSISOP_signal
+		.AnSISOP_reservar
+		.AnSISOP_liberar
+		.AnSISOP_abrir
+		.AnSISOP_borrar
+		.AnSISOP_cerrar
+		.AnSISOP_moverCursor
+		.AnSISOP_escribir
+		.AnSISOP_leer
+		*/
+
+};//NO SE PARA QUE ES ESTO
 char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
 
 //-----------------------------------------------------------------------------------------------------------------
@@ -124,7 +145,7 @@ int main(void) {
 
 	inicializarLog("/home/utnso/Log/logCPU.txt");
 	listaPcb = list_create();
-
+	log_info(loggerConPantalla, "Inicia proceso CPU");
 
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
@@ -157,8 +178,7 @@ void comenzarEjecucionNuevoPrograma(){
 	}
 
 
-
-	printf("Ejecutando\n");
+	log_info(loggerConPantalla, "Ejecutando");
 		char *programa = strdup(PROGRAMA);//copia el programa entero en esa variable
 		t_metadata_program *metadata = metadata_desde_literal(programa);//hacerlo por que si
 		int programCounter = 0;//deberia ser el del PCB
@@ -168,6 +188,7 @@ void comenzarEjecucionNuevoPrograma(){
 			metadata->instrucciones_serializado[programCounter].offset);//que me devuelva la siguiente linea la memoria
 			printf("\t Evaluando -> %s", linea);
 			analizadorLinea(linea, &functions, &kernel_functions);//que haga lo que tenga q hacer
+			log_info(loggerConPantalla, "CPU lee una linea");
 			free(linea);
 			programCounter++;
 		}
@@ -190,6 +211,7 @@ void recibirPCByEstablecerloGlobalmente(socketKernel){
 	//si recibio un PCB , se guarda en la estructura
 	counterPCBAsignado++;
 	pcbAUtilizar* pcbNuevo = malloc(sizeof(pcbAUtilizar));
+	log_info(loggerConPantalla, "CPU recibe PCB correctamente");
 	cargarPcbActual(pcbNuevo,1,2);
 	list_add(listaPcb, pcbNuevo);
 
@@ -205,8 +227,9 @@ void recibirPCByEstablecerloGlobalmente(socketKernel){
 
 
 	if(counterPCBAsignado==1){
-		//printf("Todavia no hay ningun PCB para asignar a esta CPU");
+		log_warning(loggerConPantalla, "Todavia no hay ningun PCB para asignar a esta CPU");
 	}
+	free (pcbNuevo);
 }
 
 void signalSigusrHandler(int signum)
@@ -257,7 +280,13 @@ void connectionHandler(int socket){
 					break;
 				case 'F':
 					finalizar();
+					pcbAUtilizar *pcbAEliminar = list_get(listaPcb,0);
 
+
+						//asigno pcb en memoria
+					 pcbAEliminar->pid;
+
+					log_info(loggerConPantalla,"\nSea finalizado el programa con pid%s\n" , pcbAEliminar->pid);
 					break;
 				case 'Q':
 					log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
@@ -296,6 +325,7 @@ void finalizar (){
 	list_destroy_and_destroy_elements(listaPcb, free);
 
 	counterPCBAsignado=0;
+	free(pcbAEliminar);
 }
 
 
@@ -308,10 +338,22 @@ void serializarPCByEnviar(int socket, char comandoInicializacion, pcbAUtilizar *
 
 	//envio al kernel lo empaquetado con su tamaño que hice previamente en el malloc
 	send(socket, pcbAEliminar, sizeof(int)*2 + sizeof(char), 0);
-	 //todo eso de antes taria bueno hacerlo en una funcion serializadora :)
+
 
 }
 
+pcbAUtilizar* deserializarPCB(void* pcb_serializado){
+	pcbAUtilizar* pcb = malloc(sizeof(pcbAUtilizar));
+	pcb_serializado += sizeof(char);
+	//evito el char si es que el kernel manda alguno antes
+	memcpy(&pcb->pid, pcb_serializado, sizeof(int));
+	pcb_serializado += sizeof(int);
+	memcpy(&pcb->cantidadPaginas, pcb_serializado, sizeof(int));
+	pcb_serializado += sizeof(int);
+
+
+	return pcb;
+}
 
 void leerConfiguracion(char* ruta) {
 	configuracion_memoria = config_create(ruta);
