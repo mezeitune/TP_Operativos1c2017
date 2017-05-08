@@ -32,35 +32,35 @@ void inicializarLog(char *rutaDeLog);
 t_log *loggerSinPantalla;
 t_log *loggerConPantalla;
 //----------------------------//
+ //estructura pid
+typedef struct {
+	int pid;
+	char* fechaInicio;
+	int cantImpresiones;
+	//pthread_t* idAsociado;
+} Pid ;
 
 
+//funciones
+//int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual);
 int enviarLecturaArchivo(void *ruta, int socket);
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void* connectionHandler(int socket);
+void crearPrograma(int pid, int socketKernel);
+void* imprimir(int socket);
+void cargarPid (Pid* pidEstructura, int pid,char* fechaActual);
 
-void imprimir(int socket);
+
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
 
 pthread_t HiloId;
+
+
 t_list * listaPid;
 struct tm *tlocal;
-
-typedef struct {
-	int pid;
-	char fechaInicio;
-	int cantImpresiones;
-} Pid ;
-
-void cargarPid(Pid* pidEstructura, int pid) {
-	pidEstructura->cantImpresiones=0;
-	pidEstructura->pid = pid;
-
-
-}
-
 
 
 int main(void) {
@@ -91,8 +91,9 @@ void *connectionHandler(int socket) {
 		char orden;
 		char *ruta = (char*) malloc(200 * sizeof(char));;
 		int pidAEliminar=0;
-
+		printf("----------------------------------------------------------------------\n");
 		printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
+		printf("----------------------------------------------------------------------\n");
 		scanf(" %c", &orden);
 		send(socket, (void*) &orden, sizeof(char), 0);
 
@@ -104,6 +105,7 @@ void *connectionHandler(int socket) {
 
 				log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente\n");
 			}
+
 			free(ruta);
 			break;
 
@@ -117,7 +119,6 @@ void *connectionHandler(int socket) {
 				return (pidNuevoo->pid == pidAEliminar);
 				}
 
-
 			t_list * listaNueva;
 			listaNueva= list_create();
 			listaNueva= list_filter(listaPid,verificarPid);
@@ -128,18 +129,20 @@ void *connectionHandler(int socket) {
 
 				list_remove_by_condition(listaPid, verificarPid);
 				send(socket, (void*) &pidAEliminar, sizeof(int), 0);
-
-				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado\n",pidAEliminar);
+				printf("----------------------------------------------------------------------\n");
+				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado",pidAEliminar);
 
 				Pid* estructuraPidAEliminar=list_get(listaNueva, 0);
+				char *fechaActual = malloc(sizeof(char));
+				fechaActual= temporal_get_string_time();
 
-				time_t tiempo = time(0);
-				struct tm *tlocal = localtime(&tiempo);
-				char fechaFin[128];
-				strftime(fechaFin,128,"%d/%m/%y %H:%M:%S",tlocal);
+				//int tiempoEjecucion= obtenerTiempoEjecucion(estructuraPidAEliminar->fechaInicio,fechaActual);
+				//aca falta la resta de fechas e informarlas
+				printf("----------------------------------------------------------------------\n");
+				printf("Hora de inicializacion : %s \n Hora de finalizacion: %s\nTiempo de ejecucion: \nCantidad de impresiones: %i\n",estructuraPidAEliminar->fechaInicio,fechaActual,estructuraPidAEliminar->cantImpresiones);
+				printf("----------------------------------------------------------------------\n");
 
-
-				printf("Fecha y Hora de inicializacion : \nFecha y Hora de finalizacion: %s\nCantidad de impresiones: %i\n",fechaFin,estructuraPidAEliminar->cantImpresiones);
+				//pthread_join(*estructuraPidAEliminar->idAsociado, NULL);
 
 			}else{
 				log_info(loggerConPantalla,"\nPID incorrecto\n");
@@ -151,7 +154,7 @@ void *connectionHandler(int socket) {
 			break;
 
 		case 'Q':
-
+			//pthread_join();
 			list_destroy_and_destroy_elements(listaPid, free);
 			log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
 
@@ -188,7 +191,7 @@ void imprimirHandler(int socket, char *orden) {// Recibe un char* para tener la 
 	return;
 
 }
-void imprimir(int socket){
+void *imprimir(int socket){
 
 				int bytesARecibir=0;
 
@@ -198,7 +201,7 @@ void imprimir(int socket){
 				recv(socket,buffer,bytesARecibir ,0);//recibo el mensaje de la kenrel con el tamaño de bytesArecibir
 
 				printf("%s",buffer);
-
+				return 0;
 }
 
 
@@ -250,15 +253,7 @@ int enviarLecturaArchivo(void *rut, int socket) {
 	log_info(loggerConPantalla,"\nEl socket asignado para el proceso iniciado es: %d \n", socket);
 	log_info(loggerConPantalla,"\nEl PID asignado es: %d \n", pid);
 
-	//creo lista con el pid
-	Pid* pidNuevo = malloc(sizeof(pid));
-	time_t tiempo = time(NULL);
-	struct tm *tlocal = localtime(&tiempo);
-	char fechaInicio[128];
-	strftime(fechaInicio,128,"%d/%m/%y %H:%M:%S",tlocal);
-	cargarPid(pidNuevo,pid);
-	list_add(listaPid, pidNuevo);
-	//lista con los pid
+	crearPrograma(pid,socket);
 
 	free(bufferArchivo);
 	free(mensaje);
@@ -292,5 +287,34 @@ void inicializarLog(char *rutaDeLog){
 		loggerConPantalla = log_create(rutaDeLog,"Consola", true, LOG_LEVEL_INFO);
 
 }
+void crearPrograma (int pid, int socketKernel){
+
+		Pid* pidNuevo = malloc(sizeof(pid));
+		char *fechaActual = malloc(sizeof(char));
 
 
+
+		//pidNuevo->idAsociado= hiloAsociado;
+
+		fechaActual= temporal_get_string_time();
+		cargarPid(pidNuevo,pid,fechaActual);
+
+		list_add(listaPid, pidNuevo);
+		int err = pthread_create( &HiloId , NULL , imprimir , &socketKernel);
+		if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
+}
+
+
+/*int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual){
+	int tiempoInicio = fechaInicio - '0';
+	int tiempoFinal = fechaActual - '0';
+	int tiempoEjecucion = tiempoFinal - tiempoInicio;
+}*/
+
+
+void cargarPid(Pid* pidEstructura, int pid,char* fechaActual) {
+	pidEstructura->cantImpresiones=0;
+	pidEstructura->pid = pid;
+	pidEstructura->fechaInicio=fechaActual;
+
+}
