@@ -59,13 +59,13 @@ typedef struct
 }struct_adm_memoria;
 
 char* bitMap;
-void* frame_Memoria; //Corregir movimiento de punteros
+void* bloque_Memoria; //Corregir movimiento de punteros
 
 int socket_servidor;
 
 //the thread function
 void *connection_handler(void *);
-void connection_Listener(int socket_desc);
+void *connection_Listener();
 
 //--------------------Funciones Conexiones----------------------------//
 int recibirConexion(int socket_servidor);
@@ -93,7 +93,7 @@ int finalizarPrograma(int pid);
 
 void liberarBitMap(int pos, int size);
 void ocuparBitMap(int pos, int size);
-int verificarEspacio();
+int verificarEspacioLibre();
 void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas, int cantPaginasAnteriores);
 void borrarProgramDeStructAdms(int pid);
 int buscarFrameDePaginaDeProceso(int pid, int pagina);
@@ -102,6 +102,20 @@ void imprimirBitMap();
 void imprimirEstructurasAdministrativas();
 int buscarFrameVacio();
 
+void interfazHandler();
+void modificarRetardo();
+void dumpDeMemoria();
+void flush();
+void size();
+
+void dumpCache();
+void contenidoDeMemoria();
+void datosAlmacenadosDeProceso();
+void datosAlmacenadosEnMemoria();
+void vaciarCache();
+void tamanioProceso();
+void tamanioMemoria();
+
 int main(void)
 {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/config_Memoria");
@@ -109,21 +123,20 @@ int main(void)
 
 	inicializarLog("/home/utnso/Log/logMemoria.txt");
 
+	//bitMap = string_repeat('0',marcos);
 
-
-	bitMap = string_repeat('0',marcos);
-
-	frame_Memoria= malloc(marco_size*marcos);
+	bloque_Memoria= malloc(marco_size*marcos);
 
 	inicializarMemoriaAdm();
 
-	imprimirBitMap();
+	//imprimirBitMap();
 	imprimirEstructurasAdministrativas();
 
 	socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
-	int socket_Kernel = recibirConexion(socket_servidor);
 
-	connection_Listener(socket_Kernel);
+	pthread_create( &thread_id , NULL , connection_Listener,NULL);
+
+	interfazHandler();
 
 	return EXIT_SUCCESS;
 }
@@ -148,7 +161,7 @@ void inicializarMemoriaAdm()
 
 	printf("---------------------------------------------------\n");
 
-	ocuparBitMap(0,sizeMemoriaAdm);
+	//ocuparBitMap(0,sizeMemoriaAdm);
 	struct_adm_memoria aux;
 	int i = 0;
 	int desplazamiento = sizeof(struct_adm_memoria);
@@ -167,7 +180,7 @@ void inicializarMemoriaAdm()
 			aux.pid = -1;
 			aux.num_pag=-1;
 		}
-		memcpy(frame_Memoria + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
+		memcpy(bloque_Memoria + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
 		i++;
 		aux.frame = i;
 	}
@@ -176,10 +189,10 @@ void inicializarMemoriaAdm()
 int inicializarPrograma(int pid, int cantPaginas)
 {
 	log_info(loggerConPantalla,"Inicializar Programa %d\n",pid);
-	int posicionFrame = verificarEspacio();
+	int posicionFrame = verificarEspacioLibre();
 	if(posicionFrame >= 0)
 	{
-		ocuparBitMap(posicionFrame,cantPaginas);
+		//ocuparBitMap(posicionFrame,cantPaginas);
 		asignarPaginasAProceso(pid,cantPaginas,posicionFrame);
 	}
 
@@ -192,7 +205,7 @@ char* solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buff
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 	printf("El frame es : %d\n",frame);
 
-	memcpy(*buffer,frame_Memoria + frame*marco_size+offset,size);
+	memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size);
 
 	printf("%s\n",*buffer);
 
@@ -206,7 +219,7 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 	printf("Frame:%d\n",frame);
 	if(frame >= 0)
 	{
-		memcpy(frame_Memoria + frame*marco_size+offset,buffer,size);
+		memcpy(bloque_Memoria + frame*marco_size+offset,buffer,size);
 	}
 	else
 	{
@@ -295,9 +308,9 @@ int main_inicializarPrograma(int sock)
 	printf("PID:%d\n",pid);
 	printf("CantPaginas:%d\n",cantPaginas);
 
-	int espacioLibre = verificarEspacio();
+	int espacioLibre = verificarEspacioLibre();
 
-	printf("Bitmap:%s\n",bitMap);
+	//printf("Bitmap:%s\n",bitMap);
 	if(espacioLibre >= cantPaginas)
 	{
 		int posicionFrame;
@@ -305,7 +318,7 @@ int main_inicializarPrograma(int sock)
 		while(i<cantPaginas)
 		{
 			posicionFrame = buscarFrameVacio();
-			ocuparBitMap(posicionFrame,1);
+			//ocuparBitMap(posicionFrame,1);
 			asignarPaginasAProceso(pid,1,posicionFrame);
 			i++;
 		}
@@ -350,18 +363,20 @@ int main_almacenarBytesPagina(int sock)
 	int offset;
 	int size;
 	char *bytes;
+
 	recv(sock,&pid,sizeof(int),0);
 	recv(sock,&pagina,sizeof(int),0);
 	recv(sock,&offset,sizeof(int),0);
 	recv(sock,&size,sizeof(int),0);
 	bytes=malloc(size);
 	recv(sock,bytes,size,MSG_WAITALL);
+
 	printf("PID:%d\n",pid);
 	printf("Pagina:%d\n",pagina);
 	printf("Offset:%d\n",offset);
 	printf("Size:%d\n",size);
+
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
-	printf("Sali de almacenar \n");
 	free(bytes);
 	return 0;
 }
@@ -375,9 +390,9 @@ int main_asignarPaginasAProceso(int sock)
 
 	printf("PID:%d\n",pid);
 	printf("CantPaginas:%d\n",cantPaginas);
-	printf("Bitmap:%s\n",bitMap);
+	//printf("Bitmap:%s\n",bitMap);
 
-	int espacioLibre = verificarEspacio();
+	int espacioLibre = verificarEspacioLibre();
 
 	if(espacioLibre >= cantPaginas)
 	{
@@ -386,7 +401,7 @@ int main_asignarPaginasAProceso(int sock)
 		while(i<cantPaginas)
 		{
 			posicionFrame = buscarFrameVacio();
-			ocuparBitMap(posicionFrame,1);
+			//ocuparBitMap(posicionFrame,1);
 			asignarPaginasAProceso(pid,1,posicionFrame);
 		}
 		return 0;
@@ -425,24 +440,27 @@ void ocuparBitMap(int pos, int size)
 	}
 }
 
-int verificarEspacio()
+int verificarEspacioLibre()
 {
+	struct_adm_memoria aux;
 	int i = 0, espacioLibre = 0;
+	int desplazamiento = sizeof(struct_adm_memoria);
 	while(i < marcos)
 	{
-		if(bitMap[i] == '0')
+		memcpy(&aux, bloque_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
+		if(aux.pid == -1)
 		{
-			espacioLibre ++;
-			i++;
+			espacioLibre++;
 		}
 		i++;
 	}
+
 	return espacioLibre;
 }
 
 
 /*
- * This will handle connection for each client
+ * Funcion que atiende las conexiones de los clientes
  * */
 void *connection_handler(void *socket_desc)
 {
@@ -483,21 +501,17 @@ void *connection_handler(void *socket_desc)
 			break;
 		}
 		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
-		imprimirBitMap();
+		//imprimirBitMap();
 		imprimirEstructurasAdministrativas();
 	}
     return 0;
 }
 
-void connection_Listener(int socket_desc)
+void* connection_Listener()
 {
 	int sock;
-	//Atiendo al socket del kernel
-	if( pthread_create( &thread_id , NULL , connection_handler , (void*) &socket_desc) < 0)
+	while(1)
 	{
-		perror("could not create thread");
-	}
-	while(1){
 		//Quedo a la espera de CPUs y las atiendo
 		sock = recibirConexion(socket_servidor);
 		if( pthread_create( &thread_id , NULL , connection_handler , (void*) &sock) < 0)
@@ -517,7 +531,7 @@ void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas, int cant
 	aux.frame = frame;
 	while(i < cantPaginas)
 	{
-		memcpy(frame_Memoria + frame*desplazamiento + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
+		memcpy(bloque_Memoria + frame*desplazamiento + i*desplazamiento, &aux, sizeof(struct_adm_memoria));
 		aux.num_pag++;
 		aux.frame++;
 		i++;
@@ -531,13 +545,13 @@ void borrarProgramDeStructAdms(int pid)
 	struct_adm_memoria aux;
 	while(i<marcos)
 	{
-		memcpy(&aux, frame_Memoria + i*desplazamiento,sizeof(struct_adm_memoria)); //Revisar si esto funciona
+		memcpy(&aux, bloque_Memoria + i*desplazamiento,sizeof(struct_adm_memoria)); //Revisar si esto funciona
 		if(aux.pid == pid) //Si el PID del programa en mi estructura Aadministrativa es igual al del programa que quiero borrar
 		{
-			liberarBitMap(aux.frame,1); //Marco la posición del frame que me ocupa esa página en particular de ese programa como vacía
+			//liberarBitMap(aux.frame,1); //Marco la posición del frame que me ocupa esa página en particular de ese programa como vacía
 			aux.num_pag = -1;
 			aux.pid = -1;
-			memcpy(frame_Memoria + i*desplazamiento,&aux,sizeof(struct_adm_memoria)); //Marco que en ese frame no tengo un programa asignado
+			memcpy(bloque_Memoria + i*desplazamiento,&aux,sizeof(struct_adm_memoria)); //Marco que en ese frame no tengo un programa asignado
 		}
 		i++;
 	}
@@ -550,7 +564,7 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 	struct_adm_memoria aux;
 	while(i<marcos)
 	{
-		memcpy(&aux, frame_Memoria + i*desplazamiento,sizeof(struct_adm_memoria));
+		memcpy(&aux, bloque_Memoria + i*desplazamiento,sizeof(struct_adm_memoria));
 		if(aux.pid == pid && aux.num_pag == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
 		{
 			return aux.frame;
@@ -579,7 +593,7 @@ void imprimirEstructurasAdministrativas()
 	printf("Frame/PID/NumPag\n");
 	while(i < marcos)
 	{
-		memcpy(&aux, frame_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
+		memcpy(&aux, bloque_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
 		i++;
 		printf("/___%d/__%d/__%d\n",aux.frame,aux.pid,aux.num_pag);
 	}
@@ -587,12 +601,15 @@ void imprimirEstructurasAdministrativas()
 
 int buscarFrameVacio()
 {
+	struct_adm_memoria aux;
 	int i = 0;
+	int desplazamiento = sizeof(struct_adm_memoria);
 	while(i < marcos)
 	{
-		if(bitMap[i] == '0')
+		memcpy(&aux, bloque_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
+		if(aux.pid == -1)
 		{
-			return i;
+			return aux.frame;
 		}
 		i++;
 	}
@@ -608,7 +625,7 @@ int cantPaginasDeProceso(int pid)
 	int cantPaginas = 0;
 	while(i < marcos)
 	{
-		memcpy(&aux, frame_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
+		memcpy(&aux, bloque_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
 		if(aux.pid == pid)
 		{
 			cantPaginas ++;
@@ -618,22 +635,233 @@ int cantPaginasDeProceso(int pid)
 	return cantPaginas;
 }
 
+void inicializarLog(char *rutaDeLog)
+{
+	mkdir("/home/utnso/Log",0755);
 
-
-
-
-void inicializarLog(char *rutaDeLog){
-
-
-		mkdir("/home/utnso/Log",0755);
-
-		loggerSinPantalla = log_create(rutaDeLog,"Memoria", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"Memoria", true, LOG_LEVEL_INFO);
-
+	loggerSinPantalla = log_create(rutaDeLog,"Memoria", false, LOG_LEVEL_INFO);
+	loggerConPantalla = log_create(rutaDeLog,"Memoria", true, LOG_LEVEL_INFO);
 }
 
+void interfazHandler()
+{
+	char orden;
+	printf("Esperando una orden para la interfaz\nR-Modificar Retardo\nD-Dump\nF-Flush\nS-Size\n");
+	scanf("%c",&orden);
+	while(orden != 'Q')
+	{
+		switch(orden)
+		{
+			case 'R':
+			{
+				modificarRetardo();
+				break;
+			}
+			case 'D':
+			{
+				dumpDeMemoria();
+				break;
+			}
+			case 'F':
+			{
+				flush();
+				break;
+			}
+			case 'S':
+			{
+				size();
+				break;
+			}
+			default:
+			{
+				log_warning(loggerConPantalla,"Error: Orden de interfaz no reconocida, ingrese una orden nuevamente\n");
+				break;
+			}
+		}
+		printf("Esperando una orden para la interfaz\nR-Modificar Retardo\nD-Dump\nF-Flush\nS-Size\n");
+		scanf("%c",&orden);
+	}
+}
 
+void modificarRetardo()
+{
+	printf("Ingrese el nuevo retardo de la memoria\n");
+	scanf("%d",&retardo_memoria);
+	printf("El retardo de la memoria a sido cambiado a: %d\n",retardo_memoria);
+}
 
+void dumpDeMemoria()
+{
+	printf("Elija qué sección de la memoria desea imprimir\n");
+	printf("C-Dump De Cache\nE-Dump de estructuras administrativas\nM-Contenido en Memoria\n");
+	char orden;
+	scanf("%c",&orden);
+	switch(orden)
+	{
+		case 'C':
+		{
+			dumpCache();
+			break;
+		}
+		case 'E':
+		{
+			imprimirEstructurasAdministrativas();
+			break;
+		}
+		case 'M':
+		{
+			contenidoDeMemoria();
+			break;
+		}
+		default:
+		{
+			log_warning(loggerConPantalla,"Error: Orden de interfaz no reconocida\n");
+			break;
+		}
+	}
+}
+
+void flush()
+{
+	printf("--Flush--\n");
+	vaciarCache();
+}
+
+void size()
+{
+	char orden;
+	scanf("%c",&orden);
+	switch(orden)
+	{
+		case 'P':
+		{
+			tamanioProceso();
+			break;
+		}
+		case 'M':
+		{
+			tamanioMemoria();
+			break;
+		}
+		default:
+		{
+			log_warning(loggerConPantalla,"Error: Orden de interfaz no reconocida\n");
+			break;
+		}
+	}
+}
+
+void dumpCache()
+{
+	printf("--Dump De Cache--\n");
+}
+
+void contenidoDeMemoria()
+{
+	printf("--Contenido De Memoria--\n");
+	printf("T-Mostrar datos almacenados de todos los procesos\nU-Datos almacenados de todos los procesos\n");
+	char orden;
+	scanf("%c",&orden);
+	switch(orden)
+	{
+		case 'T':
+		{
+			datosAlmacenadosEnMemoria();
+			break;
+		}
+		case 'U':
+		{
+			datosAlmacenadosDeProceso();
+			break;
+		}
+		default:
+		{
+			log_warning(loggerConPantalla,"Error: Orden de interfaz no reconocida\n");
+			break;
+		}
+	}
+}
+
+void datosAlmacenadosDeProceso()
+{
+	printf("--Datos Almacenados De Proceso--\n");
+	printf("Ingrese el PID del proceso:\n");
+	int pid;
+	scanf("%d",&pid);
+	printf("PID:%d\n",pid);
+	struct_adm_memoria aux;
+	int i = 0;
+	int desplazamientoStruct = sizeof(struct_adm_memoria);
+	char* datosFrame = malloc(marco_size);
+	while(i< marcos)
+	{
+		memcpy(&aux, bloque_Memoria + i*desplazamientoStruct, sizeof(struct_adm_memoria));
+		if(aux.pid == pid)
+		{
+			memcpy(&datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
+			printf("%s\n",datosFrame);
+		}
+		i++;
+	}
+	free(datosFrame);
+}
+
+void datosAlmacenadosEnMemoria()
+{
+	printf("--Datos Almacenados En Memoria--\n");
+
+	struct_adm_memoria aux;
+	int i = 0;
+	int desplazamientoStruct = sizeof(struct_adm_memoria);
+	char* datosFrame = malloc(marco_size);
+	while(i< marcos)
+	{
+		memcpy(&aux, bloque_Memoria + i*desplazamientoStruct, sizeof(struct_adm_memoria));
+		if(aux.pid != -9 && aux.pid != -1)
+		{
+			printf("PID:%d\nFrame:%d\n",aux.pid,aux.frame);
+			memcpy(&datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
+			printf("Datos:%s\n",datosFrame);
+		}
+		i++;
+	}
+	free(datosFrame);
+}
+
+void vaciarCache()
+{
+	printf("--Vaciar Cache--\n");
+}
+
+void tamanioProceso()
+{
+	printf("--Tamaño Proceso--\n");
+	printf("Ingrese el PID del proceso:\n");
+	int pid;
+	scanf("%d",&pid);
+	printf("PID:%d\n",pid);
+	struct_adm_memoria aux;
+	int i = 0,espacioTotal =0;
+	int desplazamientoStruct = sizeof(struct_adm_memoria);
+
+	while(i< marcos)
+	{
+		memcpy(&aux, bloque_Memoria + i*desplazamientoStruct, sizeof(struct_adm_memoria));
+		if(aux.pid == pid)
+		{
+			espacioTotal++;
+		}
+		i++;
+	}
+	printf("El proceso %d ocupa %d paginas\n",pid,espacioTotal);
+}
+
+void tamanioMemoria()
+{
+	int espacioLibre = verificarEspacioLibre();
+	int espacioOcupado = marcos - espacioLibre;
+	printf("Frames Totales:%d\nEspacios Libres:%d\nEspacios Ocupados:%d\n",marcos,espacioLibre,espacioOcupado);
+}
 
 
 
