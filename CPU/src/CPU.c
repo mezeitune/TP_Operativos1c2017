@@ -37,6 +37,16 @@ static const char* PROGRAMA =
 						"a = b + 12\n"
 						"end\n"
 						"\n";
+typedef struct PCB {
+	int pid;
+	int cantidadPaginas;
+	//int* programCounter;
+	//int** indiceCodigo;
+	int offset;
+	//Indice del Stack
+	//int exitCode;
+}pcbAUtilizar;
+
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_definirVariable	= dummy_definirVariable,
 	.AnSISOP_obtenerPosicionVariable= dummy_obtenerPosicionVariable,
@@ -82,6 +92,12 @@ void* conexionMemoria (int socketMemoria);
 void comenzarEjecucionNuevoPrograma();
 void signalSigusrHandler(int signum);
 
+//utilizacion de la memoria
+int pedirBytesMemoria(pcbAUtilizar* pcb);
+int almacenarDatosEnMemoria(pcbAUtilizar* pcb,char* buffer, int size);
+int pedirBytesYAlmacenarEnMemoria();
+void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size);
+//utilizacion de la memoria
 
 
 t_config* configuracion_memoria;
@@ -108,15 +124,7 @@ int socketKernel;
 //-----------------------------------------//
 
 
-typedef struct PCB {
-	int pid;
-	int cantidadPaginas;
-	//int* programCounter;
-	//int indiceCodigo[2];
-	//Indice de etiquetas
-	//Indice del Stack
-	//int exitCode;
-}pcbAUtilizar;
+
 t_list* listaPcb;
 
 
@@ -131,9 +139,10 @@ int counterPCBAsignado=0;//Cuando esto incremente a 1 , significa que ya recibio
 					//ya realizo todas sus operaciones correspondientes , entonces se vuelve a setear en 0
 
 
-void cargarPcbActual(pcbAUtilizar* pidEstructura, int pid, int cantidadPaginas) {
+void cargarPcbActual(pcbAUtilizar* pidEstructura, int pid, int cantidadPaginas, int offset) {
 	pidEstructura->pid=pid;
 	pidEstructura->cantidadPaginas =cantidadPaginas;
+	pidEstructura->offset= offset;
 }
 
 
@@ -166,6 +175,7 @@ int main(void) {
 				//htop->pararse sobre el proceso a mandarle signal->k->SIGUSR1->ENTER
 	comenzarEjecucionNuevoPrograma();
 
+
 	return 0;
 }
 
@@ -179,6 +189,7 @@ void comenzarEjecucionNuevoPrograma(){
 
 
 	log_info(loggerConPantalla, "Ejecutando");
+
 		char *programa = strdup(PROGRAMA);//copia el programa entero en esa variable
 		t_metadata_program *metadata = metadata_desde_literal(programa);//hacerlo por que si
 		int programCounter = 0;//deberia ser el del PCB
@@ -195,13 +206,94 @@ void comenzarEjecucionNuevoPrograma(){
 		metadata_destruir(metadata);//por que si
 		printf("================\n");
 
-	connectionHandler(socketKernel);
-}
+
+
+	//conseguirDatosMemoria(pcb,0,8);
+		connectionHandler(socketKernel);
+		}
+
+
 
 char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i){
-
-
 }
+void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size){
+	//char comandoSolicitud= 'S';
+	char * mensajeRecibido;
+	//send(socketMemoria,&comandoSolicitud,sizeof(char),0);
+	printf("bone");
+	send(socketMemoria,&pcb->pid,sizeof(int),0);
+	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
+	send(socketMemoria,&pcb->cantidadPaginas,sizeof(int),0);
+	send(socketMemoria,&size,sizeof(int),0);
+	mensajeRecibido = recibir_string(socketMemoria);
+	printf("%s",mensajeRecibido);
+}
+
+
+
+
+
+int pedirBytesYAlmacenarEnMemoria(){
+
+	pcbAUtilizar* pcb = malloc (sizeof(pcbAUtilizar));
+	int puedeAlmacenarDatosEnMemoria = pedirBytesMemoria(pcb);
+
+		if (puedeAlmacenarDatosEnMemoria){
+
+			almacenarDatosEnMemoria(pcb,"bonebone",8);
+			return 1;
+		}
+	return 0;
+	free(pcb);
+}
+
+int pedirBytesMemoria(pcbAUtilizar* pcb){
+
+		void* mensajeAMemoria = malloc(sizeof(int)*2);
+		int resultadoEjecucion=1;
+		//char comandoInicializacion = 'A';
+
+		//memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
+		memcpy(mensajeAMemoria, &pcb->pid,sizeof(int));
+		memcpy(mensajeAMemoria + sizeof(int) , &pcb->cantidadPaginas , sizeof(int));
+
+		send(socketMemoria,mensajeAMemoria,sizeof(int)*2,0);
+		printf("puede pasar ");
+		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+
+
+		free(mensajeAMemoria);
+		return resultadoEjecucion;
+}
+
+int almacenarDatosEnMemoria(pcbAUtilizar* pcb,char* buffer, int size){
+		int resultadoEjecucion=1;
+		//int comandoAlmacenar = 'C';
+
+		int paginaSolicitada = 0; // valor arbitrario
+
+		//void * mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
+		//memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
+		//memcpy(mensajeAMemoria ,&pcb->pid,sizeof(int));
+		//memcpy(mensajeAMemoria + sizeof(int),&paginaSolicitada,sizeof(int));
+		//memcpy(mensajeAMemoria + sizeof(int)*2,&pcb->offset,sizeof(int));
+		//memcpy(mensajeAMemoria + sizeof(int)*3,&size,sizeof(int));
+		//memcpy(mensajeAMemoria + sizeof(int)*4,buffer,size);
+		printf("puede");
+		send(socketMemoria,&pcb->pid,sizeof(int),0);
+		send(socketMemoria,&paginaSolicitada,sizeof(int),0);
+		send(socketMemoria,&pcb->offset,sizeof(int),0);
+		send(socketMemoria,&size,sizeof(int),0);
+
+
+		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+		return resultadoEjecucion;
+		//free(mensajeAMemoria);
+}
+
+
+
+
 
 
 void recibirPCByEstablecerloGlobalmente(socketKernel){
@@ -212,7 +304,7 @@ void recibirPCByEstablecerloGlobalmente(socketKernel){
 	counterPCBAsignado++;
 	pcbAUtilizar* pcbNuevo = malloc(sizeof(pcbAUtilizar));
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente");
-	cargarPcbActual(pcbNuevo,1,2);
+	cargarPcbActual(pcbNuevo,1,2,1);
 	list_add(listaPcb, pcbNuevo);
 
 
@@ -284,7 +376,7 @@ void connectionHandler(int socket){
 
 
 						//asigno pcb en memoria
-					 pcbAEliminar->pid;
+					 //pcbAEliminar->pid;
 
 					log_info(loggerConPantalla,"\nSea finalizado el programa con pid%s\n" , pcbAEliminar->pid);
 					break;
@@ -330,14 +422,14 @@ void finalizar (){
 
 
 
-void serializarPCByEnviar(int socket, char comandoInicializacion, pcbAUtilizar *unPcbAEliminar, void* pcbAEliminar){
+void serializarPCByEnviar(int socket, char comandoInicializacion, pcbAUtilizar *unPcb, void* pcb){
 	//aca voy copiando en pcbAEliminar cada cosa que quiero empaquetar memcpy(a donde lo pongo con su posicion, que garcha pongo, tamaño de la garcha que pongo);
-	memcpy(pcbAEliminar,&comandoInicializacion,sizeof(char));
-	memcpy(pcbAEliminar + sizeof(char), &unPcbAEliminar->pid,sizeof(int));
-	memcpy(pcbAEliminar + sizeof(char) + sizeof(int) , &unPcbAEliminar->cantidadPaginas , sizeof(int));
+	memcpy(pcb,&comandoInicializacion,sizeof(char));
+	memcpy(pcb + sizeof(char), &unPcb->pid,sizeof(int));
+	memcpy(pcb + sizeof(char) + sizeof(int) , &unPcb->cantidadPaginas , sizeof(int));
 
 	//envio al kernel lo empaquetado con su tamaño que hice previamente en el malloc
-	send(socket, pcbAEliminar, sizeof(int)*2 + sizeof(char), 0);
+	send(socket, pcb, sizeof(int)*2 + sizeof(char), 0);
 
 
 }
