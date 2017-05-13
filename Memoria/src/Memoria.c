@@ -403,6 +403,7 @@ int main_asignarPaginasAProceso(int sock)
 			posicionFrame = buscarFrameVacio();
 			//ocuparBitMap(posicionFrame,1);
 			asignarPaginasAProceso(pid,1,posicionFrame);
+			i++;
 		}
 		return 0;
 	}
