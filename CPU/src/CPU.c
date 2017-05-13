@@ -183,17 +183,17 @@ int main(void) {
 
 
 void comenzarEjecucionNuevoPrograma(){
-	while(counterPCBAsignado==0){//loopear hasta conseguir PCB(queda en espera activa)
+	//while(counterPCBAsignado==0){//loopear hasta conseguir PCB(queda en espera activa)
 		recibirPCByEstablecerloGlobalmente(socketKernel);
-	}
+	//}
 
 
 	log_info(loggerConPantalla, "Ejecutando");
 
-		char *programa = strdup(PROGRAMA);//copia el programa entero en esa variable
-		t_metadata_program *metadata = metadata_desde_literal(programa);//hacerlo por que si
-		int programCounter = 0;//deberia ser el del PCB
-		while(!terminoElPrograma()){
+		//char *programa = strdup(PROGRAMA);//copia el programa entero en esa variable
+		//t_metadata_program *metadata = metadata_desde_literal(programa);//hacerlo por que si
+		//int programCounter = 0;//deberia ser el del PCB
+		/*while(!terminoElPrograma()){
 			char* const linea = conseguirDatosDeLaMemoria(programa,
 			metadata->instrucciones_serializado[programCounter].start,
 			metadata->instrucciones_serializado[programCounter].offset);//que me devuelva la siguiente linea la memoria
@@ -202,93 +202,80 @@ void comenzarEjecucionNuevoPrograma(){
 			log_info(loggerConPantalla, "CPU lee una linea");
 			free(linea);
 			programCounter++;
-		}
-		metadata_destruir(metadata);//por que si
+		}*/
+		//metadata_destruir(metadata);//por que si
 		printf("================\n");
 
 
 
-	//conseguirDatosMemoria(pcb,0,8);
+		//conseguirDatosMemoria(pcb,0,5);
+
 		connectionHandler(socketKernel);
 		}
 
 
 
-char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i){
-}
+//char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i){
+//}
 void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size){
-	//char comandoSolicitud= 'S';
-	char * mensajeRecibido;
-	//send(socketMemoria,&comandoSolicitud,sizeof(char),0);
-	printf("bone");
+	char comandoSolicitar = 'S';//comando que le solicito a la memoria para que ande el main_solicitarBytesPagina
+	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
 	send(socketMemoria,&pcb->pid,sizeof(int),0);
 	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
-	send(socketMemoria,&pcb->cantidadPaginas,sizeof(int),0);
+	send(socketMemoria,&pcb->offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
-	mensajeRecibido = recibir_string(socketMemoria);
-	printf("%s",mensajeRecibido);
+	char* mensajeRecibido = recibir_string(socketMemoria);
+	log_info(loggerConPantalla,"\nEl mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
+
 }
 
+int pedirBytesYAlmacenarEnMemoria(pcbAUtilizar *pcb){
 
 
-
-
-int pedirBytesYAlmacenarEnMemoria(){
-
-	pcbAUtilizar* pcb = malloc (sizeof(pcbAUtilizar));
 	int puedeAlmacenarDatosEnMemoria = pedirBytesMemoria(pcb);
 
-		if (puedeAlmacenarDatosEnMemoria){
+	if (puedeAlmacenarDatosEnMemoria==1){
+		int size = strlen("bonebone");
+		printf("puede almacenar\n");
+		almacenarDatosEnMemoria(pcb,"bonebone",size);
 
-			almacenarDatosEnMemoria(pcb,"bonebone",8);
 			return 1;
 		}
 	return 0;
-	free(pcb);
+
 }
 
 int pedirBytesMemoria(pcbAUtilizar* pcb){
 
-		void* mensajeAMemoria = malloc(sizeof(int)*2);
 		int resultadoEjecucion=1;
-		//char comandoInicializacion = 'A';
+		char comandoAsignacion = 'G';
+		int paginaAPedir=2;
 
-		//memcpy(mensajeAMemoria,&comandoInicializacion,sizeof(char));
-		memcpy(mensajeAMemoria, &pcb->pid,sizeof(int));
-		memcpy(mensajeAMemoria + sizeof(int) , &pcb->cantidadPaginas , sizeof(int));
+		send(socketMemoria,&comandoAsignacion,sizeof(char),0);
+		send(socketMemoria,&pcb->pid,sizeof(int),0);
+		send(socketMemoria,&paginaAPedir,sizeof(int),0);
+		//recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+		printf("Se pidio bytes correctamente\n");
 
-		send(socketMemoria,mensajeAMemoria,sizeof(int)*2,0);
-		printf("puede pasar ");
-		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
-
-
-		free(mensajeAMemoria);
 		return resultadoEjecucion;
 }
 
 int almacenarDatosEnMemoria(pcbAUtilizar* pcb,char* buffer, int size){
 		int resultadoEjecucion=1;
-		//int comandoAlmacenar = 'C';
+		int comandoAlmacenar = 'C';
 
-		int paginaSolicitada = 0; // valor arbitrario
+		int paginaDondeGuardoDatos = 1; // valor arbitrario
 
-		//void * mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
-		//memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
-		//memcpy(mensajeAMemoria ,&pcb->pid,sizeof(int));
-		//memcpy(mensajeAMemoria + sizeof(int),&paginaSolicitada,sizeof(int));
-		//memcpy(mensajeAMemoria + sizeof(int)*2,&pcb->offset,sizeof(int));
-		//memcpy(mensajeAMemoria + sizeof(int)*3,&size,sizeof(int));
-		//memcpy(mensajeAMemoria + sizeof(int)*4,buffer,size);
-		printf("puede");
+		send(socketMemoria,&comandoAlmacenar,sizeof(char),0);
 		send(socketMemoria,&pcb->pid,sizeof(int),0);
-		send(socketMemoria,&paginaSolicitada,sizeof(int),0);
+		send(socketMemoria,&paginaDondeGuardoDatos,sizeof(int),0);
 		send(socketMemoria,&pcb->offset,sizeof(int),0);
 		send(socketMemoria,&size,sizeof(int),0);
+		send(socketMemoria,buffer,size,0);
 
-
-		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+		printf("Se almaceno correctamente %s",buffer);
 		return resultadoEjecucion;
-		//free(mensajeAMemoria);
+
 }
 
 
@@ -304,7 +291,8 @@ void recibirPCByEstablecerloGlobalmente(socketKernel){
 	counterPCBAsignado++;
 	pcbAUtilizar* pcbNuevo = malloc(sizeof(pcbAUtilizar));
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente");
-	cargarPcbActual(pcbNuevo,1,2,1);
+
+	cargarPcbActual(pcbNuevo,1,0,0);
 	list_add(listaPcb, pcbNuevo);
 
 
@@ -321,7 +309,7 @@ void recibirPCByEstablecerloGlobalmente(socketKernel){
 	if(counterPCBAsignado==1){
 		log_warning(loggerConPantalla, "Todavia no hay ningun PCB para asignar a esta CPU");
 	}
-	free (pcbNuevo);
+
 }
 
 void signalSigusrHandler(int signum)
@@ -342,16 +330,9 @@ void connectionHandler(int socket){
 
 	char orden;
 
-
-	char* mensajeRecibido;
-
-	int paginaAPedir=0;
-	int offset=0;
-	int pid=1;
-	int size=46;
-
-	char comandoSolicitar = 'S';
-
+	pcbAUtilizar *pcb = malloc(sizeof(pcbAUtilizar));
+	pcb = list_get(listaPcb,0);
+	int size = strlen("bonebone");
 	while(1){
 		while(orden != 'Q'){
 
@@ -360,16 +341,13 @@ void connectionHandler(int socket){
 
 			switch(orden){
 				case 'S':
-					send(socketMemoria,&comandoSolicitar,sizeof(char),0);
-					send(socketMemoria,&pid,sizeof(int),0);
-					send(socketMemoria,&paginaAPedir,sizeof(int),0);
-					send(socketMemoria,&offset,sizeof(int),0);
-					send(socketMemoria,&size,sizeof(int),0);
 
-					mensajeRecibido = recibir_string(socketMemoria);
-					log_info(loggerConPantalla,"\nEl mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
-
+					conseguirDatosMemoria(pcb,0,size);//el 0 es la pagina a la cual buscar y el size es de la instruccion
 					break;
+				case 'A':
+					pedirBytesYAlmacenarEnMemoria(pcb);
+					break;
+
 				case 'F':
 					finalizar();
 					pcbAUtilizar *pcbAEliminar = list_get(listaPcb,0);
@@ -417,7 +395,9 @@ void finalizar (){
 	list_destroy_and_destroy_elements(listaPcb, free);
 
 	counterPCBAsignado=0;
+	//un send avisandole al kernel q termino ese proceso con su header
 	free(pcbAEliminar);
+
 }
 
 
