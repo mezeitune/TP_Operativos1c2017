@@ -50,6 +50,14 @@ char *semInit;
 char *sharedVars;
 char *stackSize;
 
+//--------Sincronizacion-------//
+
+void inicializarSemaforos();
+pthread_mutex_t* mutexColaListos;
+pthread_mutex_t* mutexColaTerminados;
+pthread_mutex_t* mutexListaConsolas;
+//------------------------------//
+
 
 //--------Configuraciones--------//
 void leerConfiguracion(char* ruta);
@@ -60,12 +68,16 @@ t_config* configuracion_kernel;
 
 
 //----------Planificacion----------//
-int crearNuevoProceso(char* buffer,int size);
+int atenderNuevoPrograma(int socketAceptado);
+int crearNuevoProceso(char* buffer,int size,t_pcb* procesoListo);
 int verificarGradoDeMultiprogramacion();
 void encolarProcesoListo(t_pcb *procesoListo);
-void inicializarColaListos();
 void cargarConsola(int pid, int idConsola);
-void inicializarListaConsolas();
+void inicializarListas();
+void dispatcher(int socket);
+void terminarProceso(int socket);
+int buscarConsola(int pid,t_consola* infoConsola);
+t_list* colaNuevos;
 t_list* colaListos;
 t_list* colaTerminados;
 t_list* listaConsolas;
@@ -74,7 +86,6 @@ int contadorPid=0;
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
-int atenderNuevoPrograma(int socketAceptado);
 //---------ConnectionHandler-------//
 
 //--------InterfazHandler--------//
@@ -117,9 +128,10 @@ int main(void) {
 	imprimirConfiguraciones();
 	imprimirInterfazUsuario();
 
+	inicializarSemaforos();
+
 	inicializarLog("/home/utnso/Log/logKernel.txt");
-	inicializarColaListos();
-	inicializarListaConsolas();
+	inicializarListas();
 
 	socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
 	socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
@@ -193,12 +205,18 @@ void connectionHandler(int socketAceptado, char orden) {
 	}
 
 	void verCoincidenciaYEliminar(t_consola* p){
-		list_remove_by_condition(listaConsolas, verificarPid);
+		list_remove_by_condition(listaConsolas, (void*)verificarPid);
 	}
 
 	switch (orden) {
 		case 'I':
 					atenderNuevoPrograma(socketAceptado);
+					break;
+		case 'N':
+					dispatcher(socketAceptado);
+					break;
+		case 'T':
+					terminarProceso(socketAceptado);
 					break;
 		case 'F':
 				log_info(loggerConPantalla,"Se ha avisado que un proceso se quiere finalizar\n");
@@ -240,33 +258,53 @@ int atenderNuevoPrograma(int socketAceptado){
 	int bytesARecibir;
 		log_info(loggerConPantalla,"Se ha avisado que un archivo esta por enviarse\n");
 		log_info(loggerConPantalla,"---------- Peticion de inicializar programa --------- \n");
-		if(verificarGradoDeMultiprogramacion() < 0) return -1;
 
-		recv(socketAceptado,&bytesARecibir, sizeof(int),0); //recibo la cantidad de bytes del mensaje de la consola con tamaño int
+		recv(socketAceptado,&bytesARecibir, sizeof(int),0);
 		log_info(loggerConPantalla,"Los bytes a recibir son: %d \n", bytesARecibir);
+		buffer = malloc(bytesARecibir);
 
-		buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del mensaje con los bytes que recibi antes
-		recv(socketAceptado,buffer,bytesARecibir  ,0);//recibo el mensaje de la consola con el tamaño de bytesArecibir
-
+		recv(socketAceptado,buffer,bytesARecibir  ,0);
 		log_info(loggerConPantalla ,"\nEl mensaje recibido es: \" %s \" \n", buffer);
 
+
+		t_pcb* procesoListo = malloc(sizeof(t_pcb));
+
 		contadorPid++;
+
+		procesoListo->pid = contadorPid;
+		procesoListo->cantidadPaginas=1; // TODO: Es arbitrario. Hay que hacer un analisis del buffer antes de esto.
+
 		send(socketAceptado,&contadorPid,sizeof(int),0);
 		send(socketAceptado, &socketAceptado, sizeof(int),0);
 
-		if((crearNuevoProceso(buffer,bytesARecibir))<0) return -2; // Aca naceria el planificador de procesos.
-		cargarConsola(contadorPid,socketAceptado);
+		if(verificarGradoDeMultiprogramacion() < 0){
+			list_add(colaNuevos,procesoListo);
+			return -1;
+		}
+
+		if((pedirMemoria(procesoListo))< 0){
+			free(procesoListo);
+			log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
+			log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
+			return -2; // TODO: Avisar a consola que no se puede ejecutar el programa por falta de memoria.
+		}
+
+		if((crearNuevoProceso(buffer,bytesARecibir, procesoListo))<0) return -3;
+
+		cargarConsola(procesoListo->pid,socketAceptado);
 
 		free(buffer);
 		return 0;
 }
 
-void cargarConsola(int pid, int idConsola) {
+void cargarConsola(int pid, int socketConsola) {
 	t_consola *infoConsola = malloc(sizeof(t_consola));
-	infoConsola->consolaId=idConsola;
+	infoConsola->consolaId=socketConsola;
 	infoConsola->pid=pid;
+	pthread_mutex_lock(mutexListaConsolas);
 	list_add(listaConsolas,infoConsola);
-	/*free(infoConsola) ? Creo que hay que liberar ese espacio cuando se mate el proceso */
+	pthread_mutex_unlock(mutexListaConsolas);
+	free(infoConsola);
 }
 void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));
@@ -276,23 +314,13 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	send(socketConsola,mensajeAConsola,sizeof(char)+ sizeof(int),0);
 }
 
-int crearNuevoProceso(char*buffer,int size){
+int crearNuevoProceso(char*buffer,int size,t_pcb* procesoListo){
 
-	t_pcb* procesoListo = malloc(sizeof(t_pcb));
-	procesoListo->pid = contadorPid;
-	procesoListo->cantidadPaginas=1; // Es arbitrario. Hay que hacer un analisis del buffer antes de esto.
-
-	if((pedirMemoria(procesoListo))< 0){
-			free(procesoListo);
-			log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
-			log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
-			return -1;
-		}
 	if((almacenarEnMemoria(procesoListo,buffer,size))< 0){
 				free(procesoListo);
 				log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
 				log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
-				return -2;
+				return -1;
 			}
 	log_info(loggerConPantalla ,"Se inicializo el programa correctamente\n");
 	log_info(loggerConPantalla ,"Se almaceno el programa correctamente\n");
@@ -375,16 +403,27 @@ int solicitarContenidoAMemoria(char ** mensajeRecibido){
 
 void encolarProcesoListo(t_pcb *pcbProcesoListo){
 //	colaListos
-	list_add(colaListos,pcbProcesoListo); // Agrega un pcb en la cola de listos. Al final
+	pthread_mutex_lock(mutexColaListos);
+	list_add(colaListos,pcbProcesoListo);
+	pthread_mutex_unlock(mutexColaListos);
 }
 
-void inicializarColaListos(){
+void inicializarSemaforos(){
+
+		pthread_mutex_init(mutexColaListos, NULL);
+		pthread_mutex_init(mutexColaTerminados, NULL);
+		pthread_mutex_init(mutexListaConsolas,NULL);
+
+}
+
+
+void inicializarListas(){
+	colaNuevos= list_create();
 	colaListos= list_create();
+	colaTerminados= list_create();
+	listaConsolas= list_create();
 }
 
-void inicializarListaConsolas(){
-	listaConsolas = list_create();
-}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
@@ -506,6 +545,40 @@ void leerConfiguracion(char* ruta) {
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
 	stackSize = config_get_string_value(configuracion_kernel, "STACK_SIZE");
 }
+
+
+
+void dispatcher(int socketCPU){
+
+	t_pcb* pcbAEnviar = malloc(sizeof(t_pcb));
+
+	pthread_mutex_lock(mutexColaListos);
+	pcbAEnviar = list_get(colaListos, 0);
+	list_remove(colaListos, 0);
+	pthread_mutex_unlock(mutexColaListos);
+
+
+	send(socketCPU, pcbAEnviar, sizeof(t_pcb), 0);
+}
+
+
+
+
+
+void terminarProceso(int socketCPU){
+	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
+	recv(socketCPU,pcbProcesoTerminado,sizeof(t_pcb),0);
+
+	pthread_mutex_lock(mutexColaTerminados);
+	list_add(colaTerminados,pcbProcesoTerminado);
+	pthread_mutex_unlock(mutexColaTerminados);
+
+	/* TODO: Buscar Consola por PID e informar */
+
+	/* TODO:Liberar recursos */
+
+}
+
 
 void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
