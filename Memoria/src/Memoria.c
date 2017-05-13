@@ -489,7 +489,7 @@ void *connection_handler(void *socket_desc)
     int sock = *(int*)socket_desc;
     char orden;
     int resultadoDeEjecucion;
-	while((orden=nuevaOrdenDeAccion(sock)) != 'Q')
+	while((orden=nuevaOrdenDeAccion(sock)) != '\0');
 	{
 		switch(orden)
 		{
