@@ -294,13 +294,13 @@ int recibirConexion(int socket_servidor){
 
 char nuevaOrdenDeAccion(int socketCliente)
 {
-	char* buffer=malloc(sizeof(char));
+	void* buffer=malloc(sizeof(char));
 	char bufferRecibido;
 
 	printf("\n--Esperando una orden del cliente-- \n");
 
 	recv(socketCliente,buffer,sizeof(char),0);
-	bufferRecibido = *buffer;
+	bufferRecibido = *(char*)buffer;
 
 	free(buffer);
 
@@ -489,7 +489,7 @@ void *connection_handler(void *socket_desc)
     int sock = *(int*)socket_desc;
     char orden;
     int resultadoDeEjecucion;
-	while((orden=nuevaOrdenDeAccion(sock)) != '\0');
+	while((orden=nuevaOrdenDeAccion(sock)) != 'Q');
 	{
 		switch(orden)
 		{
@@ -522,7 +522,7 @@ void *connection_handler(void *socket_desc)
 		//imprimirBitMap();
 		imprimirEstructurasAdministrativas();
 	}
-	shutdown(sock,SHUT_RDWR);
+	//shutdown(sock,SHUT_RDWR);
 	printf("Cliente %d desconectado",sock);
     return 0;
 }

@@ -53,9 +53,9 @@ char *stackSize;
 //--------Sincronizacion-------//
 
 void inicializarSemaforos();
-pthread_mutex_t* mutexColaListos;
-pthread_mutex_t* mutexColaTerminados;
-pthread_mutex_t* mutexListaConsolas;
+pthread_mutex_t mutexColaListos;
+pthread_mutex_t mutexColaTerminados;
+pthread_mutex_t mutexListaConsolas;
 //------------------------------//
 
 
@@ -76,7 +76,7 @@ void cargarConsola(int pid, int idConsola);
 void inicializarListas();
 void dispatcher(int socket);
 void terminarProceso(int socket);
-int buscarConsola(int pid,t_consola* infoConsola);
+
 t_list* colaNuevos;
 t_list* colaListos;
 t_list* colaTerminados;
@@ -301,9 +301,9 @@ void cargarConsola(int pid, int socketConsola) {
 	t_consola *infoConsola = malloc(sizeof(t_consola));
 	infoConsola->consolaId=socketConsola;
 	infoConsola->pid=pid;
-	pthread_mutex_lock(mutexListaConsolas);
+	pthread_mutex_lock(&mutexListaConsolas);
 	list_add(listaConsolas,infoConsola);
-	pthread_mutex_unlock(mutexListaConsolas);
+	pthread_mutex_unlock(&mutexListaConsolas);
 	free(infoConsola);
 }
 void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
@@ -403,16 +403,16 @@ int solicitarContenidoAMemoria(char ** mensajeRecibido){
 
 void encolarProcesoListo(t_pcb *pcbProcesoListo){
 //	colaListos
-	pthread_mutex_lock(mutexColaListos);
+	pthread_mutex_lock(&mutexColaListos);
 	list_add(colaListos,pcbProcesoListo);
-	pthread_mutex_unlock(mutexColaListos);
+	pthread_mutex_unlock(&mutexColaListos);
 }
 
 void inicializarSemaforos(){
 
-		pthread_mutex_init(mutexColaListos, NULL);
-		pthread_mutex_init(mutexColaTerminados, NULL);
-		pthread_mutex_init(mutexListaConsolas,NULL);
+		pthread_mutex_init(&mutexColaListos, NULL);
+		pthread_mutex_init(&mutexColaTerminados, NULL);
+		pthread_mutex_init(&mutexListaConsolas,NULL);
 
 }
 
@@ -552,10 +552,10 @@ void dispatcher(int socketCPU){
 
 	t_pcb* pcbAEnviar = malloc(sizeof(t_pcb));
 
-	pthread_mutex_lock(mutexColaListos);
+	pthread_mutex_lock(&mutexColaListos);
 	pcbAEnviar = list_get(colaListos, 0);
 	list_remove(colaListos, 0);
-	pthread_mutex_unlock(mutexColaListos);
+	pthread_mutex_unlock(&mutexColaListos);
 
 
 	send(socketCPU, pcbAEnviar, sizeof(t_pcb), 0);
@@ -569,9 +569,9 @@ void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
 	recv(socketCPU,pcbProcesoTerminado,sizeof(t_pcb),0);
 
-	pthread_mutex_lock(mutexColaTerminados);
+	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados,pcbProcesoTerminado);
-	pthread_mutex_unlock(mutexColaTerminados);
+	pthread_mutex_unlock(&mutexColaTerminados);
 
 	/* TODO: Buscar Consola por PID e informar */
 
