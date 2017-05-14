@@ -294,18 +294,17 @@ int recibirConexion(int socket_servidor){
 
 char nuevaOrdenDeAccion(int socketCliente)
 {
-	void* buffer=malloc(sizeof(char));
+	char* buffer=malloc(sizeof(char));
 	char bufferRecibido;
 
 	printf("\n--Esperando una orden del cliente-- \n");
 
-	recv(socketCliente,buffer,sizeof(char),0);
-	bufferRecibido = *(char*)buffer;
+	read(socketCliente,buffer,sizeof(char));
+	bufferRecibido = *buffer;
 
 	free(buffer);
 
     printf("El cliente ha enviado la orden: %c\n",bufferRecibido);
-	printf("%c\n",bufferRecibido);
 	return bufferRecibido;
 }
 
@@ -314,8 +313,8 @@ int main_inicializarPrograma(int sock)
 	int pid;
 	int cantPaginas;
 
-	recv(sock,&pid,sizeof(int),0);
-	recv(sock,&cantPaginas,sizeof(int),0);
+	read(sock,&pid,sizeof(int));
+	read(sock,&cantPaginas,sizeof(int));
 
 	printf("PID:%d\n",pid);
 	printf("CantPaginas:%d\n",cantPaginas);
@@ -353,10 +352,10 @@ int main_solicitarBytesPagina(int sock)
 	int size;
 	char*bufferAEnviar;
 
-	recv(sock,&pid,sizeof(int),0);
-	recv(sock,&pagina,sizeof(int),0);
-	recv(sock,&offset,sizeof(int),0);
-	recv(sock,&size,sizeof(int),0);
+	read(sock,&pid,sizeof(int));
+	read(sock,&pagina,sizeof(int));
+	read(sock,&offset,sizeof(int));
+	read(sock,&size,sizeof(int));
 
 	printf("PID:%d\n",pid);
 	printf("Pagina:%d\n",pagina);
@@ -380,12 +379,12 @@ int main_almacenarBytesPagina(int sock)
 	int size;
 	char *bytes;
 
-	recv(sock,&pid,sizeof(int),0);
-	recv(sock,&pagina,sizeof(int),0);
-	recv(sock,&offset,sizeof(int),0);
-	recv(sock,&size,sizeof(int),0);
+	read(sock,&pid,sizeof(int));
+	read(sock,&pagina,sizeof(int));
+	read(sock,&offset,sizeof(int));
+	read(sock,&size,sizeof(int));
 	bytes=malloc(size);
-	recv(sock,bytes,size,MSG_WAITALL);
+	read(sock,bytes,size);
 
 	printf("PID:%d\n",pid);
 	printf("Pagina:%d\n",pagina);
@@ -402,8 +401,8 @@ int main_asignarPaginasAProceso(int sock)
 	int pid;
 	int cantPaginas;
 
-	recv(sock,&pid,sizeof(int),0);
-	recv(sock,&cantPaginas,sizeof(int),0);
+	read(sock,&pid,sizeof(int));
+	read(sock,&cantPaginas,sizeof(int));
 
 	printf("PID:%d\n",pid);
 	printf("CantPaginas:%d\n",cantPaginas);
@@ -436,7 +435,7 @@ int main_finalizarPrograma(int sock)
 {
 	int pid;
 
-	recv(sock,&pid,sizeof(int),0);
+	read(sock,&pid,sizeof(int));
 
 	finalizarPrograma(pid);
 	sleep(retardo_memoria);
@@ -489,11 +488,13 @@ void *connection_handler(void *socket_desc)
     int sock = *(int*)socket_desc;
     char orden;
     int resultadoDeEjecucion;
+    printf("Se la re comen todos \n");
 	while((orden=nuevaOrdenDeAccion(sock)) != 'Q');
 	{
 		switch(orden)
 		{
 		case 'A':
+			printf("Inicializar Programa\n");
 			resultadoDeEjecucion = main_inicializarPrograma(sock);
 			send(sock,&resultadoDeEjecucion,sizeof(int),0);
 			break;
@@ -684,7 +685,7 @@ void interfazHandler()
 {
 	char orden;
 	printf("Esperando una orden para la interfaz\nR-Modificar Retardo\nD-Dump\nF-Flush\nS-Size\n");
-	scanf("%c",&orden);
+	scanf(" %c",&orden);
 	while(orden != 'Q')
 	{
 		switch(orden)
@@ -716,7 +717,7 @@ void interfazHandler()
 			}
 		}
 		printf("Esperando una orden para la interfaz\nR-Modificar Retardo\nD-Dump\nF-Flush\nS-Size\n");
-		scanf("%c",&orden);
+		scanf(" %c",&orden);
 	}
 }
 
@@ -732,7 +733,7 @@ void dumpDeMemoria()
 	printf("Elija qué sección de la memoria desea imprimir\n");
 	printf("C-Dump De Cache\nE-Dump de estructuras administrativas\nM-Contenido en Memoria\n");
 	char orden;
-	scanf("%c",&orden);
+	scanf(" %c",&orden);
 	switch(orden)
 	{
 		case 'C':
@@ -767,7 +768,7 @@ void flush()
 void size()
 {
 	char orden;
-	scanf("%c",&orden);
+	scanf(" %c",&orden);
 	switch(orden)
 	{
 		case 'P':
@@ -798,7 +799,7 @@ void contenidoDeMemoria()
 	printf("--Contenido De Memoria--\n");
 	printf("T-Mostrar datos almacenados de todos los procesos\nU-Datos almacenados de todos los procesos\n");
 	char orden;
-	scanf("%c",&orden);
+	scanf(" %c",&orden);
 	switch(orden)
 	{
 		case 'T':
