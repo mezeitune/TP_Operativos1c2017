@@ -231,15 +231,12 @@ void connectionHandler(int socketAceptado, char orden) {
 					totalPids += p->pid;
 				}
 
-				list_iterate(
-						listaConsolas,
-						sumarPids);
+				list_iterate(listaConsolas, sumarPids);
 				printf("la suma de los pids es: %d", totalPids);//Para verificar si se elimino el pid deseado de la lista del kernel
 
 				break;
 		case 'Q':
-				list_iterate(listaConsolas,
-						verCoincidenciaYEliminar);
+				list_iterate(listaConsolas, verCoincidenciaYEliminar);
 				break;
 			default:
 				if(orden == '\0') break;
@@ -248,7 +245,7 @@ void connectionHandler(int socketAceptado, char orden) {
 		} // END switch de la consola
 
 	orden = '\0';
-	return;//Retorna a selectorConexiones() apenas se haya recibido una orden desde la consola para dar lugar a las otras consolas/CPUs/InterfazKernel
+	return;
 
 }
 
@@ -293,7 +290,7 @@ int atenderNuevoPrograma(int socketAceptado){
 
 		cargarConsola(procesoListo->pid,socketAceptado);
 
-		free(buffer);
+		//free(buffer);
 		return 0;
 }
 
@@ -301,10 +298,11 @@ void cargarConsola(int pid, int socketConsola) {
 	t_consola *infoConsola = malloc(sizeof(t_consola));
 	infoConsola->consolaId=socketConsola;
 	infoConsola->pid=pid;
+
 	pthread_mutex_lock(&mutexListaConsolas);
 	list_add(listaConsolas,infoConsola);
 	pthread_mutex_unlock(&mutexListaConsolas);
-	free(infoConsola);
+	//free(infoConsola);
 }
 void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));
@@ -315,6 +313,9 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 }
 
 int crearNuevoProceso(char*buffer,int size,t_pcb* procesoListo){
+
+
+
 
 	if((almacenarEnMemoria(procesoListo,buffer,size))< 0){
 				free(procesoListo);
@@ -352,6 +353,7 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* buffer, int size){
 		int offset=0; // valor arbitrario
 		int paginaSolicitada = 0; // valor arbitrario
 
+
 		void * mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + size);
 		memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
 		memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
@@ -360,9 +362,10 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* buffer, int size){
 		memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&size,sizeof(int));
 		memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),buffer,size);
 		send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + size,0);
+
 		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
-		return resultadoEjecucion;
 		free(mensajeAMemoria);
+		return resultadoEjecucion;
 }
 
 
@@ -410,9 +413,9 @@ void encolarProcesoListo(t_pcb *pcbProcesoListo){
 
 void inicializarSemaforos(){
 
-		pthread_mutex_init(&mutexColaListos, NULL);
-		pthread_mutex_init(&mutexColaTerminados, NULL);
-		pthread_mutex_init(&mutexListaConsolas,NULL);
+		//pthread_mutex_init(&mutexColaListos, NULL);
+		//pthread_mutex_init(&mutexColaTerminados, NULL);
+		//pthread_mutex_init(&mutexListaConsolas,NULL);
 
 }
 

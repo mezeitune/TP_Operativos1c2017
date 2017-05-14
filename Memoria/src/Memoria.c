@@ -26,7 +26,7 @@
 #include <pthread.h>
 #include "conexiones.h"
 #include <commons/log.h>
-
+#include <semaphore.h>
 
 
 //--------LOG----------------//
@@ -37,7 +37,10 @@ void inicializarLog(char *rutaDeLog);
 t_log *loggerSinPantalla;
 t_log *loggerConPantalla;
 //----------------------------//
+//-------------------------------//
 
+sem_t sem;
+//-----------------------------//
 
 
 char* puertoMemoria;//4000
@@ -48,7 +51,7 @@ int entradas_cache;
 int cache_x_proc;
 int retardo_memoria;
 int contadorConexiones=0;
-pthread_t thread_id;
+pthread_t thread_id, thread_id2;
 t_config* configuracion_memoria;
 
 typedef struct
@@ -72,8 +75,8 @@ void* bloque_Cache;
 int socket_servidor;
 
 //the thread function
-void *connection_handler(void *);
-void *connection_Listener();
+void* connection_handler(void * socket);
+void* connection_Listener();
 
 //--------------------Funciones Conexiones----------------------------//
 int recibirConexion(int socket_servidor);
@@ -103,6 +106,7 @@ int finalizarPrograma(int pid);
 //void ocuparBitMap(int pos, int size);
 int verificarEspacioLibre();
 void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas, int cantPaginasAnteriores);
+
 void borrarProgramDeStructAdms(int pid);
 int buscarFrameDePaginaDeProceso(int pid, int pagina);
 
@@ -123,6 +127,7 @@ void datosAlmacenadosEnMemoria();
 void vaciarCache();
 void tamanioProceso();
 void tamanioMemoria();
+int cantPaginasDeProceso(int pid);
 
 void inicializarCache();
 int buscarFrameDePaginaDeProcesoEnCache(int pid, int pagina);
@@ -135,6 +140,7 @@ int main(void)
 	inicializarLog("/home/utnso/Log/logMemoria.txt");
 
 	//bitMap = string_repeat('0',marcos);
+	sem_init(&sem,0,0);
 
 	bloque_Memoria= malloc(marco_size*marcos);
 	bloque_Cache = malloc(entradas_cache*marco_size);
@@ -150,6 +156,8 @@ int main(void)
 	pthread_create( &thread_id , NULL , connection_Listener,NULL);
 
 	interfazHandler();
+	pthread_join(thread_id,NULL);
+
 
 	return EXIT_SUCCESS;
 }
@@ -288,7 +296,7 @@ int recibirConexion(int socket_servidor){
 		log_error(loggerConPantalla,"\nError al aceptar conexion\n");
 		return 1;
 	}
-
+	sem_post(&sem);
 	return socket_aceptado;
 }
 
@@ -296,15 +304,11 @@ char nuevaOrdenDeAccion(int socketCliente)
 {
 	char* buffer=malloc(sizeof(char));
 	char bufferRecibido;
-
 	printf("\n--Esperando una orden del cliente-- \n");
-
 	read(socketCliente,buffer,sizeof(char));
 	bufferRecibido = *buffer;
-
-	free(buffer);
-
     printf("El cliente ha enviado la orden: %c\n",bufferRecibido);
+	free(buffer);
 	return bufferRecibido;
 }
 
@@ -485,11 +489,13 @@ int verificarEspacioLibre()
  * */
 void *connection_handler(void *socket_desc)
 {
+
     int sock = *(int*)socket_desc;
     char orden;
     int resultadoDeEjecucion;
-    printf("Se la re comen todos \n");
-	while((orden=nuevaOrdenDeAccion(sock)) != 'Q');
+    orden = nuevaOrdenDeAccion(sock);/*<<<<<<<<<<<<<<<<NO MOVER DE ACA POR ALGUNA RAZON ROMPE SI SE LO PONE EN EL WHILE>>>>>>>>>*/
+
+	while(orden != '\0')
 	{
 		switch(orden)
 		{
@@ -509,6 +515,8 @@ void *connection_handler(void *socket_desc)
 		case 'G':
 			resultadoDeEjecucion = main_asignarPaginasAProceso(sock);
 			break;
+		case 'Q':
+			return 0;
 		case 'F':
 			resultadoDeEjecucion = main_finalizarPrograma(sock);
 			break;
@@ -522,24 +530,32 @@ void *connection_handler(void *socket_desc)
 		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
 		//imprimirBitMap();
 		imprimirEstructurasAdministrativas();
+		orden = nuevaOrdenDeAccion(sock);
 	}
-	//shutdown(sock,SHUT_RDWR);
+
 	printf("Cliente %d desconectado",sock);
-    return 0;
+	return 0;
 }
 
-void* connection_Listener()
+void *connection_Listener()
 {
 	int sock;
+
+
+
 	while(1)
 	{
-		//Quedo a la espera de CPUs y las atiendo
 		sock = recibirConexion(socket_servidor);
-		if( pthread_create( &thread_id , NULL , connection_handler , (void*) &sock) < 0)
+		//Quedo a la espera de CPUs y las atiendo
+		sem_wait(&sem);//Es muy importante para que no rompa la Memoria
+		if( pthread_create( &thread_id2 , NULL , connection_handler , &sock) < 0)
 		{
 			perror("could not create thread");
 		}
+
 	}
+	pthread_join(thread_id2,NULL);
+	return 0;
 }
 
 void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas, int cantPaginasAnteriores)
