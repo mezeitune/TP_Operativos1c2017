@@ -122,7 +122,7 @@ int calcularPcbSize(t_pcb* pcb);
 void serializarPcbYEnviar(t_pcb* procesoAEjecutar,int socketCPU);
 
 
-int** transformarIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
+int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
 int** inicializarIndiceCodigo(t_size cantidadInstrucciones);
 //---------PCB-----------------//
 
@@ -293,8 +293,7 @@ void connectionHandler(int socketAceptado, char orden) {
 int atenderNuevoPrograma(int socketAceptado){
 	char* programa;
 	int programSize;
-		log_info(loggerConPantalla,"Se ha avisado que un archivo esta por enviarse\n");
-		log_info(loggerConPantalla,"---------- Peticion de inicializar programa --------- \n");
+		log_info(loggerConPantalla,"Atendiendo nuevo programa\n");
 
 		recv(socketAceptado,&programSize, sizeof(int),0);
 		programa = malloc(programSize);
@@ -336,7 +335,7 @@ t_pcb* crearPcb (char* programa, int programSize){
 	pcb->programCounter = metadata->instruccion_inicio;
 	pcb->cantidadPaginasCodigo = cantidadPaginasCodigoProceso(programSize);
 	pcb->cantidadInstrucciones = metadata->instrucciones_size;
-	pcb->indiceCodigo = transformarIndiceCodigoSerializado(pcb->cantidadInstrucciones,metadata->instrucciones_serializado);
+	pcb->indiceCodigo = traduccionIndiceCodigoSerializado(pcb->cantidadInstrucciones,metadata->instrucciones_serializado);
 	pcb->cantidadEtiquetas = metadata->cantidad_de_etiquetas;
 	pcb->indiceEtiquetas = malloc(sizeof(char)* metadata->etiquetas_size);
 	memcpy(pcb->indiceEtiquetas,metadata->etiquetas,sizeof(char)* metadata->etiquetas_size);
@@ -346,7 +345,7 @@ t_pcb* crearPcb (char* programa, int programSize){
 	return pcb;
 }
 
-int** transformarIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados){
+int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados){
 	int **indiceCodigo=inicializarIndiceCodigo(cantidadInstrucciones);
 	log_info(loggerConPantalla, "Transformando Indice de Codigo serializado");
 	int i;
@@ -366,6 +365,7 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
 }
 
 void serializarPcbYEnviar(t_pcb* procesoAEjecutar,int socketCPU){
+	log_info(loggerConPantalla, "Serializando PCB ----- PID:%d",procesoAEjecutar->pid);
 	int pcbSize = calcularPcbSize(procesoAEjecutar);
 	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(procesoAEjecutar->cantidadEtiquetas);
 	int indiceCodigoSize=calcularIndiceCodigoSize(procesoAEjecutar->cantidadInstrucciones);
@@ -382,15 +382,19 @@ void serializarPcbYEnviar(t_pcb* procesoAEjecutar,int socketCPU){
 	serializarStack(buffer + sizeof(int)*4 + indiceCodigoSize + indiceEtiquetasSize, procesoAEjecutar->indiceStack);
 	memcpy(buffer + sizeof(int)*4 + sizeof(t_puntero_instruccion) + indiceCodigoSize + indiceStackSize,&procesoAEjecutar->exitCode,sizeof(int));
 
+
+	log_info(loggerConPantalla, "Enviando PCB serializado ----- PID: %d ------ socketCPU: %d", procesoAEjecutar->pid, socketCPU);
 	send(socketCPU,&pcbSize,sizeof(int),0);
 	send(socketCPU,buffer,pcbSize,0);
 
 }
 
 int calcularPcbSize(t_pcb* pcb){
+	log_info(loggerConPantalla, "Calculando tamano del PCB ---- PID: %d", pcb->pid);
 	return sizeof(int)*5 + sizeof(t_puntero_instruccion) + calcularIndiceCodigoSize(pcb->cantidadInstrucciones) + calcularIndiceEtiquetasSize(pcb->cantidadEtiquetas) + calcularIndiceStackSize(pcb->indiceStack);
 }
 int calcularIndiceStackSize(t_list* indiceStack){
+	log_info(loggerConPantalla, "Calculando tamano del Stack");
 	int i;
 	int stackSize=0;
 	t_nodoStack* node;
@@ -402,14 +406,17 @@ int calcularIndiceStackSize(t_list* indiceStack){
 }
 
 int calcularIndiceCodigoSize(int cantidadInstrucciones){
+	log_info(loggerConPantalla, "Calculando tamano del Indice de Codigo");
 	return cantidadInstrucciones * sizeof(int) * 2;
 }
 
 int calcularIndiceEtiquetasSize(int cantidadEtiquetas){
+	log_info(loggerConPantalla, "Calculando tamano del Indice de Etiquetas");
 	return cantidadEtiquetas*sizeof(char);
 }
 
 void serializarStack(char*buffer,t_list* indiceStack){
+	log_info(loggerConPantalla, "Serializando Stack");
 	int i,j;
 	t_nodoStack* node;
 
@@ -441,6 +448,7 @@ void serializarStack(char*buffer,t_list* indiceStack){
 
 
 int cantidadPaginasCodigoProceso(int programSize){
+	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
 	int mod = programSize % paginaSize;
 	return mod==0? (programSize / paginaSize):(programSize / paginaSize)+ 1;
 }
@@ -464,7 +472,7 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 }
 
 int crearNuevoProceso(char*programa,int programSize,t_pcb* procesoListo){
-
+	log_info(loggerConPantalla, "Creando nuevo proceso---- PID: %d", procesoListo->pid);
 	if((almacenarEnMemoria(procesoListo,programa,programSize))< 0){ //TODO: Solo almaceno una pagina de codigo. Tiene que almacenar n paginas de codigo y ademas las paginas de stack
 				free(procesoListo);
 				log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
@@ -476,12 +484,12 @@ int crearNuevoProceso(char*programa,int programSize,t_pcb* procesoListo){
 
 
 	encolarProcesoListo(procesoListo);
-	free(procesoListo);
+	log_info(loggerConPantalla, "PCB encolado en lista de Ready ---- PID: %d", procesoListo->pid);
 	return 0;
 }
 
 int pedirMemoria(t_pcb* procesoListo){
-
+	log_info(loggerConPantalla, "Solicitando Memoria ---- PID: %d", procesoListo->pid);
 		void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
 		int paginasTotalesRequeridas = procesoListo->cantidadPaginasCodigo + stackSize;
 		int resultadoEjecucion=1;
@@ -498,6 +506,7 @@ int pedirMemoria(t_pcb* procesoListo){
 }
 
 int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
+	log_info(loggerConPantalla, "Almacenando programa en memoria ---- PID: %d", procesoListoAutorizado->pid);
 		int resultadoEjecucion=1;
 		int comandoAlmacenar = 'C';
 		int offset=0; // valor arbitrario
@@ -519,6 +528,7 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int program
 
 
 int verificarGradoDeMultiprogramacion(){
+	log_info(loggerConPantalla, "Verificando grado de multiprogramacion");
 	if(list_size(colaListos) >= gradoMultiProg) {
 		log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
 		return -1;
@@ -527,6 +537,7 @@ int verificarGradoDeMultiprogramacion(){
 }
 
 int solicitarContenidoAMemoria(char ** mensajeRecibido){
+	log_info(loggerConPantalla, "Solicitando contenido a Memoria");
 	char comandoSolicitud= 'S';
 	int pid;
 	int paginaSolicitada;
@@ -577,7 +588,7 @@ void inicializarListas(){
 }
 
 void dispatcher(int socketCPU){
-
+	log_info(loggerConPantalla, "Despachando PCB listo ---- SOCKET:%d", socketCPU);
 	t_pcb* procesoAEjecutar = malloc(sizeof(t_pcb));
 
 	pthread_mutex_lock(&mutexColaListos);
