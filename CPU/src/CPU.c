@@ -1,5 +1,9 @@
 #include "CPU.h"
 
+void handShakeKernel(int socketKernel);
+
+int paginaSize;
+
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
@@ -12,6 +16,9 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 
+	char comandoGetNuevoProceso = 'N';
+	handShakeKernel(socketKernel);
+	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
 
 	//Lo primero que habria que hacer en realidad es aca pedirle un PCB al kernel
 	//a travez de serializacion y que este me envie uno si es que tiene programas pendientes de CPU
@@ -31,8 +38,11 @@ int main(void) {
 	return 0;
 }
 
-
-
+void handShakeKernel(int socketKernel){
+	char comandoGetPaginaSize= 'P';
+	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
+	recv(socketKernel,&paginaSize,sizeof(int),0);
+}
 
 void comenzarEjecucionNuevoPrograma(){
 	//while(counterPCBAsignado==0){//loopear hasta conseguir PCB(queda en espera activa)
@@ -251,8 +261,6 @@ void serializarPCByEnviar(int socket, char comandoInicializacion, pcbAUtilizar *
 
 	//envio al kernel lo empaquetado con su tamaño que hice previamente en el malloc
 	send(socket, pcb, sizeof(int)*2 + sizeof(char), 0);
-
-
 }
 
 pcbAUtilizar* deserializarPCB(void* pcb_serializado){

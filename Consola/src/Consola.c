@@ -25,11 +25,9 @@ int main(void) {
 
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
-	else
+	pthread_join(HiloId, NULL);
 
-	(void) pthread_join(HiloId, NULL);
-
-	return EXIT_SUCCESS;
+	return 0;
 
 }
 
