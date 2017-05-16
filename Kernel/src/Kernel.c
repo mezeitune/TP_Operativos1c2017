@@ -36,15 +36,15 @@ typedef struct{
 
 
 typedef struct{
-	char nombre_var;
-	t_posMemoria* dir_var;
+	char idVar;
+	t_posMemoria* dirVar;
 } t_variable;
 
 typedef struct{
-	t_list* args; //Lista de pos_mem's. Cada posicion representa un argumento en el orden de la lista
-	t_list* vars; // Lista de variables(struct)
-	int dir_retorno;
-	t_posMemoria* var_retorno;
+	t_list* args; //Lista de argumentos. Cada posicion representa un argumento en el orden de la lista
+	t_list* vars; // Lista de t_variable
+	int retPos;
+	t_posMemoria* retVar;
 } t_nodoStack;
 
 
@@ -54,7 +54,7 @@ typedef struct {
 		int cantidadPaginasCodigo;
 		int cantidadInstrucciones;
 		int** indiceCodigo;
-		int indiceEtiquetasSize;
+		int cantidadEtiquetas;
 		char* indiceEtiquetas;
 		t_list* indiceStack;
 		int exitCode;
@@ -114,7 +114,11 @@ int contadorPid=0;
 //---------PCB-----------------//
 t_pcb* crearPcb (char* programa, int programSize);
 int cantidadPaginasCodigoProceso(int programSize);
-int calcularIndiceCodigoSize(int cantidadInstrucciones, int** indiceCodigo);
+int calcularIndiceCodigoSize(int cantidadInstrucciones);
+int calcularIndiceEtiquetasSize(int cantidadEtiquetas);
+int calcularIndiceStackSize(t_list* indiceStack);
+void serializarStack(char* buffer,t_list* indiceStack);
+int calcularPcbSize(t_pcb* pcb);
 void serializarPcbYEnviar(t_pcb* procesoAEjecutar,int socketCPU);
 
 
@@ -198,10 +202,6 @@ void interfazHandler(){
 				/*obtenerListadoProgramas(); TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'P':
-				printf("Ingresar PID del proceso");
-
-				scanf("%d",&pid);
-
 				/*obtenerProcesoDato(int pid); TODO HAY QUE IMPLEMENTAR*/
 				break;
 			case 'G':
@@ -337,16 +337,12 @@ t_pcb* crearPcb (char* programa, int programSize){
 	pcb->cantidadPaginasCodigo = cantidadPaginasCodigoProceso(programSize);
 	pcb->cantidadInstrucciones = metadata->instrucciones_size;
 	pcb->indiceCodigo = transformarIndiceCodigoSerializado(pcb->cantidadInstrucciones,metadata->instrucciones_serializado);
-	pcb->indiceEtiquetasSize = metadata->etiquetas_size;
-	pcb->indiceEtiquetas = metadata->etiquetas;
+	pcb->cantidadEtiquetas = metadata->cantidad_de_etiquetas;
+	pcb->indiceEtiquetas = malloc(sizeof(char)* metadata->etiquetas_size);
+	memcpy(pcb->indiceEtiquetas,metadata->etiquetas,sizeof(char)* metadata->etiquetas_size);
 	pcb->indiceStack = list_create();
 
-	/*
-		pcb->indiceEtiquetas = malloc(sizeof(char) * pcb->tamanioIndiceEtiquetas);
-		memcpy(pcb->indiceEtiquetas, metadata->etiquetas, sizeof(char) * pcb->tamanioIndiceEtiquetas);
-		*/
-
-		metadata_destruir(metadata);
+	metadata_destruir(metadata);
 	return pcb;
 }
 
@@ -370,77 +366,79 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
 }
 
 void serializarPcbYEnviar(t_pcb* procesoAEjecutar,int socketCPU){
-	int indiceCodigoSize=calcularIndiceCodigoSize(procesoAEjecutar->cantidadInstrucciones, procesoAEjecutar->indiceCodigo);
-	//int indiceStackSize= calcularIndiceStackSize(procesoAEjecutar->indiceStack);
-
-	int mensajeSize = sizeof(int)*3+sizeof(t_puntero_instruccion)+indiceCodigoSize + procesoAEjecutar->indiceEtiquetasSize; // +indiceStackSize
-	char* buffer= malloc(mensajeSize);
+	int pcbSize = calcularPcbSize(procesoAEjecutar);
+	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(procesoAEjecutar->cantidadEtiquetas);
+	int indiceCodigoSize=calcularIndiceCodigoSize(procesoAEjecutar->cantidadInstrucciones);
+	int indiceStackSize=calcularIndiceStackSize(procesoAEjecutar->indiceStack);
+	char* buffer= malloc(pcbSize);
 
 	memcpy(buffer,&procesoAEjecutar->pid,sizeof(int));
 	memcpy(buffer + sizeof(int), &procesoAEjecutar->cantidadPaginasCodigo, sizeof(int));
 	memcpy(buffer + sizeof(int)*2, &procesoAEjecutar->programCounter, sizeof(t_puntero_instruccion));
 	memcpy(buffer + sizeof(int)*2 + sizeof(t_puntero_instruccion), &procesoAEjecutar->cantidadInstrucciones,sizeof(int));
 	memcpy(buffer + sizeof(int)*3 + sizeof(t_puntero_instruccion), &procesoAEjecutar->indiceCodigo,indiceCodigoSize);
-	memcpy(buffer + sizeof(int)*3 + sizeof(t_puntero_instruccion) + indiceCodigoSize , &procesoAEjecutar->indiceEtiquetas, procesoAEjecutar->indiceEtiquetasSize);
-	//memcpy(buffer + sizeof(int)*3 + indiceCodigoSize, &procesoAEjecutar->indiceStack, indiceStackSize);
+	memcpy(buffer + sizeof(int)*3 + sizeof(t_puntero_instruccion)+ indiceCodigoSize, &procesoAEjecutar->cantidadEtiquetas,sizeof(int));
+	memcpy(buffer + sizeof(int)*4 + sizeof(t_puntero_instruccion) + indiceCodigoSize , &procesoAEjecutar->indiceEtiquetas, indiceEtiquetasSize);
+	serializarStack(buffer + sizeof(int)*4 + indiceCodigoSize + indiceEtiquetasSize, procesoAEjecutar->indiceStack);
+	memcpy(buffer + sizeof(int)*4 + sizeof(t_puntero_instruccion) + indiceCodigoSize + indiceStackSize,&procesoAEjecutar->exitCode,sizeof(int));
 
-	send(socketCPU,buffer,mensajeSize,0);
+	send(socketCPU,&pcbSize,sizeof(int),0);
+	send(socketCPU,buffer,pcbSize,0);
 
-
-	/*
-	typedef struct {
-			int pid; CHECK
-			t_puntero_instruccion programCounter; CHECK
-			int cantidadPaginasCodigo; CHECK
-			int cantidadInstrucciones; CHECK
-			int** indiceCodigo; CHECK
-			int indiceEtiquetasSize; CHECK
-			char* indiceEtiquetas; CHECK
-			t_list* indiceStack; TODO
-			int exitCode; TODO
-		}t_pcb;
-*/
 }
 
-int calcularIndiceCodigoSize(int cantidadInstrucciones, int** indiceCodigo){
+int calcularPcbSize(t_pcb* pcb){
+	return sizeof(int)*5 + sizeof(t_puntero_instruccion) + calcularIndiceCodigoSize(pcb->cantidadInstrucciones) + calcularIndiceEtiquetasSize(pcb->cantidadEtiquetas) + calcularIndiceStackSize(pcb->indiceStack);
+}
+int calcularIndiceStackSize(t_list* indiceStack){
+	int i;
+	int stackSize=0;
+	t_nodoStack* node;
+	for(i=0;i<indiceStack->elements_count;i++){
+			node = list_get(indiceStack,i);
+		stackSize+= sizeof(int) + node->args->elements_count * sizeof(t_posMemoria) + sizeof(int)+  node->vars->elements_count * sizeof(t_variable) + sizeof(int) +sizeof(t_posMemoria);
+	}
+	return stackSize;
+}
+
+int calcularIndiceCodigoSize(int cantidadInstrucciones){
 	return cantidadInstrucciones * sizeof(int) * 2;
 }
-/*
-int calcularIndiceCodigoSize(t_list* indiceStack){
-	int i;
-	t_nodoStack* node;
-	t_variable* variable;
 
+int calcularIndiceEtiquetasSize(int cantidadEtiquetas){
+	return cantidadEtiquetas*sizeof(char);
+}
+
+void serializarStack(char*buffer,t_list* indiceStack){
+	int i,j;
+	t_nodoStack* node;
 
 		for(i = 0; i < indiceStack->elements_count;i++){
-			elemento = (t_nodoStack*) list_get(indiceStack, i);
-			memcpy(posicion, &elemento->args->elements_count, sizeof(int));
-			posicion += sizeof(int);
+			node = (t_nodoStack*) list_get(indiceStack, i);
+			memcpy(buffer, &node->args->elements_count, sizeof(int));
+			buffer += sizeof(int);
 
-			for(f = 0; f < elemento->args->elements_count; f++){
-				memcpy(posicion, list_get(elemento->args, f), sizeof(pos_mem));
-				posicion += sizeof(pos_mem);
+			for(j = 0; j < node->args->elements_count; j++){
+				memcpy(buffer, list_get(node->args, j), sizeof(t_posMemoria));
+				buffer += sizeof(t_posMemoria);
 			}
 
-			memcpy(posicion, &elemento->vars->elements_count, sizeof(int));
-			posicion += sizeof(int);
+			memcpy(buffer, &node->vars->elements_count, sizeof(int));
+			buffer += sizeof(int);
 
-			for(f = 0; f < elemento->vars->elements_count; f++){
-				variable = list_get(elemento->vars, f);
-				memcpy(posicion, &variable->nombre_var, sizeof(char));
-				posicion += sizeof(char);
-				memcpy(posicion, variable->dir_var, sizeof(pos_mem));
-				posicion += sizeof(pos_mem);
+			for(j = 0; j < node->vars->elements_count; j++){
+				memcpy(buffer, list_get(node->vars,j), sizeof(t_variable));
+				buffer += sizeof(t_variable);
 			}
 
-			memcpy(posicion, &elemento->dir_retorno, sizeof(int));
-			posicion += sizeof(int);
+			memcpy(buffer, &node->retVar, sizeof(int));
+			buffer += sizeof(int);
 
-			memcpy(posicion, elemento->var_retorno, sizeof(pos_mem));
-			posicion += sizeof(pos_mem);
+			memcpy(buffer, node->retVar, sizeof(t_posMemoria));
+			buffer += sizeof(t_posMemoria);
 		}
 }
-*/
+
 
 int cantidadPaginasCodigoProceso(int programSize){
 	int mod = programSize % paginaSize;
@@ -578,6 +576,66 @@ void inicializarListas(){
 	listaConsolas= list_create();
 }
 
+void dispatcher(int socketCPU){
+
+	t_pcb* procesoAEjecutar = malloc(sizeof(t_pcb));
+
+	pthread_mutex_lock(&mutexColaListos);
+	procesoAEjecutar = list_get(colaListos, 0);
+	list_remove(colaListos, 0);
+	pthread_mutex_unlock(&mutexColaListos);
+
+	serializarPcbYEnviar(procesoAEjecutar,socketCPU);
+}
+
+void terminarProceso(int socketCPU){
+	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
+	recv(socketCPU,pcbProcesoTerminado,sizeof(t_pcb),0);
+
+	pthread_mutex_lock(&mutexColaTerminados);
+	list_add(colaTerminados,pcbProcesoTerminado);
+	pthread_mutex_unlock(&mutexColaTerminados);
+
+	/* TODO: Buscar Consola por PID e informar */
+
+	/* TODO:Liberar recursos */
+
+}
+
+
+void imprimirConfiguraciones() {
+	printf("---------------------------------------------------\n");
+	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
+	printf("---------------------------------------------------\n");
+	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	quantum, quantumSleep, algoritmo, gradoMultiProg, semIds, semInit, sharedVars, stackSize, paginaSize);
+	printf("---------------------------------------------------\n");
+
+}
+
+void imprimirInterfazUsuario(){
+
+	/**************************************Printea interfaz Usuario Kernel*******************************************************/
+	printf("\n-----------------------------------------------------------------------------------------------------\n");
+	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
+	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
+	printf("\n-----------------------------------------------------------------------------------------------------\n");
+	/****************************************************************************************************************************/
+}
+
+void inicializarLog(char *rutaDeLog){
+
+		mkdir("/home/utnso/Log",0755);
+
+		loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
+		loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
+}
+
+void inicializarSockets(){
+	socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
+		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
+		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
+
+}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
@@ -702,64 +760,3 @@ void leerConfiguracion(char* ruta) {
 }
 
 
-
-void dispatcher(int socketCPU){
-
-	t_pcb* procesoAEjecutar = malloc(sizeof(t_pcb));
-
-	pthread_mutex_lock(&mutexColaListos);
-	procesoAEjecutar = list_get(colaListos, 0);
-	list_remove(colaListos, 0);
-	pthread_mutex_unlock(&mutexColaListos);
-
-	serializarPcbYEnviar(procesoAEjecutar,socketCPU);
-}
-
-void terminarProceso(int socketCPU){
-	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
-	recv(socketCPU,pcbProcesoTerminado,sizeof(t_pcb),0);
-
-	pthread_mutex_lock(&mutexColaTerminados);
-	list_add(colaTerminados,pcbProcesoTerminado);
-	pthread_mutex_unlock(&mutexColaTerminados);
-
-	/* TODO: Buscar Consola por PID e informar */
-
-	/* TODO:Liberar recursos */
-
-}
-
-
-void imprimirConfiguraciones() {
-	printf("---------------------------------------------------\n");
-	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
-	printf("---------------------------------------------------\n");
-	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	quantum, quantumSleep, algoritmo, gradoMultiProg, semIds, semInit, sharedVars, stackSize, paginaSize);
-	printf("---------------------------------------------------\n");
-
-}
-
-void imprimirInterfazUsuario(){
-
-	/**************************************Printea interfaz Usuario Kernel*******************************************************/
-	printf("\n-----------------------------------------------------------------------------------------------------\n");
-	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
-	printf("\n-----------------------------------------------------------------------------------------------------\n");
-	/****************************************************************************************************************************/
-}
-
-void inicializarLog(char *rutaDeLog){
-
-		mkdir("/home/utnso/Log",0755);
-
-		loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
-}
-
-void inicializarSockets(){
-	socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
-		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
-		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
-
-}
