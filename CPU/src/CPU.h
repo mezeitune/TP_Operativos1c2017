@@ -152,6 +152,8 @@ int socketKernel;
 t_list* listaPcb;
 pthread_t HiloConexionMemoria;
 
+void interfazHandler(int socket);
+
 
 int counterPCBAsignado=0;//Cuando esto incremente a 1 , significa que ya recibio un PCB correcto
 					//si queda en 0 significa que no hay todavia. Cuando la CPU se libere del PCB actual porque

@@ -236,7 +236,7 @@ void interfazHandler(){
 
 void connectionHandler(int socketAceptado, char orden) {
 	int pidARecibir=0;
-
+	char comandoRecibirPCB='S';
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 
 	_Bool verificarPid(t_consola* pidNuevo){
@@ -252,6 +252,7 @@ void connectionHandler(int socketAceptado, char orden) {
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
+				send(socketAceptado,&comandoRecibirPCB,sizeof(char),0);
 					dispatcher(socketAceptado);
 					break;
 		case 'T':
@@ -368,7 +369,7 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
 
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 	log_info(loggerConPantalla, "Serializando PCB ----- PID:%d",pcb->pid);
-	char comandoRecibirPCB= 'S';
+
 	int pcbSerializadoSize = calcularPcbSerializadoSize(pcb);
 	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(pcb->cantidadEtiquetas);
 	int indiceCodigoSize=calcularIndiceCodigoSize(pcb->cantidadInstrucciones);
@@ -387,7 +388,8 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 
 	log_info(loggerConPantalla, "Enviando PCB serializado ----- PID: %d ------ socketCPU: %d", pcb->pid, socketCPU);
-	send(socketCPU,&comandoRecibirPCB,sizeof(char),0);
+
+
 	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	send(socketCPU,pcbSerializado,pcbSerializadoSize,0);
 
@@ -398,7 +400,7 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 	int pcbSerializadoSize;
 	recv(socketKernel,&pcbSerializadoSize,sizeof(int),0);
 	void * pcbSerializado = malloc(pcbSerializadoSize);
-	recv(socketKernel,&pcbSerializado,pcbSerializadoSize,0);
+	recv(socketKernel,pcbSerializado,pcbSerializadoSize,0);
 	t_pcb* pcb = malloc(sizeof(t_pcb));
 
 	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
@@ -809,9 +811,10 @@ void selectorConexiones(int socket) {
 					}
 					else {
 						// we got some data from a client
+						/*
 						for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
 							if (FD_ISSET(j, &master)) {
-								if (j != socket && j != i) {
+								if (j != socket && j != i) {*/
 									connectionHandler(i, orden);
 						        }
 						    }
@@ -819,9 +822,9 @@ void selectorConexiones(int socket) {
 					}
 				}
 			} // END handle data from client
-		} // END got new incoming connection
-	} // END looping through file descriptors
-}
+		//} // END got new incoming connection
+	//} // END looping through file descriptors
+//}
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa) {

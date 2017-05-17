@@ -43,6 +43,7 @@ void comenzarEjecucionNuevoPrograma(){
 		char comandoRecibirPCB;
 		char comandoGetNuevoProceso = 'N';
 		send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
+		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
 
 	//}
 
@@ -65,17 +66,18 @@ void comenzarEjecucionNuevoPrograma(){
 		//metadata_destruir(metadata);//por que si
 		printf("================\n");
 
-		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
+
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
 }
 
 void connectionHandlerKernel(int socketAceptado, char orden) {
 
 
-	//if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
+	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 
 	switch (orden) {
 		case 'S':
+			printf("voy a recibir un pcb\n");
 				recibirPCByEstablecerloGlobalmente(socketAceptado);
 					break;
 		default:
@@ -92,34 +94,25 @@ void recibirPCByEstablecerloGlobalmente(int socketKernel){
 	//counterPCBAsignado++;
 
 	pcbAUtilizar *pcb = malloc(sizeof(pcbAUtilizar));
-	recibirYDeserializarPcb(socketKernel);
+	printf("voy a recibir un pcb\n");
+	pcb = recibirYDeserializarPcb(socketKernel);
 
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente");
 
 
 	list_add(listaPcb, pcb);
+	pcbAUtilizar *pcbaaa = malloc(sizeof(pcbAUtilizar));
+	pcbaaa=list_get(listaPcb,0);
+	printf("%d",pcbaaa->cantidadInstrucciones);
+
+	interfazHandler(socketKernel);
 
 
-	//y setea counterPCBnoASignado en 0
-	//counterPCBAsignado=0;
-	//si no recibio PCB correcto , incremendo counterPCBnoASignado
 
-	//if(counterPCBAsignado==0){//PCBcorrecto?
-		//puse 1 para que no de syntax error momentaneamente
-		//printf("Ya hay un PCB asignado a esta CPU");
-	//}
-
-
-	//if(counterPCBAsignado==1){
-		//log_warning(loggerConPantalla, "Todavia no hay ningun PCB para asignar a esta CPU");
-	//}
 
 }
 
 
-
-//char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i){
-//}
 void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size){
 	char comandoSolicitar = 'S';//comando que le solicito a la memoria para que ande el main_solicitarBytesPagina
 	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
@@ -259,9 +252,10 @@ pcbAUtilizar* recibirYDeserializarPcb(int socketKernel){
 	log_info(loggerConPantalla, "Recibiendo PCB serializado---- SOCKET:%d", socketKernel);
 	int pcbSerializadoSize;
 	recv(socketKernel,&pcbSerializadoSize,sizeof(int),0);
-	printf("pasa");
+
 	void * pcbSerializado = malloc(pcbSerializadoSize);
-	recv(socketKernel,&pcbSerializado,pcbSerializadoSize,0);
+	recv(socketKernel,pcbSerializado,pcbSerializadoSize,0);
+
 	pcbAUtilizar* pcb = malloc(sizeof(pcbAUtilizar));
 
 	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
@@ -276,7 +270,6 @@ pcbAUtilizar* recibirYDeserializarPcb(int socketKernel){
 	memcpy(&pcb->indiceEtiquetas, pcbSerializado + sizeof(int)*4 + indiceCodigoSize, indiceEtiquetasSize);
 	pcb->indiceStack=list_create();
 	deserializarStack(pcbSerializado + sizeof(int)*4 + indiceCodigoSize,&pcb->indiceStack);
-
 	return pcb;
 }
 
@@ -353,7 +346,7 @@ void signalSigusrHandler(int signum)
 }
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
-		//recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
+		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
 		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, nuevaOrden);
 }
 

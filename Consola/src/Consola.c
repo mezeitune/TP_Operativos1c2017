@@ -45,6 +45,7 @@ void *connectionHandler(int socket) {
 		scanf(" %c", &orden);
 		send(socket, (void*) &orden, sizeof(char), 0);
 
+
 		switch (orden) {
 		case 'I':
 			printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
@@ -261,16 +262,16 @@ void recibirDatosDelKernelYcrearPrograma (int socketKernel){
 		cargarHiloId(hiloId);
 		list_add(listaPid, pidNuevo);
 		list_add(listaHilos,hiloId);
-		free(fechaActual);
+
 
 }
 
 
-/*int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual){
+int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual){
 	int tiempoInicio = fechaInicio - '0';
 	int tiempoFinal = fechaActual - '0';
 	int tiempoEjecucion = tiempoFinal - tiempoInicio;
-}*/
+}
 
 
 void cargarPid(Pid* pidEstructura, int pid,char* fechaActual,pthread_t hiloId) {
