@@ -2,7 +2,7 @@
 
 void handShakeKernel(int socketKernel);
 
-int paginaSize;
+int tamanio_pagina;
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
@@ -17,7 +17,8 @@ int main(void) {
 
 
 	//char comandoGetNuevoProceso = 'N';
-	//handShakeKernel(socketKernel);
+	handShakeKernel(socketKernel);
+
 	//send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
 
 	//Lo primero que habria que hacer en realidad es aca pedirle un PCB al kernel
@@ -36,36 +37,30 @@ int main(void) {
 void handShakeKernel(int socketKernel){
 	char comandoGetPaginaSize= 'P';
 	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
-	recv(socketKernel,&paginaSize,sizeof(int),0);
+	recv(socketKernel,&tamanio_pagina,sizeof(int),0);
 }
 void comenzarEjecucionNuevoPrograma(){
-	//while(counterPCBAsignado==0){//loopear hasta conseguir PCB(queda en espera activa)
+
+		pcbAUtilizar *pcb = malloc(sizeof(pcbAUtilizar));
 		char comandoRecibirPCB;
 		char comandoGetNuevoProceso = 'N';
 		send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
 
-	//}
 
-
-		log_info(loggerConPantalla, "Ejecutando");
-
-		//char *programa = strdup(PROGRAMA);//copia el programa entero en esa variable
-		//t_metadata_program *metadata = metadata_desde_literal(programa);//hacerlo por que si
-		//int programCounter = 0;//deberia ser el del PCB
-		/*while(!terminoElPrograma()){
-			char* const linea = conseguirDatosDeLaMemoria(programa,
-			metadata->instrucciones_serializado[programCounter].start,
-			metadata->instrucciones_serializado[programCounter].offset);//que me devuelva la siguiente linea la memoria
-			printf("\t Evaluando -> %s", linea);
-			analizadorLinea(linea, &functions, &kernel_functions);//que haga lo que tenga q hacer
-			log_info(loggerConPantalla, "CPU lee una linea");
-			free(linea);
-			programCounter++;
-		}*/
-		//metadata_destruir(metadata);//por que si
+		log_info(loggerConPantalla, "Esperando un PCB...");
 		printf("================\n");
 
+		//while(!terminoElPrograma()){
+		printf("carrozzaaaaaaaaa");
+			char* instruccion = obtener_instruccion(pcb);
+			printf("\t Evaluando -> %s", instruccion );
+			analizadorLinea(instruccion , &functions, &kernel_functions);//que haga lo que tenga q hacer
+			log_info(loggerConPantalla, "CPU lee una linea");
+			free(instruccion);
+			pcb->programCounter = pcb->programCounter + 1;
+
+		//}
 
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
 }
@@ -77,7 +72,7 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 
 	switch (orden) {
 		case 'S':
-			printf("voy a recibir un pcb\n");
+			log_info(loggerConPantalla, "Se esta por asignar un PCB");
 				recibirPCByEstablecerloGlobalmente(socketAceptado);
 					break;
 		default:
@@ -94,16 +89,13 @@ void recibirPCByEstablecerloGlobalmente(int socketKernel){
 	//counterPCBAsignado++;
 
 	pcbAUtilizar *pcb = malloc(sizeof(pcbAUtilizar));
-	printf("voy a recibir un pcb\n");
 	pcb = recibirYDeserializarPcb(socketKernel);
 
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente");
 
 
 	list_add(listaPcb, pcb);
-	pcbAUtilizar *pcbaaa = malloc(sizeof(pcbAUtilizar));
-	pcbaaa=list_get(listaPcb,0);
-	printf("%d",pcbaaa->cantidadInstrucciones);
+
 
 	interfazHandler(socketKernel);
 
@@ -113,7 +105,7 @@ void recibirPCByEstablecerloGlobalmente(int socketKernel){
 }
 
 
-void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size){
+char* conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size){
 	char comandoSolicitar = 'S';//comando que le solicito a la memoria para que ande el main_solicitarBytesPagina
 	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
 	send(socketMemoria,&pcb->pid,sizeof(int),0);
@@ -121,8 +113,8 @@ void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size){
 	//send(socketMemoria,&pcb->offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
 	char* mensajeRecibido = recibir_string(socketMemoria);
-	log_info(loggerConPantalla,"\nEl mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
 
+	return mensajeRecibido;
 }
 
 int pedirBytesYAlmacenarEnMemoria(pcbAUtilizar *pcb){
@@ -333,6 +325,51 @@ int calcularIndiceEtiquetasSize(int cantidadEtiquetas){
 	log_info(loggerConPantalla, "Calculando tamano del Indice de Etiquetas");
 	return cantidadEtiquetas*sizeof(char);
 }
+char* obtener_instruccion(pcbAUtilizar * pcb){
+	int program_counter = pcb->programCounter;
+	int byte_inicio_instruccion = pcb->indiceCodigo[program_counter][0];
+	int bytes_tamanio_instruccion = pcb->indiceCodigo[program_counter][1];
+	int num_pagina = byte_inicio_instruccion / tamanio_pagina;
+	int offset = byte_inicio_instruccion - (num_pagina * tamanio_pagina);//porque verga no es 0???
+	char* instruccion;
+	char* continuacion_instruccion;
+	int bytes_a_leer_primera_pagina;
+	printf("pasa vos");
+	if (bytes_tamanio_instruccion > (tamanio_pagina * 2)){
+		printf("El tamanio de la instruccion es mayor al tamanio de pagina\n");
+	}
+	if ((offset + bytes_tamanio_instruccion) < tamanio_pagina){
+		instruccion = conseguirDatosMemoria(pcb->pid, num_pagina, bytes_tamanio_instruccion);
+
+	} else {
+		bytes_a_leer_primera_pagina = tamanio_pagina - offset;
+		instruccion = conseguirDatosMemoria(pcb->pid, num_pagina, bytes_a_leer_primera_pagina);
+		log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
+		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
+			continuacion_instruccion = conseguirDatosMemoria(pcb->pid, (num_pagina + 1), (bytes_tamanio_instruccion - bytes_a_leer_primera_pagina));
+			log_info(loggerConPantalla, "Continuacion ejecucion: %s", continuacion_instruccion);
+			string_append(&instruccion, continuacion_instruccion);
+			free(continuacion_instruccion);
+		}else{
+			log_info(loggerConPantalla, "La continuacion de la instruccion es 0. Ni la leo");
+		}
+	}
+	char** string_cortado = string_split(instruccion, "\n");
+	free(instruccion);
+	instruccion = string_new();
+	string_append(&instruccion, string_cortado[0]);
+	log_info(loggerConPantalla, "Instruccion obtenida: %s", instruccion);
+	int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+	free(string_cortado);
+	return instruccion;
+	//Una vez que se usa la instruccion hay que hacer free
+}
+
+
 void signalSigusrHandler(int signum)
 {
     if (signum == SIGUSR1)
@@ -375,6 +412,3 @@ void inicializarLog(char *rutaDeLog){
 		loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 
 }
-
-
-

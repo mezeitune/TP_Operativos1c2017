@@ -252,7 +252,7 @@ void connectionHandler(int socketAceptado, char orden) {
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
-				send(socketAceptado,&comandoRecibirPCB,sizeof(char),0);
+					send(socketAceptado,&comandoRecibirPCB,sizeof(char),0);
 					dispatcher(socketAceptado);
 					break;
 		case 'T':
@@ -855,5 +855,3 @@ void leerConfiguracion(char* ruta) {
 	stackSize = atoi(config_get_string_value(configuracion_kernel, "STACK_SIZE"));
 	paginaSize = atoi(config_get_string_value(configuracion_kernel,"PAGINA_SIZE"));
 }
-
-

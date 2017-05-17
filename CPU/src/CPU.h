@@ -99,7 +99,7 @@ AnSISOP_kernel kernel_functions = {/*
 
 };
 char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
-
+char* obtener_instruccion(pcbAUtilizar * pcb);
 //-----------------------------------------------------------------------------------------------------------------
 
 void recibirPCByEstablecerloGlobalmente(int socketKernel);//Falta implementar , y que reciba con serializacion desde Kernel
@@ -119,7 +119,7 @@ void deserializarStack(void* pcbSerializado, t_list** indiceStack);
 int pedirBytesMemoria(pcbAUtilizar* pcb);
 int almacenarDatosEnMemoria(pcbAUtilizar* pcb,char* buffer, int size);
 int pedirBytesYAlmacenarEnMemoria();
-void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size);
+char* conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size);
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 int calcularIndiceCodigoSize(int cantidadInstrucciones);
 int calcularIndiceEtiquetasSize(int cantidadEtiquetas);
