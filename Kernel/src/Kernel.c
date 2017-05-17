@@ -368,6 +368,7 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
 
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 	log_info(loggerConPantalla, "Serializando PCB ----- PID:%d",pcb->pid);
+	char comandoRecibirPCB= 'S';
 	int pcbSerializadoSize = calcularPcbSerializadoSize(pcb);
 	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(pcb->cantidadEtiquetas);
 	int indiceCodigoSize=calcularIndiceCodigoSize(pcb->cantidadInstrucciones);
@@ -386,6 +387,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 
 	log_info(loggerConPantalla, "Enviando PCB serializado ----- PID: %d ------ socketCPU: %d", pcb->pid, socketCPU);
+	send(socketCPU,&comandoRecibirPCB,sizeof(char),0);
 	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	send(socketCPU,pcbSerializado,pcbSerializadoSize,0);
 
@@ -563,6 +565,7 @@ int crearNuevoProceso(char*programa,int programSize,t_pcb* procesoListo){
 
 	encolarProcesoListo(procesoListo);
 	log_info(loggerConPantalla, "PCB encolado en lista de Ready ---- PID: %d", procesoListo->pid);
+
 	return 0;
 }
 
@@ -666,6 +669,7 @@ void inicializarListas(){
 }
 
 void dispatcher(int socketCPU){
+
 	log_info(loggerConPantalla, "Despachando PCB listo ---- SOCKET:%d", socketCPU);
 	t_pcb* procesoAEjecutar = malloc(sizeof(t_pcb));
 
@@ -675,7 +679,8 @@ void dispatcher(int socketCPU){
 	pthread_mutex_unlock(&mutexColaListos);
 
 	serializarPcbYEnviar(procesoAEjecutar,socketCPU);
-}
+
+	}
 
 void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));

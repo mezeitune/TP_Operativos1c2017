@@ -16,9 +16,9 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 
-	char comandoGetNuevoProceso = 'N';
-	handShakeKernel(socketKernel);
-	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
+	//char comandoGetNuevoProceso = 'N';
+	//handShakeKernel(socketKernel);
+	//send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
 
 	//Lo primero que habria que hacer en realidad es aca pedirle un PCB al kernel
 	//a travez de serializacion y que este me envie uno si es que tiene programas pendientes de CPU
@@ -27,14 +27,9 @@ int main(void) {
 	//Le pido info a memoria desplazandome en cuanto a sus instrucciones y ejecutando las primitivas necesarias
 	//para responderle al kernel todos los resultados y que se manden a consola
 
-
-
-
 	signal(SIGUSR1, signalSigusrHandler);//Para mandar la signal:
 				//htop->pararse sobre el proceso a mandarle signal->k->SIGUSR1->ENTER
 	comenzarEjecucionNuevoPrograma();
-
-
 	return 0;
 }
 
@@ -43,14 +38,16 @@ void handShakeKernel(int socketKernel){
 	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
 	recv(socketKernel,&paginaSize,sizeof(int),0);
 }
-
 void comenzarEjecucionNuevoPrograma(){
 	//while(counterPCBAsignado==0){//loopear hasta conseguir PCB(queda en espera activa)
-		recibirPCByEstablecerloGlobalmente(socketKernel);
+		char comandoRecibirPCB;
+		char comandoGetNuevoProceso = 'N';
+		send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
+
 	//}
 
 
-	log_info(loggerConPantalla, "Ejecutando");
+		log_info(loggerConPantalla, "Ejecutando");
 
 		//char *programa = strdup(PROGRAMA);//copia el programa entero en esa variable
 		//t_metadata_program *metadata = metadata_desde_literal(programa);//hacerlo por que si
@@ -68,13 +65,58 @@ void comenzarEjecucionNuevoPrograma(){
 		//metadata_destruir(metadata);//por que si
 		printf("================\n");
 
+		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
+		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
+}
 
-		connectionHandler(socketKernel);
-		}
+void connectionHandlerKernel(int socketAceptado, char orden) {
 
 
+	//if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 
-//
+	switch (orden) {
+		case 'S':
+				recibirPCByEstablecerloGlobalmente(socketAceptado);
+					break;
+		default:
+				if(orden == '\0') break;
+				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
+				break;
+	}
+orden = '\0';
+return;
+}
+
+void recibirPCByEstablecerloGlobalmente(int socketKernel){
+
+	//counterPCBAsignado++;
+
+	pcbAUtilizar *pcb = malloc(sizeof(pcbAUtilizar));
+	recibirYDeserializarPcb(socketKernel);
+
+	log_info(loggerConPantalla, "CPU recibe PCB correctamente");
+
+
+	list_add(listaPcb, pcb);
+
+
+	//y setea counterPCBnoASignado en 0
+	//counterPCBAsignado=0;
+	//si no recibio PCB correcto , incremendo counterPCBnoASignado
+
+	//if(counterPCBAsignado==0){//PCBcorrecto?
+		//puse 1 para que no de syntax error momentaneamente
+		//printf("Ya hay un PCB asignado a esta CPU");
+	//}
+
+
+	//if(counterPCBAsignado==1){
+		//log_warning(loggerConPantalla, "Todavia no hay ningun PCB para asignar a esta CPU");
+	//}
+
+}
+
+
 
 //char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i){
 //}
@@ -83,7 +125,7 @@ void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size){
 	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
 	send(socketMemoria,&pcb->pid,sizeof(int),0);
 	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
-	send(socketMemoria,&pcb->offset,sizeof(int),0);
+	//send(socketMemoria,&pcb->offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
 	char* mensajeRecibido = recibir_string(socketMemoria);
 	log_info(loggerConPantalla,"\nEl mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
@@ -128,7 +170,7 @@ int almacenarDatosEnMemoria(pcbAUtilizar* pcb,char* buffer, int size){
 		send(socketMemoria,&comandoAlmacenar,sizeof(char),0);
 		send(socketMemoria,&pcb->pid,sizeof(int),0);
 		send(socketMemoria,&paginaDondeGuardoDatos,sizeof(int),0);
-		send(socketMemoria,&pcb->offset,sizeof(int),0);
+		//send(socketMemoria,&pcb->offset,sizeof(int),0);
 		send(socketMemoria,&size,sizeof(int),0);
 		send(socketMemoria,buffer,size,0);
 
@@ -137,47 +179,9 @@ int almacenarDatosEnMemoria(pcbAUtilizar* pcb,char* buffer, int size){
 
 }
 
-void recibirPCByEstablecerloGlobalmente(socketKernel){
-	//logica de serializacion para recibir PCB
-	//si recibio un PCB , se guarda en la estructura
-	counterPCBAsignado++;
-	pcbAUtilizar* pcbNuevo = malloc(sizeof(pcbAUtilizar));
-	log_info(loggerConPantalla, "CPU recibe PCB correctamente");
-	cargarPcbActual(pcbNuevo,1,0,0);
-	list_add(listaPcb, pcbNuevo);
 
 
-	//y setea counterPCBnoASignado en 0
-	//counterPCBAsignado=0;
-	//si no recibio PCB correcto , incremendo counterPCBnoASignado
-
-	if(counterPCBAsignado==0){//PCBcorrecto?
-		//puse 1 para que no de syntax error momentaneamente
-		//printf("Ya hay un PCB asignado a esta CPU");
-	}
-
-
-	if(counterPCBAsignado==1){
-		log_warning(loggerConPantalla, "Todavia no hay ningun PCB para asignar a esta CPU");
-	}
-
-}
-
-void signalSigusrHandler(int signum)
-{
-    if (signum == SIGUSR1)
-    {
-        //printf("Received SIGUSR1!\n");
-
-    	//hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
-		log_warning(loggerConPantalla,"\nSe ha desconectado CPU con signal SIGUSR1\n");
-		exit(1);
-    }
-}
-
-
-
-void connectionHandler(int socket){
+void interfazHandler(int socket){
 
 	char orden;
 
@@ -238,10 +242,10 @@ void finalizar (){
 
 	//asigno pcb en memoria
 	infoPcbAEliminar->pid = unPcbAEliminar->pid;
-	infoPcbAEliminar->cantidadPaginas = unPcbAEliminar->cantidadPaginas;
+	//infoPcbAEliminar->cantidadPaginas = unPcbAEliminar->cantidadPaginas;
 
-	printf("%d%d",unPcbAEliminar->pid,unPcbAEliminar->cantidadPaginas);
-	serializarPCByEnviar(socketKernel,comandoInicializacion,&infoPcbAEliminar,pcbAEliminar);
+	//printf("%d%d",unPcbAEliminar->pid,unPcbAEliminar->cantidadPaginas);
+	//serializarPCByEnviar(socketKernel,comandoInicializacion,&infoPcbAEliminar,pcbAEliminar);
 
 	list_destroy_and_destroy_elements(listaPcb, free);
 
@@ -251,29 +255,106 @@ void finalizar (){
 
 }
 
-
-
-void serializarPCByEnviar(int socket, char comandoInicializacion, pcbAUtilizar *unPcb, void* pcb){
-	//aca voy copiando en pcbAEliminar cada cosa que quiero empaquetar memcpy(a donde lo pongo con su posicion, que garcha pongo, tamaño de la garcha que pongo);
-	memcpy(pcb,&comandoInicializacion,sizeof(char));
-	memcpy(pcb + sizeof(char), &unPcb->pid,sizeof(int));
-	memcpy(pcb + sizeof(char) + sizeof(int) , &unPcb->cantidadPaginas , sizeof(int));
-
-	//envio al kernel lo empaquetado con su tamaño que hice previamente en el malloc
-	send(socket, pcb, sizeof(int)*2 + sizeof(char), 0);
-}
-
-pcbAUtilizar* deserializarPCB(void* pcb_serializado){
+pcbAUtilizar* recibirYDeserializarPcb(int socketKernel){
+	log_info(loggerConPantalla, "Recibiendo PCB serializado---- SOCKET:%d", socketKernel);
+	int pcbSerializadoSize;
+	recv(socketKernel,&pcbSerializadoSize,sizeof(int),0);
+	printf("pasa");
+	void * pcbSerializado = malloc(pcbSerializadoSize);
+	recv(socketKernel,&pcbSerializado,pcbSerializadoSize,0);
 	pcbAUtilizar* pcb = malloc(sizeof(pcbAUtilizar));
-	pcb_serializado += sizeof(char);
-	//evito el char si es que el kernel manda alguno antes
-	memcpy(&pcb->pid, pcb_serializado, sizeof(int));
-	pcb_serializado += sizeof(int);
-	memcpy(&pcb->cantidadPaginas, pcb_serializado, sizeof(int));
-	pcb_serializado += sizeof(int);
 
+	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
+	log_info(loggerConPantalla, "Deserializando PCB ----- PID:%d",pcb->pid);
+	memcpy(&pcb->cantidadPaginasCodigo,pcbSerializado + sizeof(int),sizeof(int));
+	memcpy(&pcb->programCounter, pcbSerializado + sizeof(int)*2, sizeof(int));
+	memcpy(&pcb->cantidadInstrucciones, pcbSerializado + sizeof(int)*3, sizeof(t_puntero_instruccion));
+	int indiceCodigoSize = calcularIndiceCodigoSize(pcb->cantidadInstrucciones);
+	memcpy(&pcb->indiceCodigo,pcbSerializado + sizeof(int)*3, indiceCodigoSize);
+	memcpy(&pcb->cantidadEtiquetas,pcbSerializado + sizeof (int) *3 + indiceCodigoSize, sizeof(int));
+	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(pcb->cantidadEtiquetas);
+	memcpy(&pcb->indiceEtiquetas, pcbSerializado + sizeof(int)*4 + indiceCodigoSize, indiceEtiquetasSize);
+	pcb->indiceStack=list_create();
+	deserializarStack(pcbSerializado + sizeof(int)*4 + indiceCodigoSize,&pcb->indiceStack);
 
 	return pcb;
+}
+
+void deserializarStack(void* pcbSerializado, t_list** indiceStack){
+	log_info(loggerConPantalla, "Deserializando Stack");
+		int i,j;
+		t_nodoStack* node;
+		t_posMemoria* argumento;
+		t_variable* variable;
+
+		int cantidadArgumentos;
+		int cantidadVariables;
+		int cantidadElementosStack;
+
+		memcpy(&cantidadElementosStack,(int*) pcbSerializado,sizeof(int));
+		pcbSerializado += sizeof(int);
+
+		for(i = 0; i < cantidadElementosStack;i++){
+			node = malloc(sizeof(t_nodoStack));
+			node->args = list_create();
+			memcpy(&cantidadArgumentos,(int*) pcbSerializado, sizeof(int));
+			pcbSerializado += sizeof(int);
+
+			for(j = 0; j < cantidadArgumentos; j++){
+				argumento = malloc(sizeof(t_posMemoria));
+				memcpy(&argumento,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
+				list_add(node->args,argumento);
+				pcbSerializado += sizeof(t_posMemoria);
+			}
+
+		memcpy(&cantidadVariables,(int*)pcbSerializado,sizeof(int));
+			pcbSerializado += sizeof(int);
+
+			node->vars = list_create();
+
+			for(j = 0; j < cantidadVariables; j++){
+				variable = malloc(sizeof(t_variable));
+				memcpy(&variable->idVar,(char*) pcbSerializado,sizeof(char));
+				pcbSerializado += sizeof(char);
+				variable->dirVar = malloc(sizeof(t_posMemoria));
+				memcpy(&variable->dirVar,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
+				pcbSerializado += sizeof(t_posMemoria);
+				list_add(node->vars, variable);
+			}
+
+		memcpy(&node->retPos, (int*) pcbSerializado,sizeof(int));
+			pcbSerializado += sizeof(int);
+			node->retVar=malloc(sizeof(t_posMemoria));
+		memcpy(&node->retVar,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
+			pcbSerializado += sizeof(t_posMemoria);
+			list_add(*indiceStack, node);
+		}
+
+}
+int calcularIndiceCodigoSize(int cantidadInstrucciones){
+	log_info(loggerConPantalla, "Calculando tamano del Indice de Codigo");
+	return cantidadInstrucciones * sizeof(int) * 2;
+}
+
+int calcularIndiceEtiquetasSize(int cantidadEtiquetas){
+	log_info(loggerConPantalla, "Calculando tamano del Indice de Etiquetas");
+	return cantidadEtiquetas*sizeof(char);
+}
+void signalSigusrHandler(int signum)
+{
+    if (signum == SIGUSR1)
+    {
+        //printf("Received SIGUSR1!\n");
+
+    	//hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
+		log_warning(loggerConPantalla,"\nSe ha desconectado CPU con signal SIGUSR1\n");
+		exit(1);
+    }
+}
+void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
+		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
+		//recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
+		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, nuevaOrden);
 }
 
 void leerConfiguracion(char* ruta) {
@@ -301,12 +382,6 @@ void inicializarLog(char *rutaDeLog){
 		loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 
 }
-void cargarPcbActual(pcbAUtilizar* pidEstructura, int pid, int cantidadPaginas, int offset) {
-	pidEstructura->pid=pid;
-	pidEstructura->cantidadPaginas =cantidadPaginas;
-	pidEstructura->offset= offset;
-}
-
 
 
 

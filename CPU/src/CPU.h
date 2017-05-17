@@ -11,7 +11,6 @@
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
-//#include <parser/metadata_program.h>
 #include <commons/log.h>
 #include <pthread.h>
 #include <signal.h>
@@ -21,7 +20,6 @@
 #include <commons/collections/list.h>
 #include <commons/string.h>
 #include <commons/config.h>
-//#include <parser/metadata_program.h>
 #include <commons/log.h>
 #include <pthread.h>
 #include <parser/parser.h>
@@ -37,15 +35,38 @@ static const char* PROGRAMA =
 						"a = b + 12\n"
 						"end\n"
 						"\n";
-typedef struct PCB {
-	int pid;
-	int cantidadPaginas;
-	//int* programCounter;
-	//int** indiceCodigo;
+typedef struct{
+	int pagina;
 	int offset;
-	//Indice del Stack
-	//int exitCode;
-}pcbAUtilizar;
+	int size;
+}__attribute__((packed)) t_posMemoria;
+
+
+typedef struct{
+	char idVar;
+	t_posMemoria* dirVar;
+} t_variable;
+
+typedef struct{
+	t_list* args; //Lista de argumentos. Cada posicion representa un argumento en el orden de la lista
+	t_list* vars; // Lista de t_variable
+	int retPos;
+	t_posMemoria* retVar;
+} t_nodoStack;
+
+
+typedef struct {
+		int pid;
+		t_puntero_instruccion programCounter;
+		int cantidadPaginasCodigo;
+		int cantidadInstrucciones;
+		int** indiceCodigo;
+		int cantidadEtiquetas;
+		char* indiceEtiquetas;
+		t_list* indiceStack;
+		int exitCode;
+	}pcbAUtilizar;
+
 
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_definirVariable	= dummy_definirVariable,
@@ -92,11 +113,17 @@ void comenzarEjecucionNuevoPrograma();
 void signalSigusrHandler(int signum);
 void serializarPCByEnviar(int socket, char comandoInicializacion, pcbAUtilizar *unPcbAEliminar, void* pcbAEliminar);
 void finalizar();
+pcbAUtilizar* recibirYDeserializarPcb(int socketKernel);
+void deserializarStack(void* pcbSerializado, t_list** indiceStack);
 //utilizacion de la memoria
 int pedirBytesMemoria(pcbAUtilizar* pcb);
 int almacenarDatosEnMemoria(pcbAUtilizar* pcb,char* buffer, int size);
 int pedirBytesYAlmacenarEnMemoria();
 void conseguirDatosMemoria (pcbAUtilizar* pcb, int paginaSolicitada, int size);
+void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
+int calcularIndiceCodigoSize(int cantidadInstrucciones);
+int calcularIndiceEtiquetasSize(int cantidadEtiquetas);
+void connectionHandlerKernel(int socketAceptado, char orden);
 //utilizacion de la memoria
 
 
