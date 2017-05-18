@@ -93,6 +93,9 @@ void *connectionHandler(int socket) {
 
 				pthread_join(estructuraPidAEliminar->idAsociado, NULL);
 				log_info(loggerSinPantalla,"El hilo ha finalizado con exito");
+				free(fechaActual);
+
+
 			}else{
 				log_info(loggerConPantalla,"\nPID incorrecto\n");
 			}
@@ -116,6 +119,7 @@ void *connectionHandler(int socket) {
 			log_warning(loggerConPantalla,"\nSe ha desconectado la consola\n");
 			log_info(loggerSinPantalla,"Los hilos se han finalizado con exito");
 			free(hiloACerrar);
+
 			exit(1);
 			break;
 		default:
@@ -245,8 +249,8 @@ void recibirDatosDelKernelYcrearPrograma (int socketKernel){
 		pthread_t hiloId;
 		Pid* pidNuevo = malloc(sizeof(Pid));
 
-		char *fechaActual = malloc(sizeof(char));
-		fechaActual= temporal_get_string_time();
+		char *tiempoInicio = malloc(sizeof(char));
+		tiempoInicio= temporal_get_string_time();
 
 
 		recv(socketKernel, &pid, sizeof(int), 0);
@@ -258,7 +262,7 @@ void recibirDatosDelKernelYcrearPrograma (int socketKernel){
 
 		int err = pthread_create( &hiloId , NULL , imprimir , &socketEnKernel);
 		if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
-		cargarPid(pidNuevo,pid,fechaActual,hiloId);
+		cargarPid(pidNuevo,pid,tiempoInicio,hiloId);
 		cargarHiloId(hiloId);
 		list_add(listaPid, pidNuevo);
 		list_add(listaHilos,hiloId);
@@ -267,10 +271,8 @@ void recibirDatosDelKernelYcrearPrograma (int socketKernel){
 }
 
 
-int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual){
-	int tiempoInicio = fechaInicio - '0';
-	int tiempoFinal = fechaActual - '0';
-	int tiempoEjecucion = tiempoFinal - tiempoInicio;
+void obtenerTiempoEjecucion(char *fechaInicio,char fechaActual){
+
 }
 
 
