@@ -1,3 +1,33 @@
+#include <sys/epoll.h>
+#include <stdio.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <commons/string.h>
+#include <commons/config.h>
+#include <commons/log.h>
+#include <pthread.h>
+#include <signal.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <parser/parser.h>
+#include <commons/collections/list.h>
+#include <commons/string.h>
+#include <commons/config.h>
+#include <commons/log.h>
+#include <pthread.h>
+#include <parser/parser.h>
+#include <commons/collections/list.h>
+#include "conexiones.h"
+#include "dummy_ansisop.h"
+#include <parser/metadata_program.h>
+
 #include "PCB.h"
 
 
@@ -69,5 +99,5 @@ int socketKernel;
 //-----------------------------------------//
 t_list* listaPcb;
 pthread_t HiloConexionMemoria;
-int tamanio_pagina;
+
 int cpuOcupada=1;

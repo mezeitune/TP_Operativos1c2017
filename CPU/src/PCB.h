@@ -1,33 +1,5 @@
-#include <sys/epoll.h>
-#include <stdio.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <commons/string.h>
-#include <commons/config.h>
 #include <commons/log.h>
-#include <pthread.h>
-#include <signal.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <parser/parser.h>
-#include <commons/collections/list.h>
-#include <commons/string.h>
-#include <commons/config.h>
-#include <commons/log.h>
-#include <pthread.h>
-#include <parser/parser.h>
-#include <commons/collections/list.h>
-#include "conexiones.h"
-#include "dummy_ansisop.h"
-#include <parser/metadata_program.h>
-
+int paginaSize;
 typedef struct{
 	int pagina;
 	int offset;
@@ -54,48 +26,281 @@ typedef struct {
 		int cantidadPaginasCodigo;
 		int cantidadInstrucciones;
 		int** indiceCodigo;
-		int cantidadEtiquetas;
+		t_size indiceEtiquetasSize;
 		char* indiceEtiquetas;
 		t_list* indiceStack;
 		int exitCode;
 	}t_pcb;
-void inicializarLog(char *rutaDeLog);
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
 
+
+	void inicializarLog(char *rutaDeLog);
+	t_log *loggerSinPantalla;
+	t_log *loggerConPantalla;
+	int contadorPid;
+
+//---------PCB-----------------//
+t_pcb* crearPcb (char* programa, int programSize);
+int cantidadPaginasCodigoProceso(int programSize);
 int calcularIndiceCodigoSize(int cantidadInstrucciones);
 int calcularIndiceEtiquetasSize(int cantidadEtiquetas);
 int calcularIndiceStackSize(t_list* indiceStack);
-void serializarStack(void** pcbSerializado,t_list* indiceStack);
-void deserializarStack(void* pcbSerializado,t_list** indiceStack);
+void serializarIndiceCodigo(void ** pcbSerializado, int ** indiceCodigo, int cantidadInstrucciones);
+void deserializarIndiceCodigo(void ** pcbSerializado, int *** indiceCodigo, int cantidadInstrucciones);
+void serializarStack(void**pcbSerializado,t_list* indiceStack);
+void deserializarStack(void**pcbSerializado,t_list** indiceStack);
 int calcularPcbSerializadoSize(t_pcb* pcb);
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU);
 t_pcb* recibirYDeserializarPcb(int socketKernel);
+void imprimirPcb(t_pcb* pcb);
+
+
+int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
+int** inicializarIndiceCodigo(t_size cantidadInstrucciones);
+//---------PCB-----------------//
+
+
+
+t_pcb* crearPcb (char* programa, int programSize){
+	log_info(loggerConPantalla,"Creando PCB ---> PID: %d", contadorPid);
+	t_pcb* pcb = malloc (sizeof(t_pcb));
+	t_metadata_program* metadata = metadata_desde_literal(programa);
+	pcb->pid = contadorPid;
+	pcb->programCounter = metadata->instruccion_inicio;
+	pcb->cantidadPaginasCodigo = cantidadPaginasCodigoProceso(programSize);
+	pcb->cantidadInstrucciones = metadata->instrucciones_size;
+	pcb->indiceCodigo = traduccionIndiceCodigoSerializado(pcb->cantidadInstrucciones,metadata->instrucciones_serializado);
+	pcb->indiceEtiquetasSize = metadata->etiquetas_size;
+	pcb->indiceEtiquetas = malloc(sizeof(char)* pcb->indiceEtiquetasSize);
+	memcpy(pcb->indiceEtiquetas,metadata->etiquetas,sizeof(char)* pcb->indiceEtiquetasSize);
+	pcb->indiceStack = list_create();
+
+	metadata_destruir(metadata);
+	return pcb;
+}
+
+
+int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados){
+	int **indiceCodigo=inicializarIndiceCodigo(cantidadInstrucciones);
+	log_info(loggerConPantalla, "Transformando Indice de Codigo serializado");
+	int i;
+		for(i = 0; i < cantidadInstrucciones; i++){
+			indiceCodigo[i][0] = (instrucciones_serializados + i)->start;
+			indiceCodigo[i][1] = (instrucciones_serializados + i)->offset;
+		}
+		return indiceCodigo;
+}
+
+int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
+	log_info(loggerConPantalla, "Inicializando Indice de Codigo");
+	int i;
+	int** indiceCodigo = malloc(sizeof(int*) * cantidadInstrucciones);
+	for(i=0; i < cantidadInstrucciones; i++) indiceCodigo[i] = malloc(sizeof(int) * 2);
+		return indiceCodigo;
+}
+
+
 
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 	log_info(loggerConPantalla, "Serializando PCB ----- PID:%d",pcb->pid);
 
+
 	int pcbSerializadoSize = calcularPcbSerializadoSize(pcb);
-	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(pcb->cantidadEtiquetas);
-	int indiceCodigoSize=calcularIndiceCodigoSize(pcb->cantidadInstrucciones);
-	int indiceStackSize=calcularIndiceStackSize(pcb->indiceStack);
-	void* pcbSerializado= malloc(pcbSerializadoSize);
+	log_info(loggerConPantalla, "Tamanio del PCB serializado: %d - PID ----- %d",pcbSerializadoSize,pcb->pid);
+	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(pcb->indiceEtiquetasSize);
+	void* pcbEnviar= malloc(pcbSerializadoSize);
+	void * pcbSerializado = pcbEnviar;
+
 
 	memcpy(pcbSerializado,&pcb->pid,sizeof(int));
-	memcpy(pcbSerializado + sizeof(int), &pcb->cantidadPaginasCodigo, sizeof(int));
-	memcpy(pcbSerializado + sizeof(int)*2, &pcb->programCounter, sizeof(t_puntero_instruccion));
-	memcpy(pcbSerializado + sizeof(int)*2 + sizeof(t_puntero_instruccion), &pcb->cantidadInstrucciones,sizeof(int));
-	memcpy(pcbSerializado + sizeof(int)*3 + sizeof(t_puntero_instruccion), &pcb->indiceCodigo,indiceCodigoSize);
-	memcpy(pcbSerializado + sizeof(int)*3 + sizeof(t_puntero_instruccion)+ indiceCodigoSize, &pcb->cantidadEtiquetas,sizeof(int));
-	memcpy(pcbSerializado + sizeof(int)*4 + sizeof(t_puntero_instruccion) + indiceCodigoSize , &pcb->indiceEtiquetas, indiceEtiquetasSize);
-	serializarStack(&pcbSerializado + sizeof(int)*4 + indiceCodigoSize + indiceEtiquetasSize, pcb->indiceStack);
-	memcpy(pcbSerializado + sizeof(int)*4 + sizeof(t_puntero_instruccion) + indiceCodigoSize + indiceStackSize,&pcb->exitCode,sizeof(int));
+	pcbSerializado += sizeof(int);
+	memcpy(pcbSerializado, &pcb->cantidadPaginasCodigo, sizeof(int));
+	pcbSerializado += sizeof(int);
+	memcpy(pcbSerializado, &pcb->programCounter, sizeof(t_puntero_instruccion));
+	pcbSerializado += sizeof(t_puntero_instruccion);
+	memcpy(pcbSerializado, &pcb->cantidadInstrucciones,sizeof(int));
+	pcbSerializado += sizeof(int);
+
+	log_info(loggerConPantalla, "Serializando Indice de Codigo");
+	int i;
+	for(i=0;i<pcb->cantidadInstrucciones;i++){
+		memcpy(pcbSerializado,&pcb->indiceCodigo[i][0],sizeof(int));
+		pcbSerializado += sizeof(int);
+		memcpy(pcbSerializado,&pcb->indiceCodigo[i][1],sizeof(int));
+		pcbSerializado += sizeof(int);
+	}
+	log_info(loggerConPantalla, "Indice de Codigo serializado");
+
+	//serializarIndiceCodigo(&pcbSerializado +sizeof(int)*2 + sizeof(t_puntero_instruccion), pcb->indiceCodigo, pcb->cantidadInstrucciones);
+
+	memcpy(pcbSerializado, &pcb->indiceEtiquetasSize,sizeof(t_size));
+	pcbSerializado += sizeof(t_size);
+	memcpy(pcbSerializado, pcb->indiceEtiquetas, pcb->indiceEtiquetasSize*sizeof(char));
+	pcbSerializado += pcb->indiceEtiquetasSize*sizeof(char);
+
+	memcpy(pcbSerializado, &pcb->indiceStack->elements_count, sizeof(int));
+	pcbSerializado += sizeof(int);
+
+
+	log_info(loggerConPantalla, "Serializando Stack");
+		int j;
+		t_nodoStack* node;
+		t_variable* variable;
+
+			for(i = 0; i < pcb->indiceStack->elements_count;i++){
+				node = (t_nodoStack*) list_get(pcb->indiceStack, i);
+				memcpy(pcbSerializado, &node->args->elements_count, sizeof(int));
+				pcbSerializado += sizeof(int);
+
+				for(j = 0; j < node->args->elements_count; j++){
+					memcpy(pcbSerializado, list_get(node->args, j), sizeof(t_posMemoria));
+					pcbSerializado += sizeof(t_posMemoria);
+				}
+
+				memcpy(pcbSerializado, &node->vars->elements_count, sizeof(int));
+				pcbSerializado += sizeof(int);
+
+				for(j = 0; j < node->vars->elements_count; j++){
+					variable = list_get(node->vars, j);
+					memcpy(pcbSerializado, &variable->idVar, sizeof(char));
+					pcbSerializado += sizeof(char);
+					memcpy(pcbSerializado, variable->dirVar, sizeof(t_posMemoria));
+					pcbSerializado += sizeof(t_posMemoria);
+				}
+
+				memcpy(pcbSerializado, &node->retVar, sizeof(int));
+				pcbSerializado += sizeof(int);
+
+				memcpy(pcbSerializado, node->retVar, sizeof(t_posMemoria));
+				pcbSerializado += sizeof(t_posMemoria);
+			}
+			log_info(loggerConPantalla, "Stack serializado");
+	//serializarStack(&pcbSerializado + sizeof(int)*4 +  indiceEtiquetasSize, pcb->indiceStack);
+
+	memcpy(pcbSerializado,&pcb->exitCode,sizeof(int));
 
 
 	log_info(loggerConPantalla, "Enviando PCB serializado ----- PID: %d ------ socketCPU: %d", pcb->pid, socketCPU);
-		printf("Pid: %d\n", pcb->pid);
-		printf("Program Counter: %d\n", pcb->programCounter);
 
+	//imprimir PCB
+
+	//pcbEnviar = pcbSerializado;
+
+	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
+	send(socketCPU,pcbEnviar,pcbSerializadoSize,0);
+
+	imprimirPcb(pcb);
+
+}
+
+
+t_pcb* recibirYDeserializarPcb(int socketKernel){
+	log_info(loggerConPantalla, "Recibiendo PCB serializado---- SOCKET:%d", socketKernel);
+	int pcbSerializadoSize;
+	recv(socketKernel,&pcbSerializadoSize,sizeof(int),0);
+	log_info(loggerConPantalla, "Tamanio del PCB serializado a recibir: %d",pcbSerializadoSize);
+	void * pcbSerializado = malloc(pcbSerializadoSize);
+	recv(socketKernel,pcbSerializado,pcbSerializadoSize,0);
+	t_pcb* pcb = malloc(sizeof(t_pcb));
+
+	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
+	pcbSerializado += sizeof(int);
+
+	log_info(loggerConPantalla, "Deserializando PCB ----- PID:%d",pcb->pid);
+
+	memcpy(&pcb->cantidadPaginasCodigo,pcbSerializado,sizeof(int));
+	pcbSerializado += sizeof(int);
+	memcpy(&pcb->programCounter, pcbSerializado, sizeof(int));
+	pcbSerializado += sizeof(int);
+	memcpy(&pcb->cantidadInstrucciones, pcbSerializado, sizeof(t_puntero_instruccion));
+	pcbSerializado += sizeof(t_puntero_instruccion);
+
+	pcb->indiceCodigo = inicializarIndiceCodigo(pcb->cantidadInstrucciones);
+
+	log_info(loggerConPantalla, "Deserializando Indice de Codigo");
+		int i;
+		for(i = 0 ; i < pcb->cantidadInstrucciones ; i++){
+			memcpy(&pcb->indiceCodigo[i][0],pcbSerializado,sizeof(int));
+			pcbSerializado+= sizeof(int);
+			memcpy(&pcb->indiceCodigo[i][1],pcbSerializado,sizeof(int));
+			pcbSerializado+= sizeof(int);
+		}
+	log_info(loggerConPantalla, "Indice de Codigo deserializado");
+
+	//deserializarIndiceCodigo(&pcbSerializado + sizeof(int)*3 + sizeof(t_puntero_instruccion), &pcb->indiceCodigo, pcb->cantidadInstrucciones);
+
+	memcpy(&pcb->indiceEtiquetasSize,pcbSerializado, sizeof(t_size));
+	pcbSerializado += sizeof(t_size);
+	pcb->indiceEtiquetas = malloc(pcb->indiceEtiquetasSize*sizeof(char));
+	memcpy(&pcb->indiceEtiquetas, pcbSerializado, pcb->indiceEtiquetasSize*sizeof(char));
+	pcbSerializado += pcb->indiceEtiquetasSize*sizeof(char);
+
+	pcb->indiceStack=list_create();
+
+		log_info(loggerConPantalla, "Deserializando Stack");
+			int j;
+			t_nodoStack* node;
+			t_posMemoria* argumento;
+			t_variable* variable;
+
+			int cantidadArgumentos;
+			int cantidadVariables;
+			int cantidadElementosStack;
+
+			memcpy(&cantidadElementosStack,(int*) pcbSerializado,sizeof(int));
+			pcbSerializado += sizeof(int);
+
+			for(i = 0; i < cantidadElementosStack;i++){
+				node = malloc(sizeof(t_nodoStack));
+				node->args = list_create();
+				memcpy(&cantidadArgumentos,(int*) pcbSerializado, sizeof(int));
+				pcbSerializado += sizeof(int);
+
+				for(j = 0; j < cantidadArgumentos; j++){
+					argumento = malloc(sizeof(t_posMemoria));
+					memcpy(&argumento,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
+					list_add(node->args,argumento);
+					pcbSerializado += sizeof(t_posMemoria);
+				}
+
+			memcpy(&cantidadVariables,(int*)pcbSerializado,sizeof(int));
+				pcbSerializado += sizeof(int);
+
+				node->vars = list_create();
+
+				for(j = 0; j < cantidadVariables; j++){
+					variable = malloc(sizeof(t_variable));
+					memcpy(&variable->idVar,(char*) pcbSerializado,sizeof(char));
+					pcbSerializado += sizeof(char);
+					variable->dirVar = malloc(sizeof(t_posMemoria));
+					memcpy(&variable->dirVar,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
+					pcbSerializado += sizeof(t_posMemoria);
+					list_add(node->vars, variable);
+				}
+
+			memcpy(&node->retPos, (int*) pcbSerializado,sizeof(int));
+				pcbSerializado += sizeof(int);
+				node->retVar=malloc(sizeof(t_posMemoria));
+			memcpy(&node->retVar,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
+				pcbSerializado += sizeof(t_posMemoria);
+				list_add(pcb->indiceStack, node);
+
+		}
+			log_info(loggerConPantalla, "Stack deserializado");
+
+			memcpy(&pcb->exitCode,pcbSerializado,sizeof(int));
+
+	//deserializarStack(&pcbSerializado + sizeof(int)*4 + + sizeof(t_puntero_instruccion)+ indiceCodigoSize,&pcb->indiceStack);
+
+			imprimirPcb(pcb);
+	return pcb;
+}
+
+
+
+void imprimirPcb(t_pcb* pcb){
+	printf("Pid: %d\n", pcb->pid);
+		printf("Program Counter: %d\n", pcb->programCounter);
+		printf("Cantidad de Paginas: %d\n", pcb->cantidadPaginasCodigo);
 		printf("Cantidad de Instrucciones: %d\n", pcb->cantidadInstrucciones);
 
 		printf("\n-------Indice de Codigo-------\n");
@@ -107,130 +312,36 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 		printf("\n-------Indice de Etiquetas-------\n");
 		printf("%s\n", pcb->indiceEtiquetas);
 
-	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
-	send(socketCPU,pcbSerializado,pcbSerializadoSize,0);
-
-}
-
-
-t_pcb* recibirYDeserializarPcb(int socketKernel){
-	log_info(loggerConPantalla, "Recibiendo PCB serializado---- SOCKET:%d", socketKernel);
-	int pcbSerializadoSize;
-	recv(socketKernel,&pcbSerializadoSize,sizeof(int),0);
-
-	void * pcbSerializado = malloc(pcbSerializadoSize);
-	recv(socketKernel,pcbSerializado,pcbSerializadoSize,0);
-
-	t_pcb* pcb = malloc(sizeof(t_pcb));
-
-	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
-	log_info(loggerConPantalla, "Deserializando PCB ----- PID:%d",pcb->pid);
-	memcpy(&pcb->cantidadPaginasCodigo,pcbSerializado + sizeof(int),sizeof(int));
-	memcpy(&pcb->programCounter, pcbSerializado + sizeof(int)*2, sizeof(int));
-	memcpy(&pcb->cantidadInstrucciones, pcbSerializado + sizeof(int)*3, sizeof(t_puntero_instruccion));
-	int indiceCodigoSize = calcularIndiceCodigoSize(pcb->cantidadInstrucciones);
-	memcpy(&pcb->indiceCodigo,pcbSerializado + sizeof(int)*3, indiceCodigoSize);
-	memcpy(&pcb->cantidadEtiquetas,pcbSerializado + sizeof (int) *3 + indiceCodigoSize, sizeof(int));
-	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(pcb->cantidadEtiquetas);
-	memcpy(&pcb->indiceEtiquetas, pcbSerializado + sizeof(int)*4 + indiceCodigoSize, indiceEtiquetasSize);
-	pcb->indiceStack=list_create();
-	deserializarStack(pcbSerializado + sizeof(int)*4 + indiceCodigoSize,&pcb->indiceStack);
-	return pcb;
-}
-
-void deserializarStack(void* pcbSerializado, t_list** indiceStack){
-	log_info(loggerConPantalla, "Deserializando Stack");
-		int i,j;
-		t_nodoStack* node;
+		printf("\n-------Indice de Stack-------\n");
+		t_nodoStack elemento;
 		t_posMemoria* argumento;
 		t_variable* variable;
-
-		int cantidadArgumentos;
-		int cantidadVariables;
-		int cantidadElementosStack;
-
-		memcpy(&cantidadElementosStack,(int*) pcbSerializado,sizeof(int));
-		pcbSerializado += sizeof(int);
-
-		for(i = 0; i < cantidadElementosStack;i++){
-			node = malloc(sizeof(t_nodoStack));
-			node->args = list_create();
-			memcpy(&cantidadArgumentos,(int*) pcbSerializado, sizeof(int));
-			pcbSerializado += sizeof(int);
-
-			for(j = 0; j < cantidadArgumentos; j++){
-				argumento = malloc(sizeof(t_posMemoria));
-				memcpy(&argumento,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
-				list_add(node->args,argumento);
-				pcbSerializado += sizeof(t_posMemoria);
+		printf("Cantidad Elementos: %d\n", pcb->indiceStack->elements_count);
+		int f;
+		for(i = 0; i < pcb->indiceStack->elements_count; i++){
+			printf("Elemento %d:\n", i);
+			elemento = *((t_nodoStack*)list_get(pcb->indiceStack, i));
+			printf("\tCantidad de Argumentos: %d\n", elemento.args->elements_count);
+			for(f = 0; f < elemento.args->elements_count; f++){
+				printf("\t\tArgumento %d: ", f);
+				argumento = list_get(elemento.args, f);
+				printf("Pagina: %d, Offset: %d, Size: %d\n", argumento->pagina, argumento->offset, argumento->size);
 			}
-
-		memcpy(&cantidadVariables,(int*)pcbSerializado,sizeof(int));
-			pcbSerializado += sizeof(int);
-
-			node->vars = list_create();
-
-			for(j = 0; j < cantidadVariables; j++){
-				variable = malloc(sizeof(t_variable));
-				memcpy(&variable->idVar,(char*) pcbSerializado,sizeof(char));
-				pcbSerializado += sizeof(char);
-				variable->dirVar = malloc(sizeof(t_posMemoria));
-				memcpy(&variable->dirVar,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
-				pcbSerializado += sizeof(t_posMemoria);
-				list_add(node->vars, variable);
+			printf("\tCantidad de Variables: %d\n", elemento.vars->elements_count);
+			for(f = 0; f < elemento.vars->elements_count; f++){
+				printf("\t\tVariable %d: ", f);
+				variable = list_get(elemento.vars, f);
+				printf("Identificador: %c, Pagina: %d, Offset: %d, Size: %d\n", variable->idVar, variable->dirVar->pagina, variable->dirVar->offset, variable->dirVar->size);
 			}
-
-		memcpy(&node->retPos, (int*) pcbSerializado,sizeof(int));
-			pcbSerializado += sizeof(int);
-			node->retVar=malloc(sizeof(t_posMemoria));
-		memcpy(&node->retVar,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
-			pcbSerializado += sizeof(t_posMemoria);
-			list_add(*indiceStack, node);
-		}
-
-}
-int calcularIndiceCodigoSize(int cantidadInstrucciones){
-	log_info(loggerConPantalla, "Calculando tamano del Indice de Codigo");
-	return cantidadInstrucciones * sizeof(int) * 2;
-}
-
-int calcularIndiceEtiquetasSize(int cantidadEtiquetas){
-	log_info(loggerConPantalla, "Calculando tamano del Indice de Etiquetas");
-	return cantidadEtiquetas*sizeof(char);
-}
-void serializarStack(void** pcbSerializado,t_list* indiceStack){
-	log_info(loggerConPantalla, "Serializando Stack");
-	int i,j;
-	t_nodoStack* node;
-
-		for(i = 0; i < indiceStack->elements_count;i++){
-			node = (t_nodoStack*) list_get(indiceStack, i);
-			memcpy(pcbSerializado, &node->args->elements_count, sizeof(int));
-			pcbSerializado += sizeof(int);
-
-			for(j = 0; j < node->args->elements_count; j++){
-				memcpy(pcbSerializado, list_get(node->args, j), sizeof(t_posMemoria));
-				pcbSerializado += sizeof(t_posMemoria);
-			}
-
-			memcpy(pcbSerializado, &node->vars->elements_count, sizeof(int));
-			pcbSerializado += sizeof(int);
-
-			for(j = 0; j < node->vars->elements_count; j++){
-				memcpy(pcbSerializado, list_get(node->vars,j), sizeof(t_variable));
-				pcbSerializado += sizeof(t_variable);
-			}
-
-			memcpy(pcbSerializado, &node->retVar, sizeof(int));
-			pcbSerializado += sizeof(int);
-
-			memcpy(pcbSerializado, node->retVar, sizeof(t_posMemoria));
-			pcbSerializado += sizeof(t_posMemoria);
+			printf("\tDireccion de Retorno: %d\n", elemento.retPos);
+			printf("\tPosicion de Retorno:\n");
+			printf("\t\tPagina: %d, Offset: %d, Size: %d\n", elemento.retVar->pagina, elemento.retVar->offset, elemento.retVar->size);
 		}
 }
+
 int calcularPcbSerializadoSize(t_pcb* pcb){
 	log_info(loggerConPantalla, "Calculando tamano del PCB ---- PID: %d", pcb->pid);
-	return sizeof(int)*5 + sizeof(t_puntero_instruccion) + calcularIndiceCodigoSize(pcb->cantidadInstrucciones) + calcularIndiceEtiquetasSize(pcb->cantidadEtiquetas) + calcularIndiceStackSize(pcb->indiceStack);
+	return sizeof(int)*4 + sizeof(t_puntero_instruccion) + sizeof(t_size)+ calcularIndiceCodigoSize(pcb->cantidadInstrucciones) + calcularIndiceEtiquetasSize(pcb->indiceEtiquetasSize) + calcularIndiceStackSize(pcb->indiceStack);
 }
 int calcularIndiceStackSize(t_list* indiceStack){
 	log_info(loggerConPantalla, "Calculando tamano del Stack");
@@ -244,10 +355,131 @@ int calcularIndiceStackSize(t_list* indiceStack){
 	return stackSize;
 }
 
-void inicializarLog(char *rutaDeLog){
-
-		mkdir("/home/utnso/Log",0755);
-
-		loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
+int calcularIndiceCodigoSize(int cantidadInstrucciones){
+	log_info(loggerConPantalla, "Calculando tamano del Indice de Codigo");
+	return cantidadInstrucciones * sizeof(int) * 2;
 }
+
+int calcularIndiceEtiquetasSize(int indiceEtiquetasSize){
+	log_info(loggerConPantalla, "Calculando tamano del Indice de Etiquetas");
+	return indiceEtiquetasSize*sizeof(char);
+}
+
+
+void serializarIndiceCodigo(void ** pcbSerializado, int ** indiceCodigo, int cantidadInstrucciones){
+	log_info(loggerConPantalla, "Serializando Indice de Codigo");
+	int i;
+	for(i=0;i<cantidadInstrucciones;i++){
+		memcpy(&pcbSerializado,&indiceCodigo[i][0],sizeof(int));
+		pcbSerializado += sizeof(int);
+		memcpy(&pcbSerializado,&indiceCodigo[i][1],sizeof(int));
+		pcbSerializado += sizeof(int);
+	}
+}
+void deserializarIndiceCodigo(void ** pcbSerializado, int *** indiceCodigo, int cantidadInstrucciones){
+	log_info(loggerConPantalla, "Deserializando Indice de Codigo");
+	int i;
+	for(i = 0 ; i < cantidadInstrucciones ; i++){
+		memcpy(indiceCodigo[i][0],*pcbSerializado,sizeof(int));
+		*pcbSerializado+= sizeof(int);
+		memcpy(indiceCodigo[i][1],*pcbSerializado,sizeof(int));
+		*pcbSerializado+= sizeof(int);
+	}
+}
+
+void serializarStack(void** pcbSerializado,t_list* indiceStack){
+	log_info(loggerConPantalla, "Serializando Stack");
+	int i,j;
+	t_nodoStack* node;
+
+		for(i = 0; i < indiceStack->elements_count;i++){
+			node = (t_nodoStack*) list_get(indiceStack, i);
+			memcpy(*pcbSerializado, &node->args->elements_count, sizeof(int));
+			*pcbSerializado += sizeof(int);
+
+			for(j = 0; j < node->args->elements_count; j++){
+				memcpy(*pcbSerializado, list_get(node->args, j), sizeof(t_posMemoria));
+				*pcbSerializado += sizeof(t_posMemoria);
+			}
+
+			memcpy(*pcbSerializado, &node->vars->elements_count, sizeof(int));
+			*pcbSerializado += sizeof(int);
+
+			for(j = 0; j < node->vars->elements_count; j++){
+				memcpy(*pcbSerializado, list_get(node->vars,j), sizeof(t_variable));
+				*pcbSerializado += sizeof(t_variable);
+			}
+
+			memcpy(*pcbSerializado, &node->retVar, sizeof(int));
+			*pcbSerializado += sizeof(int);
+
+			memcpy(*pcbSerializado, node->retVar, sizeof(t_posMemoria));
+			*pcbSerializado += sizeof(t_posMemoria);
+		}
+}
+
+
+void deserializarStack(void**pcbSerializado, t_list** indiceStack){
+	log_info(loggerConPantalla, "Deserializando Stack");
+		int i,j;
+		t_nodoStack* node;
+		t_posMemoria* argumento;
+		t_variable* variable;
+
+		int cantidadArgumentos;
+		int cantidadVariables;
+		int cantidadElementosStack;
+
+		memcpy(&cantidadElementosStack,(int*) *pcbSerializado,sizeof(int));
+		*pcbSerializado += sizeof(int);
+
+		for(i = 0; i < cantidadElementosStack;i++){
+			node = malloc(sizeof(t_nodoStack));
+			node->args = list_create();
+			memcpy(&cantidadArgumentos,(int*) *pcbSerializado, sizeof(int));
+			*pcbSerializado += sizeof(int);
+
+			for(j = 0; j < cantidadArgumentos; j++){
+				argumento = malloc(sizeof(t_posMemoria));
+				memcpy(&argumento,(t_posMemoria*) *pcbSerializado,sizeof(t_posMemoria));
+				list_add(node->args,argumento);
+				*pcbSerializado += sizeof(t_posMemoria);
+			}
+
+		memcpy(&cantidadVariables,(int*)*pcbSerializado,sizeof(int));
+			*pcbSerializado += sizeof(int);
+
+			node->vars = list_create();
+
+			for(j = 0; j < cantidadVariables; j++){
+				variable = malloc(sizeof(t_variable));
+				memcpy(&variable->idVar,(char*) *pcbSerializado,sizeof(char));
+				*pcbSerializado += sizeof(char);
+				variable->dirVar = malloc(sizeof(t_posMemoria));
+				memcpy(&variable->dirVar,(t_posMemoria*) *pcbSerializado,sizeof(t_posMemoria));
+				*pcbSerializado += sizeof(t_posMemoria);
+				list_add(node->vars, variable);
+			}
+
+		memcpy(&node->retPos, (int*) *pcbSerializado,sizeof(int));
+			*pcbSerializado += sizeof(int);
+			node->retVar=malloc(sizeof(t_posMemoria));
+		memcpy(&node->retVar,(t_posMemoria*) *pcbSerializado,sizeof(t_posMemoria));
+			*pcbSerializado += sizeof(t_posMemoria);
+			list_add(*indiceStack, node);
+		}
+
+	}
+void recibirTamanioPagina(int socketKernel){
+	char comandoGetPaginaSize= 'P';
+	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
+	recv(socketKernel,&paginaSize,sizeof(int),0);
+}
+
+int cantidadPaginasCodigoProceso(int programSize){
+	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
+	int mod = programSize % paginaSize;
+	return mod==0? (programSize / paginaSize):(programSize / paginaSize)+ 1;
+}
+
+

@@ -11,7 +11,7 @@ int main(void) {
 
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
-	recibirTamanioPagina();
+	recibirTamanioPagina(socketKernel);
 	listaPcb = list_create();
 	signal(SIGUSR1, signalSigusrHandler);
 
@@ -23,11 +23,7 @@ int main(void) {
 
 	return 0;
 }
-void recibirTamanioPagina(){
-	char comandoGetPaginaSize= 'P';
-	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
-	recv(socketKernel,&tamanio_pagina,sizeof(int),0);
-}
+
 void recibirPCB(){
 
 
@@ -206,20 +202,20 @@ char* obtener_instruccion(t_pcb * pcb){
 	int byte_inicio_instruccion = pcb->indiceCodigo[program_counter][0];
 	int bytes_tamanio_instruccion = pcb->indiceCodigo[program_counter][1];
 
-	int num_pagina = byte_inicio_instruccion / tamanio_pagina;
-	int offset = byte_inicio_instruccion - (num_pagina * tamanio_pagina);//porque verga no es 0???
+	int num_pagina = byte_inicio_instruccion / paginaSize;
+	int offset = byte_inicio_instruccion - (num_pagina * paginaSize);//porque verga no es 0???
 	char* instruccion;
 	char* continuacion_instruccion;
 	int bytes_a_leer_primera_pagina;
 
-	if (bytes_tamanio_instruccion > (tamanio_pagina * 2)){
+	if (bytes_tamanio_instruccion > (paginaSize * 2)){
 		printf("El tamanio de la instruccion es mayor al tamanio de pagina\n");
 	}
-	if ((offset + bytes_tamanio_instruccion) < tamanio_pagina){
+	if ((offset + bytes_tamanio_instruccion) < paginaSize){
 		instruccion = conseguirDatosMemoria(pcb, num_pagina, bytes_tamanio_instruccion,offset);
 
 	} else {
-		bytes_a_leer_primera_pagina = tamanio_pagina - offset;
+		bytes_a_leer_primera_pagina = paginaSize - offset;
 		instruccion = conseguirDatosMemoria(pcb, num_pagina, bytes_a_leer_primera_pagina,offset);
 		log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
 		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
@@ -276,5 +272,12 @@ void imprimirConfiguraciones(){
 	printf("---------------------------------------------------\n");
 	printf("CONFIGURACIONES\nPUERTO KERNEL:%s\nIP KERNEL:%s\nPUERTO MEMORIA:%s\nIP MEMORIA:%s\n",puertoKernel,ipKernel,puertoMemoria,ipMemoria);
 	printf("---------------------------------------------------\n");
+}
+void inicializarLog(char *rutaDeLog){
+
+	mkdir("/home/utnso/Log",0755);
+
+	loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
+	loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
 }
 
