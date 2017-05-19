@@ -59,38 +59,48 @@ void establecerPCB(){
 	t_pcb *pcb = malloc(sizeof(t_pcb));
 	pcb = recibirYDeserializarPcb(socketKernel);
 
-	log_info(loggerConPantalla, "CPU recibe PCB correctamente");
+	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
 
 
 	list_add(listaPcb, pcb);
 
-	leerInstrucciones(pcb);
+	ciclosDeQuantum(pcb);
 	interfazHandler(pcb);//esto despues se saca, es para probar funciones nomas
 
 }
-void leerInstrucciones(t_pcb* pcb){
-	printf("pasa vos");
-	//char* instruccion = obtener_instruccion(pcb);
-	//printf("\t Evaluando -> %s", instruccion );
-	//analizadorLinea(instruccion , &functions, &kernel_functions);//que haga lo que tenga q hacer
-	log_info(loggerConPantalla, "CPU lee una linea");
-	//free(instruccion);
-	//pcb->programCounter = pcb->programCounter + 1;
+void ciclosDeQuantum(t_pcb* pcb){
+	int i = 0;
+	int quantum_definido=4;
+	//recv(socketKernel,&quantum_definido,sizeof(int),0);
+	while((i < quantum_definido)){
+		ejecutarInstruccion(pcb);
+		i++;
+	}
+	//if((i == quantum_definido)){
+		//send(socketKernel,&comandoTerminoElQuantum , sizeof(char),0);
+	//}
+}
+void ejecutarInstruccion(t_pcb* pcb){
+
+	char* instruccion = obtener_instruccion(pcb);
+	printf("Evaluando -> %s\n", instruccion );
+	analizadorLinea(instruccion , &functions, &kernel_functions);//que haga lo que tenga q hacer
+	free(instruccion);
+	pcb->programCounter = pcb->programCounter + 1;
+
 }
 
-char* conseguirDatosMemoria (t_pcb* pcb, int paginaSolicitada, int size,int offsett){
-
-
-
+int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size){
+	int resultadoEjecucion;
 	char comandoSolicitar = 'S';//comando que le solicito a la memoria para que ande el main_solicitarBytesPagina
 	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
 	send(socketMemoria,&pcb->pid,sizeof(int),0);
-	//send(socketMemoria,&num_pagina,sizeof(int),0);
-	//send(socketMemoria,&offset,sizeof(int),0);
-	//send(socketMemoria,&bytes_tamanio_instruccion,sizeof(int),0);
-	char* mensajeRecibido = recibir_string(socketMemoria);
-
-	return mensajeRecibido;
+	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
+	send(socketMemoria,&offset,sizeof(int),0);
+	send(socketMemoria,&size,sizeof(int),0);
+	*instruccion = recibir_string(socketMemoria);
+	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+	return resultadoEjecucion;
 }
 
 int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size){
@@ -116,7 +126,7 @@ void imprimirPCB(t_pcb * pcb){
 	printf("Program Counter: %d\n", pcb->programCounter);
 
 	printf("Cantidad de Instrucciones: %d\n", pcb->cantidadInstrucciones);
-
+	printf("Cantidad de paginas en memoria: %d\n", pcb->cantidadPaginasCodigo);
 	printf("\n-------Indice de Codigo-------\n");
 	int i;
 	for(i = 0; i < pcb->cantidadInstrucciones; i++){
@@ -132,7 +142,7 @@ void interfazHandler(t_pcb* pcb){
 
 	char orden;
 	int size = strlen("bonebone");
-	char* mensaje;
+	char* instruccion;
 
 	while(1){
 		while(orden != 'Q'){
@@ -143,8 +153,8 @@ void interfazHandler(t_pcb* pcb){
 			switch(orden){
 				case 'S':
 					imprimirPCB(pcb);
-					mensaje = conseguirDatosMemoria(pcb,0,size,0);//el 0 es la pagina a la cual buscar y el size es de la instruccion
-					printf("Se almaceno correctamente %s",mensaje);
+					//instruccion = conseguirDatosMemoria(pcb,0,6,16);//el 0 es la pagina a la cual buscar y el size es de la instruccion
+
 					break;
 
 				case 'F':
@@ -198,12 +208,12 @@ void finalizar (){
 
 char* obtener_instruccion(t_pcb * pcb){
 	int program_counter = pcb->programCounter;
-	printf("pasa vos");
 	int byte_inicio_instruccion = pcb->indiceCodigo[program_counter][0];
 	int bytes_tamanio_instruccion = pcb->indiceCodigo[program_counter][1];
 
 	int num_pagina = byte_inicio_instruccion / paginaSize;
-	int offset = byte_inicio_instruccion - (num_pagina * paginaSize);//porque verga no es 0???
+	int offset = byte_inicio_instruccion - (num_pagina * paginaSize);//no es 0 porque evita el begin
+	char* mensajeRecibido;
 	char* instruccion;
 	char* continuacion_instruccion;
 	int bytes_a_leer_primera_pagina;
@@ -212,14 +222,23 @@ char* obtener_instruccion(t_pcb * pcb){
 		printf("El tamanio de la instruccion es mayor al tamanio de pagina\n");
 	}
 	if ((offset + bytes_tamanio_instruccion) < paginaSize){
-		instruccion = conseguirDatosMemoria(pcb, num_pagina, bytes_tamanio_instruccion,offset);
-
+		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_tamanio_instruccion)<0)
+			printf("No se pudo solicitar el contenido\n");
+		else
+			instruccion=mensajeRecibido;
 	} else {
 		bytes_a_leer_primera_pagina = paginaSize - offset;
-		instruccion = conseguirDatosMemoria(pcb, num_pagina, bytes_a_leer_primera_pagina,offset);
+		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
+					printf("No se pudo solicitar el contenido\n");
+		else
+					instruccion=mensajeRecibido;
+
 		log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
 		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
-			continuacion_instruccion = conseguirDatosMemoria(pcb, (num_pagina + 1), (bytes_tamanio_instruccion - bytes_a_leer_primera_pagina),offset);
+			if ( conseguirDatosMemoria(&mensajeRecibido,pcb, (num_pagina + 1),offset,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
+								printf("No se pudo solicitar el contenido\n");
+					else
+								continuacion_instruccion=mensajeRecibido;
 			log_info(loggerConPantalla, "Continuacion ejecucion: %s", continuacion_instruccion);
 			string_append(&instruccion, continuacion_instruccion);
 			free(continuacion_instruccion);
@@ -231,7 +250,7 @@ char* obtener_instruccion(t_pcb * pcb){
 	free(instruccion);
 	instruccion = string_new();
 	string_append(&instruccion, string_cortado[0]);
-	log_info(loggerConPantalla, "Instruccion obtenida: %s", instruccion);
+	log_info(loggerConPantalla, "\nInstruccion obtenida: %s", instruccion);
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
@@ -239,7 +258,6 @@ char* obtener_instruccion(t_pcb * pcb){
 	}
 	free(string_cortado);
 	return instruccion;
-	//Una vez que se usa la instruccion hay que hacer free
 }
 
 
@@ -277,7 +295,7 @@ void inicializarLog(char *rutaDeLog){
 
 	mkdir("/home/utnso/Log",0755);
 
-	loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-	loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
+	loggerSinPantalla = log_create(rutaDeLog,"CPU", false, LOG_LEVEL_INFO);
+	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
 

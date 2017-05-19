@@ -66,7 +66,7 @@ char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset,
 char* obtener_instruccion(t_pcb * pcb);
 
 int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size);
-char* conseguirDatosMemoria (t_pcb* pcb, int paginaSolicitada, int size,int offset);
+int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size);
 
 //-----------------------------------------------------------------------------------------------------------------
 void establecerPCB();
@@ -77,13 +77,14 @@ void cargarPcbActual(t_pcb* pidEstructura, int pid, int cantidadPaginas, int off
 void recibirTamanioPagina();
 void recibirPCB();
 void signalSigusrHandler(int signum);
-
+void imprimirPCB(t_pcb * pcb);
 void finalizar();
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 void connectionHandlerKernel(int socketAceptado, char orden);
-void leerInstrucciones(t_pcb* pcb);
+void ejecutarInstruccion(t_pcb* pcb);
 void interfazHandler(t_pcb * pcb);
+void ciclosDeQuantum(t_pcb* pcb);
 //-----------------------------------------------------------------------------------------------------------------
 t_config* configuracion_memoria;
 char* puertoKernel;
