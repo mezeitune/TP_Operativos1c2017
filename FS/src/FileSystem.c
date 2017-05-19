@@ -26,8 +26,8 @@
 #include "conexiones.h"
 #include <commons/log.h>
 
-char *ipKernel;
-char *puertoKernel;
+char *ipFS;
+char *puertoFS;
 char *puntoMontaje;
 int contadorConexiones=0;
 pthread_t  thread_id;
@@ -55,7 +55,7 @@ void connection_handlerR();
 int main(void){
 
 	//TODO:
-	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/'File System'/config_FileSys");
+	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/FS/config_FileSys");
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
 	imprimirConfiguraciones();
 
@@ -225,16 +225,17 @@ void connection_handlerR()
 }
 
 void leerConfiguracion(char* ruta){
+	configuracion_FS = config_create(ruta);
 
-	puertoKernel= config_get_string_value(configuracion_FS,"PUERTO_KERNEL");
-	ipKernel= config_get_string_value(configuracion_FS, "IP_KERNEL");
+	puertoFS= config_get_string_value(configuracion_FS,"PUERTO_FS");
+	ipFS= config_get_string_value(configuracion_FS, "IP_FS");
 	puntoMontaje = config_get_string_value(configuracion_FS,"PUNTO_MONTAJE");
 
 }
 
 void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
-		printf("CONFIGURACIONES\nIP KERNEL:%s\nPUERTO KERNEL:%s\nPUNTO MONTAJE:%s\n",ipKernel,puertoKernel,puntoMontaje);
+		printf("CONFIGURACIONES\nIP FS:%s\nPUERTO FS:%s\nPUNTO MONTAJE:%s\n",ipFS,puertoFS,puntoMontaje);
 		printf("---------------------------------------------------\n");
 }
 
