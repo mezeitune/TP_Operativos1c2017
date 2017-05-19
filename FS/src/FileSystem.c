@@ -190,7 +190,7 @@ void connection_handlerR()
 				printf("el archivo existe");
 			} else {
 			    // file doesn't exist
-				printf("el archivo no existe");
+				printf("Archivo inexistente");
 			}
 			break;
 		case 'C'://crear archivo
@@ -202,6 +202,8 @@ void connection_handlerR()
 			}
 			break;
 		case 'B'://borrar archivo
+			if( access( "../metadata/nuevo.bin", F_OK ) != -1 ) {
+
 
 			   fp = fopen("../metadata/nuevo.bin", "w");
 
@@ -214,24 +216,42 @@ void connection_handlerR()
 			   {
 			      printf("Error: unable to delete the file");
 			   }
+			} else {
+			    // file doesn't exist
+				printf("Archivo inexistente");
+			}
 
 			   //falta marcar los bloques como libres dentro del bitmap
 			break;
 		case 'O'://obtener datos
-			printFilePermissions("../metadata/alumno.bin");
-			if((archivoEnModoLectura("../metadata/alumno.bin"))==1){
-				printf("\n dale sigamo");
-			}else{
-				printf("\n no sigamo");
+			if( access( "../metadata/alumno.bin", F_OK ) != -1 ) {
+
+
+				printFilePermissions("../metadata/alumno.bin");
+				if((archivoEnModoLectura("../metadata/alumno.bin"))==1){
+					printf("\n dale sigamo");
+				}else{
+					printf("\n no sigamo");
+				}
+			} else {
+			    // file doesn't exist
+				printf("Archivo inexistente");
 			}
 
 			break;
 		case 'G'://guardar archivo
-			printFilePermissions("../metadata/alumno.bin");
-			if(archivoEnModoEscritura("../metadata/alumno.bin")==1){
-				printf("\n dale sigamo");
-			}else{
-				printf("\n no sigamo");
+			if( access( "../metadata/alumno.bin", F_OK ) != -1 ) {
+
+				printFilePermissions("../metadata/alumno.bin");
+				if(archivoEnModoEscritura("../metadata/alumno.bin")==1){
+					printf("\n dale sigamo");
+				}else{
+					printf("\n no sigamo");
+				}
+
+			} else {
+			    // file doesn't exist
+				printf("Archivo inexistente");
 			}
 			break;
 		default:
@@ -346,6 +366,8 @@ int archivoEnModoLectura(char *archivo){
 
 
 }
+
+
 
 void inicializarLog(char *rutaDeLog){
 
