@@ -31,6 +31,9 @@
 char *ipFS;
 char *puertoFS;
 char *puntoMontaje;
+int tamanioBloques;
+int cantidadBloques;
+char* magicNumber;
 int contadorConexiones=0;
 pthread_t  thread_id;
 t_config* configuracion_FS;
@@ -52,6 +55,7 @@ int socket_servidor;
 int recibirConexion(int socket_servidor);
 char nuevaOrdenDeAccion(int puertoCliente);
 void leerConfiguracion(char* ruta);
+void leerConfiguracionMetadata(char* ruta);
 void imprimirConfiguraciones();
 void connection_handlerR();
 void printFilePermissions(char* archivo);
@@ -62,6 +66,7 @@ int main(void){
 
 	//TODO:
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/FS/config_FileSys");
+	leerConfiguracionMetadata("/home/utnso/workspace/tp-2017-1c-servomotor/FS/metadata/Metadata.bin");
 	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
 	imprimirConfiguraciones();
 
@@ -270,9 +275,20 @@ void leerConfiguracion(char* ruta){
 
 }
 
+void leerConfiguracionMetadata(char* ruta){
+	configuracion_FS = config_create(ruta);
+
+	tamanioBloques= config_get_string_value(configuracion_FS,"TAMANIO_BLOQUES");
+	cantidadBloques= config_get_string_value(configuracion_FS, "CANTIDAD_BLOQUES");
+	magicNumber = config_get_string_value(configuracion_FS,"MAGIC_NUMBER");
+
+}
+
+
 void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
 		printf("CONFIGURACIONES\nIP FS:%s\nPUERTO FS:%s\nPUNTO MONTAJE:%s\n",ipFS,puertoFS,puntoMontaje);
+		printf("\n \nTAMANIO BLOQUS:%s\nCANTIDAD BLQOUES:%s\nMAGIC NUMBER:%s\n",tamanioBloques,cantidadBloques,magicNumber);
 		printf("---------------------------------------------------\n");
 }
 
