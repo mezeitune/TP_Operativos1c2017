@@ -17,6 +17,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <commons/string.h>
 #include <commons/config.h>
@@ -52,6 +54,10 @@ char nuevaOrdenDeAccion(int puertoCliente);
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void connection_handlerR();
+void printFilePermissions(char* archivo);
+int archivoEnModoEscritura(char* archivo);
+int archivoEnModoLectura(char* archivo);
+
 int main(void){
 
 	//TODO:
@@ -212,10 +218,21 @@ void connection_handlerR()
 			   //falta marcar los bloques como libres dentro del bitmap
 			break;
 		case 'O'://obtener datos
-
+			printFilePermissions("../metadata/alumno.bin");
+			if((archivoEnModoLectura("../metadata/alumno.bin"))==1){
+				printf("\n dale sigamo");
+			}else{
+				printf("\n no sigamo");
+			}
 
 			break;
 		case 'G'://guardar archivo
+			printFilePermissions("../metadata/alumno.bin");
+			if(archivoEnModoEscritura("../metadata/alumno.bin")==1){
+				printf("\n dale sigamo");
+			}else{
+				printf("\n no sigamo");
+			}
 			break;
 		default:
 			log_warning(loggerConPantalla,"\nError: Orden %c no definida\n",orden);
@@ -276,6 +293,58 @@ int recibirConexion(int socket_servidor){
 	}
 
 	return socket_aceptado;
+}
+
+
+void printFilePermissions(char* archivo){
+
+    struct stat fileStat;
+    stat(archivo,&fileStat);
+
+
+    printf("Information for %s\n",archivo);
+    printf("---------------------------\n");
+    printf("File Size: \t\t%d bytes\n",fileStat.st_size);
+    printf("Number of Links: \t%d\n",fileStat.st_nlink);
+    printf("File inode: \t\t%d\n",fileStat.st_ino);
+
+    printf("File Permissions: \t");
+    printf( (S_ISDIR(fileStat.st_mode)) ? "d" : "-");
+    printf( (fileStat.st_mode & S_IRUSR) ? "r" : "-");
+    printf( (fileStat.st_mode & S_IWUSR) ? "w" : "-");
+    printf( (fileStat.st_mode & S_IXUSR) ? "x" : "-");
+    printf( (fileStat.st_mode & S_IRGRP) ? "r" : "-");
+    printf( (fileStat.st_mode & S_IWGRP) ? "w" : "-");
+    printf( (fileStat.st_mode & S_IXGRP) ? "x" : "-");
+    printf( (fileStat.st_mode & S_IROTH) ? "r" : "-");
+    printf( (fileStat.st_mode & S_IWOTH) ? "w" : "-");
+    printf( (fileStat.st_mode & S_IXOTH) ? "x" : "-");
+}
+
+int archivoEnModoEscritura(char* archivo){
+	 struct stat fileStat;
+	    stat(archivo,&fileStat);
+
+
+	   if(fileStat.st_mode & S_IWGRP){
+		   return 1 ;
+	   }else{
+		   return 0;
+	   }
+}
+
+int archivoEnModoLectura(char *archivo){
+	 struct stat fileStat;
+	    stat(archivo,&fileStat);
+	        //return 1;
+
+	    if(fileStat.st_mode & S_IROTH){
+	 		   return 1 ;
+	 	   }else{
+	 		   return 0;
+	 	   }
+
+
 }
 
 void inicializarLog(char *rutaDeLog){
