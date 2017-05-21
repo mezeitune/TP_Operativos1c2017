@@ -22,11 +22,14 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
-#include "conexiones.h"
 #include <commons/log.h>
 #include <parser/metadata_program.h>
 #include <parser/parser.h>
+#include <semaphore.h>
+#include <pthread.h>
 #include "pcb.h"
+#include "conexiones.h"
+
 
 typedef struct CONSOLA{
 	int pid;
@@ -49,6 +52,7 @@ void inicializarSemaforos();
 pthread_mutex_t mutexColaListos;
 pthread_mutex_t mutexColaTerminados;
 pthread_mutex_t mutexListaConsolas;
+sem_t sem_admitirNuevoProceso;
 //------------------------------//
 void inicializarLog(char *rutaDeLog);
 t_log *loggerSinPantalla;
@@ -64,13 +68,13 @@ t_config* configuracion_kernel;
 
 //----------Planificacion----------//
 int atenderNuevoPrograma(int socketAceptado);
-int crearNuevoProceso(char* programa,int programSize,t_pcb* procesoListo);
 int verificarGradoDeMultiprogramacion();
 void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
 void inicializarListas();
 void dispatcher(int socket);
 void terminarProceso(int socket);
+
 
 t_list* colaNuevos;
 t_list* colaListos;
@@ -79,8 +83,28 @@ t_list* listaConsolas;
 int contadorPid=0;
 //---------Planificacion--------//
 
-//---------PCB-----------------//
-//---------PCB-----------------//
+
+
+//---------Planificador Largo Plazp------//
+typedef struct {
+	char* codigo;
+	int size;
+	int pid;
+	int socketConsola;
+	int idThread;
+}t_codigoPrograma;
+
+void* planificarLargoPlazo();
+t_codigoPrograma* recibirCodigoPrograma(int socketConsola);
+void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
+t_codigoPrograma* buscarCodigoDeProceso(int pid);
+int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
+
+t_list* listaCodigosProgramas;
+
+pthread_t planificadorLargoPlazo;
+
+//---------Planificador Largo Plazp------//
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
@@ -134,10 +158,11 @@ int main(void) {
 	inicializarSockets();
 
 
-	while(1){
+	pthread_create(&planificadorLargoPlazo, NULL,planificarLargoPlazo,NULL);
+
 	/*Multiplexor de conexiones. */
-		selectorConexiones(socketServidor);
-	}
+	selectorConexiones(socketServidor);
+
 
 	return 0;
 }
@@ -246,42 +271,104 @@ void connectionHandler(int socketAceptado, char orden) {
 
 }
 
+t_codigoPrograma* recibirCodigoPrograma(int socketConsola){
+	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP\n");
+	//char* comandoRecibirCodigo='R';
+	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
+	//send(socketConsola,&comandoRecibirCodigo,sizeof(char),0);
+	recv(socketConsola,&codigoPrograma->size, sizeof(int),0);
+	codigoPrograma->codigo = malloc(codigoPrograma->size);
+	recv(socketConsola,codigoPrograma->codigo,codigoPrograma->size  ,0);
+	codigoPrograma->socketConsola=socketConsola;
+	//Pedir el id del hilo de consola;
+
+	return codigoPrograma;
+}
+
 
 int atenderNuevoPrograma(int socketAceptado){
-	char* programa;
-	int programSize;
 		log_info(loggerConPantalla,"Atendiendo nuevo programa\n");
 
-		recv(socketAceptado,&programSize, sizeof(int),0);
-		programa = malloc(programSize);
-		recv(socketAceptado,programa,programSize  ,0);
+		contadorPid++; // VAR GLOBAL
 
-		contadorPid++;
-		t_pcb* procesoListo=crearPcb(programa,programSize);
-		log_info(loggerConPantalla,"Program Size: %d \n", programSize);
-		log_info(loggerConPantalla ,"Program Code: \" %s \" \n", programa);
+		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
+		codigoPrograma->pid=contadorPid;
+
+
+		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
+		log_info(loggerConPantalla,"Program Size: %d \n", codigoPrograma->size);
+		log_info(loggerConPantalla ,"Program Code: \" %s \" \n", codigoPrograma->codigo);
 
 		send(socketAceptado,&contadorPid,sizeof(int),0);
 		send(socketAceptado, &socketAceptado, sizeof(int),0);
 
-		if(verificarGradoDeMultiprogramacion() < 0){
-			list_add(colaNuevos,procesoListo);
-			return -1;
-		}
+		if(verificarGradoDeMultiprogramacion() <0 ){
+					list_add(colaNuevos,proceso);
+					list_add(listaCodigosProgramas,codigoPrograma);
+					return -1; // TODO: FALTA INFORMAR A CONSOLA
+				}
 
-		if((pedirMemoria(procesoListo))< 0){
-			free(procesoListo);
-			log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
-			log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
-			return -2; // TODO: Avisar a consola que no se puede ejecutar el programa por falta de memoria.
-		}
+		crearProceso(proceso, codigoPrograma);
 
-		if((crearNuevoProceso(programa,programSize, procesoListo))<0) return -3;
-
-		cargarConsola(procesoListo->pid,socketAceptado);
-
-		//free(buffer);
 		return 0;
+}
+
+void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
+	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
+				log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
+				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
+				 // TODO: Avisar a consola que no se puede ejecutar el programa por falta de memoria y que trate mas tarde;
+				// TODO: liberar la entrada en las respectivas listas;
+				free(proceso);
+				free(codigoPrograma);
+			}
+
+			encolarProcesoListo(proceso);
+			log_info(loggerConPantalla, "PCB encolado en lista de listos ---- PID: %d", proceso->pid);
+}
+
+int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
+	log_info(loggerConPantalla, "Inicializando proceso en memoria ---- PID: %d \n", proceso->pid);
+	if((pedirMemoria(proceso))< 0){
+				free(proceso);
+				free(codigoPrograma);
+				log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
+				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
+				return -1; // TODO: Avisar a consola que no se puede ejecutar el programa por falta de memoria.
+			}
+	log_info(loggerConPantalla ,"Existe espacio en memoria para el nuevo programa\n");
+
+	if((almacenarEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){ //TODO: Solo almaceno una pagina de codigo. Tiene que almacenar n paginas de codigo y ademas las paginas de stack
+					free(proceso);
+					free(codigoPrograma);
+					log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
+					log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
+					return -2;
+				}
+	log_info(loggerConPantalla ,"El nuevo programa se almaceno correctamente en memoria\n");
+
+
+	return 0;
+}
+
+void* planificarLargoPlazo(int socket){
+	t_pcb* proceso;
+	while(1){
+		sem_wait(&sem_admitirNuevoProceso); // Previamente hay que eliminar el proceso de las colas y liberar todos sus recursos.
+			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0){
+			proceso=list_get(colaNuevos,0);
+			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
+			crearProceso(proceso,codigoPrograma);
+			}
+	}
+}
+
+t_codigoPrograma* buscarCodigoDeProceso(int pid){
+	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
+			return (codigoPrograma->pid == pid);
+		}
+	return list_find(listaCodigosProgramas, verificarPid);
+
 }
 
 
@@ -310,23 +397,7 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	send(socketConsola,mensajeAConsola,sizeof(char)+ sizeof(int),0);
 }
 
-int crearNuevoProceso(char*programa,int programSize,t_pcb* procesoListo){
-	log_info(loggerConPantalla, "Creando nuevo proceso---- PID: %d", procesoListo->pid);
-	if((almacenarEnMemoria(procesoListo,programa,programSize))< 0){ //TODO: Solo almaceno una pagina de codigo. Tiene que almacenar n paginas de codigo y ademas las paginas de stack
-				free(procesoListo);
-				log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
-				log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
-				return -1;
-			}
-	log_info(loggerConPantalla ,"Se inicializo el programa correctamente\n");
-	log_info(loggerConPantalla ,"Se almaceno el programa correctamente\n");
 
-
-	encolarProcesoListo(procesoListo);
-	log_info(loggerConPantalla, "PCB encolado en lista de Ready ---- PID: %d", procesoListo->pid);
-
-	return 0;
-}
 
 int pedirMemoria(t_pcb* procesoListo){
 	log_info(loggerConPantalla, "Solicitando Memoria ---- PID: %d", procesoListo->pid);
@@ -369,10 +440,15 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int program
 
 int verificarGradoDeMultiprogramacion(){
 	log_info(loggerConPantalla, "Verificando grado de multiprogramacion");
+	pthread_mutex_lock(&mutexColaListos);
 	if(list_size(colaListos) >= gradoMultiProg) {
+		pthread_mutex_unlock(&mutexColaListos);
 		log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
 		return -1;
 	}
+	pthread_mutex_unlock(&mutexColaListos);
+	log_info(loggerConPantalla, "Grado de multiprogramacion suficiente\n");
+
 	return 0;
 }
 
@@ -404,19 +480,21 @@ int solicitarContenidoAMemoria(char ** mensajeRecibido){
 	return resultadoEjecucion;
 }
 
-void encolarProcesoListo(t_pcb *pcbProcesoListo){
+void encolarProcesoListo(t_pcb *procesoListo){
 //	colaListos
+	log_info(loggerConPantalla, "Encolando proceso a cola de listos---- PID: %d \n", procesoListo->pid);
+
 	pthread_mutex_lock(&mutexColaListos);
-	list_add(colaListos,pcbProcesoListo);
+	list_add(colaListos,procesoListo);
 	pthread_mutex_unlock(&mutexColaListos);
 }
 
 void inicializarSemaforos(){
 
-		//pthread_mutex_init(&mutexColaListos, NULL);
-		//pthread_mutex_init(&mutexColaTerminados, NULL);
-		//pthread_mutex_init(&mutexListaConsolas,NULL);
-
+		pthread_mutex_init(&mutexColaListos, NULL);
+		pthread_mutex_init(&mutexColaTerminados, NULL);
+		pthread_mutex_init(&mutexListaConsolas,NULL);
+		sem_init(&sem_admitirNuevoProceso, 0, 0);
 }
 
 
@@ -425,6 +503,7 @@ void inicializarListas(){
 	colaListos= list_create();
 	colaTerminados= list_create();
 	listaConsolas= list_create();
+	listaCodigosProgramas=list_create();
 }
 
 void dispatcher(int socketCPU){

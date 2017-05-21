@@ -31,7 +31,7 @@ int main(void) {
 
 }
 
-void *connectionHandler(int socket) {
+void *connectionHandler(int socketKernel) {
 
 	while (1) {
 		char orden;
@@ -43,14 +43,15 @@ void *connectionHandler(int socket) {
 		printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
 		printf("----------------------------------------------------------------------\n");
 		scanf(" %c", &orden);
-		send(socket, (void*) &orden, sizeof(char), 0);
+		send(socketKernel, (void*) &orden, sizeof(char), 0);
 
 
 		switch (orden) {
 		case 'I':
+
 			printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
 			scanf("%s", ruta);
-			if ((enviarLecturaArchivo(ruta, socket)) < 0) {
+			if ((enviarLecturaArchivo(ruta, socketKernel)) < 0) {
 
 				log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente\n");
 			}
@@ -77,7 +78,7 @@ void *connectionHandler(int socket) {
 			if (estaVacia==1){
 
 				list_remove_by_condition(listaPid, verificarPid);
-				send(socket, (void*) &pidAEliminar, sizeof(int), 0);
+				send(socketKernel, (void*) &pidAEliminar, sizeof(int), 0);
 				printf("----------------------------------------------------------------------\n");
 				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado",pidAEliminar);
 
