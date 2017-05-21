@@ -52,7 +52,10 @@ void inicializarSemaforos();
 pthread_mutex_t mutexColaListos;
 pthread_mutex_t mutexColaTerminados;
 pthread_mutex_t mutexListaConsolas;
+pthread_mutex_t mutexListaCPU;
 sem_t sem_admitirNuevoProceso;
+sem_t sem_colaReady;
+sem_t sem_CPU;
 //------------------------------//
 void inicializarLog(char *rutaDeLog);
 t_log *loggerSinPantalla;
@@ -80,8 +83,14 @@ t_list* colaNuevos;
 t_list* colaListos;
 t_list* colaTerminados;
 t_list* listaConsolas;
+t_list* listaCPU;
+
 int contadorPid=0;
 //---------Planificacion--------//
+
+void* planificarCortoPlazo();
+pthread_t planificadorCortoPlazo;
+void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex);
 
 
 
@@ -157,7 +166,7 @@ int main(void) {
 	inicializarListas();
 	inicializarSockets();
 
-
+	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,planificarLargoPlazo,NULL);
 
 	/*Multiplexor de conexiones. */
@@ -167,6 +176,15 @@ int main(void) {
 	return 0;
 }
 
+
+void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
+
+	pthread_mutex_lock(&mutex);
+	list_add(lista, elemento);
+	pthread_mutex_unlock(&mutex);
+
+
+}
 
 
 void interfazHandler(){
@@ -232,7 +250,14 @@ void connectionHandler(int socketAceptado, char orden) {
 					break;
 		case 'N':
 					send(socketAceptado,&comandoRecibirPCB,sizeof(char),0);
-					dispatcher(socketAceptado);
+
+
+					agregarA(listaCPU, socketAceptado, mutexListaCPU);
+
+
+					sem_post(&sem_CPU);
+
+
 					break;
 		case 'T':
 					terminarProceso(socketAceptado);
@@ -325,6 +350,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 
 			encolarProcesoListo(proceso);
 			log_info(loggerConPantalla, "PCB encolado en lista de listos ---- PID: %d", proceso->pid);
+			sem_post(&sem_colaReady);//Agregado para saber si hay algo en cola Listos, es el Signal
 }
 
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
@@ -356,12 +382,35 @@ void* planificarLargoPlazo(int socket){
 	while(1){
 		sem_wait(&sem_admitirNuevoProceso); // Previamente hay que eliminar el proceso de las colas y liberar todos sus recursos.
 			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0){
-			proceso=list_get(colaNuevos,0);
+			proceso = list_get(colaNuevos,0);
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
 			crearProceso(proceso,codigoPrograma);
 			}
 	}
 }
+
+
+void* planificarCortoPlazo(){
+	t_pcb* pcbListo;
+	int socket;
+
+	while(1){
+		sem_wait(&sem_colaReady);
+
+		pthread_mutex_lock(&mutexColaListos);
+		pcbListo = list_get(colaListos,0);
+		list_remove(colaListos,0);
+		pthread_mutex_unlock(&mutexColaListos);
+
+		sem_wait(&sem_CPU);
+
+		socket = list_get(listaCPU,0);
+		serializarPcbYEnviar(pcbListo, socket);
+		list_remove(listaCPU,0);
+
+	}
+}
+
 
 t_codigoPrograma* buscarCodigoDeProceso(int pid){
 	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
@@ -376,7 +425,7 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 int cantidadPaginasCodigoProceso(int programSize){
 	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
 	int mod = programSize % paginaSize;
-	return mod==0? (programSize / paginaSize):(programSize / paginaSize)+ 1;
+	return mod == 0 ? (programSize / paginaSize):(programSize / paginaSize)+ 1;
 }
 
 void cargarConsola(int pid, int socketConsola) {
@@ -494,7 +543,10 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexColaListos, NULL);
 		pthread_mutex_init(&mutexColaTerminados, NULL);
 		pthread_mutex_init(&mutexListaConsolas,NULL);
+		pthread_mutex_init(&mutexListaCPU,NULL);
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
+		sem_init(&sem_colaReady,0,0);
+		sem_init(&sem_CPU,0,0);
 }
 
 
@@ -502,11 +554,12 @@ void inicializarListas(){
 	colaNuevos= list_create();
 	colaListos= list_create();
 	colaTerminados= list_create();
-	listaConsolas= list_create();
+	listaConsolas = list_create();
+	listaCPU = list_create();
 	listaCodigosProgramas=list_create();
 }
 
-void dispatcher(int socketCPU){
+/*void dispatcher(int socketCPU){ YA NO SE USA
 
 	log_info(loggerConPantalla, "Despachando PCB listo ---- SOCKET:%d", socketCPU);
 	t_pcb* procesoAEjecutar = malloc(sizeof(t_pcb));
@@ -519,7 +572,7 @@ void dispatcher(int socketCPU){
 	serializarPcbYEnviar(procesoAEjecutar,socketCPU);
 
 	}
-
+*/
 void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
 	recv(socketCPU,pcbProcesoTerminado,sizeof(t_pcb),0);
@@ -556,7 +609,7 @@ void imprimirInterfazUsuario(){
 
 
 void inicializarSockets(){
-	socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
+		socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
 		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 
@@ -592,16 +645,14 @@ void selectorConexiones(int socket) {
 	FD_SET(0, &master); // Agrega el fd del teclado.
 	fdMax = socket; // keep track of the biggest file descriptor so far, it's this one
 
-	// main loop
 	for (;;) {
-		readFds = master; // copy it
+		readFds = master;
 		if (select(fdMax + 1, &readFds, NULL, NULL, NULL) == -1) {
 			perror("select");
 			log_error(loggerSinPantalla,"Error en select\n");
 			exit(2);
 		}
 
-		// run through the existing connections looking for data to read
 		for (i = 0; i <= fdMax; i++) {
 			if (FD_ISSET(i, &readFds)) { // we got one!!
 
@@ -610,41 +661,37 @@ void selectorConexiones(int socket) {
 				/************************************************************/
 
 				if (i == socket) {
-					// handle new connections
 					addrlen = sizeof remoteaddr;
 					newfd = accept(socket, (struct sockaddr *) &remoteaddr,&addrlen);
 
 					if (newfd == -1) {
 						perror("accept");
 					} else {
-						FD_SET(newfd, &master); // add to master set
-						if (newfd > fdMax) {    // keep track of the max
+						FD_SET(newfd, &master);
+						if (newfd > fdMax) {
 							fdMax = newfd;
 						}
 						log_info(loggerConPantalla,"\nSelectserver: nueva conexion desde %s en " "socket %d\n\n",inet_ntop(remoteaddr.ss_family,	get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
 					}
 				}
 				else if(i!=0) {
-					// handle data from a client
 					if ((nbytes = recv(i, &orden, sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
 
-						// got error or connection closed by client
 						if (nbytes == 0) {
-							// connection closed
 							log_error(loggerConPantalla,"selectserver: socket %d hung up\n", i);
 						} else {
 							perror("recv");
 						}
-						close(i); // bye!
-						FD_CLR(i, &master); // remove from master set
+						close(i);
+						FD_CLR(i, &master);
 					}
 					else {
-						// we got some data from a client
 						/*
 						for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
 							if (FD_ISSET(j, &master)) {
 								if (j != socket && j != i) {*/
 									connectionHandler(i, orden);
+
 						        }
 						    }
 						}
@@ -655,7 +702,6 @@ void selectorConexiones(int socket) {
 	//} // END looping through file descriptors
 //}
 
-// get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa) {
 	if (sa->sa_family == AF_INET) {
 		return &(((struct sockaddr_in*) sa)->sin_addr);

@@ -7,6 +7,9 @@ int main(void) {
 	imprimirConfiguraciones();
 	inicializarLog("/home/utnso/Log/logCPU.txt");
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
+	//send(socketKernel,'N',sizeof(char),0);
+
+
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 
@@ -15,11 +18,12 @@ int main(void) {
 	listaPcb = list_create();
 	signal(SIGUSR1, signalSigusrHandler);
 
-		if(cpuOcupada==1){
-				recibirPCB();
-				cpuOcupada--;
-		}else
-			log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
+
+	if(cpuOcupada == 1){
+			recibirPCB();
+			cpuOcupada--;
+	}else
+		log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
 
 	return 0;
 }
