@@ -16,16 +16,19 @@ int main(void) {
 	listaPcb = list_create();
 	signal(SIGUSR1, signalSigusrHandler);
 
+	esperarPCB();
 
-	if(cpuOcupada == 1){
-			recibirPCB();
-			cpuOcupada--;
-	}else
-		log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
+
 
 	return 0;
 }
-
+void esperarPCB(){
+				while(cpuOcupada==1){
+				log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
+				recibirPCB();
+				cpuOcupada--;
+				}
+}
 void recibirPCB(){
 
 
@@ -71,19 +74,21 @@ void establecerPCB(){
 	list_add(listaPcb, pcb);
 
 	ciclosDeQuantum(pcb);
-	interfazHandler(pcb);//esto despues se saca, es para probar funciones nomas
 
 }
 void ciclosDeQuantum(t_pcb* pcb){
 	int i = 0;
+
 	int quantum_definido=1;
 	//recv(socketKernel,&quantum_definido,sizeof(int),0);
 	while((i < quantum_definido)){
 		ejecutarInstruccion(pcb);
 		i++;
 	}
+	finalizar();
 	//if((i == quantum_definido)){
-		//send(socketKernel,&comandoTerminoElQuantum , sizeof(char),0);
+		//expropiarPorQuantum(pcb);
+
 	//}
 }
 void ejecutarInstruccion(t_pcb* pcb){
@@ -125,44 +130,6 @@ int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size){
 		printf("Se almaceno correctamente %s",buffer);
 		return resultadoEjecucion;
 
-}
-void interfazHandler(t_pcb* pcb){
-
-	char orden;
-	int size = strlen("bonebone");
-	char* instruccion;
-
-	while(1){
-		while(orden != 'Q'){
-
-			printf("\nIngresar orden:\n");
-			scanf(" %c", &orden);
-
-			switch(orden){
-				case 'S':
-
-					//instruccion = conseguirDatosMemoria(pcb,0,6,16);//el 0 es la pagina a la cual buscar y el size es de la instruccion
-
-					break;
-
-				case 'F':
-					finalizar();
-
-					log_info(loggerConPantalla,"\nSea finalizado el programa con pid%s\n" , pcb->pid);
-					free(pcb);
-					break;
-				case 'Q':
-					log_warning(loggerConPantalla,"\nSe ha desconectado el cliente\n");
-					free(pcb);
-					exit(1);
-					break;
-				default:
-					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
-					break;
-			}
-		}
-			orden = '\0';
-	}
 }
 
 char* obtener_instruccion(t_pcb * pcb){
@@ -257,7 +224,19 @@ void inicializarLog(char *rutaDeLog){
 	loggerSinPantalla = log_create(rutaDeLog,"CPU", false, LOG_LEVEL_INFO);
 	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
+void expropiarPorQuantum(t_pcb * pcb){
+	char comandoTerminoElQuantum= 'R';
+	//send(socketKernel,&comandoTerminoElQuantum , sizeof(char),0);
+	serializarPcbYEnviar(pcb,socketKernel);
+	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por fin de quantum", pcb->pid);
+	list_destroy_and_destroy_elements(listaPcb, free);
+	cpuOcupada=1;
+}
+void stackOverflow(t_pcb* pcb_actual){
+		log_warning(loggerConPantalla, "Elproceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
+		finalizar();
 
+}
 //--------------------------------------------PRIMITIVAS-------------------------------------------------
 
 
@@ -408,35 +387,15 @@ int posicion= (nueva_posicion_memoria->pagina * paginaSize) + nueva_posicion_mem
 
 return posicion;
 }
-	void finalizar (){
-
-		//comando para  avisarle al kernel que debe eliminar
-		char comandoInicializacion = 'F';
-
-		void* pcbAEliminar= malloc(sizeof(char) + sizeof(int) * 2); //pido memoria para el comando que deba usar el kernel + los 2 int de la estructura del pcb
-
-		//agarro el pcb que quiero eliminar
-		t_pcb *unPcbAEliminar = list_get(listaPcb,0);
-
-		//pido memoria para ese pcb
-		t_pcb *infoPcbAEliminar = malloc(sizeof(t_pcb));
-
-		//asigno pcb en memoria
-		infoPcbAEliminar->pid = unPcbAEliminar->pid;
-		//infoPcbAEliminar->cantidadPaginasCodigo = unPcbAEliminar->cantidadPaginasCodigo;
-
-		//printf("%d%d",unPcbAEliminar->pid,unPcbAEliminar->cantidadPaginasCodigo);
-		//serializarPCByEnviar(socketKernel,comandoInicializacion,&infoPcbAEliminar,pcbAEliminar);
-
+void finalizar (){
+		t_pcb *pcb_actual = malloc(sizeof(t_pcb));
+		pcb_actual = list_get(listaPcb,0);
+		char comandoFinalizacion = 'F';
+		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
+		//serializarPcbYEnviar(pcb_actual,socketKernel);
+		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado", pcb_actual->pid);
 		list_destroy_and_destroy_elements(listaPcb, free);
-
-
-		//un send avisandole al kernel q termino ese proceso con su header
-		free(pcbAEliminar);
-
+		cpuOcupada=1;
+		esperarPCB();
 }
-void stackOverflow(t_pcb* pcb_actual){
-		log_info(loggerConPantalla, "El pid %d sufrio stack overflow", pcb_actual->pid);
-		dummy_finalizar();
 
-}

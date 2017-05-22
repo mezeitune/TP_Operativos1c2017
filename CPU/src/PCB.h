@@ -1,6 +1,8 @@
 #include <commons/log.h>
+
 int paginaSize;
 int stackSize;
+
 typedef struct{
 	int pagina;
 	int offset;
@@ -50,7 +52,7 @@ void deserializarIndiceCodigo(void ** pcbSerializado, int *** indiceCodigo, int 
 void serializarStack(void**pcbSerializado,t_list* indiceStack);
 void deserializarStack(void**pcbSerializado,t_list** indiceStack);
 int calcularPcbSerializadoSize(t_pcb* pcb);
-void serializarPcbYEnviar(t_pcb* pcb,int socketCPU);
+void serializarPcbYEnviar(t_pcb* pcb,int socket);
 t_pcb* recibirYDeserializarPcb(int socketKernel);
 void imprimirPcb(t_pcb* pcb);
 t_puntero definirVariable(t_nombre_variable variable);
