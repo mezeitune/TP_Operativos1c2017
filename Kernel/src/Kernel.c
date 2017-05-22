@@ -99,14 +99,13 @@ typedef struct {
 	char* codigo;
 	int size;
 	int pid;
-	int socketConsola;
-	int idThread;
+	int socketHiloConsola;
 }t_codigoPrograma;
 
 void* planificarLargoPlazo();
 t_codigoPrograma* recibirCodigoPrograma(int socketConsola);
-void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
+void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 
 t_list* listaCodigosProgramas;
@@ -169,9 +168,7 @@ int main(void) {
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,planificarLargoPlazo,NULL);
 
-	/*Multiplexor de conexiones. */
 	selectorConexiones(socketServidor);
-
 
 	return 0;
 }
@@ -182,8 +179,6 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 	pthread_mutex_lock(&mutex);
 	list_add(lista, elemento);
 	pthread_mutex_unlock(&mutex);
-
-
 }
 
 
@@ -297,16 +292,15 @@ void connectionHandler(int socketAceptado, char orden) {
 
 }
 
-t_codigoPrograma* recibirCodigoPrograma(int socketConsola){
+t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
 	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP\n");
 	//char* comandoRecibirCodigo='R';
 	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
-	//send(socketConsola,&comandoRecibirCodigo,sizeof(char),0);
-	recv(socketConsola,&codigoPrograma->size, sizeof(int),0);
+	//send(socketHiloConsola,&comandoRecibirCodigo,sizeof(char),0);
+	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
 	codigoPrograma->codigo = malloc(codigoPrograma->size);
-	recv(socketConsola,codigoPrograma->codigo,codigoPrograma->size  ,0);
-	codigoPrograma->socketConsola=socketConsola;
-	//Pedir el id del hilo de consola;
+	recv(socketHiloConsola,codigoPrograma->codigo,codigoPrograma->size  ,0);
+	codigoPrograma->socketHiloConsola=socketHiloConsola;
 
 	return codigoPrograma;
 }
@@ -326,7 +320,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		log_info(loggerConPantalla ,"Program Code: \" %s \" \n", codigoPrograma->codigo);
 
 		send(socketAceptado,&contadorPid,sizeof(int),0);
-		send(socketAceptado, &socketAceptado, sizeof(int),0);
+		//send(socketAceptado, &socketAceptado, sizeof(int),0);
 
 		if(verificarGradoDeMultiprogramacion() <0 ){
 					list_add(colaNuevos,proceso);
@@ -422,12 +416,6 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 }
 
 
-
-int cantidadPaginasCodigoProceso(int programSize){
-	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
-	int mod = programSize % paginaSize;
-	return mod == 0 ? (programSize / paginaSize):(programSize / paginaSize)+ 1;
-}
 
 void cargarConsola(int pid, int socketConsola) {
 	t_consola *infoConsola = malloc(sizeof(t_consola));
@@ -678,13 +666,13 @@ void selectorConexiones(int socket) {
 				else if(i!=0) {
 					if ((nbytes = recv(i, &orden, sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
 
-						if (nbytes == 0) {
-							log_error(loggerConPantalla,"selectserver: socket %d hung up\n", i);
-						} else {
-							perror("recv");
-						}
-						close(i);
-						FD_CLR(i, &master);
+						//if (nbytes == 0) {
+						//	log_error(loggerConPantalla,"selectserver: socket %d hung up\n", i);
+						//} else {
+						//	perror("recv");
+						//}
+						//close(i);
+						//FD_CLR(i, &master);
 					}
 					else {
 						/*
@@ -692,7 +680,6 @@ void selectorConexiones(int socket) {
 							if (FD_ISSET(j, &master)) {
 								if (j != socket && j != i) {*/
 									connectionHandler(i, orden);
-
 						        }
 						    }
 						}
