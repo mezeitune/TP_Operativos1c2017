@@ -281,6 +281,7 @@ void connectionHandler(int socketAceptado, char orden) {
 				break;
 		case 'P':
 				send(socketAceptado,&paginaSize,sizeof(int),0);
+				send(socketAceptado,&stackSize,sizeof(int),0);
 				break;
 		case 'Q':
 				list_iterate(listaConsolas, verCoincidenciaYEliminar);

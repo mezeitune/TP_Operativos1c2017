@@ -1,5 +1,6 @@
 #include <commons/log.h>
 int paginaSize;
+int stackSize;
 typedef struct{
 	int pagina;
 	int offset;
@@ -52,7 +53,7 @@ int calcularPcbSerializadoSize(t_pcb* pcb);
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU);
 t_pcb* recibirYDeserializarPcb(int socketKernel);
 void imprimirPcb(t_pcb* pcb);
-
+t_puntero definirVariable(t_nombre_variable variable);
 
 int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
 int** inicializarIndiceCodigo(t_size cantidadInstrucciones);
@@ -474,6 +475,7 @@ void recibirTamanioPagina(int socketKernel){
 	char comandoGetPaginaSize= 'P';
 	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
 	recv(socketKernel,&paginaSize,sizeof(int),0);
+	recv(socketKernel,&stackSize,sizeof(int),0);
 }
 
 int cantidadPaginasCodigoProceso(int programSize){

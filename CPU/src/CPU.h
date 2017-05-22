@@ -32,7 +32,7 @@
 
 
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
-	.AnSISOP_definirVariable	= dummy_definirVariable,
+	.AnSISOP_definirVariable	=definirVariable,
 	.AnSISOP_obtenerPosicionVariable= dummy_obtenerPosicionVariable,
 	.AnSISOP_finalizar = dummy_finalizar,
 	.AnSISOP_dereferenciar	= dummy_dereferenciar,
@@ -78,7 +78,7 @@ void recibirTamanioPagina();
 void recibirPCB();
 void signalSigusrHandler(int signum);
 void imprimirPCB(t_pcb * pcb);
-void finalizar();
+
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 void connectionHandlerKernel(int socketAceptado, char orden);
@@ -86,6 +86,10 @@ void ejecutarInstruccion(t_pcb* pcb);
 void interfazHandler(t_pcb * pcb);
 void ciclosDeQuantum(t_pcb* pcb);
 //-----------------------------------------------------------------------------------------------------------------
+
+void stackOverflow();
+void finalizar();
+
 t_config* configuracion_memoria;
 char* puertoKernel;
 char* puertoMemoria;

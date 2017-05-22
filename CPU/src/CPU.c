@@ -74,7 +74,7 @@ void establecerPCB(){
 }
 void ciclosDeQuantum(t_pcb* pcb){
 	int i = 0;
-	int quantum_definido=4;
+	int quantum_definido=1;
 	//recv(socketKernel,&quantum_definido,sizeof(int),0);
 	while((i < quantum_definido)){
 		ejecutarInstruccion(pcb);
@@ -124,24 +124,6 @@ int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size){
 		return resultadoEjecucion;
 
 }
-
-void imprimirPCB(t_pcb * pcb){
-	printf("Pid: %d\n", pcb->pid);
-	printf("Program Counter: %d\n", pcb->programCounter);
-
-	printf("Cantidad de Instrucciones: %d\n", pcb->cantidadInstrucciones);
-	printf("Cantidad de paginas en memoria: %d\n", pcb->cantidadPaginasCodigo);
-	printf("\n-------Indice de Codigo-------\n");
-	int i;
-	for(i = 0; i < pcb->cantidadInstrucciones; i++){
-		printf("Instruccion %d:  \t%d %d\n", i, pcb->indiceCodigo[i][0], pcb->indiceCodigo[i][1]);
-	}
-
-	printf("\n-------Indice de Etiquetas-------\n");
-	printf("%s\n", pcb->indiceEtiquetas);
-
-}
-
 void interfazHandler(t_pcb* pcb){
 
 	char orden;
@@ -156,7 +138,7 @@ void interfazHandler(t_pcb* pcb){
 
 			switch(orden){
 				case 'S':
-					imprimirPCB(pcb);
+
 					//instruccion = conseguirDatosMemoria(pcb,0,6,16);//el 0 es la pagina a la cual buscar y el size es de la instruccion
 
 					break;
@@ -179,35 +161,6 @@ void interfazHandler(t_pcb* pcb){
 		}
 			orden = '\0';
 	}
-}
-
-
-void finalizar (){
-
-	//comando para  avisarle al kernel que debe eliminar
-	char comandoInicializacion = 'F';
-
-	void* pcbAEliminar= malloc(sizeof(char) + sizeof(int) * 2); //pido memoria para el comando que deba usar el kernel + los 2 int de la estructura del pcb
-
-	//agarro el pcb que quiero eliminar
-	t_pcb *unPcbAEliminar = list_get(listaPcb,0);
-
-	//pido memoria para ese pcb
-	t_pcb *infoPcbAEliminar = malloc(sizeof(t_pcb));
-
-	//asigno pcb en memoria
-	infoPcbAEliminar->pid = unPcbAEliminar->pid;
-	//infoPcbAEliminar->cantidadPaginas = unPcbAEliminar->cantidadPaginas;
-
-	//printf("%d%d",unPcbAEliminar->pid,unPcbAEliminar->cantidadPaginas);
-	//serializarPCByEnviar(socketKernel,comandoInicializacion,&infoPcbAEliminar,pcbAEliminar);
-
-	list_destroy_and_destroy_elements(listaPcb, free);
-
-
-	//un send avisandole al kernel q termino ese proceso con su header
-	free(pcbAEliminar);
-
 }
 
 char* obtener_instruccion(t_pcb * pcb){
@@ -303,3 +256,184 @@ void inicializarLog(char *rutaDeLog){
 	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
 
+//--------------------------------------------PRIMITIVAS-------------------------------------------------
+
+
+t_puntero definirVariable(t_nombre_variable variable) {
+	printf("pasa");
+
+	t_pcb *pcb_actual = malloc(sizeof(t_pcb));
+	pcb_actual = list_get(listaPcb,0);
+	int nodos_stack = list_size(pcb_actual->indiceStack);
+	int posicion_stack;
+	int cantidad_variables;
+	int cantidad_argumentos;
+	int encontre_valor = 1;
+	t_nodoStack *nodo;
+	t_posMemoria *posicion_memoria;
+	t_variable *var;
+	t_posMemoria* nueva_posicion_memoria;
+	t_variable *nueva_variable;
+	//if(pcb_finalizar == 1){
+		//return 0;
+	//}
+	if(nodos_stack == 0){ //si el stack esta vacio
+		t_nodoStack *nodo = malloc(sizeof(t_nodoStack));//creo un nodo con todos los campos
+		nodo->args = list_create();//creo la lista de argumentos y las variables para ese nodo vacio
+		nodo->vars = list_create();
+		nodo->retPos = 0;//cuando arranca el programa el retorno es 0
+		t_posMemoria *retorno = malloc(sizeof(t_posMemoria));
+		retorno->pagina = 0;//en memoria escribe en la pagina 0 del stack
+		retorno->offset = 0;
+		retorno->size = 0;
+		nodo->retVar = retorno;//asigno a la estructura retVar la posicion en memoria del retorno
+		list_add(pcb_actual->indiceStack, nodo);//agrego un nodo al stack
+	}
+	//ya habiendo agregado el nodo o si tengo un stack con nodos anteriores
+	nodos_stack = list_size(pcb_actual->indiceStack);
+	//hago un for recorriendo los nodos que esten en el stack
+	for(posicion_stack = (nodos_stack - 1); posicion_stack >= 0; posicion_stack--){
+			nodo = list_get(pcb_actual->indiceStack, posicion_stack); //agarro un nodo de mi stack
+			cantidad_variables = list_size(nodo->vars);//agarro su lista de variables y arg
+			cantidad_argumentos = list_size(nodo->args);
+			if(cantidad_variables != 0){//si este nodo tiene variables...
+				var = list_get(nodo->vars, (cantidad_variables - 1));//agarro una variable del nodo
+				posicion_memoria = var->dirVar; //agarro la posicion en memoria de esa variable (pag,off,size), aca no esta el id de la variable
+				posicion_stack = -1;
+				encontre_valor = 0;//encontre una variablee!!!
+			} else if(cantidad_argumentos != 0){//si este nodo tiene argumentos
+				posicion_memoria = list_get(nodo->args, (cantidad_argumentos - 1));//agarro la pos memoria de ese argumento (pag,off,size)
+				posicion_stack = -1;
+				encontre_valor = 0;//encontre un argumentoooooooooo!!
+			}
+		}
+		//reconozco la variable ANSISOP
+		if((variable >= '0') && (variable <= '9')){
+				nueva_posicion_memoria = malloc(sizeof(t_posMemoria));//creo una nueva posicion en memoria para la variable ANSISOP
+				nodo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));//agarro un nodo de mi stack (el indice es la cantidad-1)
+
+				if(encontre_valor == 0){//si encontre una variable en el nodo
+
+					//si me excedi del tamaño de la pagina
+					if(((posicion_memoria->offset + posicion_memoria->size) + 4) > paginaSize){
+						nueva_posicion_memoria->pagina = (posicion_memoria->pagina + 1);//le digo de escribir en la pagina sig
+						nueva_posicion_memoria->offset = 0;
+						nueva_posicion_memoria->size = 4;
+							if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){//si la pagina excede la cantidad de pagina del stack
+								stackOverflow(pcb_actual);
+							} else {
+							list_add(nodo->args, nueva_posicion_memoria);//sino agrego en la lista de argumentos la posicion en memoria de esa variaable
+							}
+					}
+					//si me excedi del tamaño de la pagina
+
+					else {//sino me excedi del tamaño de la pagina
+									nueva_posicion_memoria->pagina = posicion_memoria->pagina;
+									nueva_posicion_memoria->offset = (posicion_memoria->offset + posicion_memoria->size);
+									nueva_posicion_memoria->size = 4;
+									if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+										stackOverflow(pcb_actual);
+									} else {
+										list_add(nodo->args, nueva_posicion_memoria);
+									}
+					}//sino me excedi del tamaño de la pagina
+				}else {
+							if(paginaSize < 4){
+								printf("Tamaño de pagina menor a 4 bytes\n");
+							} else {
+								//le asigno la pagina donde empieza el stack (ver)
+								nueva_posicion_memoria->pagina = (pcb_actual->cantidadPaginasCodigo - stackSize);
+								nueva_posicion_memoria->offset = 0;
+								nueva_posicion_memoria->size = 4;
+								if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+									stackOverflow(pcb_actual);
+								} else {
+									list_add(nodo->args, nueva_posicion_memoria);
+								}
+							}
+						}
+		}//si mi variable no esta entre 0 y 9
+				else {
+						nueva_posicion_memoria = malloc(sizeof(t_posMemoria));
+						nueva_variable = malloc(sizeof(t_variable));
+						nodo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));
+						if(encontre_valor == 0){
+							if(((posicion_memoria->offset + posicion_memoria->size) + 4) > paginaSize){//si me paso de pagina
+								nueva_posicion_memoria->pagina = (posicion_memoria->pagina + 1);
+								nueva_posicion_memoria->offset = 0;
+								nueva_posicion_memoria->size = 4;
+								nueva_variable->idVar = variable;
+								nueva_variable->dirVar = nueva_posicion_memoria;
+								if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+									stackOverflow(pcb_actual);
+								} else {
+									list_add(nodo->vars, nueva_variable);
+								}
+							}else {
+								//sino me paso de pagina
+								nueva_posicion_memoria->pagina = posicion_memoria->pagina;
+								nueva_posicion_memoria->offset = (posicion_memoria->offset + posicion_memoria->size);
+								nueva_posicion_memoria->size = 4;
+								nueva_variable->idVar = variable;
+								nueva_variable->dirVar = nueva_posicion_memoria;
+								if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+									stackOverflow(pcb_actual);
+								} else {
+									list_add(nodo->vars, nueva_variable);
+								}
+							}
+						//sino encontre valor en la memoria
+				}	else {
+								if(paginaSize < 4){
+									printf("Tamaño de pagina menor a 4 bytes\n");
+									} else {
+										nueva_posicion_memoria->pagina = (pcb_actual->cantidadPaginasCodigo - stackSize);//ACA MUESTRA -1 PORQUE HAY UNA PAGINA DE CODIGO Y 2 DE STACK
+										nueva_posicion_memoria->offset = 0;
+										nueva_posicion_memoria->size = 4;
+										nueva_variable->idVar = variable;
+										nueva_variable->dirVar = nueva_posicion_memoria;
+										if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+											stackOverflow(pcb_actual);
+										} else {
+											list_add(nodo->vars, nueva_variable);
+										}
+									}
+								}
+					}
+imprimirPcb(pcb_actual);
+int posicion= (nueva_posicion_memoria->pagina * paginaSize) + nueva_posicion_memoria->offset;
+
+return posicion;
+}
+	void finalizar (){
+
+		//comando para  avisarle al kernel que debe eliminar
+		char comandoInicializacion = 'F';
+
+		void* pcbAEliminar= malloc(sizeof(char) + sizeof(int) * 2); //pido memoria para el comando que deba usar el kernel + los 2 int de la estructura del pcb
+
+		//agarro el pcb que quiero eliminar
+		t_pcb *unPcbAEliminar = list_get(listaPcb,0);
+
+		//pido memoria para ese pcb
+		t_pcb *infoPcbAEliminar = malloc(sizeof(t_pcb));
+
+		//asigno pcb en memoria
+		infoPcbAEliminar->pid = unPcbAEliminar->pid;
+		//infoPcbAEliminar->cantidadPaginasCodigo = unPcbAEliminar->cantidadPaginasCodigo;
+
+		//printf("%d%d",unPcbAEliminar->pid,unPcbAEliminar->cantidadPaginasCodigo);
+		//serializarPCByEnviar(socketKernel,comandoInicializacion,&infoPcbAEliminar,pcbAEliminar);
+
+		list_destroy_and_destroy_elements(listaPcb, free);
+
+
+		//un send avisandole al kernel q termino ese proceso con su header
+		free(pcbAEliminar);
+
+}
+void stackOverflow(t_pcb* pcb_actual){
+		log_info(loggerConPantalla, "El pid %d sufrio stack overflow", pcb_actual->pid);
+		dummy_finalizar();
+
+}
