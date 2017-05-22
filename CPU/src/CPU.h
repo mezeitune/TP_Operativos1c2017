@@ -30,6 +30,8 @@
 
 #include "PCB.h"
 
+int paginaSize;
+int stackSize;
 
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_definirVariable	=definirVariable,
@@ -78,7 +80,7 @@ void recibirTamanioPagina();
 void recibirPCB();
 void signalSigusrHandler(int signum);
 void imprimirPCB(t_pcb * pcb);
-
+int cantidadPaginasTotales(t_pcb * pcb);
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 void connectionHandlerKernel(int socketAceptado, char orden);

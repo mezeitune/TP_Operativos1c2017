@@ -7,14 +7,12 @@ int main(void) {
 	imprimirConfiguraciones();
 	inicializarLog("/home/utnso/Log/logCPU.txt");
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
-	//send(socketKernel,'N',sizeof(char),0);
-
-
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
 	recibirTamanioPagina(socketKernel);
+
 	listaPcb = list_create();
 	signal(SIGUSR1, signalSigusrHandler);
 
@@ -57,7 +55,11 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 orden = '\0';
 return;
 }
-
+int cantidadPaginasTotales(t_pcb* pcb){
+	int paginasTotales= (stackSize + pcb->cantidadPaginasCodigo);
+	printf("%d",paginasTotales);
+	return paginasTotales;
+}
 void establecerPCB(){
 
 	t_pcb *pcb = malloc(sizeof(t_pcb));
@@ -319,7 +321,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 						nueva_posicion_memoria->pagina = (posicion_memoria->pagina + 1);//le digo de escribir en la pagina sig
 						nueva_posicion_memoria->offset = 0;
 						nueva_posicion_memoria->size = 4;
-							if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){//si la pagina excede la cantidad de pagina del stack
+							if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){//si la pagina excede la cantidad de paginas totales
 								stackOverflow(pcb_actual);
 							} else {
 							list_add(nodo->args, nueva_posicion_memoria);//sino agrego en la lista de argumentos la posicion en memoria de esa variaable
@@ -331,21 +333,22 @@ t_puntero definirVariable(t_nombre_variable variable) {
 									nueva_posicion_memoria->pagina = posicion_memoria->pagina;
 									nueva_posicion_memoria->offset = (posicion_memoria->offset + posicion_memoria->size);
 									nueva_posicion_memoria->size = 4;
-									if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+									if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 										stackOverflow(pcb_actual);
 									} else {
 										list_add(nodo->args, nueva_posicion_memoria);
 									}
 					}//sino me excedi del tamaño de la pagina
+					//sino encontre una variable, creo una nueva :)
 				}else {
 							if(paginaSize < 4){
 								printf("Tamaño de pagina menor a 4 bytes\n");
 							} else {
 								//le asigno la pagina donde empieza el stack (ver)
-								nueva_posicion_memoria->pagina = (pcb_actual->cantidadPaginasCodigo - stackSize);
+								nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - stackSize);
 								nueva_posicion_memoria->offset = 0;
 								nueva_posicion_memoria->size = 4;
-								if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+								if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 									stackOverflow(pcb_actual);
 								} else {
 									list_add(nodo->args, nueva_posicion_memoria);
@@ -364,7 +367,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								nueva_posicion_memoria->size = 4;
 								nueva_variable->idVar = variable;
 								nueva_variable->dirVar = nueva_posicion_memoria;
-								if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+								if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 									stackOverflow(pcb_actual);
 								} else {
 									list_add(nodo->vars, nueva_variable);
@@ -376,7 +379,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								nueva_posicion_memoria->size = 4;
 								nueva_variable->idVar = variable;
 								nueva_variable->dirVar = nueva_posicion_memoria;
-								if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+								if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 									stackOverflow(pcb_actual);
 								} else {
 									list_add(nodo->vars, nueva_variable);
@@ -387,12 +390,12 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								if(paginaSize < 4){
 									printf("Tamaño de pagina menor a 4 bytes\n");
 									} else {
-										nueva_posicion_memoria->pagina = (pcb_actual->cantidadPaginasCodigo - stackSize);//ACA MUESTRA -1 PORQUE HAY UNA PAGINA DE CODIGO Y 2 DE STACK
+										nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - stackSize);//ACA MUESTRA -1 PORQUE HAY UNA PAGINA DE CODIGO Y 2 DE STACK
 										nueva_posicion_memoria->offset = 0;
 										nueva_posicion_memoria->size = 4;
 										nueva_variable->idVar = variable;
 										nueva_variable->dirVar = nueva_posicion_memoria;
-										if(nueva_posicion_memoria->pagina >= pcb_actual->cantidadPaginasCodigo){
+										if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 											stackOverflow(pcb_actual);
 										} else {
 											list_add(nodo->vars, nueva_variable);
