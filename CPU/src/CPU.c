@@ -24,9 +24,10 @@ int main(void) {
 }
 void esperarPCB(){
 				while(cpuOcupada==1){
-				log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
-				recibirPCB();
-				cpuOcupada--;
+					log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
+					recibirPCB();
+					cpuOcupada--;
+
 				}
 }
 void recibirPCB(){
@@ -38,6 +39,7 @@ void recibirPCB(){
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
 		log_info(loggerConPantalla, "Se ha avisado que se quiere enviar un PCB...\n");
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
+
 
 }
 
@@ -75,11 +77,12 @@ void establecerPCB(){
 
 	ciclosDeQuantum(pcb);
 
+
 }
 void ciclosDeQuantum(t_pcb* pcb){
 	int i = 0;
 
-	int quantum_definido=1;
+	int quantum_definido=100;
 	//recv(socketKernel,&quantum_definido,sizeof(int),0);
 	while((i < quantum_definido)){
 		ejecutarInstruccion(pcb);
@@ -385,6 +388,80 @@ int posicion= (nueva_posicion_memoria->pagina * paginaSize) + nueva_posicion_mem
 
 return posicion;
 }
+
+
+
+
+t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
+	log_info(loggerConPantalla, "Obteniendo la posicion de la variable: %c", variable);
+	t_pcb *pcb_actual = malloc(sizeof(t_pcb));
+	pcb_actual = list_get(listaPcb,0);
+	int nodos_stack = list_size(pcb_actual->indiceStack);//obtengo cantidad de nodos
+	int cantidad_variables;
+	int i;
+	int encontre_valor = 1;
+	t_nodoStack *nodoUltimo;
+	t_posMemoria *posicion_memoria;
+	t_posMemoria* nueva_posicion_memoria;
+	t_variable *nueva_variable;
+	t_variable *var;
+	nodoUltimo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));//obtengo el ultimo nodo de la lista
+	if((variable >= '0') && (variable <= '9')){//si esta entre 0 y 9 significa que es un argumento de una funcion
+		int variable_int = variable - '0';//lo pasa a int
+
+		posicion_memoria = list_get(nodoUltimo->args, variable_int);//lo busca en la lista de argumentos
+		if(posicion_memoria != NULL){
+			encontre_valor = 0;
+		}
+	} else {//si es una variable propiamente dicha
+		cantidad_variables = list_size(nodoUltimo->vars);
+		for(i = 0; i < cantidad_variables; i++){
+			var = list_get(nodoUltimo->vars, i);
+			if(var->idVar == variable){
+				posicion_memoria = var->dirVar;
+				encontre_valor = 0;
+			}
+		}
+	}
+	if(encontre_valor == 1){
+		log_info(loggerConPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
+		return -1;
+	}
+	int posicion_serializada = (posicion_memoria->pagina * paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
+	//free(pcb_actual);
+	return posicion_serializada;
+}
+
+
+/*
+
+t_valor_variable dereferenciar(t_puntero puntero) {
+	int num_pagina = puntero / paginaSize;
+	int offset = puntero - (num_pagina * paginaSize);
+	char *valor_variable_char = pedir_bytes_umc(num_pagina, offset, 4);
+	log_info(loggerConPantalla, "Valor Obtenido de la umc: %s", valor_variable_char);
+	char *ptr;
+	int valor_variable = strtol(valor_variable_char, &ptr, 10);
+	free(valor_variable_char);
+	log_info(loggerConPantalla, "dereferenciar: Valor Obtenido: %d", valor_variable);
+	return valor_variable;
+}
+
+
+
+
+void asignar(t_puntero puntero, t_valor_variable variable) {
+	int num_pagina = puntero / paginaSize;
+	int offset = puntero - (num_pagina * paginaSize);
+	char *valor_variable = string_itoa(variable);
+	enviar_bytes_umc(num_pagina, offset, 4, valor_variable);
+	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
+	free(valor_variable);
+}
+*/
+
+
+
 void finalizar (){
 		t_pcb *pcb_actual = malloc(sizeof(t_pcb));
 		pcb_actual = list_get(listaPcb,0);
