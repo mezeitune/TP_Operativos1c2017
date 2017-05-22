@@ -82,7 +82,7 @@ void establecerPCB(){
 void ciclosDeQuantum(t_pcb* pcb){
 	int i = 0;
 
-	int quantum_definido=100;
+	int quantum_definido=2;
 	//recv(socketKernel,&quantum_definido,sizeof(int),0);
 	while((i < quantum_definido)){
 		ejecutarInstruccion(pcb);
@@ -117,16 +117,16 @@ int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,
 	return resultadoEjecucion;
 }
 
-int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size){
+int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar,int offset){
 		int resultadoEjecucion=1;
 		int comandoAlmacenar = 'C';
 
-		int paginaDondeGuardoDatos = 1; // valor arbitrario
+
 
 		send(socketMemoria,&comandoAlmacenar,sizeof(char),0);
 		send(socketMemoria,&pcb->pid,sizeof(int),0);
-		send(socketMemoria,&paginaDondeGuardoDatos,sizeof(int),0);
-		//send(socketMemoria,&pcb->offset,sizeof(int),0);
+		send(socketMemoria,&paginaAGuardar,sizeof(int),0);
+		send(socketMemoria,&offset,sizeof(int),0);
 		send(socketMemoria,&size,sizeof(int),0);
 		send(socketMemoria,buffer,size,0);
 
@@ -431,37 +431,6 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	//free(pcb_actual);
 	return posicion_serializada;
 }
-
-
-/*
-
-t_valor_variable dereferenciar(t_puntero puntero) {
-	int num_pagina = puntero / paginaSize;
-	int offset = puntero - (num_pagina * paginaSize);
-	char *valor_variable_char = pedir_bytes_umc(num_pagina, offset, 4);
-	log_info(loggerConPantalla, "Valor Obtenido de la umc: %s", valor_variable_char);
-	char *ptr;
-	int valor_variable = strtol(valor_variable_char, &ptr, 10);
-	free(valor_variable_char);
-	log_info(loggerConPantalla, "dereferenciar: Valor Obtenido: %d", valor_variable);
-	return valor_variable;
-}
-
-
-
-
-void asignar(t_puntero puntero, t_valor_variable variable) {
-	int num_pagina = puntero / paginaSize;
-	int offset = puntero - (num_pagina * paginaSize);
-	char *valor_variable = string_itoa(variable);
-	enviar_bytes_umc(num_pagina, offset, 4, valor_variable);
-	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
-	free(valor_variable);
-}
-*/
-
-
-
 void finalizar (){
 		t_pcb *pcb_actual = malloc(sizeof(t_pcb));
 		pcb_actual = list_get(listaPcb,0);
@@ -474,3 +443,39 @@ void finalizar (){
 		esperarPCB();
 }
 
+t_valor_variable dereferenciar(t_puntero puntero) {
+	int num_pagina = puntero / paginaSize;
+	int offset = puntero - (num_pagina * paginaSize);
+	char *valor_variable_char;
+	char* mensajeRecibido;
+	t_pcb* pcb_actual = malloc(sizeof(t_pcb));
+	pcb_actual = list_get (listaPcb,0);
+		if ( conseguirDatosMemoria(&mensajeRecibido,pcb_actual, num_pagina,offset, 4)<0){
+				printf("No se pudo solicitar el contenido\n");
+		}else{
+				valor_variable_char=mensajeRecibido;
+		}
+	log_info(loggerConPantalla, "Valor Obtenido de la Memoria: %s", valor_variable_char);
+	char *ptr;
+	int valor_variable = strtol(valor_variable_char, &ptr, 10);
+	free(valor_variable_char);
+	log_info(loggerConPantalla, "dereferenciar: Valor Obtenido: %d", valor_variable);
+	return valor_variable;
+	free(pcb_actual);
+}
+
+
+
+
+void asignar(t_puntero puntero, t_valor_variable variable) {
+
+	t_pcb* pcb_actual = malloc(sizeof(t_pcb));
+	pcb_actual = list_get (listaPcb,0);
+	int num_pagina = puntero / paginaSize;
+	int offset = puntero - (num_pagina * paginaSize);
+	char *valor_variable = string_itoa(variable);
+	almacenarDatosEnMemoria(pcb_actual,valor_variable,4,num_pagina, offset);
+	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
+	free(valor_variable);
+	free(pcb_actual);
+}

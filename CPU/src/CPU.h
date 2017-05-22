@@ -36,8 +36,8 @@ AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_definirVariable	=definirVariable,
 	.AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
 	.AnSISOP_finalizar =finalizar,
-	.AnSISOP_dereferenciar	= dummy_dereferenciar,
-	.AnSISOP_asignar	= dummy_asignar,
+	.AnSISOP_dereferenciar	= dereferenciar,
+	.AnSISOP_asignar	= asignar,
 	/*
 	 .AnSISOP_obtenerValorCompartida
 	 .AnSISOP_asignarValorCompartida
@@ -66,7 +66,7 @@ AnSISOP_kernel kernel_functions = {/*
 char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
 char* obtener_instruccion(t_pcb * pcb);
 
-int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size);
+int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar,int offset);
 int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size);
 
 //-----------------------------------------------------------------------------------------------------------------
