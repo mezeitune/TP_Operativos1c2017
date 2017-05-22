@@ -241,8 +241,6 @@ void stackOverflow(t_pcb* pcb_actual){
 
 
 t_puntero definirVariable(t_nombre_variable variable) {
-	printf("pasa");
-
 	t_pcb *pcb_actual = malloc(sizeof(t_pcb));
 	pcb_actual = list_get(listaPcb,0);
 	int nodos_stack = list_size(pcb_actual->indiceStack);

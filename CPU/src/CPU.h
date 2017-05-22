@@ -35,7 +35,7 @@
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_definirVariable	=definirVariable,
 	.AnSISOP_obtenerPosicionVariable= dummy_obtenerPosicionVariable,
-	.AnSISOP_finalizar = dummy_finalizar,
+	.AnSISOP_finalizar =finalizar,
 	.AnSISOP_dereferenciar	= dummy_dereferenciar,
 	.AnSISOP_asignar	= dummy_asignar,
 	/*
@@ -90,7 +90,7 @@ void expropiarPorQuantum(t_pcb * pcb);
 //-----------------------------------------------------------------------------------------------------------------
 
 void stackOverflow();
-void finalizar();
+
 
 t_config* configuracion_memoria;
 char* puertoKernel;

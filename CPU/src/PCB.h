@@ -56,7 +56,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socket);
 t_pcb* recibirYDeserializarPcb(int socketKernel);
 void imprimirPcb(t_pcb* pcb);
 t_puntero definirVariable(t_nombre_variable variable);
-
+void finalizar();
 int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
 int** inicializarIndiceCodigo(t_size cantidadInstrucciones);
 //---------PCB-----------------//
