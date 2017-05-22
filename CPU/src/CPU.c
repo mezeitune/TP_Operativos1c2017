@@ -24,9 +24,10 @@ int main(void) {
 }
 void esperarPCB(){
 				while(cpuOcupada==1){
-				log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
-				recibirPCB();
-				cpuOcupada--;
+					log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
+					recibirPCB();
+					cpuOcupada--;
+
 				}
 }
 void recibirPCB(){
@@ -38,6 +39,7 @@ void recibirPCB(){
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
 		log_info(loggerConPantalla, "Se ha avisado que se quiere enviar un PCB...\n");
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
+
 
 }
 
@@ -74,6 +76,7 @@ void establecerPCB(){
 	list_add(listaPcb, pcb);
 
 	ciclosDeQuantum(pcb);
+
 
 }
 void ciclosDeQuantum(t_pcb* pcb){
@@ -403,13 +406,14 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	t_variable *nueva_variable;
 	t_variable *var;
 	nodoUltimo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));//obtengo el ultimo nodo de la lista
-	if((variable >= '0') && (variable <= '9')){//verifica que sea una variable
-		int variable_int = variable - '0';
-		posicion_memoria = list_get(nodoUltimo->args, variable_int);
+	if((variable >= '0') && (variable <= '9')){//si esta entre 0 y 9 significa que es un argumento de una funcion
+		int variable_int = variable - '0';//lo pasa a int
+
+		posicion_memoria = list_get(nodoUltimo->args, variable_int);//lo busca en la lista de argumentos
 		if(posicion_memoria != NULL){
 			encontre_valor = 0;
 		}
-	} else {
+	} else {//si es una variable propiamente dicha
 		cantidad_variables = list_size(nodoUltimo->vars);
 		for(i = 0; i < cantidad_variables; i++){
 			var = list_get(nodoUltimo->vars, i);
@@ -424,11 +428,37 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 		return -1;
 	}
 	int posicion_serializada = (posicion_memoria->pagina * paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
+	//free(pcb_actual);
 	return posicion_serializada;
 }
 
 
+/*
 
+t_valor_variable dereferenciar(t_puntero puntero) {
+	int num_pagina = puntero / paginaSize;
+	int offset = puntero - (num_pagina * paginaSize);
+	char *valor_variable_char = pedir_bytes_umc(num_pagina, offset, 4);
+	log_info(loggerConPantalla, "Valor Obtenido de la umc: %s", valor_variable_char);
+	char *ptr;
+	int valor_variable = strtol(valor_variable_char, &ptr, 10);
+	free(valor_variable_char);
+	log_info(loggerConPantalla, "dereferenciar: Valor Obtenido: %d", valor_variable);
+	return valor_variable;
+}
+
+
+
+
+void asignar(t_puntero puntero, t_valor_variable variable) {
+	int num_pagina = puntero / paginaSize;
+	int offset = puntero - (num_pagina * paginaSize);
+	char *valor_variable = string_itoa(variable);
+	enviar_bytes_umc(num_pagina, offset, 4, valor_variable);
+	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
+	free(valor_variable);
+}
+*/
 
 
 
