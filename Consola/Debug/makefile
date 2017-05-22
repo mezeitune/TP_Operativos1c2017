@@ -29,7 +29,7 @@ all: Consola
 Consola: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross GCC Linker'
-	gcc  -o "Consola" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L../parser-ansisop -o "Consola" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
