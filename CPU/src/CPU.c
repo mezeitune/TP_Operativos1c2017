@@ -79,7 +79,7 @@ void establecerPCB(){
 void ciclosDeQuantum(t_pcb* pcb){
 	int i = 0;
 
-	int quantum_definido=1;
+	int quantum_definido=100;
 	//recv(socketKernel,&quantum_definido,sizeof(int),0);
 	while((i < quantum_definido)){
 		ejecutarInstruccion(pcb);
@@ -385,6 +385,53 @@ int posicion= (nueva_posicion_memoria->pagina * paginaSize) + nueva_posicion_mem
 
 return posicion;
 }
+
+
+
+
+t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
+	log_info(loggerConPantalla, "Obteniendo la posicion de la variable: %c", variable);
+	t_pcb *pcb_actual = malloc(sizeof(t_pcb));
+	pcb_actual = list_get(listaPcb,0);
+	int nodos_stack = list_size(pcb_actual->indiceStack);//obtengo cantidad de nodos
+	int cantidad_variables;
+	int i;
+	int encontre_valor = 1;
+	t_nodoStack *nodoUltimo;
+	t_posMemoria *posicion_memoria;
+	t_posMemoria* nueva_posicion_memoria;
+	t_variable *nueva_variable;
+	t_variable *var;
+	nodoUltimo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));//obtengo el ultimo nodo de la lista
+	if((variable >= '0') && (variable <= '9')){//verifica que sea una variable
+		int variable_int = variable - '0';
+		posicion_memoria = list_get(nodoUltimo->args, variable_int);
+		if(posicion_memoria != NULL){
+			encontre_valor = 0;
+		}
+	} else {
+		cantidad_variables = list_size(nodoUltimo->vars);
+		for(i = 0; i < cantidad_variables; i++){
+			var = list_get(nodoUltimo->vars, i);
+			if(var->idVar == variable){
+				posicion_memoria = var->dirVar;
+				encontre_valor = 0;
+			}
+		}
+	}
+	if(encontre_valor == 1){
+		log_info(loggerConPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
+		return -1;
+	}
+	int posicion_serializada = (posicion_memoria->pagina * paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
+	return posicion_serializada;
+}
+
+
+
+
+
+
 void finalizar (){
 		t_pcb *pcb_actual = malloc(sizeof(t_pcb));
 		pcb_actual = list_get(listaPcb,0);
