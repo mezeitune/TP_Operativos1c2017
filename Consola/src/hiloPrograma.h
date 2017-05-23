@@ -74,9 +74,8 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		pthread_mutex_unlock(&mutex_crearHilo);
 		recv(socketHiloKernel,&size,sizeof(int),0);
 		mensaje = malloc(size);
-		recv(socketHiloKernel,&mensaje,size,0);
-		/*Procesar el mensaje*/
-		free(mensaje);
+		recv(socketHiloKernel,mensaje,size,0);
+		printf("%s\n",mensaje);
 	}
 
 	printf("Termine de recibir los datos del kernel\n");
