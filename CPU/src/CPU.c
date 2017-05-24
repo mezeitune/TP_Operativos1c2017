@@ -503,6 +503,36 @@ void retornar(t_valor_variable retorno){
 }
 
 
+void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
+t_pcb *pcb_actual = malloc(sizeof(t_pcb));
+pcb_actual = list_get(listaPcb,0);
+t_nodoStack *nodo = malloc(sizeof(t_nodoStack));
+nodo->args = list_create();
+nodo->vars = list_create();
+nodo->retPos = (pcb_actual->programCounter);//Puede ser programCounter + 1
+int num_pagina = donde_retornar / paginaSize;
+int offset = donde_retornar - (num_pagina * paginaSize);
+t_posMemoria *retorno = malloc(sizeof(t_posMemoria));
+retorno->pagina = num_pagina;
+retorno->offset = offset;
+retorno->size = 4;
+nodo->retVar = retorno;
+list_add(pcb_actual->indiceStack, nodo);
+char** string_cortado = string_split(etiqueta, "\n");
+int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
+	if(program_counter == -1){
+		printf("No se encontro la funcion %s en el indice de etiquetas\n", string_cortado[0]);
+	} else {
+		pcb_actual->programCounter = (program_counter - 1);
+	}
+int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+free(string_cortado);
+}
+
 void asignar(t_puntero puntero, t_valor_variable variable) {
 
 	t_pcb* pcb_actual = malloc(sizeof(t_pcb));
