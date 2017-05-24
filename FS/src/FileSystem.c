@@ -61,6 +61,7 @@ void connection_handlerR();
 void printFilePermissions(char* archivo);
 int archivoEnModoEscritura(char* archivo);
 int archivoEnModoLectura(char* archivo);
+char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size);
 
 int main(void){
 
@@ -234,9 +235,13 @@ void connection_handlerR()
 
 				printFilePermissions("../metadata/alumno.bin");
 				if((archivoEnModoLectura("../metadata/alumno.bin"))==1){
-					printf("\n dale sigamo");
+					//printf("\n dale sigamo");
+					fp = fopen("../metadata/alumno.bin", "r");
+					printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
+
+
 				}else{
-					printf("\n no sigamo");
+					printf("\n El archivo no esta en modo lectura");
 				}
 			} else {
 			    // file doesn't exist
@@ -251,7 +256,7 @@ void connection_handlerR()
 				if(archivoEnModoEscritura("../metadata/alumno.bin")==1){
 					printf("\n dale sigamo");
 				}else{
-					printf("\n no sigamo");
+					printf("\n El archivo no esta en modo escritura");
 				}
 
 			} else {
@@ -265,6 +270,31 @@ void connection_handlerR()
 		}
 	}
 }
+
+
+
+ /*get:  read n bytes from position pos */
+ char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
+ {
+
+	 	char aDevolver[size-offset];
+		int caracterALeer;
+		int paraDeLeer=size+offset;
+		char name[2];
+	    while((getc(fp)!=EOF))
+	    {
+	    	caracterALeer = fgetc(fp);
+	        fseek(fp,offset,0);
+	        char carALeerToChar=caracterALeer;
+	        fgets(name,1,fp);
+	        strcat(aDevolver, &carALeerToChar); /* copy name into the new var */
+	        offset++ ;
+	        if(offset==paraDeLeer) break;
+	    }
+	   fclose(fp);
+
+	   return aDevolver;
+ }
 
 void leerConfiguracion(char* ruta){
 	configuracion_FS = config_create(ruta);
@@ -358,6 +388,9 @@ void printFilePermissions(char* archivo){
 }
 
 int archivoEnModoEscritura(char* archivo){
+	//Aca en realidad lo que tengo que hacer es recibir del Kernel
+	//si esta en modo Escritura ese archivo en la tabla de archivos por proceso
+	//pero por ahora queda asi para no andar metiendo sockets de por medio
 	 struct stat fileStat;
 	    stat(archivo,&fileStat);
 
