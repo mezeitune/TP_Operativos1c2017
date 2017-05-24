@@ -61,6 +61,7 @@ void connection_handlerR();
 void printFilePermissions(char* archivo);
 int archivoEnModoEscritura(char* archivo);
 int archivoEnModoLectura(char* archivo);
+char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size);
 
 int main(void){
 
@@ -235,22 +236,9 @@ void connection_handlerR()
 				printFilePermissions("../metadata/alumno.bin");
 				if((archivoEnModoLectura("../metadata/alumno.bin"))==1){
 					//printf("\n dale sigamo");
+					fp = fopen("../metadata/alumno.bin", "r");
+					printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
 
-
-					fp=fopen("../metadata/alumno.bin","r");
-					int offset=5;
-					int caracterALeer;
-					int size=9;
-					int paraDeLeer=size+offset;
-				    while((getc(fp)!=EOF))
-				    {
-				    	caracterALeer = fgetc(fp);
-				        fseek(fp,offset,0);
-				        printf(" '%c'",caracterALeer);
-				        offset++ ;
-				        if(offset==paraDeLeer) break;
-				    }
-				    fclose(fp);
 
 				}else{
 					printf("\n El archivo no esta en modo lectura");
@@ -286,12 +274,26 @@ void connection_handlerR()
 
 
  /*get:  read n bytes from position pos */
- int get(int fd, long pos, char *buf, int n)
+ char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
  {
-     if (lseek(fd, pos, 0) >= 0) /* get to pos */
-         return read(fd, buf, n);
-     else
-         return -1;
+
+	 	char aDevolver[size-offset];
+		int caracterALeer;
+		int paraDeLeer=size+offset;
+		char name[2];
+	    while((getc(fp)!=EOF))
+	    {
+	    	caracterALeer = fgetc(fp);
+	        fseek(fp,offset,0);
+	        char carALeerToChar=caracterALeer;
+	        fgets(name,1,fp);
+	        strcat(aDevolver, &carALeerToChar); /* copy name into the new var */
+	        offset++ ;
+	        if(offset==paraDeLeer) break;
+	    }
+	   fclose(fp);
+
+	   return aDevolver;
  }
 
 void leerConfiguracion(char* ruta){
