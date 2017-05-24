@@ -181,7 +181,6 @@ void *connection_handler(void *socket_desc)
 void connection_handlerR()
 {
     char orden;
-	int offset;
     FILE *fp;
     int resultadoDeEjecucion;
     while(orden != 'Q'){
@@ -238,15 +237,18 @@ void connection_handlerR()
 					//printf("\n dale sigamo");
 
 
-					FILE *fp=fopen("../metadata/alumno.bin","r");
-					int n=5;
-					int c;
-				    while(getc(fp)!=EOF)
+					fp=fopen("../metadata/alumno.bin","r");
+					int offset=5;
+					int caracterALeer;
+					int size=9;
+					int paraDeLeer=size+offset;
+				    while((getc(fp)!=EOF))
 				    {
-				    	c = fgetc(fp);
-				        fseek(fp,n,0);
-				        printf(" '%c'",c);
-				        n++ ;
+				    	caracterALeer = fgetc(fp);
+				        fseek(fp,offset,0);
+				        printf(" '%c'",caracterALeer);
+				        offset++ ;
+				        if(offset==paraDeLeer) break;
 				    }
 				    fclose(fp);
 
