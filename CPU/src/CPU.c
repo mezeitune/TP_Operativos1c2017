@@ -533,6 +533,10 @@ int i = 0;
 free(string_cortado);
 }
 
+void llamarSinRetorno(t_nombre_etiqueta etiqueta){
+
+}
+
 void irAlLabel(t_nombre_etiqueta etiqueta){
 t_pcb *pcb_actual = malloc(sizeof(t_pcb));
 pcb_actual = list_get(listaPcb,0);
@@ -564,3 +568,30 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	free(valor_variable);
 	free(pcb_actual);
 }
+
+//Kernel primitivas
+
+
+void wait(t_nombre_semaforo identificador_semaforo){
+	t_pcb* pcb_actual = malloc(sizeof(t_pcb));
+	pcb_actual = list_get (listaPcb,0);
+	char** string_cortado = string_split(identificador_semaforo, "\n");
+	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
+	void* wait_serializado;
+	//int tamanioMensaje = serializarWait(string_cortado[0], &wait_serializado);
+	//send(socketKernel,&wait_serializado,tamanioMensaje,0);
+	free(wait_serializado);
+	char* mensaje = recibir_string(socketKernel);
+	if(strcmp(mensaje, "dale para adelante!") != 0){
+		//pcb_bloqueado = 1;
+		log_info(loggerConPantalla, "pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
+	}
+	int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+	free(string_cortado);
+	free(mensaje);
+}
+
