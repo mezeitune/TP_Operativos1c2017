@@ -1,5 +1,7 @@
 /*
  ============================================================================
+ /*
+ ============================================================================
  Name        : Kernel.c
  Author      : Servomotor
  Version     :
@@ -44,7 +46,7 @@ char *semIds;
 char *semInit;
 char *sharedVars;
 int stackSize;
-int paginaSize; // todo: Tiene que obtenerlo por handshake con memoria
+int config_paginaSize; // todo: Tiene que obtenerlo por handshake con memoria
 
 //--------Sincronizacion-------//
 
@@ -167,6 +169,7 @@ int socketServidor; // Para CPUs y Consolas
 int solicitarContenidoAMemoria(char** mensajeRecibido);
 int pedirMemoria(t_pcb* procesoListo);
 int almacenarEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
+int particionarCodigo(char* programa,char ** particionCodigo,int *programSizeRestante);
 //---------Conexion con memoria--------//
 
 
@@ -363,7 +366,7 @@ void connectionHandler(int socketAceptado, char orden) {
 				_Bool verificarPid(t_consola* pidNuevo){
 					return (pidNuevo->pid== pidARecibir);
 				}
-
+;
 				int totalPids = 0;
 				void sumarPids(t_consola* p){
 					totalPids += p->pid;
@@ -374,7 +377,7 @@ void connectionHandler(int socketAceptado, char orden) {
 
 				break;
 		case 'P':
-				send(socketAceptado,&paginaSize,sizeof(int),0);
+				send(socketAceptado,&config_paginaSize,sizeof(int),0);
 				send(socketAceptado,&stackSize,sizeof(int),0);
 				break;
 		case 'X':
@@ -403,6 +406,13 @@ void interruptHandler(int socketAceptado,char orden){
 	int socketHiloPrograma;
 
 	switch(orden){
+	case 'A':
+		log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos");
+		mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
+		size=strlen(mensaje);
+		informarConsola(socketAceptado,mensaje,size);
+		mensaje='\0';
+		break;
 	case 'P':
 		log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
 		recv(socketAceptado,&size,sizeof(int),0);
@@ -418,6 +428,7 @@ void interruptHandler(int socketAceptado,char orden){
 		mensaje = "El programa ANSISOP no puede iniciar actualmente debido a grado de multiprogramacion, se mantendra en espera hasta poder iniciar";
 		size=strlen(mensaje);
 		informarConsola(socketAceptado,mensaje,size);
+		mensaje='\0';
 		break;
 	default:
 			break;
@@ -460,7 +471,6 @@ int atenderNuevoPrograma(int socketAceptado){
 
 		contadorPid++; // VAR GLOBAL
 
-
 		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
 		codigoPrograma->pid=contadorPid;
 
@@ -484,10 +494,8 @@ int atenderNuevoPrograma(int socketAceptado){
 
 void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
-				log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
-				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
-				 // TODO: Avisar a consola que no se puede ejecutar el programa por falta de memoria y que trate mas tarde;
-				// TODO: liberar la entrada en las respectivas listas;
+				log_error(loggerConPantalla ,"\nNo se pudo reservar recursos para ejecutar el programa");
+				interruptHandler(codigoPrograma->socketHiloConsola,'A'); // Informa a consola error por no poder reservar recursos
 				free(proceso);
 				free(codigoPrograma);
 			}
@@ -502,16 +510,14 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 	if((pedirMemoria(proceso))< 0){
 				free(proceso);
 				free(codigoPrograma);
-				log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
 				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
-				return -1; // TODO: Avisar a consola que no se puede ejecutar el programa por falta de memoria.
+				return -1;
 			}
 	log_info(loggerConPantalla ,"Existe espacio en memoria para el nuevo programa\n");
 
 	if((almacenarEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){ //TODO: Solo almaceno una pagina de codigo. Tiene que almacenar n paginas de codigo y ademas las paginas de stack
 					free(proceso);
 					free(codigoPrograma);
-					log_error(loggerConPantalla ,"\nNo se puede crear un nuevo proceso en el sistema");
 					log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
 					return -2;
 				}
@@ -538,17 +544,16 @@ void* planificarLargoPlazo(int socket){
 void* planificarCortoPlazo(){
 	t_pcb* pcbListo;
 	int socket;
-	/* TODO: Aca nacho tu planificador deberia ser al revez con los signals. Primero que haga signal de la cpu, y despues de la cola de readys*/
 
 	while(1){
-		sem_wait(&sem_colaReady);
+		sem_wait(&sem_CPU);
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_get(colaListos,0);
 		list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
-		sem_wait(&sem_CPU);
+		sem_wait(&sem_colaReady);
 
 		socket = list_get(listaCPU,0);
 		serializarPcbYEnviar(pcbListo, socket);
@@ -607,23 +612,50 @@ int pedirMemoria(t_pcb* procesoListo){
 
 int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
 	log_info(loggerConPantalla, "Almacenando programa en memoria ---- PID: %d", procesoListoAutorizado->pid);
+		char* particionCodigo;
+		int particionSize;
+		int programSizeRestante = programSize;
 		int resultadoEjecucion=1;
 		int comandoAlmacenar = 'C';
 		int offset=0;
-		int paginaPrograma = 0; // Quiero guardar los datos nomas.
+		int nroPagina;
+		for(nroPagina=0; nroPagina<procesoListoAutorizado->cantidadPaginasCodigo;nroPagina++){
+			particionSize=particionarCodigo(programa,&particionCodigo,&programSizeRestante);
 
-		void * mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + programSize);
+		void * mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + particionSize);
 		memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
 		memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
-		memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&paginaPrograma,sizeof(int));
+		memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&nroPagina,sizeof(int));
 		memcpy(mensajeAMemoria + sizeof(int)*2 + sizeof(char),&offset,sizeof(int));
-		memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&programSize,sizeof(int));
-		memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),programa,programSize);
-		send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + programSize,0);
+		memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&particionSize,sizeof(int));
+		memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),particionCodigo,programSize);
+		send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + particionSize,0);
 
 		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 		free(mensajeAMemoria);
+		free(particionCodigo);
+		free(particionCodigo);
+		}
 		return resultadoEjecucion;
+
+		/*TODO: TESTEAR*/
+}
+int particionarCodigo(char* programa,char ** particionCodigo,int *programSizeRestante){
+	int mod=*programSizeRestante % config_paginaSize;
+
+			 if(mod == *programSizeRestante){
+				 *programSizeRestante -= *programSizeRestante;
+				 *particionCodigo = malloc(*programSizeRestante);
+				strncpy(*particionCodigo,programa,*programSizeRestante);
+				return *programSizeRestante;
+		 }
+			else{
+				*particionCodigo = malloc(config_paginaSize);
+				strncpy(*particionCodigo,programa,config_paginaSize);
+				*programSizeRestante -= config_paginaSize;
+				return config_paginaSize;
+		 }
+
 }
 
 
@@ -735,7 +767,7 @@ void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
 	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
 	printf("---------------------------------------------------\n");
-	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	quantum, quantumSleep, algoritmo, config_gradoMultiProgramacion, semIds, semInit, sharedVars, stackSize, paginaSize);
+	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	quantum, quantumSleep, algoritmo, config_gradoMultiProgramacion, semIds, semInit, sharedVars, stackSize, config_paginaSize);
 	printf("---------------------------------------------------\n");
 
 }
@@ -872,7 +904,7 @@ void leerConfiguracion(char* ruta) {
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
 	stackSize = atoi(config_get_string_value(configuracion_kernel, "STACK_SIZE"));
-	paginaSize = atoi(config_get_string_value(configuracion_kernel,"PAGINA_SIZE"));
+	config_paginaSize = atoi(config_get_string_value(configuracion_kernel,"PAGINA_SIZE"));
 }
 void inicializarLog(char *rutaDeLog){
 
