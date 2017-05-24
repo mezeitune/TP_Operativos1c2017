@@ -63,7 +63,7 @@ t_valor_variable dereferenciar(t_puntero puntero);
 void finalizar();
 void retornar(t_valor_variable retorno);
 void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
-
+void irAlLabel(t_nombre_etiqueta etiqueta);
 
 int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
 int** inicializarIndiceCodigo(t_size cantidadInstrucciones);

@@ -228,7 +228,7 @@ void inicializarLog(char *rutaDeLog){
 	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
 void expropiarPorQuantum(t_pcb * pcb){
-	char comandoTerminoElQuantum= 'R';
+	//char comandoTerminoElQuantum= 'R';
 	//send(socketKernel,&comandoTerminoElQuantum , sizeof(char),0);
 	serializarPcbYEnviar(pcb,socketKernel);
 	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por fin de quantum", pcb->pid);
@@ -402,8 +402,8 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	int encontre_valor = 1;
 	t_nodoStack *nodoUltimo;
 	t_posMemoria *posicion_memoria;
-	t_posMemoria* nueva_posicion_memoria;
-	t_variable *nueva_variable;
+	//t_posMemoria* nueva_posicion_memoria;
+//	t_variable *nueva_variable;
 	t_variable *var;
 	nodoUltimo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));//obtengo el ultimo nodo de la lista
 	if((variable >= '0') && (variable <= '9')){//si esta entre 0 y 9 significa que es un argumento de una funcion
@@ -524,6 +524,25 @@ int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->in
 		printf("No se encontro la funcion %s en el indice de etiquetas\n", string_cortado[0]);
 	} else {
 		pcb_actual->programCounter = (program_counter - 1);
+	}
+int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+free(string_cortado);
+}
+
+void irAlLabel(t_nombre_etiqueta etiqueta){
+t_pcb *pcb_actual = malloc(sizeof(t_pcb));
+pcb_actual = list_get(listaPcb,0);
+char** string_cortado = string_split(etiqueta, "\n");
+int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
+	if(program_counter == -1){
+		log_info(loggerConPantalla, "No se encontro la etiqueta: %s en el indice de etiquetas", string_cortado[0]);
+	} else {
+		pcb_actual->programCounter = (program_counter - 1);
+		log_info(loggerConPantalla, "Program Counter, despues de etiqueta: %d", pcb_actual->programCounter);
 	}
 int i = 0;
 	while(string_cortado[i] != NULL){
