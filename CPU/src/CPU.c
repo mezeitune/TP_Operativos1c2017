@@ -577,10 +577,10 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	pcb_actual = list_get (listaPcb,0);
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
-	void* wait_serializado;
+	//void* wait_serializado;
 	//int tamanioMensaje = serializarWait(string_cortado[0], &wait_serializado);
 	//send(socketKernel,&wait_serializado,tamanioMensaje,0);
-	free(wait_serializado);
+	//free(wait_serializado);
 	char* mensaje = recibir_string(socketKernel);
 	if(strcmp(mensaje, "dale para adelante!") != 0){
 		//pcb_bloqueado = 1;
