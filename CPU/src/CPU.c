@@ -428,7 +428,7 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 		return -1;
 	}
 	int posicion_serializada = (posicion_memoria->pagina * paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
-	//free(pcb_actual);
+	free(pcb_actual);
 	return posicion_serializada;
 }
 void finalizar (){
@@ -464,7 +464,43 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 	free(pcb_actual);
 }
 
-
+void retornar(t_valor_variable retorno){
+	t_pcb *pcb_actual = malloc(sizeof(t_pcb));
+	pcb_actual = list_get(listaPcb,0);
+	t_nodoStack *nodo;
+	int cantidad_nodos = list_size(pcb_actual->indiceStack);
+	nodo = list_remove(pcb_actual->indiceStack, (cantidad_nodos - 1));
+	t_posMemoria *posicion_memoria;
+	posicion_memoria = nodo->retVar;
+	int num_pagina = posicion_memoria->pagina;
+	int offset = posicion_memoria->offset;
+	char *valor_variable = string_itoa(retorno);
+	almacenarDatosEnMemoria(pcb_actual,valor_variable,4,num_pagina, offset);
+	free(valor_variable);
+	pcb_actual->programCounter = nodo->retPos;// Puede ser la dir_retorno + 1
+	//Elimino el nodo de la lista
+	int cantidad_argumentos;
+	int cantidad_variables;
+	t_variable *var;
+	cantidad_argumentos = list_size(nodo->args);
+	while(cantidad_argumentos != 0){
+		posicion_memoria = list_remove(nodo->args, (cantidad_argumentos - 1));
+		free(posicion_memoria);
+		cantidad_argumentos = list_size(nodo->args);
+	}
+	list_destroy(nodo->args);
+	cantidad_variables = list_size(nodo->vars);
+	while(cantidad_variables != 0){
+		var = list_remove(nodo->vars, (cantidad_variables - 1));
+		free(var->dirVar);
+		free(var);
+		cantidad_variables = list_size(nodo->vars);
+	}
+	list_destroy(nodo->vars);
+	free(nodo->retVar);
+	free(nodo);
+	imprimirPcb(pcb_actual);
+}
 
 
 void asignar(t_puntero puntero, t_valor_variable variable) {

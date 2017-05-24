@@ -44,8 +44,7 @@ AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	 .AnSISOP_irAlLabel
 	 .AnSISOP_llamarSinRetorno
 	 .AnSISOP_llamarConRetorno
-	 .AnSISOP_retornar
-	 */
+	*/ .AnSISOP_retornar = retornar
 };
 
 AnSISOP_kernel kernel_functions = {/*
