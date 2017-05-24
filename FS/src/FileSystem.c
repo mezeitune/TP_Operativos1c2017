@@ -181,6 +181,7 @@ void *connection_handler(void *socket_desc)
 void connection_handlerR()
 {
     char orden;
+	int offset;
     FILE *fp;
     int resultadoDeEjecucion;
     while(orden != 'Q'){
@@ -234,9 +235,23 @@ void connection_handlerR()
 
 				printFilePermissions("../metadata/alumno.bin");
 				if((archivoEnModoLectura("../metadata/alumno.bin"))==1){
-					printf("\n dale sigamo");
+					//printf("\n dale sigamo");
+
+
+					FILE *fp=fopen("../metadata/alumno.bin","r");
+					int n=5;
+					int c;
+				    while(getc(fp)!=EOF)
+				    {
+				    	c = fgetc(fp);
+				        fseek(fp,n,0);
+				        printf(" '%c'",c);
+				        n++ ;
+				    }
+				    fclose(fp);
+
 				}else{
-					printf("\n no sigamo");
+					printf("\n El archivo no esta en modo lectura");
 				}
 			} else {
 			    // file doesn't exist
@@ -251,7 +266,7 @@ void connection_handlerR()
 				if(archivoEnModoEscritura("../metadata/alumno.bin")==1){
 					printf("\n dale sigamo");
 				}else{
-					printf("\n no sigamo");
+					printf("\n El archivo no esta en modo escritura");
 				}
 
 			} else {
@@ -265,6 +280,17 @@ void connection_handlerR()
 		}
 	}
 }
+
+
+
+ /*get:  read n bytes from position pos */
+ int get(int fd, long pos, char *buf, int n)
+ {
+     if (lseek(fd, pos, 0) >= 0) /* get to pos */
+         return read(fd, buf, n);
+     else
+         return -1;
+ }
 
 void leerConfiguracion(char* ruta){
 	configuracion_FS = config_create(ruta);
@@ -358,6 +384,9 @@ void printFilePermissions(char* archivo){
 }
 
 int archivoEnModoEscritura(char* archivo){
+	//Aca en realidad lo que tengo que hacer es recibir del Kernel
+	//si esta en modo Escritura ese archivo en la tabla de archivos por proceso
+	//pero por ahora queda asi para no andar metiendo sockets de por medio
 	 struct stat fileStat;
 	    stat(archivo,&fileStat);
 
