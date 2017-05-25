@@ -104,9 +104,8 @@ char* ipKernel;
 int socketMemoria;
 int socketKernel;
 //-----------------------------------------//
-t_list* listaPcb;
 pthread_t HiloConexionMemoria;
-
+t_list* listaPcb;
 int cpuOcupada=1;
 
 
