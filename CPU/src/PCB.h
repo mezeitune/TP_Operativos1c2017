@@ -55,11 +55,27 @@ int calcularPcbSerializadoSize(t_pcb* pcb);
 void serializarPcbYEnviar(t_pcb* pcb,int socket);
 t_pcb* recibirYDeserializarPcb(int socketKernel);
 void imprimirPcb(t_pcb* pcb);
+
+
+//---------Primitivas Kernel----------//
 t_puntero definirVariable(t_nombre_variable variable);
 t_puntero obtenerPosicionVariable(t_nombre_variable variable);
 void asignar(t_puntero puntero, t_valor_variable variable);
 t_valor_variable dereferenciar(t_puntero puntero);
 void finalizar();
+void retornar(t_valor_variable retorno);
+void llamarSinRetorno(t_nombre_etiqueta etiqueta);
+void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
+void irAlLabel(t_nombre_etiqueta etiqueta);
+
+
+
+//---------Primitivas Kernel----------//
+void wait(t_nombre_semaforo identificador_semaforo);
+
+
+
+
 int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
 int** inicializarIndiceCodigo(t_size cantidadInstrucciones);
 //---------PCB-----------------//

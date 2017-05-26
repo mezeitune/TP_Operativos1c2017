@@ -33,6 +33,15 @@
 #include "conexiones.h"
 
 
+
+char** tablaGlobalArchivos;
+typedef struct FS{//Para poder guardar en la lista
+	char** tablaArchivoPorProceso;
+}t_tablaArchivoPorProceso;
+t_list* listaTablasArchivosPorProceso;
+
+
+
 typedef struct CONSOLA{
 	int pid;
 	int socketHiloPrograma;
@@ -742,6 +751,7 @@ void inicializarListas(){
 	listaConsolas = list_create();
 	listaCPU = list_create();
 	listaCodigosProgramas=list_create();
+	listaTablasArchivosPorProceso=list_create();
 }
 
 /*void dispatcher(int socketCPU){ YA NO SE USA

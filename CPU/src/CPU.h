@@ -31,7 +31,6 @@
 #include "PCB.h"
 
 
-
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_definirVariable	=definirVariable,
 	.AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
@@ -41,15 +40,16 @@ AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	/*
 	 .AnSISOP_obtenerValorCompartida
 	 .AnSISOP_asignarValorCompartida
-	 .AnSISOP_irAlLabel
-	 .AnSISOP_llamarSinRetorno
-	 .AnSISOP_llamarConRetorno
-	 .AnSISOP_retornar
 	 */
+	 .AnSISOP_irAlLabel = irAlLabel,
+	 .AnSISOP_llamarSinRetorno=llamarSinRetorno,
+	 .AnSISOP_llamarConRetorno = llamarConRetorno,
+	 .AnSISOP_retornar = retornar
 };
 
-AnSISOP_kernel kernel_functions = {/*
-		.AnSISOP_wait
+AnSISOP_kernel kernel_functions = {
+		.AnSISOP_wait= wait
+		/*
 		.AnSISOP_signal
 		.AnSISOP_reservar
 		.AnSISOP_liberar
@@ -104,7 +104,10 @@ char* ipKernel;
 int socketMemoria;
 int socketKernel;
 //-----------------------------------------//
-t_list* listaPcb;
 pthread_t HiloConexionMemoria;
-
+t_list* listaPcb;
 int cpuOcupada=1;
+
+
+
+
