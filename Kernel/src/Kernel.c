@@ -169,7 +169,7 @@ int socketServidor; // Para CPUs y Consolas
 int solicitarContenidoAMemoria(char** mensajeRecibido);
 int pedirMemoria(t_pcb* procesoListo);
 int almacenarEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
-int particionarCodigo(char* programa,char ** particionCodigo,int *programSizeRestante);
+int particionarCodigo(char** programa,char ** particionCodigo,int *programSizeRestante);
 //---------Conexion con memoria--------//
 
 
@@ -515,7 +515,7 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 			}
 	log_info(loggerConPantalla ,"Existe espacio en memoria para el nuevo programa\n");
 
-	if((almacenarEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){ //TODO: Solo almaceno una pagina de codigo. Tiene que almacenar n paginas de codigo y ademas las paginas de stack
+	if((almacenarEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){
 					free(proceso);
 					free(codigoPrograma);
 					log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
@@ -612,46 +612,56 @@ int pedirMemoria(t_pcb* procesoListo){
 
 int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
 	log_info(loggerConPantalla, "Almacenando programa en memoria ---- PID: %d", procesoListoAutorizado->pid);
-		char* particionCodigo;
+		char* particionCodigo = malloc(config_paginaSize);
+		char* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + config_paginaSize);
 		int particionSize;
 		int programSizeRestante = programSize;
-		int resultadoEjecucion=1;
+		int resultadoEjecucion=0;
 		int comandoAlmacenar = 'C';
 		int offset=0;
 		int nroPagina;
-		for(nroPagina=0; nroPagina<procesoListoAutorizado->cantidadPaginasCodigo;nroPagina++){
-			particionSize=particionarCodigo(programa,&particionCodigo,&programSizeRestante);
 
-		void * mensajeAMemoria= malloc(sizeof(char) + sizeof(int)* 4 + particionSize);
-		memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
-		memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
-		memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&nroPagina,sizeof(int));
-		memcpy(mensajeAMemoria + sizeof(int)*2 + sizeof(char),&offset,sizeof(int));
-		memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&particionSize,sizeof(int));
-		memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),particionCodigo,programSize);
-		send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + particionSize,0);
+		log_info(loggerConPantalla, "Paginas de codigo a almacenar: %d", procesoListoAutorizado->cantidadPaginasCodigo);
 
-		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+		for(nroPagina=0; nroPagina<procesoListoAutorizado->cantidadPaginasCodigo && resultadoEjecucion==0;nroPagina++){
+			log_info(loggerConPantalla, "Numero de pagina: %d",nroPagina);
+				particionSize=particionarCodigo(&programa,&particionCodigo,&programSizeRestante);
+
+				log_info(loggerConPantalla, "Particion de codigo a almacenar:\n %s\n", particionCodigo);
+				log_info(loggerConPantalla, "Tamano de la particion de codigo a almacenar:\n %d\n", particionSize);
+
+				memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
+				memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
+				memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&nroPagina,sizeof(int));
+				memcpy(mensajeAMemoria + sizeof(int)*2 + sizeof(char),&offset,sizeof(int));
+
+				memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&particionSize,sizeof(int));
+				memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),particionCodigo,particionSize);
+				send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + particionSize,0);
+
+				recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+		}
+		log_info(loggerConPantalla, "Programa almacenado en Memoria---- PID: %d", procesoListoAutorizado->pid);
 		free(mensajeAMemoria);
 		free(particionCodigo);
-		free(particionCodigo);
-		}
+
 		return resultadoEjecucion;
 
-		/*TODO: TESTEAR*/
+		/*TODO: Seguir testeando con mas scripts de tamano mayor al de una pagina*/
 }
-int particionarCodigo(char* programa,char ** particionCodigo,int *programSizeRestante){
+int particionarCodigo(char** programa,char ** particionCodigo,int *programSizeRestante){
+	log_info(loggerConPantalla,"Particionando codigo para almacenar en una pagina");
 	int mod=*programSizeRestante % config_paginaSize;
-
 			 if(mod == *programSizeRestante){
-				 *programSizeRestante -= *programSizeRestante;
-				 *particionCodigo = malloc(*programSizeRestante);
-				strncpy(*particionCodigo,programa,*programSizeRestante);
+				strncpy(*particionCodigo,*programa,*programSizeRestante);
+				strcpy(*particionCodigo+*programSizeRestante,"\0");
+				*programa+=*programSizeRestante;
 				return *programSizeRestante;
 		 }
 			else{
-				*particionCodigo = malloc(config_paginaSize);
-				strncpy(*particionCodigo,programa,config_paginaSize);
+				strncpy(*particionCodigo,*programa,config_paginaSize);
+				strcpy(*particionCodigo+config_paginaSize,"\0");
+				*programa+=config_paginaSize;
 				*programSizeRestante -= config_paginaSize;
 				return config_paginaSize;
 		 }
