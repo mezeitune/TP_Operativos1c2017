@@ -137,23 +137,23 @@ char* obtener_instruccion(t_pcb * pcb){
 	int byte_inicio_instruccion = pcb->indiceCodigo[program_counter][0];
 	int bytes_tamanio_instruccion = pcb->indiceCodigo[program_counter][1];
 
-	int num_pagina = byte_inicio_instruccion / paginaSize;
-	int offset = byte_inicio_instruccion - (num_pagina * paginaSize);//no es 0 porque evita el begin
+	int num_pagina = byte_inicio_instruccion / config_paginaSize;
+	int offset = byte_inicio_instruccion - (num_pagina * config_paginaSize);//no es 0 porque evita el begin
 	char* mensajeRecibido;
 	char* instruccion;
 	char* continuacion_instruccion;
 	int bytes_a_leer_primera_pagina;
 
-	if (bytes_tamanio_instruccion > (paginaSize * 2)){
+	if (bytes_tamanio_instruccion > (config_paginaSize * 2)){
 		printf("El tamanio de la instruccion es mayor al tamanio de pagina\n");
 	}
-	if ((offset + bytes_tamanio_instruccion) < paginaSize){
+	if ((offset + bytes_tamanio_instruccion) < config_paginaSize){
 		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_tamanio_instruccion)<0)
 			printf("No se pudo solicitar el contenido\n");
 		else
 			instruccion=mensajeRecibido;
 	} else {
-		bytes_a_leer_primera_pagina = paginaSize - offset;
+		bytes_a_leer_primera_pagina = config_paginaSize - offset;
 		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
 					printf("No se pudo solicitar el contenido\n");
 		else
@@ -296,7 +296,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 				if(encontre_valor == 0){//si encontre una variable en el nodo
 
 					//si me excedi del tamaño de la pagina
-					if(((posicion_memoria->offset + posicion_memoria->size) + 4) > paginaSize){
+					if(((posicion_memoria->offset + posicion_memoria->size) + 4) > config_paginaSize){
 						nueva_posicion_memoria->pagina = (posicion_memoria->pagina + 1);//le digo de escribir en la pagina sig
 						nueva_posicion_memoria->offset = 0;
 						nueva_posicion_memoria->size = 4;
@@ -320,7 +320,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 					}//sino me excedi del tamaño de la pagina
 					//sino encontre una variable, creo una nueva :)
 				}else {
-							if(paginaSize < 4){
+							if(config_paginaSize < 4){
 								printf("Tamaño de pagina menor a 4 bytes\n");
 							} else {
 								//le asigno la pagina donde empieza el stack (ver)
@@ -340,7 +340,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 						nueva_variable = malloc(sizeof(t_variable));
 						nodo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));
 						if(encontre_valor == 0){
-							if(((posicion_memoria->offset + posicion_memoria->size) + 4) > paginaSize){//si me paso de pagina
+							if(((posicion_memoria->offset + posicion_memoria->size) + 4) > config_paginaSize){//si me paso de pagina
 								nueva_posicion_memoria->pagina = (posicion_memoria->pagina + 1);
 								nueva_posicion_memoria->offset = 0;
 								nueva_posicion_memoria->size = 4;
@@ -366,7 +366,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 							}
 						//sino encontre valor en la memoria
 				}	else {
-								if(paginaSize < 4){
+								if(config_paginaSize < 4){
 									printf("Tamaño de pagina menor a 4 bytes\n");
 									} else {
 										nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - stackSize);//ACA MUESTRA -1 PORQUE HAY UNA PAGINA DE CODIGO Y 2 DE STACK
@@ -383,7 +383,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								}
 					}
 
-int posicion= (nueva_posicion_memoria->pagina * paginaSize) + nueva_posicion_memoria->offset;
+int posicion= (nueva_posicion_memoria->pagina * config_paginaSize) + nueva_posicion_memoria->offset;
 
 return posicion;
 }
@@ -425,7 +425,8 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 		log_info(loggerConPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
 		return -1;
 	}
-	int posicion_serializada = (posicion_memoria->pagina * paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
+	int posicion_serializada = (posicion_memoria->pagina * config_paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
+	//free(pcb_actual);
 
 	return posicion_serializada;
 }
@@ -442,8 +443,8 @@ void finalizar (){
 }
 
 t_valor_variable dereferenciar(t_puntero puntero) {
-	int num_pagina = puntero / paginaSize;
-	int offset = puntero - (num_pagina * paginaSize);
+	int num_pagina = puntero / config_paginaSize;
+	int offset = puntero - (num_pagina * config_paginaSize);
 	char *valor_variable_char;
 	char* mensajeRecibido;
 	t_pcb* pcb_actual = malloc(sizeof(t_pcb));
@@ -507,8 +508,8 @@ t_nodoStack *nodo = malloc(sizeof(t_nodoStack));
 nodo->args = list_create();
 nodo->vars = list_create();
 nodo->retPos = (pcb_actual->programCounter);//Puede ser programCounter + 1
-int num_pagina = donde_retornar / paginaSize;
-int offset = donde_retornar - (num_pagina * paginaSize);
+int num_pagina = donde_retornar / config_paginaSize;
+int offset = donde_retornar - (num_pagina * config_paginaSize);
 t_posMemoria *retorno = malloc(sizeof(t_posMemoria));
 retorno->pagina = num_pagina;
 retorno->offset = offset;
@@ -556,10 +557,10 @@ free(string_cortado);
 }
 
 void asignar(t_puntero puntero, t_valor_variable variable) {
-	//t_pcb * pcb_actual= malloc(sizeof(t_pcb));
+
 	t_pcb *pcb_actual = list_get (listaPcb,0);
-	int num_pagina = puntero / paginaSize;
-	int offset = puntero - (num_pagina * paginaSize);
+	int num_pagina = puntero / config_paginaSize;
+	int offset = puntero - (num_pagina * config_paginaSize);
 	char *valor_variable = string_itoa(variable);
 	almacenarDatosEnMemoria(pcb_actual,valor_variable,4,num_pagina, offset);
 	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);

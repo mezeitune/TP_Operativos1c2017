@@ -109,7 +109,7 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	tamanioArchivo = ftell(f);
 	rewind(f);
 
-	bufferArchivo = malloc(tamanioArchivo); // Pido memoria para leer el contenido del archivo
+	bufferArchivo = malloc(tamanioArchivo + sizeof(char)); // Pido memoria para leer el contenido del archivo
 
 	if (bufferArchivo == NULL) {
 		log_error(loggerConPantalla,"\nNo se pudo conseguir memoria dinamica\n");
@@ -128,15 +128,17 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	}
 
 	fread(bufferArchivo, sizeof(bufferArchivo), tamanioArchivo, f);
+	strcat(bufferArchivo,"\0");
+	tamanioArchivo += sizeof(char);
 
 	printf("El tamano del archivo a enviar es: %d\n", tamanioArchivo);
-	printf("El archivo a enviar es %s\n", bufferArchivo);
+	printf("El archivo a enviar es:\n %s\n", bufferArchivo);
 
 	memcpy(mensaje, &comandoIniciarPrograma,sizeof(char));
 	memcpy(mensaje + sizeof(char), &tamanioArchivo, sizeof(int));
 	memcpy(mensaje + sizeof(char) + sizeof(int), bufferArchivo, tamanioArchivo);
 	printf("Enviando codigo ANSISOP por socket: %d\n", socketHiloKernel);
-	send(socketHiloKernel, mensaje, tamanioArchivo + sizeof(int) , 0);
+	send(socketHiloKernel, mensaje, tamanioArchivo + sizeof(int) + sizeof(char)  , 0);
 	log_info(loggerConPantalla,"\nEl programa ANSISOP ha sido enviado al Kernel\n");
 
 	free(bufferArchivo);

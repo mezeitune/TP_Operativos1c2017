@@ -52,7 +52,7 @@ int calcularPcbSerializadoSize(t_pcb* pcb);
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU);
 t_pcb* recibirYDeserializarPcb(int socketKernel);
 void imprimirPcb(t_pcb* pcb);
-int paginaSize;
+int config_paginaSize;
 
 int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
 int** inicializarIndiceCodigo(t_size cantidadInstrucciones);
@@ -473,7 +473,7 @@ void deserializarStack(void**pcbSerializado, t_list** indiceStack){
 
 int cantidadPaginasCodigoProceso(int programSize){
 	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
-	int mod = programSize % paginaSize;
-	return mod == 0 ? (programSize / paginaSize):(programSize / paginaSize)+ 1;
+	int mod = programSize % config_paginaSize;
+	return mod == 0 ? (programSize / config_paginaSize):(programSize / config_paginaSize)+ 1;
 }
 

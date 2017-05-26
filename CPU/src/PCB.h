@@ -1,6 +1,6 @@
 #include <commons/log.h>
 
-int paginaSize;
+int config_paginaSize;
 int stackSize;
 
 typedef struct{
@@ -495,14 +495,14 @@ void deserializarStack(void**pcbSerializado, t_list** indiceStack){
 void recibirTamanioPagina(int socketKernel){
 	char comandoGetPaginaSize= 'P';
 	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
-	recv(socketKernel,&paginaSize,sizeof(int),0);
+	recv(socketKernel,&config_paginaSize,sizeof(int),0);
 	recv(socketKernel,&stackSize,sizeof(int),0);
 }
 
 int cantidadPaginasCodigoProceso(int programSize){
 	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
-	int mod = programSize % paginaSize;
-	return mod==0? (programSize / paginaSize):(programSize / paginaSize)+ 1;
+	int mod = programSize % config_paginaSize;
+	return mod==0? (programSize / config_paginaSize):(programSize / config_paginaSize)+ 1;
 }
 
 
