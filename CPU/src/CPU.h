@@ -48,7 +48,7 @@ AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 };
 
 AnSISOP_kernel kernel_functions = {
-		.AnSISOP_wait= wait
+		.AnSISOP_wait= wait,
 		/*
 		.AnSISOP_signal
 		.AnSISOP_reservar
@@ -57,9 +57,9 @@ AnSISOP_kernel kernel_functions = {
 		.AnSISOP_borrar
 		.AnSISOP_cerrar
 		.AnSISOP_moverCursor
-		.AnSISOP_escribir
-		.AnSISOP_leer
-		*/
+		*/.AnSISOP_escribir = escribir
+		//.AnSISOP_leer
+
 
 };
 //-----------------------------------------------------------------------------------------------------------------
@@ -107,6 +107,7 @@ int socketKernel;
 pthread_t HiloConexionMemoria;
 t_list* listaPcb;
 int cpuOcupada=1;
+
 
 
 

@@ -63,7 +63,6 @@ return;
 }
 int cantidadPaginasTotales(t_pcb* pcb){
 	int paginasTotales= (stackSize + pcb->cantidadPaginasCodigo);
-	printf("%d",paginasTotales);
 	return paginasTotales;
 }
 void establecerPCB(){
@@ -83,7 +82,7 @@ void establecerPCB(){
 void ciclosDeQuantum(t_pcb* pcb){
 	int i = 0;
 
-	int quantum_definido=2;
+	int quantum_definido=pcb->cantidadInstrucciones;
 	//recv(socketKernel,&quantum_definido,sizeof(int),0);
 	while((i < quantum_definido)){
 		ejecutarInstruccion(pcb);
@@ -99,7 +98,7 @@ void ejecutarInstruccion(t_pcb* pcb){
 
 	char* instruccion = obtener_instruccion(pcb);
 	printf("Evaluando -> %s\n", instruccion );
-	analizadorLinea(instruccion , &functions, &kernel_functions);//que haga lo que tenga q hacer
+	analizadorLinea(instruccion , &functions, &kernel_functions);
 	free(instruccion);
 	pcb->programCounter = pcb->programCounter + 1;
 
@@ -121,15 +120,13 @@ int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,
 int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar,int offset){
 		int resultadoEjecucion=1;
 		int comandoAlmacenar = 'C';
-
-
-
 		send(socketMemoria,&comandoAlmacenar,sizeof(char),0);
 		send(socketMemoria,&pcb->pid,sizeof(int),0);
 		send(socketMemoria,&paginaAGuardar,sizeof(int),0);
 		send(socketMemoria,&offset,sizeof(int),0);
 		send(socketMemoria,&size,sizeof(int),0);
 		send(socketMemoria,buffer,size,0);
+		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 
 		return resultadoEjecucion;
 
@@ -240,12 +237,14 @@ void stackOverflow(t_pcb* pcb_actual){
 		finalizar();
 
 }
+
+
 //--------------------------------------------PRIMITIVAS-------------------------------------------------
 
 
 t_puntero definirVariable(t_nombre_variable variable) {
-
-	t_pcb *pcb_actual = list_get(listaPcb,0);
+	//t_pcb* pcb_actual = malloc(sizeof(t_pcb));
+	t_pcb*pcb_actual = list_get (listaPcb,0);
 	int nodos_stack = list_size(pcb_actual->indiceStack);
 	int posicion_stack;
 	int cantidad_variables;
@@ -383,7 +382,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 									}
 								}
 					}
-imprimirPcb(pcb_actual);
+
 int posicion= (nueva_posicion_memoria->pagina * paginaSize) + nueva_posicion_memoria->offset;
 
 return posicion;
@@ -394,8 +393,7 @@ return posicion;
 
 t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	log_info(loggerConPantalla, "Obteniendo la posicion de la variable: %c", variable);
-
-	t_pcb * pcb_actual = list_get(listaPcb,0);
+	 t_pcb* pcb_actual = list_get (listaPcb,0);
 	int nodos_stack = list_size(pcb_actual->indiceStack);//obtengo cantidad de nodos
 	int cantidad_variables;
 	int i;
@@ -448,7 +446,8 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 	int offset = puntero - (num_pagina * paginaSize);
 	char *valor_variable_char;
 	char* mensajeRecibido;
-	t_pcb* pcb_actual = list_get (listaPcb,0);
+	t_pcb* pcb_actual = malloc(sizeof(t_pcb));
+	pcb_actual = list_get (listaPcb,0);
 		if ( conseguirDatosMemoria(&mensajeRecibido,pcb_actual, num_pagina,offset, 4)<0){
 				printf("No se pudo solicitar el contenido\n");
 		}else{
@@ -475,7 +474,7 @@ void retornar(t_valor_variable retorno){
 	char *valor_variable = string_itoa(retorno);
 	almacenarDatosEnMemoria(pcb_actual,valor_variable,4,num_pagina, offset);
 	free(valor_variable);
-	pcb_actual->programCounter = nodo->retPos;// Puede ser la dir_retorno + 1
+	//pcb_actual->programCounter = nodo->retPos;// Puede ser la dir_retorno + 1
 	//Elimino el nodo de la lista
 	int cantidad_argumentos;
 	int cantidad_variables;
@@ -557,15 +556,14 @@ free(string_cortado);
 }
 
 void asignar(t_puntero puntero, t_valor_variable variable) {
-
-	t_pcb * pcb_actual = list_get (listaPcb,0);
+	//t_pcb * pcb_actual= malloc(sizeof(t_pcb));
+	t_pcb *pcb_actual = list_get (listaPcb,0);
 	int num_pagina = puntero / paginaSize;
 	int offset = puntero - (num_pagina * paginaSize);
 	char *valor_variable = string_itoa(variable);
 	almacenarDatosEnMemoria(pcb_actual,valor_variable,4,num_pagina, offset);
 	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
 	free(valor_variable);
-
 }
 
 //Kernel primitivas
@@ -594,4 +592,14 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	free(mensaje);
 
 }
-
+void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
+	printf("la concha de tu madre all boys");
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoImprimir = 'X';
+	char comandoImprimirPorConsola = 'P';
+	send(socketKernel,&comandoImprimir,sizeof(char),0);
+	send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
+	send(socketKernel,&tamanio,sizeof(informacion),0);
+	send(socketKernel,&informacion,sizeof(informacion),0);
+	send(socketKernel,&pcb_actual->pid,sizeof(int),0);
+}
