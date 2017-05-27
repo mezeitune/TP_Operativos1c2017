@@ -138,7 +138,6 @@ void connectionHandler(int socketAceptado, char orden) {
 				_Bool verificarPid(t_consola* pidNuevo){
 					return (pidNuevo->pid== pidARecibir);
 				}
-;
 				int totalPids = 0;
 				void sumarPids(t_consola* p){
 					totalPids += p->pid;
@@ -173,7 +172,7 @@ void connectionHandler(int socketAceptado, char orden) {
 
 void interruptHandler(int socketAceptado,char orden){
 	log_info(loggerConPantalla,"Ejecutando interrupt handler\n");
-	char * mensaje;
+	void* mensaje;
 	int size;
 	int pid;
 	int socketHiloPrograma;
@@ -185,7 +184,7 @@ void interruptHandler(int socketAceptado,char orden){
 		strcat(mensaje,"\0");
 		size=strlen(mensaje);
 		informarConsola(socketAceptado,mensaje,size);
-		log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente");
+		log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socketAceptado);
 		break;
 	case 'P':
 		log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
@@ -218,7 +217,7 @@ void interruptHandler(int socketAceptado,char orden){
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
 	send(socketHiloPrograma,&size,sizeof(int),0);
-	send(socketHiloPrograma,&mensaje,size,0);
+	send(socketHiloPrograma,mensaje,size,0);
 }
 
 int buscarSocketHiloPrograma(int pid){

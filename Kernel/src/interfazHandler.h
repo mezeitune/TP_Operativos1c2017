@@ -58,6 +58,9 @@ void interfazHandler(){
 					printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
 					}
 				break;
+			case 'I':
+					imprimirInterfazUsuario();
+				break;
 			default:
 				if(orden == '\0') break;
 				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
@@ -105,17 +108,16 @@ void mostrarProcesos(char orden){
 	case 'E':
 		pthread_mutex_lock(&mutexColaNuevos);
 		pthread_mutex_unlock(&mutexColaNuevos);
-
 		break;
 	case 'F':
 		pthread_mutex_lock(&mutexColaNuevos);
 		pthread_mutex_unlock(&mutexColaNuevos);
-
 		break;
 	case 'B':
 		pthread_mutex_lock(&mutexColaNuevos);
 		pthread_mutex_unlock(&mutexColaNuevos);
-
+		break;
+	case 'T':
 		break;
 	default:
 		break;
@@ -129,10 +131,9 @@ void filtrarPorPidYMostrar(t_list* cola){
 		void liberar(int* pid){
 			free(pid);
 		}
-
-	t_list* listaPid = list_filter(cola,(void*)transformarPid);
-			imprimirListadoDeProcesos(listaPid);
-			list_destroy_and_destroy_elements(listaPid, (void*)liberar);
+		imprimirListadoDeProcesos(list_filter(cola,(void*)transformarPid));
+			//list_destroy_and_destroy_elements(listaPid, (void*)liberar);
+			/*TODO:PREGUNTAR QUE PASA CON ESTA NUEVA LISTA CREADA*/
 }
 
 void imprimirListadoDeProcesos(t_list* listaPid){

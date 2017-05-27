@@ -112,7 +112,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 			cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 			free(codigoPrograma);
 			log_info(loggerConPantalla, "PCB encolado en lista de listos ---- PID: %d", proceso->pid);
-			sem_post(&sem_colaReady);//Agregado para saber si hay algo en cola Listos, es el Signal
+			//sem_post(&sem_colaReady);//Agregado para saber si hay algo en cola Listos, es el Signal
 	}
 }
 
