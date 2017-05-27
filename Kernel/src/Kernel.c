@@ -1,7 +1,5 @@
 /*
  ============================================================================
- /*
- ============================================================================
  Name        : Kernel.c
  Author      : Servomotor
  Version     :
@@ -23,14 +21,15 @@
 #include <commons/string.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
-#include <pthread.h>
 #include <commons/log.h>
 #include <parser/metadata_program.h>
 #include <parser/parser.h>
-#include <semaphore.h>
-#include <pthread.h>
 #include "pcb.h"
 #include "conexiones.h"
+#include "interfazHandler.h"
+#include "sincronizacion.h"
+#include "planificacion.h"
+#include "configuraciones.h"
 
 
 
@@ -41,112 +40,14 @@ typedef struct FS{//Para poder guardar en la lista
 t_list* listaTablasArchivosPorProceso;
 
 
-
-typedef struct CONSOLA{
-	int pid;
-	int socketHiloPrograma;
-}t_consola;
-
-char *quantum;
-char *quantumSleep;
-char *algoritmo;
-int config_gradoMultiProgramacion;
-char *semIds;
-char *semInit;
-char *sharedVars;
-int stackSize;
-int config_paginaSize; // todo: Tiene que obtenerlo por handshake con memoria
-
-//--------Sincronizacion-------//
-
-void inicializarSemaforos();
-pthread_mutex_t mutexColaNuevos;
-pthread_mutex_t mutexColaListos;
-pthread_mutex_t mutexColaTerminados;
-pthread_mutex_t mutexListaConsolas;
-pthread_mutex_t mutexListaCPU;
-pthread_mutex_t mutexConexion;
-sem_t sem_admitirNuevoProceso;
-sem_t sem_colaReady;
-sem_t sem_CPU;
-//------------------------------//
-void inicializarLog(char *rutaDeLog);
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
-
-//--------Configuraciones--------//
-void leerConfiguracion(char* ruta);
-void imprimirConfiguraciones();
-t_config* configuracion_kernel;
-
-//--------configuraciones-------//
-
-
-//----------Planificacion----------//
-int atenderNuevoPrograma(int socketAceptado);
-int verificarGradoDeMultiprogramacion();
-void encolarProcesoListo(t_pcb *procesoListo);
-void cargarConsola(int pid, int idConsola);
-void inicializarListas();
-void dispatcher(int socket);
-void terminarProceso(int socket);
-
-
-t_list* colaNuevos;
-t_list* colaListos;
-t_list* colaTerminados;
-t_list* listaConsolas;
-t_list* listaCPU;
-
-int contadorPid=0;
-//---------Planificacion--------//
-
 void* planificarCortoPlazo();
 pthread_t planificadorCortoPlazo;
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex);
 
 
-
-//---------Planificador Largo Plazo------//
-typedef struct {
-	char* codigo;
-	int size;
-	int pid;
-	int socketHiloConsola;
-}t_codigoPrograma;
-
-void* planificarLargoPlazo();
-t_codigoPrograma* recibirCodigoPrograma(int socketConsola);
-t_codigoPrograma* buscarCodigoDeProceso(int pid);
-void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
-int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
-
-t_list* listaCodigosProgramas;
-pthread_t planificadorLargoPlazo;
-int gradoMultiProgramacion;
-pthread_mutex_t mutexGradoMultiProgramacion;
-
-//---------Planificador Largo Plazo------//
-
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
 //---------ConnectionHandler-------//
-
-//--------InterfazHandler--------//
-void interfazHandler();
-void imprimirInterfazUsuario();
-
-void inicializarLog(char *rutaDeLog);
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
-
-void modificarGradoMultiprogramacion();
-void obtenerListadoProcesos();
-void mostrarProcesos(char orden);
-void imprimirListadoDeProcesos(t_list* listaPid);
-void filtrarPorPidYMostrar(t_list* cola);
-//--------InterfazHandler-------//
-
 
 //------InterruptHandler-----//
 void interruptHandler(int socket,char orden);
@@ -159,12 +60,6 @@ void informarConsola(int socketHiloPrograma,char* mensaje, int size);
 void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones(int socket);
-char *ipServidor;
-char *ipMemoria;
-char *ipFileSys;
-char *puertoServidor;
-char *puertoMemoria;
-char *puertoFileSys;
 //---------Conexiones-------------//
 
 //------------Sockets unicos globales--------------------//
@@ -181,6 +76,7 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int progra
 int particionarCodigo(char** programa,char ** particionCodigo,int *programSizeRestante);
 //---------Conexion con memoria--------//
 
+void inicializarListas();
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
@@ -209,138 +105,6 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 	pthread_mutex_unlock(&mutex);
 }
 
-
-void interfazHandler(){
-	log_info(loggerConPantalla,"Iniciando Interfaz Handler\n");
-	char orden;
-	//int pid;
-	char* mensajeRecibido;
-
-	scanf("%c",&orden);
-
-	switch(orden){
-			case 'O':
-				obtenerListadoProcesos();
-				break;
-			case 'P':
-				/*obtenerProcesoDato(int pid); TODO HAY QUE IMPLEMENTAR*/
-				break;
-			case 'G':
-				/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
-				break;
-			case 'M':
-				modificarGradoMultiprogramacion();
-				break;
-			case 'K':
-				/*finalizarProceso(int pid) TODO HAY QUE IMPLEMENTAR*/
-				break;
-			case 'D':
-				/*pausarPlanificacion() TODO HAY QUE IMPLEMENTAR*/
-				break;
-			case 'S':
-				if((solicitarContenidoAMemoria(&mensajeRecibido))<0){
-					printf("No se pudo solicitar el contenido\n");
-					break;
-				}
-				else{
-					printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
-					}
-				break;
-			default:
-				if(orden == '\0') break;
-				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
-				break;
-	}
-	orden = '\0';
-	log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler\n");
-	return;
-
-}
-
-void obtenerListadoProcesos(){
-	char orden;
-	log_info(loggerConPantalla,"T: Mostrar todos los procesos\nC: Mostrar procesos de un estado\n");
-	scanf("%c",&orden);
-	switch(orden){
-	case 'T':
-		orden = 'T';
-		mostrarProcesos(orden);
-		break;
-	case 'C':
-		log_info(loggerConPantalla,"N:New\nR:Ready\nE:Exec\nF:Finished\nB:Blocked\n");
-		scanf("%c",&orden);
-		mostrarProcesos(orden);
-		break;
-	default:
-		log_error(loggerConPantalla,"Orden no reconocida\n");
-		break;
-	}
-}
-
-void mostrarProcesos(char orden){
-
-	switch(orden){
-	case 'N':
-		pthread_mutex_lock(&mutexColaNuevos);
-		filtrarPorPidYMostrar(colaNuevos);
-		pthread_mutex_unlock(&mutexColaNuevos);
-		break;
-	case 'R':
-		pthread_mutex_lock(&mutexColaListos);
-		filtrarPorPidYMostrar(colaListos);
-		pthread_mutex_unlock(&mutexColaListos);
-		break;
-	case 'E':
-		pthread_mutex_lock(&mutexColaNuevos);
-		pthread_mutex_unlock(&mutexColaNuevos);
-
-		break;
-	case 'F':
-		pthread_mutex_lock(&mutexColaNuevos);
-		pthread_mutex_unlock(&mutexColaNuevos);
-
-		break;
-	case 'B':
-		pthread_mutex_lock(&mutexColaNuevos);
-		pthread_mutex_unlock(&mutexColaNuevos);
-
-		break;
-	default:
-		break;
-	}
-}
-
-void filtrarPorPidYMostrar(t_list* cola){
-	int transformarPid(t_pcb* pcb){
-			return pcb->pid;
-		}
-		void liberar(int* pid){
-			free(pid);
-		}
-
-	t_list* listaPid = list_filter(cola,(void*)transformarPid);
-			imprimirListadoDeProcesos(listaPid);
-			list_destroy_and_destroy_elements(listaPid, (void*)liberar);
-}
-
-void imprimirListadoDeProcesos(t_list* listaPid){
-	printf("PID\n");
-	int pid;
-	int i;
-	for(i=0 ; i<listaPid->elements_count ; i++){
-		pid = *(int*)list_get(listaPid,i);
-		printf("%d\n",pid);
-	}
-}
-
-void modificarGradoMultiprogramacion(){
-	int nuevoGrado;
-	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion");
-	scanf("%d",&nuevoGrado);
-	pthread_mutex_lock(&mutexGradoMultiProgramacion);
-	config_gradoMultiProgramacion= nuevoGrado;
-	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-}
 
 void connectionHandler(int socketAceptado, char orden) {
 	int pidARecibir=0;
@@ -469,92 +233,6 @@ int buscarSocketHiloPrograma(int pid){
 	return socketHiloConsola;
 }
 
-t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
-	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP\n");
-	//char* comandoRecibirCodigo='R';
-	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
-	//send(socketHiloConsola,&comandoRecibirCodigo,sizeof(char),0);
-	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
-	codigoPrograma->codigo = malloc(codigoPrograma->size);
-	recv(socketHiloConsola,codigoPrograma->codigo,codigoPrograma->size  ,0);
-	codigoPrograma->socketHiloConsola=socketHiloConsola;
-
-	return codigoPrograma;
-}
-
-
-int atenderNuevoPrograma(int socketAceptado){
-		log_info(loggerConPantalla,"Atendiendo nuevo programa\n");
-
-		contadorPid++; // VAR GLOBAL
-
-		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
-		codigoPrograma->pid=contadorPid;
-
-		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
-		log_info(loggerConPantalla,"Program Size: %d \n", codigoPrograma->size);
-		log_info(loggerConPantalla ,"Program Code: \" %s \" \n", codigoPrograma->codigo);
-
-		send(socketAceptado,&contadorPid,sizeof(int),0);
-
-		if(verificarGradoDeMultiprogramacion() <0 ){
-					list_add(colaNuevos,proceso);
-					list_add(listaCodigosProgramas,codigoPrograma);
-					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
-					return -1;
-				}
-		gradoMultiProgramacion++;//VAR GLOBAL
-		crearProceso(proceso, codigoPrograma);
-		return 0;
-}
-
-void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
-	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
-				log_error(loggerConPantalla ,"\nNo se pudo reservar recursos para ejecutar el programa");
-				interruptHandler(codigoPrograma->socketHiloConsola,'A'); // Informa a consola error por no poder reservar recursos
-				free(proceso);
-				free(codigoPrograma);
-			}
-	else{
-			encolarProcesoListo(proceso);
-			cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
-			free(codigoPrograma);
-			log_info(loggerConPantalla, "PCB encolado en lista de listos ---- PID: %d", proceso->pid);
-			sem_post(&sem_colaReady);//Agregado para saber si hay algo en cola Listos, es el Signal
-	}
-}
-
-int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
-	log_info(loggerConPantalla, "Inicializando proceso en memoria ---- PID: %d \n", proceso->pid);
-	if((pedirMemoria(proceso))< 0){
-				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
-				return -1;
-			}
-	log_info(loggerConPantalla ,"Existe espacio en memoria para el nuevo programa\n");
-
-	if((almacenarEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){
-					log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
-					return -2;
-				}
-	log_info(loggerConPantalla ,"El nuevo programa se almaceno correctamente en memoria\n");
-
-	return 0;
-}
-
-void* planificarLargoPlazo(int socket){
-	t_pcb* proceso;
-	while(1){
-		sem_wait(&sem_admitirNuevoProceso); // Previamente hay que eliminar el proceso de las colas y liberar todos sus recursos.
-			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0){
-			proceso = list_get(colaNuevos,0);
-			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
-			crearProceso(proceso,codigoPrograma);
-			list_remove(colaNuevos,0);
-			}
-	}
-}
-
-
 void* planificarCortoPlazo(){
 	t_pcb* pcbListo;
 	int socket;
@@ -576,27 +254,6 @@ void* planificarCortoPlazo(){
 	}
 }
 
-
-t_codigoPrograma* buscarCodigoDeProceso(int pid){
-	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
-			return (codigoPrograma->pid == pid);
-		}
-	return list_find(listaCodigosProgramas, (void*)verificarPid);
-
-}
-
-
-
-void cargarConsola(int pid, int socketHiloPrograma) {
-	t_consola *infoConsola = malloc(sizeof(t_consola));
-	infoConsola->socketHiloPrograma=socketHiloPrograma;
-	infoConsola->pid=pid;
-
-	pthread_mutex_lock(&mutexListaConsolas);
-	list_add(listaConsolas,infoConsola);
-	pthread_mutex_unlock(&mutexListaConsolas);
-	//free(infoConsola);
-}
 void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));
 
@@ -681,21 +338,6 @@ int particionarCodigo(char** programa,char ** particionCodigo,int *programSizeRe
 
 }
 
-
-int verificarGradoDeMultiprogramacion(){
-	log_info(loggerConPantalla, "Verificando grado de multiprogramacion");
-	pthread_mutex_lock(&mutexGradoMultiProgramacion);
-	if(gradoMultiProgramacion >= config_gradoMultiProgramacion) {
-		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-		log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
-		return -1;
-	}
-	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-	log_info(loggerConPantalla, "Grado de multiprogramacion suficiente\n");
-
-	return 0;
-}
-
 int solicitarContenidoAMemoria(char ** mensajeRecibido){
 	log_info(loggerConPantalla, "Solicitando contenido a Memoria");
 	char comandoSolicitud= 'S';
@@ -724,29 +366,11 @@ int solicitarContenidoAMemoria(char ** mensajeRecibido){
 	return resultadoEjecucion;
 }
 
-void encolarProcesoListo(t_pcb *procesoListo){
-//	colaListos
-	log_info(loggerConPantalla, "Encolando proceso a cola de listos---- PID: %d \n", procesoListo->pid);
-
-	pthread_mutex_lock(&mutexColaListos);
-	list_add(colaListos,procesoListo);
-	pthread_mutex_unlock(&mutexColaListos);
+void inicializarSockets(){
+		socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
+		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
+		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 }
-
-void inicializarSemaforos(){
-		pthread_mutex_init(&mutexColaNuevos,NULL);
-		pthread_mutex_init(&mutexColaListos, NULL);
-		pthread_mutex_init(&mutexColaTerminados, NULL);
-		pthread_mutex_init(&mutexListaConsolas,NULL);
-		pthread_mutex_init(&mutexListaCPU,NULL);
-		pthread_mutex_init(&mutexGradoMultiProgramacion,NULL);
-		pthread_mutex_init(&mutexConexion,NULL);
-		sem_init(&sem_admitirNuevoProceso, 0, 0);
-		sem_init(&sem_colaReady,0,0);
-		sem_init(&sem_CPU,0,0);
-
-}
-
 
 void inicializarListas(){
 	colaNuevos= list_create();
@@ -758,61 +382,6 @@ void inicializarListas(){
 	listaTablasArchivosPorProceso=list_create();
 }
 
-/*void dispatcher(int socketCPU){ YA NO SE USA
-
-	log_info(loggerConPantalla, "Despachando PCB listo ---- SOCKET:%d", socketCPU);
-	t_pcb* procesoAEjecutar = malloc(sizeof(t_pcb));
-
-	pthread_mutex_lock(&mutexColaListos);
-	procesoAEjecutar = list_get(colaListos, 0);
-	list_remove(colaListos, 0);
-	pthread_mutex_unlock(&mutexColaListos);
-
-	serializarPcbYEnviar(procesoAEjecutar,socketCPU);
-
-	}
-*/
-void terminarProceso(int socketCPU){
-	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
-	recv(socketCPU,pcbProcesoTerminado,sizeof(t_pcb),0);
-
-	pthread_mutex_lock(&mutexColaTerminados);
-	list_add(colaTerminados,pcbProcesoTerminado);
-	pthread_mutex_unlock(&mutexColaTerminados);
-
-	/* TODO: Buscar Consola por PID e informar */
-
-	/* TODO:Liberar recursos */
-
-}
-
-
-void imprimirConfiguraciones() {
-	printf("---------------------------------------------------\n");
-	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
-	printf("---------------------------------------------------\n");
-	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	quantum, quantumSleep, algoritmo, config_gradoMultiProgramacion, semIds, semInit, sharedVars, stackSize, config_paginaSize);
-	printf("---------------------------------------------------\n");
-
-}
-
-void imprimirInterfazUsuario(){
-
-	/**************************************Printea interfaz Usuario Kernel*******************************************************/
-	printf("\n-----------------------------------------------------------------------------------------------------\n");
-	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
-	printf("\n-----------------------------------------------------------------------------------------------------\n");
-	/****************************************************************************************************************************/
-}
-
-
-void inicializarSockets(){
-		socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
-		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
-		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
-
-}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
@@ -909,32 +478,4 @@ void *get_in_addr(struct sockaddr *sa) {
 	}
 
 	return &(((struct sockaddr_in6*) sa)->sin6_addr);
-}
-
-void leerConfiguracion(char* ruta) {
-
-	configuracion_kernel = config_create(ruta);
-
-	ipServidor = config_get_string_value(configuracion_kernel, "IP_SERVIDOR");
-	puertoServidor = config_get_string_value(configuracion_kernel,"PUERTO_SERVIDOR");
-	ipMemoria = config_get_string_value(configuracion_kernel, "IP_MEMORIA");
-	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
-	ipFileSys = config_get_string_value(configuracion_kernel, "IP_FS");
-	puertoFileSys = config_get_string_value(configuracion_kernel, "PUERTO_FS");
-	quantum = config_get_string_value(configuracion_kernel, "QUANTUM");
-	quantumSleep = config_get_string_value(configuracion_kernel,"QUANTUM_SLEEP");
-	algoritmo = config_get_string_value(configuracion_kernel, "ALGORTIMO");
-	config_gradoMultiProgramacion = atoi(config_get_string_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION"));
-	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
-	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
-	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
-	stackSize = atoi(config_get_string_value(configuracion_kernel, "STACK_SIZE"));
-	config_paginaSize = atoi(config_get_string_value(configuracion_kernel,"PAGINA_SIZE"));
-}
-void inicializarLog(char *rutaDeLog){
-
-		mkdir("/home/utnso/Log",0755);
-
-		loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
 }
