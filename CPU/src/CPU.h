@@ -85,8 +85,9 @@ void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 void connectionHandlerKernel(int socketAceptado, char orden);
 void ejecutarInstruccion(t_pcb* pcb);
 void interfazHandler(t_pcb * pcb);
-void ciclosDeQuantum(t_pcb* pcb);
+void EjecutarProgramaMedianteAlgoritmo(t_pcb* pcb);
 void expropiarPorQuantum(t_pcb * pcb);
+void CerrarPorSignal();
 //-----------------------------------------------------------------------------------------------------------------
 
 void stackOverflow();
@@ -107,7 +108,7 @@ int socketKernel;
 pthread_t HiloConexionMemoria;
 t_list* listaPcb;
 int cpuOcupada=1;
-
+int cpuFinalizada=1;
 
 
 

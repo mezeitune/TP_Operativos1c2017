@@ -67,7 +67,7 @@ void retornar(t_valor_variable retorno);
 void llamarSinRetorno(t_nombre_etiqueta etiqueta);
 void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
 void irAlLabel(t_nombre_etiqueta etiqueta);
-void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio);
+void escribir(t_descriptor_archivo descriptor_archivo, char* informacion, t_valor_variable tamanio);
 
 
 //---------Primitivas Kernel----------//

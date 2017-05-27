@@ -24,16 +24,16 @@ int main(void) {
 	return 0;
 }
 void esperarPCB(){
-				while(cpuOcupada==1){
+				while(cpuOcupada==1 && cpuFinalizada==1){
+
 					log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
 					recibirPCB();
 					cpuOcupada--;
 
 				}
+				CerrarPorSignal();
 }
 void recibirPCB(){
-
-
 		char comandoRecibirPCB;
 		char comandoGetNuevoProceso = 'N';
 		send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
@@ -75,24 +75,27 @@ void establecerPCB(){
 
 	list_add(listaPcb, pcb);
 
-	ciclosDeQuantum(pcb);
+	EjecutarProgramaMedianteAlgoritmo(pcb);
 
 
 }
-void ciclosDeQuantum(t_pcb* pcb){
-	int i = 0;
+void EjecutarProgramaMedianteAlgoritmo(t_pcb* pcb){
+	int i;
+	if(cpuFinalizada==0){
+	i = pcb->programCounter;
+	}
+	else{
+			i = 0;
+		}
+	//recv(socketKernel,&ultimaInstruccion,sizeof(int),0);
+	int cantidadInstruccionesAEjecutar=pcb->cantidadInstrucciones;
 
-	int quantum_definido=pcb->cantidadInstrucciones;
-	//recv(socketKernel,&quantum_definido,sizeof(int),0);
-	while((i < quantum_definido)){
+	while((i < cantidadInstruccionesAEjecutar)){
 		ejecutarInstruccion(pcb);
 		i++;
 	}
-	finalizar();
-	//if((i == quantum_definido)){
-		//expropiarPorQuantum(pcb);
-
-	//}
+	//if(i==(cantidadInstruccionesAEjecutar-1))
+	//expropiarPorQuantum(pcb);
 }
 void ejecutarInstruccion(t_pcb* pcb){
 
@@ -103,6 +106,7 @@ void ejecutarInstruccion(t_pcb* pcb){
 	pcb->programCounter = pcb->programCounter + 1;
 
 }
+
 
 int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size){
 	int resultadoEjecucion;
@@ -191,12 +195,19 @@ void signalSigusrHandler(int signum)
 {
     if (signum == SIGUSR1)
     {
-        //printf("Received SIGUSR1!\n");
-
-    	//hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
-		log_warning(loggerConPantalla,"\nSe ha desconectado CPU con signal SIGUSR1\n");
-		exit(1);
+    	cpuFinalizada=0;
+    	t_pcb * pcb= list_get(listaPcb,0);
+    	EjecutarProgramaMedianteAlgoritmo(pcb);
     }
+}
+void CerrarPorSignal(){
+	char comandoInterruptHandler='X';
+	char comandoCierreCpu='C';
+	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
+	 send(socketKernel,&comandoCierreCpu,sizeof(char),0);
+	 //hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
+	 log_warning(loggerConPantalla,"\nSe ha desconectado CPU con signal SIGUSR1\n");
+	exit(1);
 }
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
@@ -593,14 +604,15 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	free(mensaje);
 
 }
-void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
+void escribir(t_descriptor_archivo descriptor_archivo, char* informacion, t_valor_variable tamanio){
 	printf("la concha de tu madre all boys");
 	t_pcb* pcb_actual = list_get (listaPcb,0);
+	int pcb=1;
 	char comandoImprimir = 'X';
 	char comandoImprimirPorConsola = 'P';
 	send(socketKernel,&comandoImprimir,sizeof(char),0);
 	send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
-	send(socketKernel,&tamanio,sizeof(informacion),0);
-	send(socketKernel,&informacion,sizeof(informacion),0);
-	send(socketKernel,&pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&tamanio,sizeof(t_valor_variable),0);
+	send(socketKernel,&informacion,tamanio,0);
+	//send(socketKernel,&pcb,sizeof(int),0);
 }

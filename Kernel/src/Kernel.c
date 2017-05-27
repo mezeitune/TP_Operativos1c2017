@@ -416,7 +416,7 @@ void interruptHandler(int socketAceptado,char orden){
 
 	switch(orden){
 	case 'A':
-		log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos");
+		log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos\n");
 		mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
 		size=strlen(mensaje);
 		informarConsola(socketAceptado,mensaje,size);
@@ -425,19 +425,26 @@ void interruptHandler(int socketAceptado,char orden){
 	case 'P':
 		log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
 		recv(socketAceptado,&size,sizeof(int),0);
+		printf("pasa1");
 		mensaje=malloc(size);
-		recv(socketAceptado,mensaje,size,0);
+		recv(socketAceptado,&mensaje,size,0);
+		printf("pasa2");
 		recv(socketAceptado,&pid,sizeof(int),0);
+
 		socketHiloPrograma = buscarSocketHiloPrograma(pid);
 		informarConsola(socketHiloPrograma,mensaje,size);
 		log_info(loggerConPantalla,"Rutina para imprimir finalizo ----- PID: %d\n", pid);
 			break;
 	case 'M':
-		log_info(loggerConPantalla,"Informando a Consola excepcion por grado de multiprogramacion");
+		log_info(loggerConPantalla,"Informando a Consola excepcion por grado de multiprogramacion\n");
 		mensaje = "El programa ANSISOP no puede iniciar actualmente debido a grado de multiprogramacion, se mantendra en espera hasta poder iniciar";
 		size=strlen(mensaje);
 		informarConsola(socketAceptado,mensaje,size);
 		mensaje='\0';
+		break;
+	case 'C':
+		log_info(loggerConPantalla,"La CPU de socket %d se ha cerrado al ejecutar signal SIGUSR1\n",socketAceptado);
+		//aca hay que eliminar la cpu
 		break;
 	default:
 			break;
@@ -446,7 +453,7 @@ void interruptHandler(int socketAceptado,char orden){
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
 	send(socketHiloPrograma,&size,sizeof(int),0);
-	send(socketHiloPrograma,mensaje,size,0);
+	send(socketHiloPrograma,&mensaje,size,0);
 }
 
 int buscarSocketHiloPrograma(int pid){
