@@ -65,7 +65,7 @@ pthread_mutex_t mutexColaListos;
 pthread_mutex_t mutexColaTerminados;
 pthread_mutex_t mutexListaConsolas;
 pthread_mutex_t mutexListaCPU;
-pthread_mutex_t mutexConsola;
+pthread_mutex_t mutexConexion;
 sem_t sem_admitirNuevoProceso;
 sem_t sem_colaReady;
 sem_t sem_CPU;
@@ -343,7 +343,6 @@ void modificarGradoMultiprogramacion(){
 }
 
 void connectionHandler(int socketAceptado, char orden) {
-	pthread_mutex_unlock(&mutexConsola);
 	int pidARecibir=0;
 	char comandoRecibirPCB='S';
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
@@ -402,6 +401,7 @@ void connectionHandler(int socketAceptado, char orden) {
 				break;
 		} // END switch de la consola
 
+	pthread_mutex_unlock(&mutexConexion);
 	orden = '\0';
 	return;
 
@@ -418,9 +418,10 @@ void interruptHandler(int socketAceptado,char orden){
 	case 'A':
 		log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos\n");
 		mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
+		strcat(mensaje,"\0");
 		size=strlen(mensaje);
 		informarConsola(socketAceptado,mensaje,size);
-		mensaje='\0';
+		log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente");
 		break;
 	case 'P':
 		log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
@@ -438,9 +439,9 @@ void interruptHandler(int socketAceptado,char orden){
 	case 'M':
 		log_info(loggerConPantalla,"Informando a Consola excepcion por grado de multiprogramacion\n");
 		mensaje = "El programa ANSISOP no puede iniciar actualmente debido a grado de multiprogramacion, se mantendra en espera hasta poder iniciar";
+		strcat(mensaje,"\0");
 		size=strlen(mensaje);
 		informarConsola(socketAceptado,mensaje,size);
-		mensaje='\0';
 		break;
 	case 'C':
 		log_info(loggerConPantalla,"La CPU de socket %d se ha cerrado al ejecutar signal SIGUSR1\n",socketAceptado);
@@ -504,7 +505,6 @@ int atenderNuevoPrograma(int socketAceptado){
 				}
 		gradoMultiProgramacion++;//VAR GLOBAL
 		crearProceso(proceso, codigoPrograma);
-		cargarConsola(proceso->pid,socketAceptado);
 		return 0;
 }
 
@@ -515,30 +515,28 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 				free(proceso);
 				free(codigoPrograma);
 			}
-			free(codigoPrograma);
+	else{
 			encolarProcesoListo(proceso);
+			cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
+			free(codigoPrograma);
 			log_info(loggerConPantalla, "PCB encolado en lista de listos ---- PID: %d", proceso->pid);
 			sem_post(&sem_colaReady);//Agregado para saber si hay algo en cola Listos, es el Signal
+	}
 }
 
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
 	log_info(loggerConPantalla, "Inicializando proceso en memoria ---- PID: %d \n", proceso->pid);
 	if((pedirMemoria(proceso))< 0){
-				free(proceso);
-				free(codigoPrograma);
 				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
 				return -1;
 			}
 	log_info(loggerConPantalla ,"Existe espacio en memoria para el nuevo programa\n");
 
 	if((almacenarEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){
-					free(proceso);
-					free(codigoPrograma);
 					log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
 					return -2;
 				}
 	log_info(loggerConPantalla ,"El nuevo programa se almaceno correctamente en memoria\n");
-
 
 	return 0;
 }
@@ -663,7 +661,6 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int program
 
 		return resultadoEjecucion;
 
-		/*TODO: Seguir testeando con mas scripts de tamano mayor al de una pagina*/
 }
 int particionarCodigo(char** programa,char ** particionCodigo,int *programSizeRestante){
 	log_info(loggerConPantalla,"Particionando codigo para almacenar en una pagina");
@@ -743,7 +740,7 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaConsolas,NULL);
 		pthread_mutex_init(&mutexListaCPU,NULL);
 		pthread_mutex_init(&mutexGradoMultiProgramacion,NULL);
-		pthread_mutex_init(&mutexConsola,NULL);
+		pthread_mutex_init(&mutexConexion,NULL);
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_colaReady,0,0);
 		sem_init(&sem_CPU,0,0);
@@ -894,6 +891,7 @@ void selectorConexiones(int socket) {
 						for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
 							if (FD_ISSET(j, &master)) {
 								if (j != socket && j != i) {*/
+							pthread_mutex_lock(&mutexConexion);
 									connectionHandler(i, orden);
 						        }
 						    }
