@@ -112,7 +112,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 			cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 			free(codigoPrograma);
 			log_info(loggerConPantalla, "PCB encolado en lista de listos ---- PID: %d", proceso->pid);
-			//sem_post(&sem_colaReady);//Agregado para saber si hay algo en cola Listos, es el Signal
+			sem_post(&sem_colaReady);//Agregado para saber si hay algo en cola Listos, es el Signal
 	}
 }
 
@@ -203,11 +203,30 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
-	recv(socketCPU,pcbProcesoTerminado,sizeof(t_pcb),0);
+	t_consola* consolaAInformar = malloc(sizeof(t_consola));
+
+	char *mensaje = malloc(30);
+
+	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 
 	pthread_mutex_lock(&mutexColaTerminados);
-	list_add(colaTerminados,pcbProcesoTerminado);
+	list_add(colaTerminados, pcbProcesoTerminado);
 	pthread_mutex_unlock(&mutexColaTerminados);
+
+	_Bool verificarPid(t_consola* pidNuevo){
+						return (pidNuevo->pid == pcbProcesoTerminado->pid);
+					}
+
+	consolaAInformar = list_find(listaConsolas, verificarPid);
+
+
+	strcpy(mensaje,"termine\0");
+
+	int tamanioMensaje = strlen(mensaje) + 1;
+
+	send(consolaAInformar->socketHiloPrograma,&tamanioMensaje,sizeof(int),0);
+	send(consolaAInformar->socketHiloPrograma,mensaje,tamanioMensaje,0);
+
 
 	/* TODO: Buscar Consola por PID e informar */
 

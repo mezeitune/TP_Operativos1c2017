@@ -107,8 +107,11 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 
 
 void connectionHandler(int socketAceptado, char orden) {
+
 	int pidARecibir=0;
+
 	char comandoRecibirPCB='S';
+
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 
 	_Bool verificarPid(t_consola* pidNuevo){
@@ -129,12 +132,13 @@ void connectionHandler(int socketAceptado, char orden) {
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
+					log_info(loggerConPantalla,"Se ha avisado que un proceso se quiere finalizar\n");
 					terminarProceso(socketAceptado);
 					break;
 		case 'F':
-				log_info(loggerConPantalla,"Se ha avisado que un proceso se quiere finalizar\n");
-				recv(socketAceptado,&pidARecibir, sizeof(int),0);
 
+
+/*
 				_Bool verificarPid(t_consola* pidNuevo){
 					return (pidNuevo->pid== pidARecibir);
 				}
@@ -144,7 +148,7 @@ void connectionHandler(int socketAceptado, char orden) {
 				}
 
 				list_iterate(listaConsolas, (void*) sumarPids);
-				printf("la suma de los pids es: %d", totalPids);//Para verificar si se elimino el pid deseado de la lista del kernel
+				printf("la suma de los pids es: %d", totalPids);//Para verificar si se elimino el pid deseado de la lista del kernel*/
 
 				break;
 		case 'P':
@@ -237,14 +241,14 @@ void* planificarCortoPlazo(){
 	int socket;
 
 	while(1){
-		sem_wait(&sem_CPU);
+		sem_wait(&sem_colaReady);
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_get(colaListos,0);
 		list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
-		sem_wait(&sem_colaReady);
+		sem_wait(&sem_CPU);
 
 		socket = list_get(listaCPU,0);
 		serializarPcbYEnviar(pcbListo, socket);

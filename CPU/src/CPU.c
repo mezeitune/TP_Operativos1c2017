@@ -14,7 +14,7 @@ int main(void) {
 	log_info(loggerConPantalla, "Inicia proceso CPU");
 	recibirTamanioPagina(socketKernel);
 
-	listaPcb = list_create();
+
 	signal(SIGUSR1, signalSigusrHandler);
 
 	esperarPCB();
@@ -24,6 +24,8 @@ int main(void) {
 	return 0;
 }
 void esperarPCB(){
+
+				listaPcb = list_create();
 				while(cpuOcupada==1 && cpuFinalizada==1){
 
 					log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
@@ -73,8 +75,10 @@ void establecerPCB(){
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
 
 
+
 	list_add(listaPcb, pcb);
 
+	printf("\n\nPCB:%d\n\n", pcb->pid);
 	EjecutarProgramaMedianteAlgoritmo(pcb);
 
 
@@ -444,9 +448,17 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 void finalizar (){
 
 		t_pcb * pcb_actual = list_get(listaPcb,0);
-		char comandoFinalizacion = 'F';
+		char comandoFinalizacion = 'T';
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
-		//serializarPcbYEnviar(pcb_actual,socketKernel);
+
+
+
+		serializarPcbYEnviar(pcb_actual,socketKernel);
+
+
+
+
+
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado", pcb_actual->pid);
 		list_destroy_and_destroy_elements(listaPcb, free);
 		cpuOcupada=1;
