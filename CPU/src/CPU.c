@@ -75,9 +75,7 @@ void establecerPCB(){
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
 
 
-
 	list_add(listaPcb, pcb);
-
 	printf("\n\nPCB:%d\n\n", pcb->pid);
 	EjecutarProgramaMedianteAlgoritmo(pcb);
 
@@ -144,7 +142,6 @@ char* obtener_instruccion(t_pcb * pcb){
 	int program_counter = pcb->programCounter;
 	int byte_inicio_instruccion = pcb->indiceCodigo[program_counter][0];
 	int bytes_tamanio_instruccion = pcb->indiceCodigo[program_counter][1];
-
 	int num_pagina = byte_inicio_instruccion / config_paginaSize;
 	int offset = byte_inicio_instruccion - (num_pagina * config_paginaSize);//no es 0 porque evita el begin
 	char* mensajeRecibido;
@@ -155,42 +152,49 @@ char* obtener_instruccion(t_pcb * pcb){
 	if (bytes_tamanio_instruccion > (config_paginaSize * 2)){
 		printf("El tamanio de la instruccion es mayor al tamanio de pagina\n");
 	}
-	if ((offset + bytes_tamanio_instruccion) < config_paginaSize){
+	//if ((offset + bytes_tamanio_instruccion) < config_paginaSize){
 		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_tamanio_instruccion)<0)
+			{
 			printf("No se pudo solicitar el contenido\n");
-		else
-			instruccion=mensajeRecibido;
-	} else {
-		bytes_a_leer_primera_pagina = config_paginaSize - offset;
-		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
-					printf("No se pudo solicitar el contenido\n");
-		else
-					instruccion=mensajeRecibido;
+			}
+			else{
+				instruccion=mensajeRecibido;
+				}
+//	} else {
+		//bytes_a_leer_primera_pagina = config_paginaSize - offset;
+		//if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
+		//			{printf("No se pudo solicitar el contenido\n");}
+		//	else{
+			//		instruccion=mensajeRecibido;
+		//	}
+		//free(mensajeRecibido);
+	//	log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
+		//if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
+			//if ( conseguirDatosMemoria(&continuacionMensajeRecibido,pcb, (num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
+				//	{printf("No se pudo solicitar el contenido\n");}
+					//	else{
+						//continuacion_instruccion=continuacionMensajeRecibido;
+						//log_info(loggerConPantalla, "Continuacion ejecucion: %s", continuacion_instruccion);
+							//	}
 
-		log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
-		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
-			if ( conseguirDatosMemoria(&mensajeRecibido,pcb, (num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
-								printf("No se pudo solicitar el contenido\n");
-					else
-								continuacion_instruccion=mensajeRecibido;
-			log_info(loggerConPantalla, "Continuacion ejecucion: %s", continuacion_instruccion);
-			string_append(&instruccion, continuacion_instruccion);
-			free(continuacion_instruccion);
-		}else{
-			log_info(loggerConPantalla, "La continuacion de la instruccion es 0. Ni la leo");
-		}
-	}
-	char** string_cortado = string_split(instruccion, "\n");
-	free(instruccion);
-	instruccion = string_new();
-	string_append(&instruccion, string_cortado[0]);
-	log_info(loggerConPantalla, "\nInstruccion obtenida: %s", instruccion);
-	int i = 0;
-	while(string_cortado[i] != NULL){
-		free(string_cortado[i]);
-		i++;
-	}
-	free(string_cortado);
+		//	string_append(&instruccion, continuacion_instruccion);
+		//	free(continuacion_instruccion);
+		//}else{
+			//log_info(loggerConPantalla, "La continuacion de la instruccion es 0. Ni la leo");
+		//}
+//	}
+	//char** string_cortado = string_split(instruccion, "\n");
+	//free(instruccion);
+	//instruccion= string_new();
+	//string_append(&instruccion, string_cortado[0]);
+	//log_info(loggerConPantalla, "\nInstruccion obtenida: %s", instruccion);
+	//int i = 0;
+	//while(string_cortado[i] != NULL){
+		//free(string_cortado[i]);
+		//i++;
+	//}
+	//free(string_cortado);
+		imprimirPcb(pcb);
 	return instruccion;
 }
 

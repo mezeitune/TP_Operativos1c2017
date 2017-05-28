@@ -188,7 +188,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	send(socketCPU,pcbEnviar,pcbSerializadoSize,0);
 
-	//imprimirPcb(pcb);
+	imprimirPcb(pcb);
 
 }
 

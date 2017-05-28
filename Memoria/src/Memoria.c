@@ -370,7 +370,7 @@ int main_solicitarBytesPagina(int sock)
 	solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
 	sleep(retardo_memoria);
 	enviar_string(sock,bufferAEnviar);
-	//send(sock,bufferAEnviar,size,0);
+	//send(sock,&bufferAEnviar,size,0);
 
 	free(bufferAEnviar);
 	return 0;
