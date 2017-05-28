@@ -73,7 +73,7 @@ int socketServidor; // Para CPUs y Consolas
 int solicitarContenidoAMemoria(char** mensajeRecibido);
 int pedirMemoria(t_pcb* procesoListo);
 int almacenarEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
-int particionarCodigo(char** programa,char ** particionCodigo,int *programSizeRestante);
+int calcularTamanioParticion(int *programSizeRestante);
 //---------Conexion con memoria--------//
 
 void inicializarListas();
@@ -286,8 +286,8 @@ int pedirMemoria(t_pcb* procesoListo){
 
 int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
 	log_info(loggerConPantalla, "Almacenando programa en memoria ---- PID: %d", procesoListoAutorizado->pid);
-		char* particionCodigo = malloc(config_paginaSize);
 		char* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + config_paginaSize);
+		char* particionCodigo = malloc(config_paginaSize);
 		int particionSize;
 		int programSizeRestante = programSize;
 		int resultadoEjecucion=0;
@@ -295,14 +295,19 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int program
 		int offset=0;
 		int nroPagina;
 
+	//imprimirPcb(procesoListoAutorizado);
+
 		log_info(loggerConPantalla, "Paginas de codigo a almacenar: %d", procesoListoAutorizado->cantidadPaginasCodigo);
 
 		for(nroPagina=0; nroPagina<procesoListoAutorizado->cantidadPaginasCodigo && resultadoEjecucion==0;nroPagina++){
-			log_info(loggerConPantalla, "Numero de pagina: %d",nroPagina);
-				particionSize=particionarCodigo(&programa,&particionCodigo,&programSizeRestante);
+				log_info(loggerConPantalla, "Numero de pagina: %d",nroPagina);
+				particionSize=calcularTamanioParticion(&programSizeRestante);
+				log_info(loggerConPantalla, "Tamano de la particion de codigo a almacenar:\n %d\n", particionSize);
+				strncpy(particionCodigo,programa,particionSize);
+				strcpy(particionCodigo + particionSize,"\0");
+				programa += particionSize;
 
 				log_info(loggerConPantalla, "Particion de codigo a almacenar:\n %s\n", particionCodigo);
-				log_info(loggerConPantalla, "Tamano de la particion de codigo a almacenar:\n %d\n", particionSize);
 
 				memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
 				memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
@@ -322,23 +327,16 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int program
 		return resultadoEjecucion;
 
 }
-int particionarCodigo(char** programa,char ** particionCodigo,int *programSizeRestante){
-	log_info(loggerConPantalla,"Particionando codigo para almacenar en una pagina");
-	int mod=*programSizeRestante % config_paginaSize;
-			 if(mod == *programSizeRestante){
-				strncpy(*particionCodigo,*programa,*programSizeRestante);
-				strcpy(*particionCodigo+*programSizeRestante,"\0");
-				*programa+=*programSizeRestante;
-				return *programSizeRestante;
-		 }
-			else{
-				strncpy(*particionCodigo,*programa,config_paginaSize);
-				strcpy(*particionCodigo+config_paginaSize,"\0");
-				*programa+=config_paginaSize;
-				*programSizeRestante -= config_paginaSize;
-				return config_paginaSize;
-		 }
-
+int calcularTamanioParticion(int *programSizeRestante){
+	log_info(loggerConPantalla,"Calculando tamano de particion de codigo");
+		int mod=*programSizeRestante % config_paginaSize;
+				 if(mod == *programSizeRestante){
+					return *programSizeRestante;
+			 }
+				else{
+					*programSizeRestante -= config_paginaSize;
+					return config_paginaSize;
+			 }
 }
 
 int solicitarContenidoAMemoria(char ** mensajeRecibido){
