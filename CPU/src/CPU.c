@@ -169,7 +169,7 @@ char* obtener_instruccion(t_pcb * pcb){
 
 		log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
 		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
-			if ( conseguirDatosMemoria(&mensajeRecibido,pcb, (num_pagina + 1),offset,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
+			if ( conseguirDatosMemoria(&mensajeRecibido,pcb, (num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
 								printf("No se pudo solicitar el contenido\n");
 					else
 								continuacion_instruccion=mensajeRecibido;
