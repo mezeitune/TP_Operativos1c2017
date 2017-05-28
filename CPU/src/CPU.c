@@ -11,7 +11,7 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 
-	log_info(loggerConPantalla, "Inicia proceso CPU");
+	log_info(loggerConPantalla, "Inicia procesooooooo CPU");
 	recibirTamanioPagina(socketKernel);
 
 

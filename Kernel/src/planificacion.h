@@ -202,7 +202,7 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 
 void terminarProceso(int socketCPU){
-	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
+	t_pcb* pcbProcesoTerminado/* = malloc(sizeof(t_pcb))*/;
 	t_consola* consolaAInformar = malloc(sizeof(t_consola));
 
 	char *mensaje = malloc(30);

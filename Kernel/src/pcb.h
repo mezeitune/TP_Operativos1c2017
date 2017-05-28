@@ -319,9 +319,11 @@ void imprimirPcb(t_pcb* pcb){
 		printf("%s\n", pcb->indiceEtiquetas);
 
 		printf("\n-------Indice de Stack-------\n");
+
 		t_nodoStack elemento;
 		t_posMemoria* argumento = malloc(sizeof(t_posMemoria));
 		t_variable* variable = malloc(sizeof(t_variable));
+
 		printf("Cantidad Elementos: %d\n", pcb->indiceStack->elements_count);
 		int f;
 		for(i = 0; i < pcb->indiceStack->elements_count; i++){
