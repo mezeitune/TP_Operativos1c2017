@@ -118,7 +118,10 @@ int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,
 	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
 	send(socketMemoria,&offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
-	*instruccion = recibir_string(socketMemoria);
+	*instruccion=malloc((size+1)*sizeof(char));
+	recv(socketMemoria,*instruccion,size,0);
+	strcpy(*instruccion+size,"\0");
+//	*instruccion = recibir_string(socketMemoria);
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 	return resultadoEjecucion;
 }
@@ -194,7 +197,7 @@ char* obtener_instruccion(t_pcb * pcb){
 		//i++;
 	//}
 	//free(string_cortado);
-		imprimirPcb(pcb);
+	//	imprimirPcb(pcb);
 	return instruccion;
 }
 

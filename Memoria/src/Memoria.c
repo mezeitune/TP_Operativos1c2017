@@ -96,7 +96,7 @@ int main_finalizarPrograma();
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
 int inicializarPrograma(int pid, int cantPaginas);
-char* solicitarBytesPagina(int pid,int pagina, int offset, int size,char** buffer);
+void solicitarBytesPagina(int pid,int pagina, int offset, int size,char** buffer);
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);
 int asignarPaginasAProceso(int pid, int cantPaginas, int frame);
 int finalizarPrograma(int pid);
@@ -220,17 +220,18 @@ int inicializarPrograma(int pid, int cantPaginas)
 	return posicionFrame;
 }
 
-char* solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffer)
+void solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffer)
 {
 	printf("Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 	printf("El frame es : %d\n",frame);
 
-	memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size);
+	memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size*sizeof(char));
+	strcpy(*buffer+size*sizeof(char),"\0");
 
 	printf("%s\n",*buffer);
 
-	return *buffer;
+	//return *buffer;
 }
 
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
@@ -366,11 +367,11 @@ int main_solicitarBytesPagina(int sock)
 	printf("Offset:%d\n",offset);
 	printf("Size:%d\n",size);
 
-	bufferAEnviar=malloc(size);
+	bufferAEnviar=malloc((size+1)*sizeof(char));
 	solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
 	sleep(retardo_memoria);
-	enviar_string(sock,bufferAEnviar);
-	//send(sock,&bufferAEnviar,size,0);
+	//enviar_string(sock,bufferAEnviar);
+	send(sock,bufferAEnviar,size,0);
 
 	free(bufferAEnviar);
 	return 0;

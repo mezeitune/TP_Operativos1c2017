@@ -213,14 +213,11 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 	log_info(loggerConPantalla, "Enviando PCB serializado ----- PID: %d ------ socketCPU: %d", pcb->pid, socketCPU);
 
-	//imprimir PCB
 
-	//pcbEnviar = pcbSerializado;
 
 	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	send(socketCPU,pcbEnviar,pcbSerializadoSize,0);
 
-		//imprimirPcb(pcb);
 }
 
 

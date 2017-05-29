@@ -124,7 +124,7 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 			}
 	log_info(loggerConPantalla ,"Existe espacio en memoria para el nuevo programa\n");
 
-	if((almacenarEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){
+	if((almacenarCodigoEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){
 					log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
 					return -2;
 				}

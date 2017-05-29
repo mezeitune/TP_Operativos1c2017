@@ -72,7 +72,7 @@ int socketServidor; // Para CPUs y Consolas
 //---------Conexion con memoria--------//
 int solicitarContenidoAMemoria(char** mensajeRecibido);
 int pedirMemoria(t_pcb* procesoListo);
-int almacenarEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
+int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
 int calcularTamanioParticion(int *programSizeRestante);
 //---------Conexion con memoria--------//
 
@@ -284,7 +284,7 @@ int pedirMemoria(t_pcb* procesoListo){
 		return resultadoEjecucion;
 }
 
-int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
+int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
 	log_info(loggerConPantalla, "Almacenando programa en memoria ---- PID: %d", procesoListoAutorizado->pid);
 		char* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + config_paginaSize);
 		char* particionCodigo = malloc(config_paginaSize);
@@ -295,7 +295,8 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int program
 		int offset=0;
 		int nroPagina;
 
-	//imprimirPcb(procesoListoAutorizado);
+		//printf("El programa a particionar es : \n%s ", programa);
+	imprimirPcb(procesoListoAutorizado);
 
 		log_info(loggerConPantalla, "Paginas de codigo a almacenar: %d", procesoListoAutorizado->cantidadPaginasCodigo);
 
@@ -307,7 +308,7 @@ int almacenarEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int program
 				strcpy(particionCodigo + particionSize,"\0");
 				programa += particionSize;
 
-				log_info(loggerConPantalla, "Particion de codigo a almacenar:\n %s\n", particionCodigo);
+				log_info(loggerConPantalla, "Particion de codigo a almacenar: \n%s", particionCodigo);
 
 				memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
 				memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
@@ -362,7 +363,9 @@ int solicitarContenidoAMemoria(char ** mensajeRecibido){
 	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
 	send(socketMemoria,&offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
-	*mensajeRecibido = recibir_string(socketMemoria);
+	*mensajeRecibido = malloc((size + 1 )*sizeof(char));
+	recv(socketMemoria,*mensajeRecibido,size,0);
+	strcpy(*mensajeRecibido+size,"\0");
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 	return resultadoEjecucion;
 }
