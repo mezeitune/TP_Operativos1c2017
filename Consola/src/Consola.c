@@ -7,163 +7,121 @@
  Description : Hello World in C, Ansi-style
  ============================================================================
  */
-
-#include <sys/epoll.h>
-#include <stdio.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <commons/string.h>
-#include <commons/config.h>
-#include <commons/collections/list.h>
-#include <pthread.h>
-#include <commons/log.h>
-#include "conexiones.h"
-#include <time.h>
-
-//--------LOG----------------//
-void inicializarLog(char *rutaDeLog);
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
-//----------------------------//
- //estructura pid
-typedef struct {
-	int pid;
-	char* fechaInicio;
-	int cantImpresiones;
-	//pthread_t* idAsociado;
-} Pid ;
-
-
-//funciones
-//int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual);
-int enviarLecturaArchivo(void *ruta, int socket);
-void leerConfiguracion(char* ruta);
-void imprimirConfiguraciones();
-void* connectionHandler(int socket);
-void crearPrograma(int pid, int socketKernel);
-void* imprimir(int socket);
-void cargarPid (Pid* pidEstructura, int pid,char* fechaActual);
-
-
-t_config* configuracion_Consola;
-char* ipKernel;
-char* puertoKernel;
-
-pthread_t HiloId;
-
-
-t_list * listaPid;
-struct tm *tlocal;
-
+#include "Consola.h"
+#include "hiloPrograma.h"
 
 int main(void) {
-
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logConsola.txt");
+	inicializarListas();
 
-	listaPid = list_create();
-	int socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
-	int err = pthread_create(&HiloId, NULL, connectionHandler,	(void*) socketKernel);
+	pthread_mutex_init(&mutex_crearHilo,NULL);
+	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
+	pthread_mutex_unlock(&mutex_crearHilo);
 
+	int err = pthread_create(&hiloInterfazUsuario, NULL, connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
-	else
+	pthread_join(hiloInterfazUsuario, NULL);
 
-	(void) pthread_join(HiloId, NULL);
-
-	return EXIT_SUCCESS;
+	return 0;
 
 }
 
-void *connectionHandler(int socket) {
+void *connectionHandler() {
 
 	while (1) {
 		char orden;
-		char *ruta = (char*) malloc(200 * sizeof(char));;
 		int pidAEliminar=0;
-		printf("----------------------------------------------------------------------\n");
-		printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
-		printf("----------------------------------------------------------------------\n");
+		int tamanoLista=0,i=0;
+		t_hilos * hiloACerrar = malloc(sizeof(t_hilos));
+
+		pthread_mutex_lock(&mutex_crearHilo);
+
+		imprimirInterfaz();
 		scanf(" %c", &orden);
-		send(socket, (void*) &orden, sizeof(char), 0);
 
 		switch (orden) {
-		case 'I':
-			printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
-			scanf("%s", ruta);
-			if ((enviarLecturaArchivo(ruta, socket)) < 0) {
+			case 'I':
+				crearHiloPrograma();
+				break;
+			case 'F': /*TODO: Emprolijar esto*/
 
-				log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente\n");
-			}
-
-			free(ruta);
-			break;
-
-		case 'F':
-
-			printf("Ingresar el PID del programa a finalizar\n");
-			scanf("%d", &pidAEliminar);
+				printf("Ingresar el PID del programa a finalizar\n");
+				scanf("%d", &pidAEliminar);
 
 
-			_Bool verificarPid(Pid* pidNuevoo){
-				return (pidNuevoo->pid == pidAEliminar);
+				_Bool verificarPid(t_hiloPrograma* pidNuevoo){
+					return (pidNuevoo->pid == pidAEliminar);
+					}
+
+				t_list * listaNueva;
+				listaNueva= list_create();
+				listaNueva= list_filter(listaPid,verificarPid);
+
+				int estaVacia =  list_size(listaNueva);
+
+				if (estaVacia==1){
+
+					list_remove_by_condition(listaPid, verificarPid);
+					send(socketKernel, (void*) &pidAEliminar, sizeof(int), 0);
+					printf("----------------------------------------------------------------------\n");
+					log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado",pidAEliminar);
+
+					t_hiloPrograma* estructuraPidAEliminar=list_get(listaNueva, 0);
+					char *fechaActual = malloc(sizeof(char));
+					fechaActual= temporal_get_string_time();
+
+					//int tiempoEjecucion= obtenerTiempoEjecucion(estructuraPidAEliminar->fechaInicio,fechaActual);
+					//aca falta la resta de fechas e informarlas
+					printf("----------------------------------------------------------------------\n");
+					printf("Hora de inicializacion : %s \n Hora de finalizacion: %s\nTiempo de ejecucion: \nCantidad de impresiones: %i\n",estructuraPidAEliminar->fechaInicio,fechaActual,estructuraPidAEliminar->cantImpresiones);
+					printf("----------------------------------------------------------------------\n");
+
+					//pthread_join(estructuraPidAEliminar->idAsociado, NULL);
+					log_info(loggerSinPantalla,"El hilo ha finalizado con exito");
+					free(fechaActual);
+
+
+				}else{
+					log_info(loggerConPantalla,"\nPID incorrecto\n");
 				}
+				pthread_mutex_unlock(&mutex_crearHilo);
+				break;
 
-			t_list * listaNueva;
-			listaNueva= list_create();
-			listaNueva= list_filter(listaPid,verificarPid);
+			case 'C':
+				system("clear");
+				pthread_mutex_unlock(&mutex_crearHilo);
 
-			int estaVacia =  list_size(listaNueva);
+				break;
 
-			if (estaVacia==1){
+			case 'Q':
+				tamanoLista = list_size(listaHilos);
 
-				list_remove_by_condition(listaPid, verificarPid);
-				send(socket, (void*) &pidAEliminar, sizeof(int), 0);
-				printf("----------------------------------------------------------------------\n");
-				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado",pidAEliminar);
+				for(i=0;i<tamanoLista;i++){
+						hiloACerrar= list_get(listaHilos,i);
+						pthread_join(hiloACerrar->idHilo, NULL);
 
-				Pid* estructuraPidAEliminar=list_get(listaNueva, 0);
-				char *fechaActual = malloc(sizeof(char));
-				fechaActual= temporal_get_string_time();
+					}
 
-				//int tiempoEjecucion= obtenerTiempoEjecucion(estructuraPidAEliminar->fechaInicio,fechaActual);
-				//aca falta la resta de fechas e informarlas
-				printf("----------------------------------------------------------------------\n");
-				printf("Hora de inicializacion : %s \n Hora de finalizacion: %s\nTiempo de ejecucion: \nCantidad de impresiones: %i\n",estructuraPidAEliminar->fechaInicio,fechaActual,estructuraPidAEliminar->cantImpresiones);
-				printf("----------------------------------------------------------------------\n");
+				list_destroy_and_destroy_elements(listaPid, free);
+				list_destroy_and_destroy_elements(listaHilos, free);
+				log_warning(loggerConPantalla,"\nSe ha desconectado la consola\n");
+				log_info(loggerSinPantalla,"Los hilos se han finalizado con exito");
+				free(hiloACerrar);
+				pthread_mutex_unlock(&mutex_crearHilo);
 
-				//pthread_join(*estructuraPidAEliminar->idAsociado, NULL);
+				exit(1);
+				break;
+			default:
+				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
+				pthread_mutex_unlock(&mutex_crearHilo);
 
-			}else{
-				log_info(loggerConPantalla,"\nPID incorrecto\n");
+				break;
 			}
-			break;
-
-		case 'C':
-			system("clear");
-			break;
-
-		case 'Q':
-			//pthread_join();
-			list_destroy_and_destroy_elements(listaPid, free);
-			log_warning(loggerConPantalla,"\nSe ha desconectado la consola\n");
-
-			exit(1);
-			break;
-		default:
-			log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
-			break;
-		}
 
 	}
 }
@@ -205,65 +163,6 @@ void *imprimir(int socket){
 }
 
 
-int enviarLecturaArchivo(void *rut, int socket) {
-	FILE *f;
-	void *mensaje;
-	void *bufferArchivo;
-	int tamanioArchivo;
-	int pid=0;
-	int socketEnKernel;
-	char *ruta = (char *) rut;
-
-	/* TODO Validar el nombre del archivo */
-
-	if ((f = fopen(ruta, "r+")) == NULL)return -1;
-
-	fseek(f, 0, SEEK_END);
-	tamanioArchivo = ftell(f);
-	rewind(f);
-
-	bufferArchivo = malloc(tamanioArchivo); // Pido memoria para leer el contenido del archivo
-
-	if (bufferArchivo == NULL) {
-
-		log_error(loggerConPantalla,"\nNo se pudo conseguir memoria\n");
-		free(bufferArchivo);
-		exit(2);
-	}
-
-	mensaje = malloc(sizeof(int) * 2 + tamanioArchivo); // Pido memoria para el mensaje EMPAQUETADO que voy a mandar
-
-	if (mensaje == NULL) {
-
-		log_error(loggerConPantalla,"\nNo se pudo conseguir memoria\n");
-		free(mensaje);
-		free(bufferArchivo);
-		exit(2);
-	}
-
-	fread(bufferArchivo, sizeof(bufferArchivo), tamanioArchivo, f);
-
-	memcpy(mensaje, &tamanioArchivo, sizeof(int)); // Empaqueto en el mensaje el tamano del archivo a enviar.
-	memcpy(mensaje + sizeof(int), bufferArchivo, tamanioArchivo); // Empaqueto en el mensjae, el contenido del archivo.
-
-	send(socket, mensaje, tamanioArchivo + sizeof(int), 0); // Mando el mensjae empaquetado.
-	log_info(loggerConPantalla,"\nEl mensaje ha sido enviado al kernel\n");
-
-	recv(socket, &pid, sizeof(int), 0);
-	recv(socket, &socketEnKernel, sizeof(int),0);
-	log_info(loggerConPantalla,"\nEl socket asignado en kernel para el proceso iniciado es: %d \n", socketEnKernel);
-	log_info(loggerConPantalla,"\nEl PID asignado es: %d \n", pid);
-
-	crearPrograma(pid,socket);
-
-	free(bufferArchivo);
-	free(mensaje);
-	return 0;
-
-
-}
-
-
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);
 	ipKernel = config_get_string_value(configuracion_Consola, "IP_KERNEL");
@@ -280,42 +179,32 @@ void imprimirConfiguraciones() {
 
 
 void inicializarLog(char *rutaDeLog){
-
-
 		mkdir("/home/utnso/Log",0755);
-
 		loggerSinPantalla = log_create(rutaDeLog,"Consola", false, LOG_LEVEL_INFO);
 		loggerConPantalla = log_create(rutaDeLog,"Consola", true, LOG_LEVEL_INFO);
-
 }
-void crearPrograma (int pid, int socketKernel){
 
-		Pid* pidNuevo = malloc(sizeof(pid));
-		char *fechaActual = malloc(sizeof(char));
-
-
-
-		//pidNuevo->idAsociado= hiloAsociado;
-
-		fechaActual= temporal_get_string_time();
-		cargarPid(pidNuevo,pid,fechaActual);
-
-		list_add(listaPid, pidNuevo);
-		int err = pthread_create( &HiloId , NULL , imprimir , &socketKernel);
-		if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
+void inicializarListas(){
+	listaPid = list_create();
+	listaHilos= list_create();
+	listaHilosProgramas= list_create();
 }
 
 
-/*int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual){
-	int tiempoInicio = fechaInicio - '0';
-	int tiempoFinal = fechaActual - '0';
-	int tiempoEjecucion = tiempoFinal - tiempoInicio;
-}*/
-
-
-void cargarPid(Pid* pidEstructura, int pid,char* fechaActual) {
-	pidEstructura->cantImpresiones=0;
-	pidEstructura->pid = pid;
-	pidEstructura->fechaInicio=fechaActual;
+void obtenerTiempoEjecucion(char *fechaInicio,char fechaActual){
 
 }
+
+
+void cargarHiloId(pthread_t hiloId){
+	t_hilos* hiloNuevo = malloc(sizeof(t_hilos));
+	hiloNuevo->idHilo=hiloId;
+	list_add(listaHilos,hiloNuevo);
+}
+
+void imprimirInterfaz(){
+	printf("----------------------------------------------------------------------\n");
+	printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
+	printf("----------------------------------------------------------------------\n");
+}
+
