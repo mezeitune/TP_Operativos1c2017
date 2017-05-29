@@ -1,8 +1,6 @@
 #include "CPU.h"
 
-
 int main(void) {
-
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
@@ -106,7 +104,6 @@ void ejecutarInstruccion(t_pcb* pcb){
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 	free(instruccion);
 	pcb->programCounter = pcb->programCounter + 1;
-
 }
 
 
@@ -121,7 +118,6 @@ int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,
 	*instruccion=malloc((size+1)*sizeof(char));
 	recv(socketMemoria,*instruccion,size,0);
 	strcpy(*instruccion+size,"\0");
-//	*instruccion = recibir_string(socketMemoria);
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 	return resultadoEjecucion;
 }

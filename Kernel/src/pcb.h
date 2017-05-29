@@ -1,3 +1,13 @@
+/*
+ * pcb.h
+ *
+ *  Created on: 29/5/2017
+ *      Author: utnso
+ */
+
+#ifndef PCB_H_
+#define PCB_H_
+
 #include <commons/log.h>
 
 typedef struct{
@@ -99,14 +109,12 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
 }
 
 
-
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 	log_info(loggerConPantalla, "Serializando PCB ----- PID:%d",pcb->pid);
 
 
 	int pcbSerializadoSize = calcularPcbSerializadoSize(pcb);
 	log_info(loggerConPantalla, "Tamanio del PCB serializado: %d - PID ----- %d",pcbSerializadoSize,pcb->pid);
-	int indiceEtiquetasSize=calcularIndiceEtiquetasSize(pcb->indiceEtiquetasSize);
 	void* pcbEnviar= malloc(pcbSerializadoSize);
 	void * pcbSerializado = pcbEnviar;
 
@@ -142,9 +150,9 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 
 	log_info(loggerConPantalla, "Serializando Stack");
-		int j;
-		t_nodoStack* node;
-		t_variable* variable;
+	int j;
+	t_nodoStack* node;
+	t_variable* variable;
 
 			for(i = 0; i < pcb->indiceStack->elements_count;i++){
 				node = (t_nodoStack*) list_get(pcb->indiceStack, i);
@@ -174,6 +182,8 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 				pcbSerializado += sizeof(t_posMemoria);
 			}
 			log_info(loggerConPantalla, "Stack serializado");
+
+
 	//serializarStack(&pcbSerializado + sizeof(int)*4 +  indiceEtiquetasSize, pcb->indiceStack);
 
 	memcpy(pcbSerializado,&pcb->exitCode,sizeof(int));
@@ -181,30 +191,22 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 	log_info(loggerConPantalla, "Enviando PCB serializado ----- PID: %d ------ socketCPU: %d", pcb->pid, socketCPU);
 
-	//imprimir PCB
 
-	//pcbEnviar = pcbSerializado;
 
 	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	send(socketCPU,pcbEnviar,pcbSerializadoSize,0);
-
-	imprimirPcb(pcb);
 
 }
 
 
 t_pcb* recibirYDeserializarPcb(int socketKernel){
+	t_pcb* pcb = malloc(sizeof(t_pcb));
 	log_info(loggerConPantalla, "Recibiendo PCB serializado---- SOCKET:%d", socketKernel);
-
 	int pcbSerializadoSize;
 	recv(socketKernel,&pcbSerializadoSize,sizeof(int),0);
-
-	void * pcbSerializado = malloc(pcbSerializadoSize);
-
 	log_info(loggerConPantalla, "Tamanio del PCB serializado a recibir: %d",pcbSerializadoSize);
+	void * pcbSerializado = malloc(pcbSerializadoSize);
 	recv(socketKernel,pcbSerializado,pcbSerializadoSize,0);
-
-	t_pcb* pcb = malloc(sizeof(t_pcb));
 
 	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);
@@ -213,10 +215,10 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 
 	memcpy(&pcb->cantidadPaginasCodigo,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);
-	memcpy(&pcb->programCounter, pcbSerializado, sizeof(int));
-	pcbSerializado += sizeof(int);
-	memcpy(&pcb->cantidadInstrucciones, pcbSerializado, sizeof(t_puntero_instruccion));
+	memcpy(&pcb->programCounter, pcbSerializado, sizeof(t_puntero_instruccion));
 	pcbSerializado += sizeof(t_puntero_instruccion);
+	memcpy(&pcb->cantidadInstrucciones, pcbSerializado, sizeof(int));
+	pcbSerializado += sizeof(int);
 
 	pcb->indiceCodigo = inicializarIndiceCodigo(pcb->cantidadInstrucciones);
 
@@ -242,9 +244,9 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 
 		log_info(loggerConPantalla, "Deserializando Stack");
 			int j;
-			t_nodoStack* node = malloc(sizeof(t_nodoStack));
-			t_posMemoria* argumento = malloc(sizeof(t_posMemoria));
-			t_variable* variable = malloc(sizeof(t_variable));
+			t_nodoStack* node;
+			t_posMemoria* argumento;
+			t_variable* variable;
 
 			int cantidadArgumentos;
 			int cantidadVariables;
@@ -254,13 +256,13 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 			pcbSerializado += sizeof(int);
 
 			for(i = 0; i < cantidadElementosStack;i++){
-				//node = malloc(sizeof(t_nodoStack));
+				node = malloc(sizeof(t_nodoStack));
 				node->args = list_create();
 				memcpy(&cantidadArgumentos,(int*) pcbSerializado, sizeof(int));
 				pcbSerializado += sizeof(int);
 
 				for(j = 0; j < cantidadArgumentos; j++){
-					//argumento = malloc(sizeof(t_posMemoria));
+					argumento = malloc(sizeof(t_posMemoria));
 					memcpy(&argumento,(t_posMemoria*) pcbSerializado,sizeof(t_posMemoria));
 					list_add(node->args,argumento);
 					pcbSerializado += sizeof(t_posMemoria);
@@ -272,7 +274,7 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 				node->vars = list_create();
 
 				for(j = 0; j < cantidadVariables; j++){
-					//variable = malloc(sizeof(t_variable));
+					variable = malloc(sizeof(t_variable));
 					memcpy(&variable->idVar,(char*) pcbSerializado,sizeof(char));
 					pcbSerializado += sizeof(char);
 					variable->dirVar = malloc(sizeof(t_posMemoria));
@@ -296,10 +298,10 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 	//deserializarStack(&pcbSerializado + sizeof(int)*4 + + sizeof(t_puntero_instruccion)+ indiceCodigoSize,&pcb->indiceStack);
 
 			//imprimirPcb(pcb);
-
-
 	return pcb;
 }
+
+
 
 
 
@@ -494,3 +496,7 @@ int cantidadPaginasCodigoProceso(int programSize){
 	return mod == 0 ? (programSize / config_paginaSize):(programSize / config_paginaSize)+ 1;
 }
 
+
+
+
+#endif /* PCB_H_ */

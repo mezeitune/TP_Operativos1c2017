@@ -252,7 +252,7 @@ void* planificarCortoPlazo(){
 
 		socket = list_get(listaCPU,0);
 		serializarPcbYEnviar(pcbListo, socket);
-		list_remove(listaCPU,0);
+		//list_remove(listaCPU,0);
 
 	}
 }
@@ -296,7 +296,6 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int p
 		int nroPagina;
 
 		//printf("El programa a particionar es : \n%s ", programa);
-	imprimirPcb(procesoListoAutorizado);
 
 		log_info(loggerConPantalla, "Paginas de codigo a almacenar: %d", procesoListoAutorizado->cantidadPaginasCodigo);
 

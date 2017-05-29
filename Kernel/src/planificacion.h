@@ -20,9 +20,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <netinet/in.h>
-
 #include "configuraciones.h"
-
+#include "pcb.h"
 
 
 typedef struct {
