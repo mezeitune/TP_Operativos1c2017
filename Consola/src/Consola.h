@@ -14,7 +14,7 @@
 #include <commons/collections/list.h>
 #include <commons/log.h>
 #include <time.h>
-
+#include <signal.h>
 
 //--------LOG----------------//
 void inicializarLog(char *rutaDeLog);
@@ -37,7 +37,7 @@ void inicializarListas();
 void* connectionHandler();
 void* imprimir(int socket);
 void cargarHiloId(pthread_t hiloId);
-
+void cerrarTodo();
 t_config* configuracion_Consola;
 char* ipKernel;
 char* puertoKernel;
@@ -49,3 +49,4 @@ pthread_t hiloInterfazUsuario;
 t_list * listaPid;
 t_list * listaHilos;
 struct tm *tlocal;
+static volatile int keepRunning = 1;

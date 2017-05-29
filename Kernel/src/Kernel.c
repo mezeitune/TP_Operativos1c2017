@@ -211,8 +211,12 @@ void interruptHandler(int socketAceptado,char orden){
 		informarConsola(socketAceptado,mensaje,size);
 		break;
 	case 'C':
-		log_info(loggerConPantalla,"La CPU de socket %d se ha cerrado al ejecutar signal SIGUSR1\n",socketAceptado);
+		log_info(loggerConPantalla,"La CPU de socket %d se ha cerrado por  signal\n",socketAceptado);
 		//aca hay que eliminar la cpu
+		break;
+	case 'E':
+		log_info(loggerConPantalla,"La Consola de socket %d se ha cerrado por signal \n",socketAceptado);
+		//fijarse las cosas de la consola
 		break;
 	default:
 			break;

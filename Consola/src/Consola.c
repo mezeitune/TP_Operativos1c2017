@@ -9,7 +9,7 @@
  */
 #include "Consola.h"
 #include "hiloPrograma.h"
-
+void signalSigIntHandler(int signum);
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
@@ -24,11 +24,23 @@ int main(void) {
 
 	int err = pthread_create(&hiloInterfazUsuario, NULL, connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
+	signal(SIGINT, signalSigIntHandler);
 
 	pthread_join(hiloInterfazUsuario, NULL);
 
 	return 0;
 
+}
+
+void signalSigIntHandler(int signum)
+{
+    if (signum == SIGINT)
+    {
+    	log_warning(loggerConPantalla,"Cierre por signal, cerrando hilos programa y avisando a kernel \n");
+    	cerrarTodo();
+    	log_warning(loggerConPantalla,"La consola se ha cerrado por signal correctamente \n");
+    	exit(1);
+    }
 }
 
 void *connectionHandler() {
@@ -99,21 +111,7 @@ void *connectionHandler() {
 				break;
 
 			case 'Q':
-				tamanoLista = list_size(listaHilos);
-
-				for(i=0;i<tamanoLista;i++){
-						hiloACerrar= list_get(listaHilos,i);
-						pthread_join(hiloACerrar->idHilo, NULL);
-
-					}
-
-				list_destroy_and_destroy_elements(listaPid, free);
-				list_destroy_and_destroy_elements(listaHilos, free);
-				log_warning(loggerConPantalla,"\nSe ha desconectado la consola\n");
-				log_info(loggerSinPantalla,"Los hilos se han finalizado con exito");
-				free(hiloACerrar);
-				pthread_mutex_unlock(&mutex_crearHilo);
-
+				cerrarTodo();
 				exit(1);
 				break;
 			default:
@@ -206,5 +204,24 @@ void imprimirInterfaz(){
 	printf("----------------------------------------------------------------------\n");
 	printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
 	printf("----------------------------------------------------------------------\n");
+}
+void cerrarTodo(){
+	char comandoInterruptHandler='X';
+	char comandoCierreConsola = 'E';
+	t_hilos * hiloACerrar = malloc(sizeof(t_hilos));
+	int i,tamanoLista = list_size(listaHilos);
+
+		for(i=0;i<tamanoLista;i++){
+			hiloACerrar= list_get(listaHilos,i);
+			pthread_join(hiloACerrar->idHilo, NULL);
+		}
+			list_destroy_and_destroy_elements(listaPid, free);
+			list_destroy_and_destroy_elements(listaHilos, free);
+			log_info(loggerSinPantalla,"Los hilos se han finalizado con exito");
+			free(hiloACerrar);
+			pthread_mutex_unlock(&mutex_crearHilo);
+
+			send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
+			send(socketKernel,&comandoCierreConsola,sizeof(char),0);
 }
 

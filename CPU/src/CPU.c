@@ -9,11 +9,11 @@ int main(void) {
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 
-	log_info(loggerConPantalla, "Inicia procesooooooo CPU");
+	log_info(loggerConPantalla, "Inicia proceso CPU");
 	recibirTamanioPagina(socketKernel);
 
-
-	signal(SIGUSR1, signalSigusrHandler);
+	signal(SIGINT, signalHandler);
+	signal(SIGUSR1, signalHandler);
 
 	esperarPCB();
 
@@ -144,6 +144,7 @@ char* obtener_instruccion(t_pcb * pcb){
 	int num_pagina = byte_inicio_instruccion / config_paginaSize;
 	int offset = byte_inicio_instruccion - (num_pagina * config_paginaSize);//no es 0 porque evita el begin
 	char* mensajeRecibido;
+	char* mensajeRecibido2;
 	char* instruccion;
 	char* continuacion_instruccion;
 	int bytes_a_leer_primera_pagina;
@@ -151,7 +152,7 @@ char* obtener_instruccion(t_pcb * pcb){
 	if (bytes_tamanio_instruccion > (config_paginaSize * 2)){
 		printf("El tamanio de la instruccion es mayor al tamanio de pagina\n");
 	}
-	//if ((offset + bytes_tamanio_instruccion) < config_paginaSize){
+	if ((offset + bytes_tamanio_instruccion) < config_paginaSize){
 		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_tamanio_instruccion)<0)
 			{
 			printf("No se pudo solicitar el contenido\n");
@@ -159,49 +160,50 @@ char* obtener_instruccion(t_pcb * pcb){
 			else{
 				instruccion=mensajeRecibido;
 				}
-//	} else {
-		//bytes_a_leer_primera_pagina = config_paginaSize - offset;
-		//if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
-		//			{printf("No se pudo solicitar el contenido\n");}
-		//	else{
-			//		instruccion=mensajeRecibido;
-		//	}
+	} else {
+		bytes_a_leer_primera_pagina = config_paginaSize - offset;
+		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
+					{printf("No se pudo solicitar el contenido\n");}
+		else{
+				instruccion=mensajeRecibido;
+			}
 		//free(mensajeRecibido);
-	//	log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
-		//if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
-			//if ( conseguirDatosMemoria(&continuacionMensajeRecibido,pcb, (num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
-				//	{printf("No se pudo solicitar el contenido\n");}
-					//	else{
-						//continuacion_instruccion=continuacionMensajeRecibido;
-						//log_info(loggerConPantalla, "Continuacion ejecucion: %s", continuacion_instruccion);
-							//	}
+		log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
+		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
+			if ( conseguirDatosMemoria(&mensajeRecibido2,pcb, (num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
+					{printf("No se pudo solicitar el contenido\n");}
+						else{
+						continuacion_instruccion=mensajeRecibido2;
+						log_info(loggerConPantalla, "Continuacion ejecucion: %s", continuacion_instruccion);
+								}
 
-		//	string_append(&instruccion, continuacion_instruccion);
-		//	free(continuacion_instruccion);
-		//}else{
-			//log_info(loggerConPantalla, "La continuacion de la instruccion es 0. Ni la leo");
-		//}
-//	}
-	//char** string_cortado = string_split(instruccion, "\n");
-	//free(instruccion);
-	//instruccion= string_new();
-	//string_append(&instruccion, string_cortado[0]);
-	//log_info(loggerConPantalla, "\nInstruccion obtenida: %s", instruccion);
-	//int i = 0;
-	//while(string_cortado[i] != NULL){
-		//free(string_cortado[i]);
-		//i++;
-	//}
-	//free(string_cortado);
+			string_append(&instruccion, continuacion_instruccion);
+			free(continuacion_instruccion);
+		}else{
+			log_info(loggerConPantalla, "La continuacion de la instruccion es 0. Ni la leo");
+		}
+	}
+	char** string_cortado = string_split(instruccion, "\n");
+	free(instruccion);
+	instruccion= string_new();
+	string_append(&instruccion, string_cortado[0]);
+	log_info(loggerConPantalla, "\nInstruccion obtenida: %s", instruccion);
+	int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+	free(string_cortado);
 	//	imprimirPcb(pcb);
 	return instruccion;
 }
 
 
-void signalSigusrHandler(int signum)
+void signalHandler(int signum)
 {
-    if (signum == SIGUSR1)
+    if (signum == SIGUSR1 || signum == SIGINT)
     {
+    	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del pcb actual y cerrando CPU ...");
     	cpuFinalizada=0;
     	t_pcb * pcb= list_get(listaPcb,0);
     	EjecutarProgramaMedianteAlgoritmo(pcb);
@@ -210,12 +212,14 @@ void signalSigusrHandler(int signum)
 void CerrarPorSignal(){
 	char comandoInterruptHandler='X';
 	char comandoCierreCpu='C';
+
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
-	 send(socketKernel,&comandoCierreCpu,sizeof(char),0);
+	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
 	 //hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
-	 log_warning(loggerConPantalla,"\nSe ha desconectado CPU con signal SIGUSR1\n");
+	log_warning(loggerConPantalla,"\nSe ha desconectado CPU con signal correctamente\n");
 	exit(1);
 }
+
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
 		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
@@ -449,7 +453,6 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	return posicion_serializada;
 }
 void finalizar (){
-
 		t_pcb * pcb_actual = list_get(listaPcb,0);
 		char comandoFinalizacion = 'T';
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);

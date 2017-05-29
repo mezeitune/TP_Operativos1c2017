@@ -77,7 +77,7 @@ void connectionHandler(t_pcb pcb);
 void cargarPcbActual(t_pcb* pidEstructura, int pid, int cantidadPaginas, int offset);
 void recibirTamanioPagina();
 void recibirPCB();
-void signalSigusrHandler(int signum);
+void signalHandler(int signum);
 void imprimirPCB(t_pcb * pcb);
 int cantidadPaginasTotales(t_pcb * pcb);
 void esperarPCB();
