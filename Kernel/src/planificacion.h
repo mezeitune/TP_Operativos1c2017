@@ -201,12 +201,16 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 
 void terminarProceso(int socketCPU){
-	t_pcb* pcbProcesoTerminado/* = malloc(sizeof(t_pcb))*/;
+	t_pcb* pcbProcesoTerminado;
 	t_consola* consolaAInformar = malloc(sizeof(t_consola));
 
 	char *mensaje = malloc(30);
 
+
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
+	log_info(loggerConPantalla, "Terminando proceso---- PID: %d \n", pcbProcesoTerminado->pid);
+	list_add(listaCPU,(void*)socketCPU);
+	sem_post(&sem_CPU);
 
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados, pcbProcesoTerminado);

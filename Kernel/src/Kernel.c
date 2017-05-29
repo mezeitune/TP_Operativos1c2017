@@ -132,7 +132,7 @@ void connectionHandler(int socketAceptado, char orden) {
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
-					log_info(loggerConPantalla,"Se ha avisado que un proceso se quiere finalizar\n");
+					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
 					terminarProceso(socketAceptado);
 					break;
 		case 'F':
@@ -215,8 +215,9 @@ void interruptHandler(int socketAceptado,char orden){
 		//aca hay que eliminar la cpu
 		break;
 	case 'E':
-		log_info(loggerConPantalla,"La Consola de socket %d se ha cerrado por signal \n",socketAceptado);
-		//fijarse las cosas de la consola
+		log_info(loggerConPantalla,"La Consola con socket %d asignado se ha cerrado por signal \n",socketAceptado);
+		/*Finalizar todos los procesos que esta consola haya inciado. Mandar a los procesos a la cola de TErminados*/
+		/*Sacar al socket global y a los sockets de los hilos programas del SET del Select*/
 		break;
 	default:
 			break;
@@ -256,7 +257,7 @@ void* planificarCortoPlazo(){
 
 		socket = list_get(listaCPU,0);
 		serializarPcbYEnviar(pcbListo, socket);
-		//list_remove(listaCPU,0);
+		list_remove(listaCPU,0);
 
 	}
 }
@@ -298,8 +299,6 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int p
 		int comandoAlmacenar = 'C';
 		int offset=0;
 		int nroPagina;
-
-		//printf("El programa a particionar es : \n%s ", programa);
 
 		log_info(loggerConPantalla, "Paginas de codigo a almacenar: %d", procesoListoAutorizado->cantidadPaginasCodigo);
 

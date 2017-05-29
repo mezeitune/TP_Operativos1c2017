@@ -112,12 +112,10 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 	log_info(loggerConPantalla, "Serializando PCB ----- PID:%d",pcb->pid);
 
-
 	int pcbSerializadoSize = calcularPcbSerializadoSize(pcb);
 	log_info(loggerConPantalla, "Tamanio del PCB serializado: %d - PID ----- %d",pcbSerializadoSize,pcb->pid);
 	void* pcbEnviar= malloc(pcbSerializadoSize+sizeof(int));
 	void * pcbSerializado = pcbEnviar;
-
 
 	memcpy(pcbSerializado,&pcb->pid,sizeof(int));
 	pcbSerializado += sizeof(int);
@@ -138,7 +136,6 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 	}
 	log_info(loggerConPantalla, "Indice de Codigo serializado");
 
-	//serializarIndiceCodigo(&pcbSerializado +sizeof(int)*2 + sizeof(t_puntero_instruccion), pcb->indiceCodigo, pcb->cantidadInstrucciones);
 
 	memcpy(pcbSerializado, &pcb->indiceEtiquetasSize,sizeof(t_size));
 	pcbSerializado += sizeof(t_size);
@@ -183,19 +180,11 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 			}
 			log_info(loggerConPantalla, "Stack serializado");
 
-
-	//serializarStack(&pcbSerializado + sizeof(int)*4 +  indiceEtiquetasSize, pcb->indiceStack);
-
 	memcpy(pcbSerializado,&pcb->exitCode,sizeof(int));
-
-
-	log_info(loggerConPantalla, "Enviando PCB serializado ----- PID: %d ------ socketCPU: %d", pcb->pid, socketCPU);
-
-
 
 	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	send(socketCPU,pcbEnviar,pcbSerializadoSize,0);
-
+	log_info(loggerConPantalla, "Pcb serializado y enviado ----- PID: %d ------ socketCPU: %d", pcb->pid, socketCPU);
 }
 
 
@@ -232,7 +221,6 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 		}
 	log_info(loggerConPantalla, "Indice de Codigo deserializado");
 
-	//deserializarIndiceCodigo(&pcbSerializado + sizeof(int)*3 + sizeof(t_puntero_instruccion), &pcb->indiceCodigo, pcb->cantidadInstrucciones);
 
 	memcpy(&pcb->indiceEtiquetasSize,pcbSerializado, sizeof(t_size));
 	pcbSerializado += sizeof(t_size);
@@ -295,9 +283,7 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 
 			memcpy(&pcb->exitCode,pcbSerializado,sizeof(int));
 
-	//deserializarStack(&pcbSerializado + sizeof(int)*4 + + sizeof(t_puntero_instruccion)+ indiceCodigoSize,&pcb->indiceStack);
-
-			//imprimirPcb(pcb);
+			log_info(loggerConPantalla,"Pcb deserializado------PID: %d",pcb->pid);
 	return pcb;
 }
 
