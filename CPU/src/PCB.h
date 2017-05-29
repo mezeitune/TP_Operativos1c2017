@@ -170,13 +170,13 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 				printf("Loop numero: %d\n",i);
 				node = (t_nodoStack*) list_get(pcb->indiceStack, i);
 				memcpy(pcbSerializado, &node->args->elements_count, sizeof(int));
-				printf("Hola1\n");
+
 				pcbSerializado += sizeof(int);
 
 				printf("Cantidad de nodos argumentos: %d\n", node->args->elements_count);
 				for(j = 0; j < node->args->elements_count; j++){
 					memcpy(pcbSerializado, list_get(node->args, j), sizeof(t_posMemoria));
-					printf("Hola2\n");
+
 					pcbSerializado += sizeof(t_posMemoria);
 				}
 
@@ -184,7 +184,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 				pcbSerializado += sizeof(int);
 				printf("Cantidad de nodos variables: %d\n",node->vars->elements_count);
 				for(j = 0; j < node->vars->elements_count; j++){
-					printf("Hola3\n");
+
 					variable = list_get(node->vars, j);
 					memcpy(pcbSerializado, &variable->idVar, sizeof(char));
 					pcbSerializado += sizeof(char);
@@ -197,7 +197,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 				memcpy(pcbSerializado, node->retVar, sizeof(t_posMemoria));
 				pcbSerializado += sizeof(t_posMemoria);
-				printf("Termine el loop: %d\n",i);
+
 			}
 			log_info(loggerConPantalla, "Stack serializado");
 

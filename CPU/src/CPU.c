@@ -24,14 +24,14 @@ int main(void) {
 void esperarPCB(){
 
 				listaPcb = list_create();
-				while(cpuOcupada==1 && cpuFinalizada==1){
+				while(cpuOcupada==1){
 
 					log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
 					recibirPCB();
 					cpuOcupada--;
 
 				}
-				CerrarPorSignal();
+
 }
 void recibirPCB(){
 		char comandoRecibirPCB;
@@ -81,12 +81,7 @@ void establecerPCB(){
 }
 void EjecutarProgramaMedianteAlgoritmo(t_pcb* pcb){
 	int i;
-	if(cpuFinalizada==0){
-	i = pcb->programCounter;
-	}
-	else{
 			i = 0;
-		}
 	//recv(socketKernel,&ultimaInstruccion,sizeof(int),0);
 	int cantidadInstruccionesAEjecutar=pcb->cantidadInstrucciones;
 
@@ -205,8 +200,6 @@ void signalHandler(int signum)
     {
     	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del pcb actual y cerrando CPU ...");
     	cpuFinalizada=0;
-    	t_pcb * pcb= list_get(listaPcb,0);
-    	EjecutarProgramaMedianteAlgoritmo(pcb);
     }
 }
 void CerrarPorSignal(){
@@ -467,6 +460,9 @@ void finalizar (){
 
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado", pcb_actual->pid);
 		list_destroy_and_destroy_elements(listaPcb, free);
+		if(cpuFinalizada==0){
+		CerrarPorSignal();
+		}
 		cpuOcupada=1;
 		esperarPCB();
 }
