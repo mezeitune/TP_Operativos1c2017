@@ -61,16 +61,11 @@ typedef struct
 	int num_pag;
 }struct_adm_memoria;
 
-typedef struct
-{
-	int entrada;
-	int pid;
-	int num_pag;
-}struct_adm_cache;
-
 //char* bitMap;
 void* bloque_Memoria;
 void* bloque_Cache;
+void* bloqueBitUsoCache;
+int contadorBitDeUso=1;
 
 int socket_servidor;
 
@@ -130,7 +125,10 @@ void tamanioMemoria();
 int cantPaginasDeProceso(int pid);
 
 void inicializarCache();
-int buscarFrameDePaginaDeProcesoEnCache(int pid, int pagina);
+int buscarEntradaDeProcesoEnCache(int pid, int pagina);
+void escribirContenidoEnEntradaCache(char* contenido,int entrada);
+char* leerContenidoEnCache(int entrada,char** buffer);
+void iniciarEntradaEnCache(int pid, int pagina, char *contenido);
 
 int main(void)
 {
@@ -143,7 +141,8 @@ int main(void)
 	sem_init(&sem,0,0);
 
 	bloque_Memoria= malloc(marco_size*marcos);
-	bloque_Cache = malloc(entradas_cache*marco_size);
+	bloque_Cache = malloc((sizeof(int)*2+marco_size)*entradas_cache);
+	bloqueBitUsoCache = malloc(sizeof(int)*entradas_cache);
 
 	inicializarMemoriaAdm();
 	inicializarCache();
@@ -368,12 +367,24 @@ int main_solicitarBytesPagina(int sock)
 	printf("Size:%d\n",size);
 
 	bufferAEnviar=malloc((size+1)*sizeof(char));
-	solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
-	sleep(retardo_memoria);
-	//enviar_string(sock,bufferAEnviar);
-	send(sock,bufferAEnviar,size,0);
 
+	int posicionEnCache = buscarEntradaDeProcesoEnCache(pid,pagina);
+	if(posicionEnCache != -1)
+	{
+		leerContenidoEnCache(posicionEnCache,&bufferAEnviar);
+		printf("Se encontró la pagina %d del proceso %d en la entrada %d de la cache\n",pagina,pid,posicionEnCache);
+	}
+	else
+	{
+		solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
+		printf("No se encontró la pagina %d del proceso %d en la cache\n",pagina,pid);
+		iniciarEntradaEnCache(pid,pagina, bufferAEnviar);
+		sleep(retardo_memoria);
+		//enviar_string(sock,bufferAEnviar);
+	}
+	send(sock,bufferAEnviar,size,0);
 	free(bufferAEnviar);
+
 	return 0;
 }
 int main_almacenarBytesPagina(int sock)
@@ -638,18 +649,18 @@ void imprimirEstructurasAdministrativas()
 		printf("/___%d/__%d/__%d\n",auxMemoria.frame,auxMemoria.pid,auxMemoria.num_pag);
 	}
 
-
-
-	struct_adm_cache auxCache;
+	int pidProc;
+	int paginaProc;
 	i = 0;
-	desplazamiento = sizeof(struct_adm_cache);
+	desplazamiento = sizeof(int)*2+marco_size;
 	printf("---Estructuras Adm De la Cache---\n");
-	printf("Entrada/PID/NumPag\n");
+	printf("PID/NumPag\n");
 	while(i < entradas_cache)
 	{
-		memcpy(&auxCache, bloque_Cache + i*desplazamiento, sizeof(struct_adm_cache));
+		memcpy(&pidProc, bloque_Cache + i*desplazamiento,sizeof(int));
+		memcpy(&paginaProc, bloque_Cache + i*desplazamiento+sizeof(int),sizeof(int));
 		i++;
-		printf("/___%d/__%d/__%d\n",auxCache.entrada,auxCache.pid,auxCache.num_pag);
+		printf("/__%d/__%d\n",pidProc,paginaProc);
 	}
 	printf("---------------------------------------------------\n");
 }
@@ -920,52 +931,111 @@ void tamanioMemoria()
 
 void inicializarCache()
 {
-	int sizeStructsAdmCache= ((sizeof(struct_adm_cache)*entradas_cache)+marco_size-1)/marco_size;
-	log_info(loggerConPantalla,"Las estructuras administrativas de la cache ocupan %i entradas\n",sizeStructsAdmCache);
-
-
 	printf("-------------Inicializar Cache-------------\n");
 
-	//ocuparBitMap(0,sizeMemoriaAdm);
-	struct_adm_cache aux;
 	int i = 0;
-	int desplazamiento = sizeof(struct_adm_cache);
-	aux.pid=-1;
-	aux.num_pag=-1;
-	aux.entrada = i;
+	int desplazamiento = sizeof(int)*2+marco_size;
+	int pid = -1;
+	int pagina = -1;
+
 	while(i < entradas_cache)
 	{
-		if(i<sizeStructsAdmCache)
-		{
-			aux.pid = -9;
-			aux.num_pag=i;
-		}
-		else
-		{
-			aux.pid = -1;
-			aux.num_pag=-1;
-		}
-		memcpy(bloque_Cache + i*desplazamiento, &aux, sizeof(struct_adm_cache));
+		memcpy(bloque_Cache + i*desplazamiento,&pid , sizeof(int));
+		memcpy(bloque_Cache + i*desplazamiento+sizeof(int),&pagina , sizeof(int));
 		i++;
-		aux.entrada = i;
 	}
+
+	i = 0;
+	int bitUso = -1;
+	desplazamiento = sizeof(int);
+
+	while(i < entradas_cache)
+	{
+		memcpy(bloqueBitUsoCache + i*desplazamiento,&bitUso , sizeof(int));
+		i++;
+	}
+
+
 }
 
-int buscarFrameDePaginaDeProcesoEnCache(int pid, int pagina)
+int buscarEntradaDeProcesoEnCache(int pid, int pagina)
 {
 	int i = 0;
-	int desplazamiento = sizeof(struct_adm_cache);
-	struct_adm_cache aux;
+	int desplazamiento = sizeof(int)*2+marco_size;
+	int pidProc;
+	int paginaProc;
 	while(i<entradas_cache)
 	{
-		memcpy(&aux, bloque_Cache + i*desplazamiento,sizeof(struct_adm_cache));
-		if(aux.pid == pid && aux.num_pag == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
+		memcpy(&pidProc, bloque_Cache + i*desplazamiento,sizeof(int));
+		memcpy(&paginaProc, bloque_Cache + i*desplazamiento+sizeof(int),sizeof(int));
+		if(pidProc == pid && paginaProc == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
 		{
-			return aux.entrada;
+			return i;
 		}
 		i++;
 	}
 	return -1;
+}
+
+void iniciarEntradaEnCache(int pid, int pagina, char *contenido)
+{
+	int entrada = buscarUnaEntradaParaProcesoEnCache();
+	int desplazamiento = sizeof(int)*2+marco_size;
+	memcpy(&pid, bloque_Cache + entrada*desplazamiento,sizeof(int));
+	memcpy(&pagina, bloque_Cache + entrada*desplazamiento+sizeof(int),sizeof(int));
+	escribirContenidoEnEntradaCache(contenido,entrada);
+	memcpy(bloqueBitUsoCache + entrada*sizeof(int),&contadorBitDeUso , sizeof(int));
+	contadorBitDeUso++;
+}
+
+void escribirContenidoEnEntradaCache(char* contenido,int entrada)
+{
+	int desplazamiento = sizeof(int)*2+marco_size;
+	memcpy(&bloque_Cache+entrada*desplazamiento+2*sizeof(int),&contenido,marco_size);
+}
+
+char* leerContenidoEnCache(int entrada,char** buffer)
+{
+
+	int desplazamiento = sizeof(int)*2+marco_size;
+	memcpy(*buffer, bloque_Cache + entrada*desplazamiento+sizeof(int)*2,marco_size);
+	memcpy(bloqueBitUsoCache + entrada*sizeof(int),&contadorBitDeUso , sizeof(int));
+	contadorBitDeUso++;
+	return *buffer;
+}
+
+int buscarUnaEntradaParaProcesoEnCache()
+{
+	int i=0;
+	int bitDeUso;
+	int bitDeUsoAux;
+	int entrada = 0;
+	while(i < entradas_cache)
+	{
+		if(i == 0)
+		{
+			memcpy(&bitDeUso,bloqueBitUsoCache + i*sizeof(int),sizeof(int));
+			if(bitDeUso == -1)
+			{
+				return i;
+			}
+		}
+		else
+		{
+			memcpy(&bitDeUsoAux,bloqueBitUsoCache + i*sizeof(int),sizeof(int));
+			if(bitDeUsoAux == -1)
+			{
+				return i;
+			}
+			if(bitDeUsoAux <= bitDeUso)
+			{
+				bitDeUso = bitDeUsoAux;
+				entrada = i;
+			}
+		}
+		i++;
+	}
+	return entrada;
 }
 
 
