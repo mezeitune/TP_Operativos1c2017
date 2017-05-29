@@ -115,7 +115,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 	int pcbSerializadoSize = calcularPcbSerializadoSize(pcb);
 	log_info(loggerConPantalla, "Tamanio del PCB serializado: %d - PID ----- %d",pcbSerializadoSize,pcb->pid);
-	void* pcbEnviar= malloc(pcbSerializadoSize);
+	void* pcbEnviar= malloc(pcbSerializadoSize+sizeof(int));
 	void * pcbSerializado = pcbEnviar;
 
 
@@ -369,7 +369,7 @@ int calcularIndiceStackSize(t_list* indiceStack){
 	t_nodoStack* node;
 	for(i=0;i<indiceStack->elements_count;i++){
 			node = list_get(indiceStack,i);
-		stackSize+= sizeof(int) + node->args->elements_count * sizeof(t_posMemoria) + sizeof(int)+  node->vars->elements_count * sizeof(t_variable) + sizeof(int) +sizeof(t_posMemoria);
+		stackSize+= sizeof(int) + node->args->elements_count * sizeof(t_posMemoria) + sizeof(int)+  node->vars->elements_count * (sizeof(char)+sizeof(t_posMemoria)) + sizeof(int) +sizeof(t_posMemoria);
 	}
 	return stackSize;
 }
