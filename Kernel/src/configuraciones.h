@@ -20,7 +20,7 @@ char *semIds;
 char *semInit;
 char *sharedVars;
 int stackSize;
-int config_paginaSize; // todo: Tiene que obtenerlo por handshake con memoria
+int config_paginaSize;
 int config_gradoMultiProgramacion;
 int gradoMultiProgramacion;
 char *ipServidor;
@@ -59,7 +59,6 @@ void leerConfiguracion(char* ruta) {
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
 	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
 	stackSize = atoi(config_get_string_value(configuracion_kernel, "STACK_SIZE"));
-	config_paginaSize = atoi(config_get_string_value(configuracion_kernel,"PAGINA_SIZE"));
 }
 
 

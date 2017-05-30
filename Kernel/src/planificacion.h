@@ -208,7 +208,7 @@ void terminarProceso(int socketCPU){
 
 
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
-	log_info(loggerConPantalla, "Terminando proceso---- PID: %d \n", pcbProcesoTerminado->pid);
+	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 	list_add(listaCPU,(void*)socketCPU);
 	sem_post(&sem_CPU);
 

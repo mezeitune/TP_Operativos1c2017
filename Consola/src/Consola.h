@@ -36,7 +36,6 @@ void inicializarListas();
 //int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual);
 void* connectionHandler();
 void* imprimir(int socket);
-void cargarHiloId(pthread_t hiloId);
 void cerrarTodo();
 t_config* configuracion_Consola;
 char* ipKernel;
@@ -44,8 +43,3 @@ char* puertoKernel;
 int socketKernel;
 
 pthread_t hiloInterfazUsuario;
-
-
-t_list * listaPid;
-t_list * listaHilos;
-struct tm *tlocal;

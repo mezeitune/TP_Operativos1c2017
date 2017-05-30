@@ -532,6 +532,9 @@ void *connection_handler(void *socket_desc)
 		case 'F':
 			resultadoDeEjecucion = main_finalizarPrograma(sock);
 			break;
+		case 'P':
+			send(sock,&marco_size,sizeof(int),0);
+			break;
 		case 'X':
 			perror("recv failed");
 			break;

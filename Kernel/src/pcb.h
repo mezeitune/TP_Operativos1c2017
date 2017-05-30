@@ -9,6 +9,7 @@
 #define PCB_H_
 
 #include <commons/log.h>
+#include "configuraciones.h"
 
 typedef struct{
 	int pagina;
@@ -62,7 +63,6 @@ int calcularPcbSerializadoSize(t_pcb* pcb);
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU);
 t_pcb* recibirYDeserializarPcb(int socketKernel);
 void imprimirPcb(t_pcb* pcb);
-int config_paginaSize;
 
 int** traduccionIndiceCodigoSerializado(t_size cantidadInstrucciones, t_intructions* instrucciones_serializados);
 int** inicializarIndiceCodigo(t_size cantidadInstrucciones);

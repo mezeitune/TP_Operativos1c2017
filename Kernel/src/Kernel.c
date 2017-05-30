@@ -60,6 +60,8 @@ void informarConsola(int socketHiloPrograma,char* mensaje, int size);
 void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones(int socket);
+void eliminarSockets(int socketConsolaGlobal,int* procesosAFinales);
+fd_set master;
 //---------Conexiones-------------//
 
 //------------Sockets unicos globales--------------------//
@@ -74,6 +76,7 @@ int solicitarContenidoAMemoria(char** mensajeRecibido);
 int pedirMemoria(t_pcb* procesoListo);
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
 int calcularTamanioParticion(int *programSizeRestante);
+void handshakeMemoria();
 //---------Conexion con memoria--------//
 
 void inicializarListas();
@@ -88,13 +91,20 @@ int main(void) {
 	inicializarLog("/home/utnso/Log/logKernel.txt");
 	inicializarListas();
 	inicializarSockets();
+	handshakeMemoria();
 	gradoMultiProgramacion=0;
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
-	pthread_create(&planificadorLargoPlazo, NULL,planificarLargoPlazo,NULL);
+	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 
 	selectorConexiones(socketServidor);
 
 	return 0;
+}
+
+void handshakeMemoria(){
+	char comandoTamanioPagina = 'P';
+	send(socketMemoria,&comandoTamanioPagina,sizeof(char),0);
+	recv(socketMemoria,&config_paginaSize,sizeof(int),0);
 }
 
 
@@ -180,6 +190,7 @@ void interruptHandler(int socketAceptado,char orden){
 	int size;
 	int pid;
 	int socketHiloPrograma;
+	int i=0;
 
 	switch(orden){
 	case 'A':
@@ -216,12 +227,37 @@ void interruptHandler(int socketAceptado,char orden){
 		break;
 	case 'E':
 		log_info(loggerConPantalla,"La Consola con socket %d asignado se ha cerrado por signal \n",socketAceptado);
-		/*Finalizar todos los procesos que esta consola haya inciado. Mandar a los procesos a la cola de TErminados*/
-		/*Sacar al socket global y a los sockets de los hilos programas del SET del Select*/
+		recv(socketAceptado,&size,sizeof(int),0);
+		mensaje = malloc(size);
+		recv(socketAceptado,mensaje,size,0);
+		strcpy(mensaje+size,"\0");
+		int* procesosAFinalizar = malloc(size);
+		for(i=0;i<size;i++){
+			memcpy(procesosAFinalizar,mensaje,sizeof(int));
+			mensaje += sizeof(int);
+		}
+		//printf("%d\n", procesosAFinalizar[0]);
+		/*TODO:Hay que buscar a todos los procesosAFinalizar en la cola de los estados, y llevarlos a la cola de terminados*/
+
+		eliminarSockets(socketAceptado,procesosAFinalizar);
+
+		break;
+	case 'F':
+		log_info(loggerConPantalla,"La consola con socket: %d asignado ha solicitado finalizar un proceso ",socketAceptado);
+		recv(socketAceptado,&pid,sizeof(int),0);
+		log_info(loggerConPantalla,"Finalizando proceso-----PID: %d",pid);
+		/*TODO> Buscar al procesoAFinalizar en la cola de los estados, llevarlo a la cola de terminados*/
+
 		break;
 	default:
 			break;
 	}
+}
+
+void eliminarSockets(int socketConsolaGlobal,int* procesosAFinales){
+			close(socketConsolaGlobal);
+			FD_CLR(socketConsolaGlobal,&master);
+	/*TODO: Buscar por pid y borrar los socket de los hilos programas*/
 }
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
@@ -406,7 +442,6 @@ void selectorConexiones(int socket) {
 	char remoteIP[INET6_ADDRSTRLEN];
 
 	socklen_t addrlen;
-	fd_set master;    // master file descriptor list
 	fd_set readFds;  // temp file descriptor list for select()
 
 	// listen

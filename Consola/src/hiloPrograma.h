@@ -7,20 +7,17 @@
 
 #include <pthread.h>
 #include "conexiones.h"
+#include <time.h>
 
 
 typedef struct {
 	int pid;
-	char* fechaInicio;
+	struct tm* fechaInicio;
 	int cantImpresiones;
 	int socketHiloKernel;
 	pthread_t idHilo;
 }t_hiloPrograma;
 
-
-typedef struct {
-	pthread_t idHilo;
-}t_hilos;
 
 pthread_mutex_t mutex_crearHilo;
 t_list* listaHilosProgramas;
@@ -29,15 +26,16 @@ void crearHiloPrograma();
 void* iniciarPrograma(int* socketHiloKernel);
 void recibirDatosDelKernel(int socketHiloKernel);
 int enviarLecturaArchivo(char *ruta,int socketHiloKernel);
-void cargarHiloPrograma(int pid, char*tiempo, int socket);
-void finalizarPrograma();
-void cargarPid(t_hiloPrograma* pidEstructura, int pid,char* fechaActual,int socketHiloKernel);
+void cargarHiloPrograma(int pid, int socket);
 
 void crearHiloPrograma(){
 	t_hiloPrograma* nuevoPrograma = malloc(sizeof(t_hiloPrograma));
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
 	int err = pthread_create(&nuevoPrograma->idHilo , NULL ,(void*)iniciarPrograma ,&nuevoPrograma->socketHiloKernel);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
+
+    time_t tiempoInicio = time(0);
+	nuevoPrograma->fechaInicio=localtime(&tiempoInicio);
 	list_add(listaHilosProgramas,nuevoPrograma);
 }
 
@@ -62,12 +60,10 @@ void recibirDatosDelKernel(int socketHiloKernel){
 	int size;
 	char* mensaje;
 
-	char *tiempoInicio = malloc(sizeof(char));
-	tiempoInicio= temporal_get_string_time();
 	recv(socketHiloKernel, &pid, sizeof(int), 0);
 	log_info(loggerConPantalla,"\nEl PID asignado es: %d \n", pid);
 
-	cargarHiloPrograma(pid,tiempoInicio,socketHiloKernel);
+	cargarHiloPrograma(pid,socketHiloKernel);
 	/* Se queda escuchando los mensaje para imprimir */
 	while(1){
 		printf("Hilo programa--- PID: %d ----SOCKET: %d ----- escuchando Kernel\n", pid, socketHiloKernel);
@@ -83,50 +79,16 @@ void recibirDatosDelKernel(int socketHiloKernel){
 }
 
 
-void cargarHiloPrograma(int pid, char*tiempo, int socket){
+void cargarHiloPrograma(int pid, int socket){
 
 	_Bool verificarSocket(t_hiloPrograma* hiloPrograma){
 					return (hiloPrograma->socketHiloKernel ==socket);
 					}
-	t_hiloPrograma* hiloPrograma= list_find(listaHilosProgramas ,verificarSocket);
+	t_hiloPrograma* hiloPrograma= list_remove_by_condition(listaHilosProgramas,(void*)verificarSocket);
 	hiloPrograma->pid = pid;
-	hiloPrograma->fechaInicio = tiempo;
-	list_remove_by_condition(listaHilosProgramas, verificarSocket);
 	list_add(listaHilosProgramas,hiloPrograma);
 }
-void finalizarPrograma(){
-	t_hilos * hiloACerrar = malloc(sizeof(t_hilos));
-	int pidAEliminar;
-	log_info(loggerConPantalla,"Ingresar el PID del programa a finalizar\n");
-	scanf("%d", &pidAEliminar);
-		_Bool verificarPid(t_hiloPrograma* pidDeLaLista){
-			return (pidDeLaLista->pid == pidAEliminar);
-		}
-	t_list * listaNueva;
-	listaNueva= list_create();
-	listaNueva= list_filter(listaHilosProgramas,verificarPid);
-	int estaVacia =  list_size(listaNueva);
-		if (estaVacia==1){
-				list_remove_by_condition(listaHilosProgramas, verificarPid);
-				send(socketKernel, (void*) &pidAEliminar, sizeof(int), 0);
-				printf("----------------------------------------------------------------------\n");
-				log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado",pidAEliminar);
-				t_hiloPrograma* estructuraPidAEliminar=list_get(listaNueva, 0);
-				char *fechaActual = malloc(sizeof(char));
-				fechaActual= temporal_get_string_time();
-				//int tiempoEjecucion= obtenerTiempoEjecucion(estructuraPidAEliminar->fechaInicio,fechaActual);
-				//aca falta la resta de fechas e informarlas
-				printf("----------------------------------------------------------------------\n");
-				printf("Hora de inicializacion : %s \n Hora de finalizacion: %s\nTiempo de ejecucion: \nCantidad de impresiones: %i\n",estructuraPidAEliminar->fechaInicio,fechaActual,estructuraPidAEliminar->cantImpresiones);
-				printf("----------------------------------------------------------------------\n");
-				pthread_join(hiloACerrar->idHilo, NULL);
-				log_info(loggerSinPantalla,"El hilo ha finalizado con exito");
-				free(fechaActual);
-			}else{
-						log_info(loggerConPantalla,"\nPID incorrecto\n");
-			}
-		free(hiloACerrar);
-}
+
 int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	FILE *f;
 	void *mensaje;
@@ -178,13 +140,4 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	free(mensaje);
 
 	return 0;
-}
-
-
-void cargarPid(t_hiloPrograma* pidEstructura, int pid,char* fechaActual,int socketHiloKernel) {
-	pidEstructura->cantImpresiones=0;
-	pidEstructura->pid = pid;
-	pidEstructura->fechaInicio=fechaActual;
-	pidEstructura->socketHiloKernel=socketHiloKernel;
-	list_add(listaPid, pidEstructura);
 }
