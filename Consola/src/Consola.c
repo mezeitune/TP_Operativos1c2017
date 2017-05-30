@@ -47,10 +47,6 @@ void *connectionHandler() {
 
 	while (1) {
 		char orden;
-		int pidAEliminar=0;
-		int tamanoLista=0,i=0;
-		t_hilos * hiloACerrar = malloc(sizeof(t_hilos));
-
 		pthread_mutex_lock(&mutex_crearHilo);
 
 		imprimirInterfaz();
@@ -61,46 +57,7 @@ void *connectionHandler() {
 				crearHiloPrograma();
 				break;
 			case 'F': /*TODO: Emprolijar esto*/
-
-				printf("Ingresar el PID del programa a finalizar\n");
-				scanf("%d", &pidAEliminar);
-
-
-				_Bool verificarPid(t_hiloPrograma* pidNuevoo){
-					return (pidNuevoo->pid == pidAEliminar);
-					}
-
-				t_list * listaNueva;
-				listaNueva= list_create();
-				listaNueva= list_filter(listaPid,verificarPid);
-
-				int estaVacia =  list_size(listaNueva);
-
-				if (estaVacia==1){
-
-					list_remove_by_condition(listaPid, verificarPid);
-					send(socketKernel, (void*) &pidAEliminar, sizeof(int), 0);
-					printf("----------------------------------------------------------------------\n");
-					log_info(loggerConPantalla,"\nEl programa AnSISOP de PID : %d  ha finalizado",pidAEliminar);
-
-					t_hiloPrograma* estructuraPidAEliminar=list_get(listaNueva, 0);
-					char *fechaActual = malloc(sizeof(char));
-					fechaActual= temporal_get_string_time();
-
-					//int tiempoEjecucion= obtenerTiempoEjecucion(estructuraPidAEliminar->fechaInicio,fechaActual);
-					//aca falta la resta de fechas e informarlas
-					printf("----------------------------------------------------------------------\n");
-					printf("Hora de inicializacion : %s \n Hora de finalizacion: %s\nTiempo de ejecucion: \nCantidad de impresiones: %i\n",estructuraPidAEliminar->fechaInicio,fechaActual,estructuraPidAEliminar->cantImpresiones);
-					printf("----------------------------------------------------------------------\n");
-
-					//pthread_join(estructuraPidAEliminar->idAsociado, NULL);
-					log_info(loggerSinPantalla,"El hilo ha finalizado con exito");
-					free(fechaActual);
-
-
-				}else{
-					log_info(loggerConPantalla,"\nPID incorrecto\n");
-				}
+				finalizarPrograma();
 				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 

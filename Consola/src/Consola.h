@@ -49,4 +49,3 @@ pthread_t hiloInterfazUsuario;
 t_list * listaPid;
 t_list * listaHilos;
 struct tm *tlocal;
-static volatile int keepRunning = 1;
