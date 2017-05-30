@@ -52,7 +52,6 @@ void connectionHandler(int socketAceptado, char orden);
 //------InterruptHandler-----//
 void interruptHandler(int socket,char orden);
 int buscarSocketHiloPrograma(int pid);
-void informarConsola(int socketHiloPrograma,char* mensaje, int size);
 //------InterruptHandler-----//
 
 
@@ -117,19 +116,11 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 
 
 void connectionHandler(int socketAceptado, char orden) {
-
 	int pidARecibir=0;
-
 	char comandoRecibirPCB='S';
-
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
-
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
-	}
-
-	void verCoincidenciaYEliminar(t_consola* p){
-		list_remove_by_condition(listaConsolas, (void*)verificarPid);
 	}
 
 	switch (orden) {
@@ -145,22 +136,6 @@ void connectionHandler(int socketAceptado, char orden) {
 					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
 					terminarProceso(socketAceptado);
 					break;
-		case 'F':
-
-
-/*
-				_Bool verificarPid(t_consola* pidNuevo){
-					return (pidNuevo->pid== pidARecibir);
-				}
-				int totalPids = 0;
-				void sumarPids(t_consola* p){
-					totalPids += p->pid;
-				}
-
-				list_iterate(listaConsolas, (void*) sumarPids);
-				printf("la suma de los pids es: %d", totalPids);//Para verificar si se elimino el pid deseado de la lista del kernel*/
-
-				break;
 		case 'P':
 				send(socketAceptado,&config_paginaSize,sizeof(int),0);
 				send(socketAceptado,&stackSize,sizeof(int),0);
@@ -169,10 +144,7 @@ void connectionHandler(int socketAceptado, char orden) {
 				recv(socketAceptado,&orden,sizeof(char),0);
 				interruptHandler(socketAceptado,orden);
 			break;
-		case 'Q':
-				list_iterate(listaConsolas,(void*) verCoincidenciaYEliminar);
-				break;
-			default:
+		default:
 				if(orden == '\0') break;
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 				break;
@@ -223,7 +195,7 @@ void interruptHandler(int socketAceptado,char orden){
 		break;
 	case 'C':
 		log_info(loggerConPantalla,"La CPU de socket %d se ha cerrado por  signal\n",socketAceptado);
-		//aca hay que eliminar la cpu
+		/*TODO: Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
 		break;
 	case 'E':
 		log_info(loggerConPantalla,"La Consola con socket %d asignado se ha cerrado por signal \n",socketAceptado);
@@ -254,15 +226,10 @@ void interruptHandler(int socketAceptado,char orden){
 	}
 }
 
-void eliminarSockets(int socketConsolaGlobal,int* procesosAFinales){
+void eliminarSockets(int socketConsolaGlobal,int* procesosAFinalizar){
 			close(socketConsolaGlobal);
 			FD_CLR(socketConsolaGlobal,&master);
 	/*TODO: Buscar por pid y borrar los socket de los hilos programas*/
-}
-
-void informarConsola(int socketHiloPrograma,char* mensaje, int size){
-	send(socketHiloPrograma,&size,sizeof(int),0);
-	send(socketHiloPrograma,mensaje,size,0);
 }
 
 int buscarSocketHiloPrograma(int pid){

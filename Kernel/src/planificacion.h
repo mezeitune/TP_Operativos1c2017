@@ -43,6 +43,9 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid);
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 
+void informarConsola(int socketHiloPrograma,char* mensaje, int size);
+
+
 t_list* listaCodigosProgramas;
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
@@ -191,9 +194,6 @@ void cargarConsola(int pid, int socketHiloPrograma) {
 }
 
 void encolarProcesoListo(t_pcb *procesoListo){
-//	colaListos
-	log_info(loggerConPantalla, "Encolando proceso a cola de listos---- PID: %d \n", procesoListo->pid);
-
 	pthread_mutex_lock(&mutexColaListos);
 	list_add(colaListos,procesoListo);
 	pthread_mutex_unlock(&mutexColaListos);
@@ -202,16 +202,16 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado;
-	t_consola* consolaAInformar = malloc(sizeof(t_consola));
-
-	char *mensaje = malloc(30);
-
+	t_consola* consolaAInformar;
 
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
+
 	list_add(listaCPU,(void*)socketCPU);
 	sem_post(&sem_CPU);
 
+
+	/*TODO: remover al pcb de la cola En ejecucion y llevarlo a cola de terminados como ahora*/
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados, pcbProcesoTerminado);
 	pthread_mutex_unlock(&mutexColaTerminados);
@@ -220,21 +220,18 @@ void terminarProceso(int socketCPU){
 						return (pidNuevo->pid == pcbProcesoTerminado->pid);
 					}
 
-	consolaAInformar = list_find(listaConsolas, verificarPid);
+	consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPid);
 
-
-	strcpy(mensaje,"termine\0");
-
-	int tamanioMensaje = strlen(mensaje) + 1;
-
-	send(consolaAInformar->socketHiloPrograma,&tamanioMensaje,sizeof(int),0);
-	send(consolaAInformar->socketHiloPrograma,mensaje,tamanioMensaje,0);
-
-
-	/* TODO: Buscar Consola por PID e informar */
+	char* mensaje= "El proceso ha finalizado correctamente";
+	int size= strlen(mensaje);
+	informarConsola(consolaAInformar->socketHiloPrograma,mensaje,size);
 
 	/* TODO:Liberar recursos */
-
+	//free(consolaAInformar); //Ojo aca, si metes este free aca nomas, vas a ver que borras la consolaAInformar antes de que la Consola reciba el mensaje. Hay que hacer algun tipo de espera aca
 }
 
+void informarConsola(int socketHiloPrograma,char* mensaje, int size){
+	send(socketHiloPrograma,&size,sizeof(int),0);
+	send(socketHiloPrograma,mensaje,size,0);
+}
 #endif /* PLANIFICACION_H_ */
