@@ -232,15 +232,16 @@ void terminarProceso(int socketCPU){
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
-	pthread_mutex_lock(&colaEjecucion);
-	list_remove_by_condition(colaEjecucion, verificarPid);//Remueve pcb de la colaEjecucion
-	pthread_mutex_unlock(&colaEjecucion);
+	pthread_mutex_lock(&mutexColaEjecucion);
+	list_remove_by_condition(colaEjecucion,(void*) verificarPid);//Remueve pcb de la colaEjecucion
+	pthread_mutex_unlock(&mutexColaEjecucion);
 
-
-	pthread_mutex_lock(&listaCPU);
-	list_remove_by_condition(listaCPU, verificarCPU);
-	pthread_mutex_unlock(&listaCPU);
-
+/*
+	pthread_mutex_lock(&mutexListaCPU);
+	cpuFinalizada=list_remove_by_condition(listaCPU,(void*)verificarCPU);
+	list_add(listaCPU,cpuFinalizada);
+	pthread_mutex_unlock(&mutexListaCPU);
+*/
 
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados, pcbProcesoTerminado);

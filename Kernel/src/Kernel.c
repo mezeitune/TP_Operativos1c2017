@@ -149,21 +149,28 @@ void connectionHandler(int socketAceptado, char orden) {
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	int pidARecibir=0;
-	char comandoRecibirPCB='S';
+	char comandoEnviarPcb='S';
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
+	_Bool verificaSocket(t_cpu* cpu){
+			return (cpu->socket == socketAceptado);
+		}
 
 	switch (orden) {
 		case 'I':
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
-					send(socketAceptado,&comandoRecibirPCB,sizeof(char),0);
-
+					pthread_mutex_lock(&mutexListaCPU);
+					if(!list_any_satisfy(listaCPU,(void*)verificaSocket)){
+					t_cpu* cpu = malloc (sizeof(t_cpu));
 					cpu->socket = socketAceptado;
-					agregarA(listaCPU,cpu,mutexListaCPU);
+					list_add(listaCPU,cpu);
+					}
+					pthread_mutex_unlock(&mutexListaCPU);
+					send(socketAceptado,&comandoEnviarPcb,sizeof(char),0);
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
@@ -291,18 +298,16 @@ void* planificarCortoPlazo(){
 		sem_wait(&sem_CPU);
 
 
-
-
 		pthread_mutex_lock(&mutexColaListos);
-		pcbListo = list_get(colaListos,0);
-		list_remove(colaListos,0);
+		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
 		pthread_mutex_lock(&mutexListaCPU);
-		cpuEnEjecucion = list_get(listaCPU,0);
+		cpuEnEjecucion = list_remove(listaCPU,0);
+		cpuEnEjecucion->pid = pcbListo->pid;
+		list_add(listaCPU,cpuEnEjecucion);
 		pthread_mutex_unlock(&mutexListaCPU);
 
-		cpuEnEjecucion->pid = pcbListo->pid;
 
 
 		pthread_mutex_lock(&mutexColaEjecucion);
