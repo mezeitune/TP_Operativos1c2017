@@ -124,8 +124,17 @@ void handshakeFS(){
 */
 
 
-	printf("%d", validado);
+	//printf("%d", validado);
 }
+
+
+
+
+
+
+
+
+
 
 
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){

@@ -94,6 +94,9 @@ int main(void){
 
 
 
+
+
+
 	//log_info(loggerConPantalla, "File System Conectado");
 
 
@@ -230,6 +233,11 @@ void connection_handlerR(int socket_cliente)
 
 
 
+
+
+
+
+
  /*get:  read n bytes from position pos */
  char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
  {
@@ -253,6 +261,12 @@ void connection_handlerR(int socket_cliente)
 	   return aDevolver;
  }
 
+
+
+
+
+
+
 void leerConfiguracion(char* ruta){
 	configuracion_FS = config_create(ruta);
 
@@ -261,6 +275,10 @@ void leerConfiguracion(char* ruta){
 	puntoMontaje = config_get_string_value(configuracion_FS,"PUNTO_MONTAJE");
 	puerto_Kernel= config_get_string_value(configuracion_FS,"PUERTO_KERNEL");
 }
+
+
+
+
 
 void leerConfiguracionMetadata(char* ruta){
 	configuracion_FS = config_create(ruta);
