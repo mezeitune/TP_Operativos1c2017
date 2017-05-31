@@ -95,6 +95,7 @@ int main(void) {
 	inicializarListas();
 	inicializarSockets();
 	handshakeMemoria();
+	handshakeFS();
 	gradoMultiProgramacion=0;
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
@@ -108,6 +109,22 @@ void handshakeMemoria(){
 	char comandoTamanioPagina = 'P';
 	send(socketMemoria,&comandoTamanioPagina,sizeof(char),0);
 	recv(socketMemoria,&config_paginaSize,sizeof(int),0);
+}
+
+
+void handshakeFS(){
+	/*char comandoTamanioPagina = 'V';
+	char archivoAVerificar[11]="alumno.bin";
+	int tamano=sizeof(archivoAVerificar);
+	int validado;
+	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
+	send(socketFyleSys,&tamano,sizeof(int),0);
+	send(socketFyleSys,&archivoAVerificar,tamano,0);
+	recv(socketFyleSys,&validado,sizeof(int),0);
+*/
+
+
+	printf("%d", validado);
 }
 
 

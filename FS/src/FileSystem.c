@@ -27,10 +27,15 @@
 #include <pthread.h>
 #include "conexiones.h"
 #include <commons/log.h>
+#include <commons/bitarray.h>
 
 char *ipFS;
+
+t_bitarray * bit;
+
 char *puertoFS;
 char *puntoMontaje;
+char *puerto_Kernel;
 int tamanioBloques;
 int cantidadBloques;
 char* magicNumber;
@@ -47,8 +52,6 @@ t_log *loggerSinPantalla;
 t_log *loggerConPantalla;
 //----------------------------//
 
-//the thread function
-void *connection_handler(void *);
 
 int socket_servidor;
 
@@ -63,6 +66,8 @@ int archivoEnModoEscritura(char* archivo);
 int archivoEnModoLectura(char* archivo);
 char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size);
 
+char *bitarray;
+
 int main(void){
 
 	//TODO:
@@ -73,9 +78,18 @@ int main(void){
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
-	//socket_servidor = crear_socket_servidor("127.0.0.1","5002");
+	bit = bitarray_create_with_mode(bitarray, cantidadBloques/8, LSB_FIRST);
 
-	//int socket_Kernel = recibirConexion(socket_servidor);
+	   FILE *fp;
+
+	   fp = fopen( "../metadata/alumno.bin" , "w" );
+	   fwrite(&bit , 1 , sizeof(t_bitarray) , fp );
+	//int socket_kernel = crear_socket_cliente("127.0.0.1",puerto_Kernel);
+	int socket_FS = crear_socket_servidor(ipFS,puertoFS);
+
+
+	int socket_Kernel= recibirConexion(socket_FS);
+	connection_handlerR(socket_Kernel);
 
 
 
@@ -84,8 +98,7 @@ int main(void){
 
 
 
-	//connection_Listener(socket_Kernel);
-	connection_handlerR();//TODO LO QUE ESTA COMENTADO ARRIBA TENDRIA Q IR DESCOMENTADO , PERO ESTOY USANDO ESTA
+	//TODO LO QUE ESTA COMENTADO ARRIBA TENDRIA Q IR DESCOMENTADO , PERO ESTOY USANDO ESTA
 				//FUNCION MOMENTANEAMENTE , POR QUE EL KERNEL TODAVIA NO SE COMUNICA CON FS
 				//ENTONCES LO HAGO PARA TESTEAR , NO BORRAR LAS OTRAS FUNCIONES QUE HAY
 
@@ -101,7 +114,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 
 	printf("\n--Esperando una orden del cliente-- \n");
 
-	recv(socketCliente,buffer,sizeof(char),0);
+	//recv(socketCliente,buffer,sizeof(char),0);
 	bufferRecibido = *buffer;
 
 	free(buffer);
@@ -111,92 +124,36 @@ char nuevaOrdenDeAccion(int socketCliente)
 	return bufferRecibido;
 }
 
-void connection_Listener(int socket_desc)
-{
-	int sock;
-	//Atiendo al socket del kernel
-	if( pthread_create( &thread_id , NULL , connection_handler , (void*) &socket_desc) < 0)
-	{
-		perror("could not create thread");
-	}
-	while(1){
-		//Quedo a la espera de CPUs y las atiendo
-		sock = recibirConexion(socket_servidor);
-		if( pthread_create( &thread_id , NULL , connection_handler , (void*) &sock) < 0)
-		{
-			perror("could not create thread");
-		}
-	}
-}
 
 
-void *connection_handler(void *socket_desc)
+
+void connection_handlerR(int socket_cliente)
 {
-    int sock = *(int*)socket_desc;
+	printf("fmksdmmsk");
     char orden;
-    int resultadoDeEjecucion;
-	while((orden=nuevaOrdenDeAccion(sock)) != 'Q')
-	{
-		switch(orden)
-		{
-
-		case 'V'://validar archivo
-			if( access( "alumno.bin", F_OK ) != -1 ) {
-			    // file exists
-
-				log_info(loggerConPantalla, "El archivo existe");
-
-				//printf("el archivo existe");
-			} else {
-			    // file doesn't exist
-
-				log_info(loggerConPantalla, "El archivo no existe");
-
-				//printf("el archivo no existe");
-			}
-			break;
-		case 'C'://crear archivo
-
-			log_info(loggerConPantalla, "El archivo fue creado");
-			break;
-		case 'B'://borrar archivo
-
-			log_info(loggerConPantalla, "El archivo fue borrado");
-			break;
-		case 'O'://obtener datos
-
-			log_info(loggerConPantalla, "Los datos obtenidos son : ");
-			break;
-		case 'G'://guardar archivo
-
-			log_info(loggerConPantalla, "El archivo fue guardado");
-			break;
-		default:
-			log_warning(loggerConPantalla,"\nError: Orden %c no definida\n",orden);
-			break;
-		}
-	}
-    return 0;
-}
-
-void connection_handlerR()
-{
-    char orden;
+    char* nombreArchivo;
+    int tamanoArchivo;
+    recv(socket_cliente,&orden,sizeof(char),0);
     FILE *fp;
     int resultadoDeEjecucion;
     while(orden != 'Q'){
 
-    			printf("\nIngresar orden:\n");
-    			scanf(" %c", &orden);
+    			//printf("\nIngresar orden:\n");
+    			//scanf(" %c", &orden);
 
     	switch(orden){
 		case 'V'://validar archivo   TERMINADO (FALTA QUE RECIBA EL ARCHIVO QUE SOLICITE DESDE KERNEL)
-			if( access( "../metadata/alumno.bin", F_OK ) != -1 ) {
+		    recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
+		    recv(socket_cliente,&nombreArchivo,tamanoArchivo,0);
+		    char* nombreArchivoRecibido=strcat("../metadata/", &nombreArchivo);
+			if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 			    // file exists
 				printf("el archivo existe");
+				send(socket_cliente,1,sizeof(int),0);
 			} else {
 			    // file doesn't exist
-				printf("Archivo inexistente");
+			   printf("Archivo inexistente");
+				send(socket_cliente,2,sizeof(int),0);
 			}
 			break;
 		case 'C'://crear archivo
@@ -302,7 +259,7 @@ void leerConfiguracion(char* ruta){
 	puertoFS= config_get_string_value(configuracion_FS,"PUERTO_FS");
 	ipFS= config_get_string_value(configuracion_FS, "IP_FS");
 	puntoMontaje = config_get_string_value(configuracion_FS,"PUNTO_MONTAJE");
-
+	puerto_Kernel= config_get_string_value(configuracion_FS,"PUERTO_KERNEL");
 }
 
 void leerConfiguracionMetadata(char* ruta){
@@ -311,6 +268,7 @@ void leerConfiguracionMetadata(char* ruta){
 	tamanioBloques= config_get_string_value(configuracion_FS,"TAMANIO_BLOQUES");
 	cantidadBloques= config_get_string_value(configuracion_FS, "CANTIDAD_BLOQUES");
 	magicNumber = config_get_string_value(configuracion_FS,"MAGIC_NUMBER");
+
 
 }
 
@@ -351,6 +309,7 @@ int recibirConexion(int socket_servidor){
 	contadorConexiones ++;
 	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
 	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
+	printf("sssssssssss");
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
