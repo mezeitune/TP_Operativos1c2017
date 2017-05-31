@@ -233,27 +233,18 @@ void terminarProceso(int socketCPU){
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
 	pthread_mutex_lock(&colaEjecucion);
-	t_pcb* buffer = list_get(colaEjecucion,0);
-	printf("\n\nPID pcb Ejecucion:%d\n\n", buffer->pid);
-	printf("\n\nCantidad en Ejecucion Antes de eliminar:%d\n\n", list_size(colaEjecucion));
 	list_remove_by_condition(colaEjecucion, verificarPid);//Remueve pcb de la colaEjecucion
-	printf("\n\nCantidad en Ejecucion Despues de eliminar:%d\n\n", list_size(colaEjecucion));
 	pthread_mutex_unlock(&colaEjecucion);
 
 
 	pthread_mutex_lock(&listaCPU);
-	printf("\n\nCantidad en lista CPU Antes de eliminar:%d\n\n", list_size(listaCPU));
 	list_remove_by_condition(listaCPU, verificarCPU);
-	printf("\n\nCantidad en lista CPU Despues de eliminar:%d\n\n", list_size(listaCPU));
 	pthread_mutex_unlock(&listaCPU);
 
 
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados, pcbProcesoTerminado);
 	pthread_mutex_unlock(&mutexColaTerminados);
-
-
-	printf("\n\nCantidad Terminados:%d\n\n", list_size(colaTerminados));
 
 	consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPidConsola);
 
