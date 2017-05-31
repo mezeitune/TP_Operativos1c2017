@@ -33,6 +33,10 @@
 
 
 
+
+
+
+
 char** tablaGlobalArchivos;
 typedef struct FS{//Para poder guardar en la lista
 	char** tablaArchivoPorProceso;
@@ -116,6 +120,8 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 
 
 void connectionHandler(int socketAceptado, char orden) {
+
+	t_cpu* cpu = malloc(sizeof(t_cpu));
 	int pidARecibir=0;
 	char comandoRecibirPCB='S';
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
@@ -129,7 +135,9 @@ void connectionHandler(int socketAceptado, char orden) {
 					break;
 		case 'N':
 					send(socketAceptado,&comandoRecibirPCB,sizeof(char),0);
-					agregarA(listaCPU, socketAceptado, mutexListaCPU);
+
+					cpu->socket = socketAceptado;
+					agregarA(listaCPU,cpu,mutexListaCPU);
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
@@ -246,21 +254,38 @@ int buscarSocketHiloPrograma(int pid){
 
 void* planificarCortoPlazo(){
 	t_pcb* pcbListo;
-	int socket;
+	int pid;
+	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
+
+
 
 	while(1){
+
 		sem_wait(&sem_colaReady);
+		sem_wait(&sem_CPU);
+
+
+
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_get(colaListos,0);
 		list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
-		sem_wait(&sem_CPU);
+		pthread_mutex_lock(&mutexListaCPU);
+		cpuEnEjecucion = list_get(listaCPU,0);
+		pthread_mutex_unlock(&mutexListaCPU);
 
-		socket = list_get(listaCPU,0);
-		serializarPcbYEnviar(pcbListo, socket);
-		list_remove(listaCPU,0);
+		cpuEnEjecucion->pid = pcbListo->pid;
+
+
+		pthread_mutex_lock(&mutexColaEjecucion);
+		list_add(colaEjecucion, pcbListo);
+		pthread_mutex_unlock(&mutexColaEjecucion);
+
+		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+
+
 
 	}
 }
@@ -389,6 +414,7 @@ void inicializarListas(){
 	listaCPU = list_create();
 	listaCodigosProgramas=list_create();
 	listaTablasArchivosPorProceso=list_create();
+	colaEjecucion = list_create();
 }
 
 

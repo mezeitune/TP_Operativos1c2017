@@ -24,6 +24,15 @@
 #include "pcb.h"
 
 
+
+typedef struct CPU {
+	int pid;
+	int socket;
+}t_cpu;
+
+
+
+
 typedef struct {
 	char* codigo;
 	int size;
@@ -64,6 +73,7 @@ t_list* colaListos;
 t_list* colaTerminados;
 t_list* listaConsolas;
 t_list* listaCPU;
+t_list* colaEjecucion;//<IMPORTANTE: GENERADA CON t_cpu{ t_pcb* y socket} PARA NO TENER QUE ARMAR UNA LISTA NUEVA "listaCPUConPid">
 /*---PLANIFICACION GENERAL-------*/
 
 
@@ -203,24 +213,49 @@ void encolarProcesoListo(t_pcb *procesoListo){
 void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado;
 	t_consola* consolaAInformar;
+	t_cpu* cpuFinalizada;
+	int i;
+
+	_Bool verificarPidConsola(t_consola* consola){
+						return (consola->pid == pcbProcesoTerminado->pid);
+					}
+
+	_Bool verificarPid(t_pcb* pcb){
+		return (pcb->pid == pcbProcesoTerminado->pid);
+	}
+
+	_Bool verificarCPU(t_cpu* cpu){
+			return (cpu->socket == socketCPU);
+		}
+
 
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
-	list_add(listaCPU,(void*)socketCPU);
-	sem_post(&sem_CPU);
+	pthread_mutex_lock(&colaEjecucion);
+	t_pcb* buffer = list_get(colaEjecucion,0);
+	printf("\n\nPID pcb Ejecucion:%d\n\n", buffer->pid);
+	printf("\n\nCantidad en Ejecucion Antes de eliminar:%d\n\n", list_size(colaEjecucion));
+	list_remove_by_condition(colaEjecucion, verificarPid);//Remueve pcb de la colaEjecucion
+	printf("\n\nCantidad en Ejecucion Despues de eliminar:%d\n\n", list_size(colaEjecucion));
+	pthread_mutex_unlock(&colaEjecucion);
 
 
-	/*TODO: remover al pcb de la cola En ejecucion y llevarlo a cola de terminados como ahora*/
+	pthread_mutex_lock(&listaCPU);
+	printf("\n\nCantidad en lista CPU Antes de eliminar:%d\n\n", list_size(listaCPU));
+	list_remove_by_condition(listaCPU, verificarCPU);
+	printf("\n\nCantidad en lista CPU Despues de eliminar:%d\n\n", list_size(listaCPU));
+	pthread_mutex_unlock(&listaCPU);
+
+
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados, pcbProcesoTerminado);
 	pthread_mutex_unlock(&mutexColaTerminados);
 
-	_Bool verificarPid(t_consola* pidNuevo){
-						return (pidNuevo->pid == pcbProcesoTerminado->pid);
-					}
 
-	consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPid);
+	printf("\n\nCantidad Terminados:%d\n\n", list_size(colaTerminados));
+
+	consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPidConsola);
 
 	char* mensaje= "El proceso ha finalizado correctamente";
 	int size= strlen(mensaje);

@@ -15,6 +15,7 @@ int main(void) {
 	signal(SIGINT, signalHandler);
 	signal(SIGUSR1, signalHandler);
 
+
 	esperarPCB();
 
 
@@ -34,9 +35,9 @@ void esperarPCB(){
 
 }
 void recibirPCB(){
-		char comandoRecibirPCB;
 		char comandoGetNuevoProceso = 'N';
 		send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
+		char comandoRecibirPCB;
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
 		log_info(loggerConPantalla, "Se ha avisado que se quiere enviar un PCB...\n");
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
