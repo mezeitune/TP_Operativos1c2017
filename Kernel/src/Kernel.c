@@ -117,7 +117,7 @@ void handshakeMemoria(){
 
 void handshakeFS(){
 	char comandoTamanioPagina = 'V';
-	char* archivoAVerificar="alumnoosdad.bin";
+	char* archivoAVerificar="alumno.bin";
 	int tamano=strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
