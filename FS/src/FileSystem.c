@@ -27,7 +27,6 @@
 #include <pthread.h>
 #include "conexiones.h"
 #include "permisos.h"
-#include <commons/log.h>
 #include <commons/bitarray.h>
 
 char *ipFS;
@@ -40,23 +39,20 @@ char *puerto_Kernel;
 int tamanioBloques;
 int cantidadBloques;
 char* magicNumber;
-int contadorConexiones=0;
+
 pthread_t  thread_id;
 t_config* configuracion_FS;
 
-//--------LOG----------------//
-void inicializarLog(char *rutaDeLog);
 
 
 
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
+
 //----------------------------//
 
 
 int socket_servidor;
 
-int recibirConexion(int socket_servidor);
+
 char nuevaOrdenDeAccion(int puertoCliente);
 void leerConfiguracion(char* ruta);
 void leerConfiguracionMetadata(char* ruta);
@@ -283,54 +279,7 @@ void imprimirConfiguraciones(){
 
 
 
-int recibirConexion(int socket_servidor){
-	struct sockaddr_storage their_addr;
-	 socklen_t addr_size;
-
-
-	int estado = listen(socket_servidor, 5);
-
-	if(estado == -1){
-		log_info(loggerConPantalla,"\nError al poner el servidor en listen\n");
-		close(socket_servidor);
-		return 1;
-	}
-
-
-	if(estado == 0){
-		log_info(loggerConPantalla,"\nSe puso el socket en listen\n");
-		printf("---------------------------------------------------\n");
-	}
-
-	addr_size = sizeof(their_addr);
-
-	int socket_aceptado;
-    socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
-
-	contadorConexiones ++;
-	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
-	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
-
-	if (socket_aceptado == -1){
-		close(socket_servidor);
-		log_error(loggerConPantalla,"\nError al aceptar conexion\n");
-		return 1;
-	}
-
-	return socket_aceptado;
-}
 
 
 
-
-
-void inicializarLog(char *rutaDeLog){
-
-
-		mkdir("/home/utnso/Log",0755);
-
-		loggerSinPantalla = log_create(rutaDeLog,"FS", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"FS", true, LOG_LEVEL_INFO);
-
-}
 
