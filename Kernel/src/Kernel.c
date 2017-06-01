@@ -80,6 +80,7 @@ int pedirMemoria(t_pcb* procesoListo);
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
 int calcularTamanioParticion(int *programSizeRestante);
 void handshakeMemoria();
+void handshakeFS();
 //---------Conexion con memoria--------//
 
 void inicializarListas();
@@ -95,6 +96,7 @@ int main(void) {
 	inicializarListas();
 	inicializarSockets();
 	handshakeMemoria();
+	handshakeFS();
 	gradoMultiProgramacion=0;
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
@@ -111,6 +113,32 @@ void handshakeMemoria(){
 }
 
 
+
+
+void handshakeFS(){
+	char comandoTamanioPagina = 'V';
+	char* archivoAVerificar="alumnoosdad.bin";
+	int tamano=strlen(archivoAVerificar);
+	int validado;
+	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
+	send(socketFyleSys,&tamano,sizeof(int),0);
+	send(socketFyleSys,archivoAVerificar,tamano,0);
+	printf("Mande todoo\n");
+	recv(socketFyleSys,&validado,sizeof(int),0);
+	printf("La validacion es : %d\n",validado);
+
+}
+
+
+
+
+
+
+
+
+
+
+
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 
 	pthread_mutex_lock(&mutex);
@@ -123,21 +151,27 @@ void connectionHandler(int socketAceptado, char orden) {
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	int pidARecibir=0;
-	char comandoRecibirPCB='S';
+	char comandoEnviarPcb='S';
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
+	_Bool verificaSocket(t_cpu* cpu){
+			return (cpu->socket == socketAceptado);
+		}
 
 	switch (orden) {
 		case 'I':
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
-					send(socketAceptado,&comandoRecibirPCB,sizeof(char),0);
 
+					pthread_mutex_lock(&mutexListaCPU);
 					cpu->socket = socketAceptado;
-					agregarA(listaCPU,cpu,mutexListaCPU);
+					list_add(listaCPU,cpu);
+					pthread_mutex_unlock(&mutexListaCPU);
+
+					send(socketAceptado,&comandoEnviarPcb,sizeof(char),0);
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
@@ -260,11 +294,12 @@ void* planificarCortoPlazo(){
 	while(1){
 
 		sem_wait(&sem_colaReady);
-		sem_wait(&sem_CPU);
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
+
+		sem_wait(&sem_CPU);
 
 		pthread_mutex_lock(&mutexListaCPU);
 		cpuEnEjecucion = list_remove(listaCPU,0);

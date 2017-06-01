@@ -26,11 +26,17 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "conexiones.h"
+#include "permisos.h"
 #include <commons/log.h>
+#include <commons/bitarray.h>
 
 char *ipFS;
+
+t_bitarray * bit;
+
 char *puertoFS;
 char *puntoMontaje;
+char *puerto_Kernel;
 int tamanioBloques;
 int cantidadBloques;
 char* magicNumber;
@@ -47,8 +53,6 @@ t_log *loggerSinPantalla;
 t_log *loggerConPantalla;
 //----------------------------//
 
-//the thread function
-void *connection_handler(void *);
 
 int socket_servidor;
 
@@ -63,6 +67,8 @@ int archivoEnModoEscritura(char* archivo);
 int archivoEnModoLectura(char* archivo);
 char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size);
 
+char *bitarray;
+
 int main(void){
 
 	//TODO:
@@ -73,9 +79,21 @@ int main(void){
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
-	//socket_servidor = crear_socket_servidor("127.0.0.1","5002");
+	bit = bitarray_create_with_mode(bitarray, cantidadBloques/8, LSB_FIRST);
 
-	//int socket_Kernel = recibirConexion(socket_servidor);
+	   FILE *fp;
+
+	   fp = fopen( "../metadata/alumno.bin" , "w" );
+	   fwrite(&bit , 1 , sizeof(t_bitarray) , fp );
+	//int socket_kernel = crear_socket_cliente("127.0.0.1",puerto_Kernel);
+	int socket_FS = crear_socket_servidor(ipFS,puertoFS);
+
+
+	int socket_Kernel= recibirConexion(socket_FS);
+	connection_handlerR(socket_Kernel);
+
+
+
 
 
 
@@ -84,8 +102,7 @@ int main(void){
 
 
 
-	//connection_Listener(socket_Kernel);
-	connection_handlerR();//TODO LO QUE ESTA COMENTADO ARRIBA TENDRIA Q IR DESCOMENTADO , PERO ESTOY USANDO ESTA
+	//TODO LO QUE ESTA COMENTADO ARRIBA TENDRIA Q IR DESCOMENTADO , PERO ESTOY USANDO ESTA
 				//FUNCION MOMENTANEAMENTE , POR QUE EL KERNEL TODAVIA NO SE COMUNICA CON FS
 				//ENTONCES LO HAGO PARA TESTEAR , NO BORRAR LAS OTRAS FUNCIONES QUE HAY
 
@@ -101,7 +118,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 
 	printf("\n--Esperando una orden del cliente-- \n");
 
-	recv(socketCliente,buffer,sizeof(char),0);
+	//recv(socketCliente,buffer,sizeof(char),0);
 	bufferRecibido = *buffer;
 
 	free(buffer);
@@ -111,92 +128,50 @@ char nuevaOrdenDeAccion(int socketCliente)
 	return bufferRecibido;
 }
 
-void connection_Listener(int socket_desc)
-{
-	int sock;
-	//Atiendo al socket del kernel
-	if( pthread_create( &thread_id , NULL , connection_handler , (void*) &socket_desc) < 0)
-	{
-		perror("could not create thread");
-	}
-	while(1){
-		//Quedo a la espera de CPUs y las atiendo
-		sock = recibirConexion(socket_servidor);
-		if( pthread_create( &thread_id , NULL , connection_handler , (void*) &sock) < 0)
-		{
-			perror("could not create thread");
-		}
-	}
-}
 
 
-void *connection_handler(void *socket_desc)
-{
-    int sock = *(int*)socket_desc;
-    char orden;
-    int resultadoDeEjecucion;
-	while((orden=nuevaOrdenDeAccion(sock)) != 'Q')
-	{
-		switch(orden)
-		{
 
-		case 'V'://validar archivo
-			if( access( "alumno.bin", F_OK ) != -1 ) {
-			    // file exists
-
-				log_info(loggerConPantalla, "El archivo existe");
-
-				//printf("el archivo existe");
-			} else {
-			    // file doesn't exist
-
-				log_info(loggerConPantalla, "El archivo no existe");
-
-				//printf("el archivo no existe");
-			}
-			break;
-		case 'C'://crear archivo
-
-			log_info(loggerConPantalla, "El archivo fue creado");
-			break;
-		case 'B'://borrar archivo
-
-			log_info(loggerConPantalla, "El archivo fue borrado");
-			break;
-		case 'O'://obtener datos
-
-			log_info(loggerConPantalla, "Los datos obtenidos son : ");
-			break;
-		case 'G'://guardar archivo
-
-			log_info(loggerConPantalla, "El archivo fue guardado");
-			break;
-		default:
-			log_warning(loggerConPantalla,"\nError: Orden %c no definida\n",orden);
-			break;
-		}
-	}
-    return 0;
-}
-
-void connection_handlerR()
+void connection_handlerR(int socket_cliente)
 {
     char orden;
+    char* nombreArchivo;
+    int tamanoArchivo;
     FILE *fp;
     int resultadoDeEjecucion;
+    int validado;
+
+    recv(socket_cliente,&orden,sizeof(char),0);
+
     while(orden != 'Q'){
 
-    			printf("\nIngresar orden:\n");
-    			scanf(" %c", &orden);
+    			//printf("\nIngresar orden:\n");
+    			//scanf(" %c", &orden);
 
     	switch(orden){
 		case 'V'://validar archivo   TERMINADO (FALTA QUE RECIBA EL ARCHIVO QUE SOLICITE DESDE KERNEL)
-			if( access( "../metadata/alumno.bin", F_OK ) != -1 ) {
+
+		    recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
+		    recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+
+		    printf("Recibi el nombre del archivo\n");
+
+
+			char *nombreArchivoRecibido = string_new();
+			string_append(&nombreArchivoRecibido, "../metadata/");
+			string_append(&nombreArchivoRecibido, &nombreArchivo);
+		    printf("%s", nombreArchivoRecibido);
+			if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 			    // file exists
-				printf("el archivo existe");
+				printf("el archivo existe\n");
+
+				validado=0;
+				send(socket_cliente,&validado,sizeof(int),0);
 			} else {
 			    // file doesn't exist
-				printf("Archivo inexistente");
+			   printf("Archivo inexistente");
+
+			   validado=1;
+			   send(socket_cliente,&validado,sizeof(int),0);
 			}
 			break;
 		case 'C'://crear archivo
@@ -273,28 +248,13 @@ void connection_handlerR()
 
 
 
- /*get:  read n bytes from position pos */
- char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
- {
 
-	 	char aDevolver[size-offset];
-		int caracterALeer;
-		int paraDeLeer=size+offset;
-		char name[2];
-	    while((getc(fp)!=EOF))
-	    {
-	    	caracterALeer = fgetc(fp);
-	        fseek(fp,offset,0);
-	        char carALeerToChar=caracterALeer;
-	        fgets(name,1,fp);
-	        strcat(aDevolver, &carALeerToChar); /* copy name into the new var */
-	        offset++ ;
-	        if(offset==paraDeLeer) break;
-	    }
-	   fclose(fp);
 
-	   return aDevolver;
- }
+
+
+
+
+
 
 void leerConfiguracion(char* ruta){
 	configuracion_FS = config_create(ruta);
@@ -302,8 +262,12 @@ void leerConfiguracion(char* ruta){
 	puertoFS= config_get_string_value(configuracion_FS,"PUERTO_FS");
 	ipFS= config_get_string_value(configuracion_FS, "IP_FS");
 	puntoMontaje = config_get_string_value(configuracion_FS,"PUNTO_MONTAJE");
-
+	puerto_Kernel= config_get_string_value(configuracion_FS,"PUERTO_KERNEL");
 }
+
+
+
+
 
 void leerConfiguracionMetadata(char* ruta){
 	configuracion_FS = config_create(ruta);
@@ -311,6 +275,7 @@ void leerConfiguracionMetadata(char* ruta){
 	tamanioBloques= config_get_string_value(configuracion_FS,"TAMANIO_BLOQUES");
 	cantidadBloques= config_get_string_value(configuracion_FS, "CANTIDAD_BLOQUES");
 	magicNumber = config_get_string_value(configuracion_FS,"MAGIC_NUMBER");
+
 
 }
 
@@ -362,59 +327,6 @@ int recibirConexion(int socket_servidor){
 }
 
 
-void printFilePermissions(char* archivo){
-
-    struct stat fileStat;
-    stat(archivo,&fileStat);
-
-
-    printf("Information for %s\n",archivo);
-    printf("---------------------------\n");
-    printf("File Size: \t\t%d bytes\n",fileStat.st_size);
-    printf("Number of Links: \t%d\n",fileStat.st_nlink);
-    printf("File inode: \t\t%d\n",fileStat.st_ino);
-
-    printf("File Permissions: \t");
-    printf( (S_ISDIR(fileStat.st_mode)) ? "d" : "-");
-    printf( (fileStat.st_mode & S_IRUSR) ? "r" : "-");
-    printf( (fileStat.st_mode & S_IWUSR) ? "w" : "-");
-    printf( (fileStat.st_mode & S_IXUSR) ? "x" : "-");
-    printf( (fileStat.st_mode & S_IRGRP) ? "r" : "-");
-    printf( (fileStat.st_mode & S_IWGRP) ? "w" : "-");
-    printf( (fileStat.st_mode & S_IXGRP) ? "x" : "-");
-    printf( (fileStat.st_mode & S_IROTH) ? "r" : "-");
-    printf( (fileStat.st_mode & S_IWOTH) ? "w" : "-");
-    printf( (fileStat.st_mode & S_IXOTH) ? "x" : "-");
-}
-
-int archivoEnModoEscritura(char* archivo){
-	//Aca en realidad lo que tengo que hacer es recibir del Kernel
-	//si esta en modo Escritura ese archivo en la tabla de archivos por proceso
-	//pero por ahora queda asi para no andar metiendo sockets de por medio
-	 struct stat fileStat;
-	    stat(archivo,&fileStat);
-
-
-	   if(fileStat.st_mode & S_IWGRP){
-		   return 1 ;
-	   }else{
-		   return 0;
-	   }
-}
-
-int archivoEnModoLectura(char *archivo){
-	 struct stat fileStat;
-	    stat(archivo,&fileStat);
-	        //return 1;
-
-	    if(fileStat.st_mode & S_IROTH){
-	 		   return 1 ;
-	 	   }else{
-	 		   return 0;
-	 	   }
-
-
-}
 
 
 
