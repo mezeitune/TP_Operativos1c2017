@@ -156,19 +156,22 @@ void connection_handlerR(int socket_cliente)
 		    printf("Recibi el nombre del archivo\n");
 
 
-		    char* nombreArchivoRecibido=strcat("../metadata/", &nombreArchivo);
+			char *nombreArchivoRecibido = string_new();
+			string_append(&nombreArchivoRecibido, "../metadata/");
+			string_append(&nombreArchivoRecibido, &nombreArchivo);
+		    printf("%s", nombreArchivoRecibido);
 			if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 			    // file exists
 				printf("el archivo existe\n");
 
-				validado=1;
+				validado=0;
 				send(socket_cliente,&validado,sizeof(int),0);
 			} else {
 			    // file doesn't exist
 			   printf("Archivo inexistente");
 
-			   validado=0;
-				send(socket_cliente,&validado,sizeof(int),0);
+			   validado=1;
+			   send(socket_cliente,&validado,sizeof(int),0);
 			}
 			break;
 		case 'C'://crear archivo
@@ -246,32 +249,6 @@ void connection_handlerR(int socket_cliente)
 
 
 
-
-
-
-
- /*get:  read n bytes from position pos */
- char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
- {
-
-	 	char aDevolver[size-offset];
-		int caracterALeer;
-		int paraDeLeer=size+offset;
-		char name[2];
-	    while((getc(fp)!=EOF))
-	    {
-	    	caracterALeer = fgetc(fp);
-	        fseek(fp,offset,0);
-	        char carALeerToChar=caracterALeer;
-	        fgets(name,1,fp);
-	        strcat(aDevolver, &carALeerToChar); /* copy name into the new var */
-	        offset++ ;
-	        if(offset==paraDeLeer) break;
-	    }
-	   fclose(fp);
-
-	   return aDevolver;
- }
 
 
 

@@ -113,17 +113,19 @@ void handshakeMemoria(){
 }
 
 
+
+
 void handshakeFS(){
 	char comandoTamanioPagina = 'V';
-	char* archivoAVerificar="alumno.bin";
+	char* archivoAVerificar="alumnoosdad.bin";
 	int tamano=strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
 	send(socketFyleSys,archivoAVerificar,tamano,0);
-	printf("Mande todo\n");
+	printf("Mande todoo\n");
 	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("Recibi la validacion : %d\n",validado);
+	printf("La validacion es : %d\n",validado);
 
 }
 

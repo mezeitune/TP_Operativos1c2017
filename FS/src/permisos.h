@@ -52,3 +52,31 @@ int archivoEnModoLectura(char *archivo){
 
 
 }
+
+
+
+
+
+/*get:  read n bytes from position pos */
+char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
+{
+
+	 	char aDevolver[size-offset];
+		int caracterALeer;
+		int paraDeLeer=size+offset;
+		char name[2];
+	    while((getc(fp)!=EOF))
+	    {
+	    	caracterALeer = fgetc(fp);
+	        fseek(fp,offset,0);
+	        char carALeerToChar=caracterALeer;
+	        fgets(name,1,fp);
+	        strcat(aDevolver, &carALeerToChar); /* copy name into the new var */
+	        offset++ ;
+	        if(offset==paraDeLeer) break;
+	    }
+	   fclose(fp);
+
+	   return aDevolver;
+}
+
