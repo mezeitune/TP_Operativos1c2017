@@ -229,7 +229,7 @@ void terminarProceso(int socketCPU){
 
 	_Bool verificarCPU(t_cpu* cpu){
 			return (cpu->socket == socketCPU);
-		}
+	}
 
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);

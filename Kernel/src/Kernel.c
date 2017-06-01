@@ -117,7 +117,7 @@ void handshakeMemoria(){
 
 void handshakeFS(){
 	char comandoTamanioPagina = 'V';
-	char* archivoAVerificar="alumno.bin";
+	char* archivoAVerificar="alumnoosdad.bin";
 	int tamano=strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
@@ -165,7 +165,6 @@ void connectionHandler(int socketAceptado, char orden) {
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
-
 					pthread_mutex_lock(&mutexListaCPU);
 					cpu->socket = socketAceptado;
 					list_add(listaCPU,cpu);
@@ -294,12 +293,12 @@ void* planificarCortoPlazo(){
 	while(1){
 
 		sem_wait(&sem_colaReady);
+		sem_wait(&sem_CPU);
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
-		sem_wait(&sem_CPU);
 
 		pthread_mutex_lock(&mutexListaCPU);
 		cpuEnEjecucion = list_remove(listaCPU,0);
