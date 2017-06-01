@@ -257,27 +257,20 @@ void* planificarCortoPlazo(){
 	int pid;
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
-
-
 	while(1){
 
 		sem_wait(&sem_colaReady);
 		sem_wait(&sem_CPU);
 
-
-
-
 		pthread_mutex_lock(&mutexColaListos);
-		pcbListo = list_get(colaListos,0);
-		list_remove(colaListos,0);
+		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
 		pthread_mutex_lock(&mutexListaCPU);
-		cpuEnEjecucion = list_get(listaCPU,0);
+		cpuEnEjecucion = list_remove(listaCPU,0);
 		pthread_mutex_unlock(&mutexListaCPU);
 
 		cpuEnEjecucion->pid = pcbListo->pid;
-
 
 		pthread_mutex_lock(&mutexColaEjecucion);
 		list_add(colaEjecucion, pcbListo);

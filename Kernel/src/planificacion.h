@@ -172,7 +172,10 @@ int atenderNuevoPrograma(int socketAceptado){
 					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
 					return -1;
 				}
+
+		pthread_mutex_lock(&mutexGradoMultiProgramacion);
 		gradoMultiProgramacion++;//VAR GLOBAL
+		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 		crearProceso(proceso, codigoPrograma);
 		return 0;
 }
@@ -228,7 +231,6 @@ void terminarProceso(int socketCPU){
 			return (cpu->socket == socketCPU);
 		}
 
-
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
@@ -236,6 +238,10 @@ void terminarProceso(int socketCPU){
 	list_remove_by_condition(colaEjecucion, verificarPid);//Remueve pcb de la colaEjecucion
 	pthread_mutex_unlock(&colaEjecucion);
 
+
+	pthread_mutex_lock(&mutexGradoMultiProgramacion);
+	gradoMultiProgramacion--;
+	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 
 	pthread_mutex_lock(&listaCPU);
 	list_remove_by_condition(listaCPU, verificarCPU);
