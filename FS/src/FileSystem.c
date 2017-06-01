@@ -134,7 +134,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 void connection_handlerR(int socket_cliente)
 {
     char orden;
-    char* nombreArchivo;
+    //char* nombreArchivo;
     int tamanoArchivo;
     FILE *fp;
     int resultadoDeEjecucion;
@@ -151,28 +151,31 @@ void connection_handlerR(int socket_cliente)
 		case 'V'://validar archivo   TERMINADO (FALTA QUE RECIBA EL ARCHIVO QUE SOLICITE DESDE KERNEL)
 
 		    recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
+		    char* nombreArchivo = malloc(tamanoArchivo);
 		    recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
 
-		    printf("Recibi el nombre del archivo\n");
+		    printf("Recibi el nombre del archivo\n ");
 
 
 			char *nombreArchivoRecibido = string_new();
 			string_append(&nombreArchivoRecibido, "../metadata/");
-			string_append(&nombreArchivoRecibido, &nombreArchivo);
+			string_append(&nombreArchivoRecibido, nombreArchivo);
 		    printf("%s", nombreArchivoRecibido);
 			if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 			    // file exists
-				printf("el archivo existe\n");
+				printf("\n el archivo existe\n");
 
-				validado=0;
+				validado=1;
 				send(socket_cliente,&validado,sizeof(int),0);
 			} else {
 			    // file doesn't exist
-			   printf("Archivo inexistente");
+			   printf("\n Archivo inexistente");
 
-			   validado=1;
+			   validado=0;
 			   send(socket_cliente,&validado,sizeof(int),0);
 			}
+
+		    printf("\n ");//esto tiene que estar , no se por que
 			break;
 		case 'C'://crear archivo
 			if( access( "../metadata/nuevo.bin", F_OK ) != -1 ) {
@@ -245,15 +248,6 @@ void connection_handlerR(int socket_cliente)
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
 
 
 void leerConfiguracion(char* ruta){
