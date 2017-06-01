@@ -80,6 +80,7 @@ int pedirMemoria(t_pcb* procesoListo);
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
 int calcularTamanioParticion(int *programSizeRestante);
 void handshakeMemoria();
+void handshakeFS();
 //---------Conexion con memoria--------//
 
 void inicializarListas();
@@ -113,18 +114,17 @@ void handshakeMemoria(){
 
 
 void handshakeFS(){
-	/*char comandoTamanioPagina = 'V';
-	char archivoAVerificar[11]="alumno.bin";
-	int tamano=sizeof(archivoAVerificar);
+	char comandoTamanioPagina = 'V';
+	char* archivoAVerificar="alumno.bin";
+	int tamano=strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,&archivoAVerificar,tamano,0);
+	send(socketFyleSys,archivoAVerificar,tamano,0);
+	printf("Mande todo\n");
 	recv(socketFyleSys,&validado,sizeof(int),0);
-*/
+	printf("Recibi la validacion : %d\n",validado);
 
-
-	//printf("%d", validado);
 }
 
 
@@ -302,6 +302,7 @@ void* planificarCortoPlazo(){
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
+		/*La primera cpu vuelve a la segunda vuelta a la misma posicion, entonces se manda el segundo pcb a la misma cpu y estalla*/
 		pthread_mutex_lock(&mutexListaCPU);
 		cpuEnEjecucion = list_remove(listaCPU,0);
 		cpuEnEjecucion->pid = pcbListo->pid;

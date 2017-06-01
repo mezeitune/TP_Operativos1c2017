@@ -133,13 +133,15 @@ char nuevaOrdenDeAccion(int socketCliente)
 
 void connection_handlerR(int socket_cliente)
 {
-	printf("fmksdmmsk");
     char orden;
     char* nombreArchivo;
     int tamanoArchivo;
-    recv(socket_cliente,&orden,sizeof(char),0);
     FILE *fp;
     int resultadoDeEjecucion;
+    int validado;
+
+    recv(socket_cliente,&orden,sizeof(char),0);
+
     while(orden != 'Q'){
 
     			//printf("\nIngresar orden:\n");
@@ -147,17 +149,26 @@ void connection_handlerR(int socket_cliente)
 
     	switch(orden){
 		case 'V'://validar archivo   TERMINADO (FALTA QUE RECIBA EL ARCHIVO QUE SOLICITE DESDE KERNEL)
+
 		    recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-		    recv(socket_cliente,&nombreArchivo,tamanoArchivo,0);
+		    recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+
+		    printf("Recibi el nombre del archivo\n");
+
+
 		    char* nombreArchivoRecibido=strcat("../metadata/", &nombreArchivo);
 			if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 			    // file exists
-				printf("el archivo existe");
-				send(socket_cliente,1,sizeof(int),0);
+				printf("el archivo existe\n");
+
+				validado=1;
+				send(socket_cliente,&validado,sizeof(int),0);
 			} else {
 			    // file doesn't exist
 			   printf("Archivo inexistente");
-				send(socket_cliente,2,sizeof(int),0);
+
+			   validado=0;
+				send(socket_cliente,&validado,sizeof(int),0);
 			}
 			break;
 		case 'C'://crear archivo
@@ -328,7 +339,6 @@ int recibirConexion(int socket_servidor){
 	contadorConexiones ++;
 	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
 	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
-	printf("sssssssssss");
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
