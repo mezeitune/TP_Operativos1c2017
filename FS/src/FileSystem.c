@@ -27,31 +27,14 @@
 #include <pthread.h>
 #include "conexiones.h"
 #include "permisos.h"
+#include "configuracionesLib.h"
 #include <commons/bitarray.h>
-
-char *ipFS;
 
 t_bitarray * bit;
 
-char *puertoFS;
-char *puntoMontaje;
-char *puerto_Kernel;
-int tamanioBloques;
-int cantidadBloques;
-char* magicNumber;
-
-pthread_t  thread_id;
-t_config* configuracion_FS;
-
-
-
-
-
 //----------------------------//
 
-
 int socket_servidor;
-
 
 char nuevaOrdenDeAccion(int puertoCliente);
 void leerConfiguracion(char* ruta);
@@ -77,11 +60,6 @@ int main(void){
 
 	bit = bitarray_create_with_mode(bitarray, cantidadBloques/8, LSB_FIRST);
 
-	   FILE *fp;
-
-	   fp = fopen( "../metadata/alumno.bin" , "w" );
-	   fwrite(&bit , 1 , sizeof(t_bitarray) , fp );
-	//int socket_kernel = crear_socket_cliente("127.0.0.1",puerto_Kernel);
 	int socket_FS = crear_socket_servidor(ipFS,puertoFS);
 
 
@@ -90,40 +68,8 @@ int main(void){
 
 
 
-
-
-
-
-	//log_info(loggerConPantalla, "File System Conectado");
-
-
-
-	//TODO LO QUE ESTA COMENTADO ARRIBA TENDRIA Q IR DESCOMENTADO , PERO ESTOY USANDO ESTA
-				//FUNCION MOMENTANEAMENTE , POR QUE EL KERNEL TODAVIA NO SE COMUNICA CON FS
-				//ENTONCES LO HAGO PARA TESTEAR , NO BORRAR LAS OTRAS FUNCIONES QUE HAY
-
-
 	return 0;
 }
-
-
-char nuevaOrdenDeAccion(int socketCliente)
-{
-	char* buffer=malloc(sizeof(char));
-	char bufferRecibido;
-
-	printf("\n--Esperando una orden del cliente-- \n");
-
-	//recv(socketCliente,buffer,sizeof(char),0);
-	bufferRecibido = *buffer;
-
-	free(buffer);
-
-    printf("El cliente ha enviado la orden: %c\n",bufferRecibido);
-	printf("%c\n",bufferRecibido);
-	return bufferRecibido;
-}
-
 
 
 
@@ -245,37 +191,6 @@ void connection_handlerR(int socket_cliente)
 	}
 }
 
-
-void leerConfiguracion(char* ruta){
-	configuracion_FS = config_create(ruta);
-
-	puertoFS= config_get_string_value(configuracion_FS,"PUERTO_FS");
-	ipFS= config_get_string_value(configuracion_FS, "IP_FS");
-	puntoMontaje = config_get_string_value(configuracion_FS,"PUNTO_MONTAJE");
-	puerto_Kernel= config_get_string_value(configuracion_FS,"PUERTO_KERNEL");
-}
-
-
-
-
-
-void leerConfiguracionMetadata(char* ruta){
-	configuracion_FS = config_create(ruta);
-
-	tamanioBloques= config_get_string_value(configuracion_FS,"TAMANIO_BLOQUES");
-	cantidadBloques= config_get_string_value(configuracion_FS, "CANTIDAD_BLOQUES");
-	magicNumber = config_get_string_value(configuracion_FS,"MAGIC_NUMBER");
-
-
-}
-
-
-void imprimirConfiguraciones(){
-		printf("---------------------------------------------------\n");
-		printf("CONFIGURACIONES\nIP FS:%s\nPUERTO FS:%s\nPUNTO MONTAJE:%s\n",ipFS,puertoFS,puntoMontaje);
-		printf("\n \nTAMANIO BLOQUS:%s\nCANTIDAD BLQOUES:%s\nMAGIC NUMBER:%s\n",tamanioBloques,cantidadBloques,magicNumber);
-		printf("---------------------------------------------------\n");
-}
 
 
 
