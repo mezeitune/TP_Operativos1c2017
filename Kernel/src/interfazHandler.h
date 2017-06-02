@@ -15,6 +15,7 @@ void obtenerListadoProcesos();
 void mostrarProcesos(char orden);
 void imprimirListadoDeProcesos(t_list* listaPid);
 void filtrarPorPidYMostrar(t_list* cola);
+void interfazHandlerParaFileSystem(char orden);
 
 /*-------------LOG-----------------*/
 void inicializarLog(char *rutaDeLog);
@@ -61,6 +62,10 @@ void interfazHandler(){
 			case 'I':
 					imprimirInterfazUsuario();
 				break;
+			case 'F':
+				printf("Enviando instrucciones a File System");
+				interfazHandlerParaFileSystem('V');
+				break;
 			default:
 				if(orden == '\0') break;
 				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
@@ -69,6 +74,41 @@ void interfazHandler(){
 	orden = '\0';
 	log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler\n");
 	return;
+
+}
+
+
+void interfazHandlerParaFileSystem(char orden){
+		log_info(loggerConPantalla,"Iniciando Interfaz Handler Para File System\n");
+		//int pid;
+		char* mensajeRecibido;
+
+
+		switch(orden){
+				case 'V'://validar archivo   TERMINADO (FALTA QUE RECIBA EL ARCHIVO QUE SOLICITE DESDE KERNEL)
+
+					printf("VVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
+					break;
+				case 'C'://crear archivo
+					printf("Enviando instrucciones a File System");
+					break;
+				case 'B'://borrar archivo
+					printf("Enviando instrucciones a File System");
+					break;
+				case 'O'://obtener datos
+					printf("Enviando instrucciones a File System");
+					break;
+				case 'G'://guardar archivo
+					printf("Enviando instrucciones a File System");
+					break;
+			default:
+				if(orden == '\0') break;
+				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
+				break;
+			}
+			orden = '\0';
+			log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler de File System\n");
+			return;
 
 }
 
