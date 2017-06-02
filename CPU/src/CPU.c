@@ -662,6 +662,21 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	free(mensaje);
 
 }
+void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
+	char** string_cortado = string_split(identificador_semaforo, "\n");
+	log_info(loggerConPantalla, "Semaforo a subir: %s", string_cortado[0]);
+	void* signal;
+	int tamanio;
+	//send(socketKernel,signal,tamanio,0);
+	free(signal);
+	int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+	free(string_cortado);
+}
+
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
 	t_pcb* pcb_actual = list_get (listaPcb,0);
 	char *valor_variable = string_itoa(valor);
@@ -673,3 +688,5 @@ void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t
 	send(socketKernel,&valor_variable,tamanio,0);
 	send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 }
+
+
