@@ -617,7 +617,24 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	free(string_cortado);
 	return valor_variable;
 }
-
+t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
+	char** string_cortado = string_split(variable, "\n");
+	char* variable_string = string_new();
+	string_append(&variable_string, "!");
+	string_append(&variable_string, string_cortado[0]);
+	void* variable_a_enviar;
+	//int tamanio = calcularTamanio(variable_string, valor, &variable_serializada);
+	//send(socketKernel,variable,tamanio,0);
+	free(variable_string);
+	free(variable_a_enviar);
+	int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+	free(string_cortado);
+	return valor;
+}
 
 //-------------------------------------------Kernel primitivas------------------------------------------------//
 
