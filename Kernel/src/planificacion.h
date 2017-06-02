@@ -22,16 +22,17 @@
 #include <netinet/in.h>
 #include "configuraciones.h"
 #include "pcb.h"
-
-
+#include "conexionMemoria.h"
 
 typedef struct CPU {
 	int pid;
 	int socket;
 }t_cpu;
 
-
-
+typedef struct CONSOLA{
+	int pid;
+	int socketHiloPrograma;
+}t_consola;
 
 typedef struct {
 	char* codigo;
@@ -40,31 +41,29 @@ typedef struct {
 	int socketHiloConsola;
 }t_codigoPrograma;
 
-typedef struct CONSOLA{
-	int pid;
-	int socketHiloPrograma;
-}t_consola;
-
 /*----LARGO PLAZO--------*/
 void* planificarLargoPlazo();
-t_codigoPrograma* recibirCodigoPrograma(int socketConsola);
-t_codigoPrograma* buscarCodigoDeProceso(int pid);
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
-
 void informarConsola(int socketHiloPrograma,char* mensaje, int size);
-
-
+t_codigoPrograma* recibirCodigoPrograma(int socketConsola);
+t_codigoPrograma* buscarCodigoDeProceso(int pid);
 t_list* listaCodigosProgramas;
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
+
+/*----CORTO PLAZO--------*/
+
+void* planificarCortoPlazo();
+void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex);
+pthread_t planificadorCortoPlazo;
+/*----CORTO PLAZO--------*/
 
 /*---PLANIFICACION GENERAL-------*/
 int atenderNuevoPrograma(int socketAceptado);
 int verificarGradoDeMultiprogramacion();
 void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
-//void dispatcher(int socket);
 void terminarProceso(int socket);
 
 int contadorPid=0;
@@ -73,7 +72,7 @@ t_list* colaListos;
 t_list* colaTerminados;
 t_list* listaConsolas;
 t_list* listaCPU;
-t_list* colaEjecucion;//<IMPORTANTE: GENERADA CON t_cpu{ t_pcb* y socket} PARA NO TENER QUE ARMAR UNA LISTA NUEVA "listaCPUConPid">
+t_list* colaEjecucion;
 /*---PLANIFICACION GENERAL-------*/
 
 
@@ -108,7 +107,7 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
 			return (codigoPrograma->pid == pid);
 		}
-	return list_find(listaCodigosProgramas, (void*)verificarPid);
+	return list_remove_by_condition(listaCodigosProgramas, (void*)verificarPid);
 
 }
 
@@ -141,10 +140,46 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 	return 0;
 }
 
+/*------------------------LARGO PLAZO-----------------------------------------*/
+
+/*------------------------CORTO PLAZO-----------------------------------------*/
+
+void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
+
+	pthread_mutex_lock(&mutex);
+	list_add(lista, elemento);
+	pthread_mutex_unlock(&mutex);
+}
+
+void* planificarCortoPlazo(){
+	t_pcb* pcbListo;
+	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
+
+	while(1){
+		sem_wait(&sem_CPU);
+		sem_wait(&sem_colaReady);
+
+		pthread_mutex_lock(&mutexColaListos);
+		pcbListo = list_remove(colaListos,0);
+		pthread_mutex_unlock(&mutexColaListos);
 
 
+		pthread_mutex_lock(&mutexListaCPU);
+		cpuEnEjecucion = list_remove(listaCPU,0);
+		pthread_mutex_unlock(&mutexListaCPU);
+
+		cpuEnEjecucion->pid = pcbListo->pid;
+
+		pthread_mutex_lock(&mutexColaEjecucion);
+		list_add(colaEjecucion, pcbListo);
+		pthread_mutex_unlock(&mutexColaEjecucion);
+
+		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+	}
+}
 
 
+/*------------------------CORTO PLAZO-----------------------------------------*/
 
 /*-------------------PLANIFICACION GENERAL------------------------------------*/
 
@@ -212,8 +247,6 @@ void encolarProcesoListo(t_pcb *procesoListo){
 void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado;
 	t_consola* consolaAInformar;
-	t_cpu* cpuFinalizada;
-	int i;
 
 	_Bool verificarPidConsola(t_consola* consola){
 						return (consola->pid == pcbProcesoTerminado->pid);
@@ -230,18 +263,18 @@ void terminarProceso(int socketCPU){
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
-	pthread_mutex_lock(&colaEjecucion);
-	list_remove_by_condition(colaEjecucion, verificarPid);//Remueve pcb de la colaEjecucion
-	pthread_mutex_unlock(&colaEjecucion);
+	pthread_mutex_lock(&mutexColaEjecucion);
+	list_remove_by_condition(colaEjecucion, (void*)verificarPid);//Remueve pcb de la colaEjecucion
+	pthread_mutex_unlock(&mutexColaEjecucion);
 
 
 	pthread_mutex_lock(&mutexGradoMultiProgramacion);
 	gradoMultiProgramacion--;
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 
-	pthread_mutex_lock(&listaCPU);
-	list_remove_by_condition(listaCPU, verificarCPU);
-	pthread_mutex_unlock(&listaCPU);
+	pthread_mutex_lock(&mutexListaCPU);
+	list_remove_by_condition(listaCPU,(void*)verificarCPU);
+	pthread_mutex_unlock(&mutexListaCPU);
 
 
 	pthread_mutex_lock(&mutexColaTerminados);

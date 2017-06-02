@@ -61,10 +61,11 @@ void *connectionHandler() {
 				crearHiloPrograma();
 				break;
 			case 'F':
-				finalizarPrograma(); /*TODO: Verificar que se liberan bien los recursos*//*TODO: Verificar que el hilo termine y libere sus recursos*/
+				finalizarPrograma(); /*TODO:Faltan liberar recursos */
 				break;
 			case 'C':
 				system("clear");
+				sem_post(&sem_crearHilo);
 				break;
 			case 'Q':
 				cerrarTodo(); /*TODO: Verificar que los hilos terminen y liberen sus recursos*/
@@ -72,6 +73,7 @@ void *connectionHandler() {
 				break;
 			default:
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
+				sem_post(&sem_crearHilo);
 				break;
 			}
 		orden = '\0';
@@ -117,7 +119,6 @@ void *imprimir(int socket){
 void finalizarPrograma(){
 	char comandoInterruptHandler = 'X';
 	char comandoFinalizarPrograma= 'F';
-	char* mensajeResultado;
 	int size;
 	int procesoATerminar;
 	log_info(loggerConPantalla,"Ingresar el PID del programa a finalizar\n");
@@ -136,7 +137,8 @@ void finalizarPrograma(){
 				send(socketKernel, (void*) &procesoATerminar, sizeof(int), 0);
 
 				time_t tiempoFinalizacion = time(0);
-				struct tm* fechaFinalizacion = localtime(&tiempoFinalizacion);
+				struct tm* fechaFinalizacion = malloc(sizeof(struct tm));
+				fechaFinalizacion=localtime(&tiempoFinalizacion);
 				double tiempoEjecucion= difftime(tiempoFinalizacion,mktime(programaAFinalizar->fechaInicio));
 
 				printf("----------------------------------------------------------------------\n");
@@ -144,20 +146,22 @@ void finalizarPrograma(){
 				printf("----------------------------------------------------------------------\n");
 
 
-				pthread_detach(programaAFinalizar->idHilo);
-				log_info(loggerSinPantalla,"El hilo ha finalizado con exito");
-
-
 				recv(socketKernel,&size,sizeof(int),0);
-				recv(socketKernel,&mensajeResultado,size,0);
-				log_info(loggerSinPantalla,mensajeResultado);
+				char* mensajeResultado=malloc(size);
+				recv(socketKernel,mensajeResultado,size,0);
+				printf("%s\n",mensajeResultado);
+
+				/*TODO: Tenemos que finalizar el hilo Programa*/
+
+				log_info(loggerConPantalla,"El hilo programa del proceso PID:%d ha finalizado con exito",programaAFinalizar->pid);
 				free(mensajeResultado);
 				free(programaAFinalizar);
-				free(fechaFinalizacion);
+				//free(fechaFinalizacion); TODO: Solucionar este free
 
 			}else{
 						log_info(loggerConPantalla,"\nPID incorrecto\n");
 			}
+		sem_post(&sem_crearHilo);
 }
 
 
