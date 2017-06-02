@@ -123,8 +123,8 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 			encolarProcesoListo(proceso);
 			cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 			free(codigoPrograma);
-			log_info(loggerConPantalla, "PCB encolado en lista de listos ---- PID: %d", proceso->pid);
-			sem_post(&sem_colaReady);//Agregado para saber si hay algo en cola Listos, es el Signal
+			log_info(loggerConPantalla, "PCB encolado en cola de listos ---- PID: %d", proceso->pid);
+			sem_post(&sem_colaReady);
 	}
 }
 
@@ -134,14 +134,10 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
 				return -1;
 			}
-	log_info(loggerConPantalla ,"Existe espacio en memoria para el nuevo programa\n");
-
 	if((almacenarCodigoEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){
 					log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
 					return -2;
 				}
-	log_info(loggerConPantalla ,"El nuevo programa se almaceno correctamente en memoria\n");
-
 	return 0;
 }
 
@@ -161,8 +157,8 @@ int atenderNuevoPrograma(int socketAceptado){
 		codigoPrograma->pid=contadorPid;
 
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
-		log_info(loggerConPantalla,"Program Size: %d \n", codigoPrograma->size);
-		log_info(loggerConPantalla ,"Program Code: \" %s \" \n", codigoPrograma->codigo);
+		//log_info(loggerConPantalla,"Program Size: %d \n", codigoPrograma->size);
+		//log_info(loggerConPantalla ,"Program Code: \" %s \" \n", codigoPrograma->codigo);
 
 		send(socketAceptado,&contadorPid,sizeof(int),0);
 
@@ -174,7 +170,7 @@ int atenderNuevoPrograma(int socketAceptado){
 				}
 
 		pthread_mutex_lock(&mutexGradoMultiProgramacion);
-		gradoMultiProgramacion++;//VAR GLOBAL
+		gradoMultiProgramacion++;
 		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 		crearProceso(proceso, codigoPrograma);
 		return 0;
@@ -182,7 +178,7 @@ int atenderNuevoPrograma(int socketAceptado){
 
 
 int verificarGradoDeMultiprogramacion(){
-	log_info(loggerConPantalla, "Verificando grado de multiprogramacion");
+	//log_info(loggerConPantalla, "Verificando grado de multiprogramacion");
 	pthread_mutex_lock(&mutexGradoMultiProgramacion);
 	if(gradoMultiProgramacion >= config_gradoMultiProgramacion) {
 		pthread_mutex_unlock(&mutexGradoMultiProgramacion);

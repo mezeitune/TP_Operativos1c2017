@@ -123,13 +123,9 @@ void handshakeFS(){
 	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
 	send(socketFyleSys,archivoAVerificar,tamano,0);
-	printf("Mande todoo\n");
 	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion es : %d\n",validado);
 
 }
-
-
 
 
 
@@ -355,17 +351,14 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int p
 		int offset=0;
 		int nroPagina;
 
-		log_info(loggerConPantalla, "Paginas de codigo a almacenar: %d", procesoListoAutorizado->cantidadPaginasCodigo);
-
 		for(nroPagina=0; nroPagina<procesoListoAutorizado->cantidadPaginasCodigo && resultadoEjecucion==0;nroPagina++){
-				log_info(loggerConPantalla, "Numero de pagina: %d",nroPagina);
 				particionSize=calcularTamanioParticion(&programSizeRestante);
-				log_info(loggerConPantalla, "Tamano de la particion de codigo a almacenar:\n %d\n", particionSize);
+			//	log_info(loggerConPantalla, "Tamano de la particion de codigo a almacenar:\n %d\n", particionSize);
 				strncpy(particionCodigo,programa,particionSize);
 				strcpy(particionCodigo + particionSize,"\0");
 				programa += particionSize;
 
-				log_info(loggerConPantalla, "Particion de codigo a almacenar: \n%s", particionCodigo);
+				//log_info(loggerConPantalla, "Particion de codigo a almacenar: \n%s", particionCodigo);
 
 				memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
 				memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
@@ -378,7 +371,7 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int p
 
 				recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 		}
-		log_info(loggerConPantalla, "Programa almacenado en Memoria---- PID: %d", procesoListoAutorizado->pid);
+		//log_info(loggerConPantalla, "Programa almacenado en Memoria---- PID: %d", procesoListoAutorizado->pid);
 		free(mensajeAMemoria);
 		free(particionCodigo);
 
@@ -386,7 +379,6 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int p
 
 }
 int calcularTamanioParticion(int *programSizeRestante){
-	log_info(loggerConPantalla,"Calculando tamano de particion de codigo");
 		int mod=*programSizeRestante % config_paginaSize;
 				 if(mod == *programSizeRestante){
 					return *programSizeRestante;

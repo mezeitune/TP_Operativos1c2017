@@ -21,10 +21,10 @@ int main(void) {
 
 	inicializarLog("/home/utnso/Log/logConsola.txt");
 	inicializarListas();
-
 	pthread_mutex_init(&mutex_crearHilo,NULL);
+	pthread_mutex_init(&mutexListaHilos,NULL);
+	sem_init(&sem_crearHilo,0,1);
 	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
-	pthread_mutex_unlock(&mutex_crearHilo);
 
 	int err = pthread_create(&hiloInterfazUsuario, NULL, connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
@@ -51,7 +51,7 @@ void *connectionHandler() {
 
 	while (1) {
 		char orden;
-		pthread_mutex_lock(&mutex_crearHilo);
+		sem_wait(&sem_crearHilo);
 
 		imprimirInterfaz();
 		scanf(" %c", &orden);
@@ -62,11 +62,9 @@ void *connectionHandler() {
 				break;
 			case 'F':
 				finalizarPrograma(); /*TODO: Verificar que se liberan bien los recursos*//*TODO: Verificar que el hilo termine y libere sus recursos*/
-				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			case 'C':
 				system("clear");
-				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			case 'Q':
 				cerrarTodo(); /*TODO: Verificar que los hilos terminen y liberen sus recursos*/
@@ -74,7 +72,6 @@ void *connectionHandler() {
 				break;
 			default:
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
-				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			}
 		orden = '\0';
