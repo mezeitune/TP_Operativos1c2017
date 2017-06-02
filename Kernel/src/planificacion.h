@@ -292,7 +292,9 @@ void terminarProceso(int socketCPU){
 }
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
+	char comI = 'I';
+	send(socketHiloPrograma,&comI,sizeof(char),0);
 	send(socketHiloPrograma,&size,sizeof(int),0);
-	send(socketHiloPrograma,mensaje,size,0);
+	send(socketHiloPrograma,&mensaje,size,0);
 }
 #endif /* PLANIFICACION_H_ */
