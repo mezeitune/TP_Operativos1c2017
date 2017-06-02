@@ -27,9 +27,71 @@
 #include "conexiones.h"
 #include "dummy_ansisop.h"
 #include <parser/metadata_program.h>
-
 #include "PCB.h"
+//-----------------------------------------------------------------------------------------------------------------
+char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
+char* obtener_instruccion(t_pcb * pcb);
+int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar,int offset);
+int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size);
 
+//-----------------------------------------------------------------------------------------------------------------
+void establecerPCB();
+void leerConfiguracion(char* ruta);
+void imprimirConfiguraciones();
+void connectionHandler(t_pcb pcb);
+void cargarPcbActual(t_pcb* pidEstructura, int pid, int cantidadPaginas, int offset);
+void recibirTamanioPagina();
+void recibirPCB();
+void signalHandler(int signum);
+void imprimirPCB(t_pcb * pcb);
+int cantidadPaginasTotales(t_pcb * pcb);
+void esperarPCB();
+void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
+void connectionHandlerKernel(int socketAceptado, char orden);
+void ejecutarInstruccion(t_pcb* pcb);
+void interfazHandler(t_pcb * pcb);
+void EjecutarProgramaMedianteAlgoritmo(t_pcb* pcb);
+void expropiarPorQuantum(t_pcb * pcb);
+void CerrarPorSignal();
+void stackOverflow();
+//-----------------------------------------------------------------------------------------------------------------
+
+t_config* configuracion_memoria;
+char* puertoKernel;
+char* puertoMemoria;
+char* ipMemoria;
+char* ipKernel;
+//----------------------------//
+
+//------------------Sockets Globales-------//
+int socketMemoria;
+int socketKernel;
+//-----------------------------------------//
+
+t_list* listaPcb;
+int cpuOcupada=1;
+int cpuFinalizada=1;
+
+
+//-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
+//---------Primitivas Comunes----------//
+t_puntero definirVariable(t_nombre_variable variable);
+t_puntero obtenerPosicionVariable(t_nombre_variable variable);
+void asignar(t_puntero puntero, t_valor_variable variable);
+t_valor_variable dereferenciar(t_puntero puntero);
+void finalizar();
+void retornar(t_valor_variable retorno);
+void llamarSinRetorno(t_nombre_etiqueta etiqueta);
+void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
+void irAlLabel(t_nombre_etiqueta etiqueta);
+void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio);
+
+
+//---------Primitivas Kernel----------//
+void wait(t_nombre_semaforo identificador_semaforo);
+
+
+//-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 	.AnSISOP_definirVariable	=definirVariable,
@@ -62,54 +124,4 @@ AnSISOP_kernel kernel_functions = {
 
 
 };
-//-----------------------------------------------------------------------------------------------------------------
-char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
-char* obtener_instruccion(t_pcb * pcb);
-
-int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar,int offset);
-int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size);
-
-//-----------------------------------------------------------------------------------------------------------------
-void establecerPCB();
-void leerConfiguracion(char* ruta);
-void imprimirConfiguraciones();
-void connectionHandler(t_pcb pcb);
-void cargarPcbActual(t_pcb* pidEstructura, int pid, int cantidadPaginas, int offset);
-void recibirTamanioPagina();
-void recibirPCB();
-void signalHandler(int signum);
-void imprimirPCB(t_pcb * pcb);
-int cantidadPaginasTotales(t_pcb * pcb);
-void esperarPCB();
-void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
-void connectionHandlerKernel(int socketAceptado, char orden);
-void ejecutarInstruccion(t_pcb* pcb);
-void interfazHandler(t_pcb * pcb);
-void EjecutarProgramaMedianteAlgoritmo(t_pcb* pcb);
-void expropiarPorQuantum(t_pcb * pcb);
-void CerrarPorSignal();
-//-----------------------------------------------------------------------------------------------------------------
-
-void stackOverflow();
-
-
-t_config* configuracion_memoria;
-char* puertoKernel;
-char* puertoMemoria;
-char* ipMemoria;
-char* ipKernel;
-
-//----------------------------//
-
-//------------------Sockets Globales-------//
-int socketMemoria;
-int socketKernel;
-//-----------------------------------------//
-pthread_t HiloConexionMemoria;
-t_list* listaPcb;
-int cpuOcupada=1;
-int cpuFinalizada=1;
-
-
-
 

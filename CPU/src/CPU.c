@@ -592,8 +592,34 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
 	free(valor_variable);
 }
+t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
+	char** string_cortado = string_split(variable, "\n");
+	char* variable_string = string_new();
+	string_append(&variable_string, "!");
+	string_append(&variable_string, string_cortado[0]);
+	void* variable_a_enviar;
+	int tamanio;
+	//send(socketKernel,variable_a_enviar,tamanio,0);
 
-//Kernel primitivas
+	free(variable_string);
+	free(variable_a_enviar);
+
+	int* valor_variable_recibida = malloc(sizeof(int));
+	//valor_variable_recibida = (int*) recv(socketKernel,,,);
+	int valor_variable = *valor_variable_recibida;
+	free(valor_variable_recibida);
+	log_info(loggerConPantalla, "Valor de la variable compartida: %d", valor_variable);
+	int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+	free(string_cortado);
+	return valor_variable;
+}
+
+
+//-------------------------------------------Kernel primitivas------------------------------------------------//
 
 
 void wait(t_nombre_semaforo identificador_semaforo){
@@ -619,15 +645,14 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	free(mensaje);
 
 }
-void escribir(t_descriptor_archivo descriptor_archivo, char* informacion, t_valor_variable tamanio){
-	printf("la concha de tu madre all boys");
+void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
 	t_pcb* pcb_actual = list_get (listaPcb,0);
-	int pcb=1;
+	char *valor_variable = string_itoa(valor);
 	char comandoImprimir = 'X';
 	char comandoImprimirPorConsola = 'P';
 	send(socketKernel,&comandoImprimir,sizeof(char),0);
 	send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
 	send(socketKernel,&tamanio,sizeof(t_valor_variable),0);
-	send(socketKernel,&informacion,tamanio,0);
-	//send(socketKernel,&pcb,sizeof(int),0);
+	send(socketKernel,&valor_variable,tamanio,0);
+	send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 }

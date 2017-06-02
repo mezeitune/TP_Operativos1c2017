@@ -195,7 +195,7 @@ void connectionHandler(int socketAceptado, char orden) {
 
 void interruptHandler(int socketAceptado,char orden){
 	log_info(loggerConPantalla,"Ejecutando interrupt handler\n");
-	void* mensaje;
+	char* mensaje;
 	int size;
 	int pid;
 	int socketHiloPrograma;
@@ -213,10 +213,11 @@ void interruptHandler(int socketAceptado,char orden){
 	case 'P':
 		log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
 		recv(socketAceptado,&size,sizeof(int),0);
-		printf("pasa1");
+
 		mensaje=malloc(size);
 		recv(socketAceptado,&mensaje,size,0);
-		printf("pasa2");
+
+
 		recv(socketAceptado,&pid,sizeof(int),0);
 
 		socketHiloPrograma = buscarSocketHiloPrograma(pid);
