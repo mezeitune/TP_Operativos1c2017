@@ -27,45 +27,10 @@
 #include "conexiones.h"
 #include "dummy_ansisop.h"
 #include <parser/metadata_program.h>
-
 #include "PCB.h"
-
-
-AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
-	.AnSISOP_definirVariable	=definirVariable,
-	.AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
-	.AnSISOP_finalizar =finalizar,
-	.AnSISOP_dereferenciar	= dereferenciar,
-	.AnSISOP_asignar	= asignar,
-	/*
-	 .AnSISOP_obtenerValorCompartida
-	 .AnSISOP_asignarValorCompartida
-	 */
-	 .AnSISOP_irAlLabel = irAlLabel,
-	 .AnSISOP_llamarSinRetorno=llamarSinRetorno,
-	 .AnSISOP_llamarConRetorno = llamarConRetorno,
-	 .AnSISOP_retornar = retornar
-};
-
-AnSISOP_kernel kernel_functions = {
-		.AnSISOP_wait= wait,
-		/*
-		.AnSISOP_signal
-		.AnSISOP_reservar
-		.AnSISOP_liberar
-		.AnSISOP_abrir
-		.AnSISOP_borrar
-		.AnSISOP_cerrar
-		.AnSISOP_moverCursor
-		*/.AnSISOP_escribir = escribir
-		//.AnSISOP_leer
-
-
-};
 //-----------------------------------------------------------------------------------------------------------------
 char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
 char* obtener_instruccion(t_pcb * pcb);
-
 int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar,int offset);
 int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size);
 
@@ -88,28 +53,73 @@ void interfazHandler(t_pcb * pcb);
 void EjecutarProgramaMedianteAlgoritmo(t_pcb* pcb);
 void expropiarPorQuantum(t_pcb * pcb);
 void CerrarPorSignal();
-//-----------------------------------------------------------------------------------------------------------------
-
 void stackOverflow();
-
+//-----------------------------------------------------------------------------------------------------------------
 
 t_config* configuracion_memoria;
 char* puertoKernel;
 char* puertoMemoria;
 char* ipMemoria;
 char* ipKernel;
-
 //----------------------------//
 
 //------------------Sockets Globales-------//
 int socketMemoria;
 int socketKernel;
 //-----------------------------------------//
-pthread_t HiloConexionMemoria;
+
 t_list* listaPcb;
 int cpuOcupada=1;
 int cpuFinalizada=1;
 
 
+//-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
+//---------Primitivas Comunes----------//
+t_puntero definirVariable(t_nombre_variable variable);
+t_puntero obtenerPosicionVariable(t_nombre_variable variable);
+void asignar(t_puntero puntero, t_valor_variable variable);
+t_valor_variable dereferenciar(t_puntero puntero);
+void finalizar();
+void retornar(t_valor_variable retorno);
+void llamarSinRetorno(t_nombre_etiqueta etiqueta);
+void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
+void irAlLabel(t_nombre_etiqueta etiqueta);
+t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor);
+t_valor_variable obtenerValorCompartida(t_nombre_compartida variable);
 
+//---------Primitivas Kernel----------//
+void wait(t_nombre_semaforo identificador_semaforo);
+void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio);
+void signal_Ansisop(t_nombre_semaforo identificador_semaforo);
+//-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
+
+AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
+	.AnSISOP_definirVariable	=definirVariable,
+	.AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
+	.AnSISOP_finalizar =finalizar,
+	.AnSISOP_dereferenciar	= dereferenciar,
+	.AnSISOP_asignar	= asignar,
+	 .AnSISOP_obtenerValorCompartida = obtenerValorCompartida,
+	 .AnSISOP_asignarValorCompartida = asignarValorCompartida,
+	 .AnSISOP_irAlLabel = irAlLabel,
+	 .AnSISOP_llamarSinRetorno=llamarSinRetorno,
+	 .AnSISOP_llamarConRetorno = llamarConRetorno,
+	 .AnSISOP_retornar = retornar
+};
+
+AnSISOP_kernel kernel_functions = {
+		.AnSISOP_wait= wait,
+
+		.AnSISOP_signal = signal_Ansisop,
+		/*.AnSISOP_reservar
+		.AnSISOP_liberar
+		.AnSISOP_abrir
+		.AnSISOP_borrar
+		.AnSISOP_cerrar
+		.AnSISOP_moverCursor
+		*/.AnSISOP_escribir = escribir
+		//.AnSISOP_leer
+
+
+};
 

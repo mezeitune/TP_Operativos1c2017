@@ -21,6 +21,7 @@ pthread_mutex_t mutexListaConsolas;
 pthread_mutex_t mutexListaCPU;
 pthread_mutex_t mutexConexion;
 pthread_mutex_t mutexGradoMultiProgramacion;
+pthread_mutex_t mutex_FDSET;
 sem_t sem_admitirNuevoProceso;
 sem_t sem_colaReady;
 sem_t sem_CPU;
@@ -34,6 +35,7 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaCPU,NULL);
 		pthread_mutex_init(&mutexGradoMultiProgramacion,NULL);
 		pthread_mutex_init(&mutexConexion,NULL);
+		pthread_mutex_init(&mutex_FDSET,NULL);
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_colaReady,0,0);
 		sem_init(&sem_CPU,0,0);

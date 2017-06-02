@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include "conexiones.h"
 #include <time.h>
+#include <semaphore.h>
 
 
 typedef struct {
@@ -18,8 +19,9 @@ typedef struct {
 	pthread_t idHilo;
 }t_hiloPrograma;
 
-
+pthread_mutex_t mutexListaHilos;
 pthread_mutex_t mutex_crearHilo;
+sem_t sem_crearHilo;
 t_list* listaHilosProgramas;
 
 void crearHiloPrograma();
@@ -33,14 +35,16 @@ void crearHiloPrograma(){
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
 	int err = pthread_create(&nuevoPrograma->idHilo , NULL ,(void*)iniciarPrograma ,&nuevoPrograma->socketHiloKernel);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
-
     time_t tiempoInicio = time(0);
 	nuevoPrograma->fechaInicio=localtime(&tiempoInicio);
+
+	pthread_mutex_lock(&mutexListaHilos);
 	list_add(listaHilosProgramas,nuevoPrograma);
+	pthread_mutex_unlock(&mutexListaHilos);
 }
 
 void* iniciarPrograma(int* socketHiloKernel){
-	char *ruta = (char*) malloc(200 * sizeof(char));
+	char *ruta = malloc(200 * sizeof(char));
 
 	printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
 	scanf("%s", ruta);
@@ -51,31 +55,28 @@ void* iniciarPrograma(int* socketHiloKernel){
 	free(ruta);
 
 	recibirDatosDelKernel(*socketHiloKernel);
-
 	return 0;
 }
 
 void recibirDatosDelKernel(int socketHiloKernel){
-	int pid=0;
+	int pid;
 	int size;
-	char* mensaje;
 
 	recv(socketHiloKernel, &pid, sizeof(int), 0);
-	log_info(loggerConPantalla,"\nEl PID asignado es: %d \n", pid);
+	log_info(loggerConPantalla,"Al programa ANSISOP en socket: %d se le ha asignado el PID: %d", socketHiloKernel,pid);
 
 	cargarHiloPrograma(pid,socketHiloKernel);
-	/* Se queda escuchando los mensaje para imprimir */
+	sem_post(&sem_crearHilo);
 	while(1){
-		printf("Hilo programa--- PID: %d ----SOCKET: %d ----- escuchando Kernel\n", pid, socketHiloKernel);
-		pthread_mutex_unlock(&mutex_crearHilo);
+		//printf("Hilo programa--- PID: %d ----SOCKET: %d ----- escuchando Kernel\n", pid, socketHiloKernel);
 		recv(socketHiloKernel,&size,sizeof(int),0);
-		mensaje = malloc(size);
-		printf("El tamano del mensaje a recibir es: %d\n", size);
+		log_info(loggerConPantalla,"Informacion para PID: %d por SOCKET: %d",pid,socketHiloKernel);
+		char* mensaje = malloc(size);
 		recv(socketHiloKernel,(void*)mensaje,size,0);
+		strcpy(mensaje+size,"\0");
 		printf("%s\n",mensaje);
+		free(mensaje);
 	}
-
-	printf("Termine de recibir los datos del kernel\n");
 }
 
 
@@ -86,7 +87,9 @@ void cargarHiloPrograma(int pid, int socket){
 					}
 	t_hiloPrograma* hiloPrograma= list_remove_by_condition(listaHilosProgramas,(void*)verificarSocket);
 	hiloPrograma->pid = pid;
+	pthread_mutex_lock(&mutexListaHilos);
 	list_add(listaHilosProgramas,hiloPrograma);
+	pthread_mutex_unlock(&mutexListaHilos);
 }
 
 int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
@@ -111,7 +114,9 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 		free(bufferArchivo);
 		exit(2);
 	}
-
+	fread(bufferArchivo, sizeof(bufferArchivo), tamanioArchivo, f);
+	strcat(bufferArchivo,"\0");
+	tamanioArchivo += sizeof(char);
 	mensaje = malloc(sizeof(int) + sizeof(char) + tamanioArchivo); // Pido memoria para el mensaje EMPAQUETADO que voy a mandar
 
 	if (mensaje == NULL) {
@@ -122,19 +127,10 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 		exit(2);
 	}
 
-	fread(bufferArchivo, sizeof(bufferArchivo), tamanioArchivo, f);
-	strcat(bufferArchivo,"\0");
-	tamanioArchivo += sizeof(char);
-
-	printf("El tamano del archivo a enviar es: %d\n", tamanioArchivo);
-	printf("El archivo a enviar es:\n %s\n", bufferArchivo);
-
 	memcpy(mensaje, &comandoIniciarPrograma,sizeof(char));
 	memcpy(mensaje + sizeof(char), &tamanioArchivo, sizeof(int));
 	memcpy(mensaje + sizeof(char) + sizeof(int), bufferArchivo, tamanioArchivo);
-	printf("Enviando codigo ANSISOP por socket: %d\n", socketHiloKernel);
 	send(socketHiloKernel, mensaje, tamanioArchivo + sizeof(int) + sizeof(char)  , 0);
-	log_info(loggerConPantalla,"\nEl programa ANSISOP ha sido enviado al Kernel\n");
 
 	free(bufferArchivo);
 	free(mensaje);
