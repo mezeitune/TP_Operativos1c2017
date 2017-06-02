@@ -58,7 +58,8 @@ int main(void){
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
-	bit = bitarray_create_with_mode(bitarray, cantidadBloques/8, LSB_FIRST);
+	bit = bitarray_create_with_mode(bitarray, cantidadBloques, LSB_FIRST);
+
 
 	int socket_FS = crear_socket_servidor(ipFS,puertoFS);
 
@@ -76,7 +77,6 @@ int main(void){
 void connection_handlerR(int socket_cliente)
 {
     char orden;
-    //char* nombreArchivo;
     int tamanoArchivo;
     FILE *fp;
     int resultadoDeEjecucion;
