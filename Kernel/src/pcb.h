@@ -278,7 +278,7 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 			memcpy(&pcb->exitCode,pcbSerializado,sizeof(int));
 			log_info(loggerConPantalla,"Pcb deserializado------PID: %d -----SocketCPU: %d -----Tamanio: %d",pcb->pid,socketCPU,pcbSerializadoSize);
 
-		//free(pcbADeserializar); TODO: Sacar este buffer afuera para poder liberarlo despues.
+		free(pcbADeserializar); //TODO: Sacar este buffer afuera para poder liberarlo despues.
 	return pcb;
 }
 

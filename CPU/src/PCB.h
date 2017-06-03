@@ -270,7 +270,7 @@ t_pcb* recibirYDeserializarPcb(int socketKernel){
 
 			log_info(loggerConPantalla,"Pcb deserializado------PID: %d -----SocketCPU: %d -----Tamanio: %d",pcb->pid,socketKernel,pcbSerializadoSize);
 
-		//free(pcbADeserializar);
+		free(pcbADeserializar);
 	return pcb;
 }
 
