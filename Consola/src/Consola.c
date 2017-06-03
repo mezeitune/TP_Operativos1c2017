@@ -179,15 +179,13 @@ void cerrarTodo(){
 		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
 		memcpy(procesosATerminar,&procesoACerrar->pid,sizeof(int));
 		procesosATerminar += sizeof(int);
-		pthread_detach(procesoACerrar->idHilo);
+		pthread_detach(procesoACerrar->idHilo); /*TODO: Matar bien los hilos */
 	}
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreConsola,sizeof(char),0);
 	send(socketKernel,&mensajeSize,sizeof(int),0);
 	send(socketKernel,mensaje,mensajeSize,0);
-	free(procesoACerrar);
 	free(mensaje);
-
 
 			log_info(loggerSinPantalla,"Los hilos se han finalizado con exito");
 

@@ -204,7 +204,6 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 	pcbSerializado += sizeof(t_puntero_instruccion);
 	memcpy(&pcb->cantidadInstrucciones, pcbSerializado, sizeof(int));
 	pcbSerializado += sizeof(int);
-
 	pcb->indiceCodigo = inicializarIndiceCodigo(pcb->cantidadInstrucciones);
 
 	//log_info(loggerConPantalla, "Deserializando Indice de Codigo");
@@ -216,7 +215,6 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 			pcbSerializado+= sizeof(int);
 		}
 	//log_info(loggerConPantalla, "Indice de Codigo deserializado");
-
 
 	memcpy(&pcb->indiceEtiquetasSize,pcbSerializado, sizeof(t_size));
 	pcbSerializado += sizeof(t_size);
@@ -278,10 +276,9 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 			//log_info(loggerConPantalla, "Stack deserializado");
 
 			memcpy(&pcb->exitCode,pcbSerializado,sizeof(int));
-
 			log_info(loggerConPantalla,"Pcb deserializado------PID: %d -----SocketCPU: %d -----Tamanio: %d",pcb->pid,socketCPU,pcbSerializadoSize);
 
-		free(pcbADeserializar);
+		//free(pcbADeserializar); TODO: Sacar este buffer afuera para poder liberarlo despues.
 	return pcb;
 }
 
@@ -366,7 +363,6 @@ int calcularIndiceEtiquetasSize(int indiceEtiquetasSize){
 
 
 int cantidadPaginasCodigoProceso(int programSize){
-	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
 	int mod = programSize % config_paginaSize;
 	return mod == 0 ? (programSize / config_paginaSize):(programSize / config_paginaSize)+ 1;
 }

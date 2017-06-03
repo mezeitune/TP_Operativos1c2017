@@ -32,12 +32,6 @@
 #include "configuraciones.h"
 #include "conexionMemoria.h"
 
-
-
-
-
-
-
 char** tablaGlobalArchivos;
 typedef struct FS{//Para poder guardar en la lista
 	char** tablaArchivoPorProceso;
@@ -131,7 +125,6 @@ void connectionHandler(int socketAceptado, char orden) {
 					cpu->socket = socketAceptado;
 					list_add(listaCPU,cpu);
 					pthread_mutex_unlock(&mutexListaCPU);
-
 					send(socketAceptado,&comandoEnviarPcb,sizeof(char),0);
 					sem_post(&sem_CPU);
 					break;

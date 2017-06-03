@@ -110,8 +110,9 @@ void mostrarProcesos(char orden){
 		pthread_mutex_unlock(&mutexColaNuevos);
 		break;
 	case 'F':
-		pthread_mutex_lock(&mutexColaNuevos);
-		pthread_mutex_unlock(&mutexColaNuevos);
+		pthread_mutex_lock(&mutexColaTerminados);
+		filtrarPorPidYMostrar(colaTerminados);
+		pthread_mutex_unlock(&mutexColaTerminados);
 		break;
 	case 'B':
 		pthread_mutex_lock(&mutexColaNuevos);
@@ -124,14 +125,15 @@ void mostrarProcesos(char orden){
 	}
 }
 
-void filtrarPorPidYMostrar(t_list* cola){
+void filtrarPorPidYMostrar(t_list* colaEstados){
+	t_list* cola=colaEstados;
 	int transformarPid(t_pcb* pcb){
 			return pcb->pid;
 		}
 		void liberar(int* pid){
 			free(pid);
 		}
-		imprimirListadoDeProcesos(list_filter(cola,(void*)transformarPid));
+		imprimirListadoDeProcesos(list_map(cola,(void*)transformarPid));
 			//list_destroy_and_destroy_elements(listaPid, (void*)liberar);
 			/*TODO:PREGUNTAR QUE PASA CON ESTA NUEVA LISTA CREADA*/
 }

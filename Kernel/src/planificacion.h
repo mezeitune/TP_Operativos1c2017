@@ -80,8 +80,9 @@ t_list* colaEjecucion;
 void* planificarLargoPlazo(int socket){
 	t_pcb* proceso;
 	while(1){
-		sem_wait(&sem_admitirNuevoProceso); // Previamente hay que eliminar el proceso de las colas y liberar todos sus recursos.
+		sem_wait(&sem_admitirNuevoProceso);
 			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0){
+			log_info(loggerConPantalla,"Inicializando nuevo proceso desde cola de Nuevos");
 			proceso = list_get(colaNuevos,0);
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
 			crearProceso(proceso,codigoPrograma);
@@ -92,9 +93,7 @@ void* planificarLargoPlazo(int socket){
 
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
 	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP\n");
-	//char* comandoRecibirCodigo='R';
 	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
-	//send(socketHiloConsola,&comandoRecibirCodigo,sizeof(char),0);
 	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
 	codigoPrograma->codigo = malloc(codigoPrograma->size);
 	recv(socketHiloConsola,codigoPrograma->codigo,codigoPrograma->size  ,0);
@@ -156,8 +155,8 @@ void* planificarCortoPlazo(){
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
 	while(1){
-		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaReady);
+		sem_wait(&sem_CPU);
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
@@ -173,7 +172,6 @@ void* planificarCortoPlazo(){
 		pthread_mutex_lock(&mutexColaEjecucion);
 		list_add(colaEjecucion, pcbListo);
 		pthread_mutex_unlock(&mutexColaEjecucion);
-
 		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 	}
 }
@@ -187,15 +185,11 @@ int atenderNuevoPrograma(int socketAceptado){
 		log_info(loggerConPantalla,"Atendiendo nuevo programa\n");
 
 		contadorPid++; // VAR GLOBAL
+		send(socketAceptado,&contadorPid,sizeof(int),0);
 
 		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
 		codigoPrograma->pid=contadorPid;
-
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
-		//log_info(loggerConPantalla,"Program Size: %d \n", codigoPrograma->size);
-		//log_info(loggerConPantalla ,"Program Code: \" %s \" \n", codigoPrograma->codigo);
-
-		send(socketAceptado,&contadorPid,sizeof(int),0);
 
 		if(verificarGradoDeMultiprogramacion() <0 ){
 					list_add(colaNuevos,proceso);
@@ -221,7 +215,6 @@ int verificarGradoDeMultiprogramacion(){
 		return -1;
 	}
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-	log_info(loggerConPantalla, "Grado de multiprogramacion suficiente\n");
 
 	return 0;
 }
@@ -264,13 +257,9 @@ void terminarProceso(int socketCPU){
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
 	pthread_mutex_lock(&mutexColaEjecucion);
-	list_remove_by_condition(colaEjecucion, (void*)verificarPid);//Remueve pcb de la colaEjecucion
+	list_remove_by_condition(colaEjecucion, (void*)verificarPid);
 	pthread_mutex_unlock(&mutexColaEjecucion);
 
-
-	pthread_mutex_lock(&mutexGradoMultiProgramacion);
-	gradoMultiProgramacion--;
-	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 
 	pthread_mutex_lock(&mutexListaCPU);
 	list_remove_by_condition(listaCPU,(void*)verificarCPU);
@@ -283,18 +272,21 @@ void terminarProceso(int socketCPU){
 
 	consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPidConsola);
 
-	char* mensaje= "El proceso ha finalizado correctamente";
+	char* mensaje= "El proceso ha finalizado correctamente"; /*TODO:Meterle el PID a este string*/
 	int size= strlen(mensaje);
 	informarConsola(consolaAInformar->socketHiloPrograma,mensaje,size);
+
+	pthread_mutex_lock(&mutexGradoMultiProgramacion);
+	gradoMultiProgramacion--;
+	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+	sem_post(&sem_admitirNuevoProceso);
 
 	/* TODO:Liberar recursos */
 	//free(consolaAInformar); //Ojo aca, si metes este free aca nomas, vas a ver que borras la consolaAInformar antes de que la Consola reciba el mensaje. Hay que hacer algun tipo de espera aca
 }
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
-	char comI = 'I';
-	send(socketHiloPrograma,&comI,sizeof(char),0);
 	send(socketHiloPrograma,&size,sizeof(int),0);
-	send(socketHiloPrograma,&mensaje,size,0);
+	send(socketHiloPrograma,mensaje,size,0);
 }
 #endif /* PLANIFICACION_H_ */
