@@ -713,11 +713,15 @@ void liberar (t_puntero puntero){
 }
 
 
-t_descriptor_archivo abrir_Archivo(t_direccion_archivo direccion, t_banderas flags){
+t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas flags){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
 	t_descriptor_archivo descriptorArchivoAbierto;
 	char comandoCapaFS = 'F';
+	char comandoAbrirArchivo = 'A';
 	int resultadoEjecucion ;
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoAbrirArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
 	send(socketKernel,&direccion,sizeof(int),0);
 	//enviar los flags al kernel
 	recv(socketKernel,&descriptorArchivoAbierto,sizeof(int),0);
@@ -727,6 +731,22 @@ t_descriptor_archivo abrir_Archivo(t_direccion_archivo direccion, t_banderas fla
 		return descriptorArchivoAbierto;
 	}
 	else return 0;
+}
+void borrar_archivo (t_descriptor_archivo descriptor_archivo){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoCapaFS = 'F';
+	char comandoBorrarArchivo = 'B';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoBorrarArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&descriptor_archivo,sizeof(int),0);
+	//enviar los flags al kernel
+	recv(socketKernel,&descriptor_archivo,sizeof(int),0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+		log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s");
+	else log_info(loggerConPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d");
 }
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
 	t_pcb* pcb_actual = list_get (listaPcb,0);
