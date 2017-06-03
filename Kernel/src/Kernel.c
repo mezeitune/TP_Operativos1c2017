@@ -222,11 +222,12 @@ void interruptHandler(int socketAceptado,char orden){
 		log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
 		break;
 	case  'R':
-		size
-		recv(socketAceptado,&size,sizeof(int),0);
+
+		//recv(socketAceptado,&size,sizeof(int),0);
 		//recv(socketAceptado,&espacioAReservar,size,0);
 		//reservar heap de ese espacio
 		//devolverle a la CPU el puntero que apunta a donde esta reservado ese espacio en heap
+		break;
 	default:
 			break;
 	}
