@@ -165,6 +165,7 @@ void interruptHandler(int socketAceptado,char orden){
 	int pid;
 	int socketHiloPrograma;
 	int i=0;
+	int resultadoEjecucion;
 	char* mensaje; /*TODO: Ver el tema de pedir memoria y liberar esta variable siempre que se pueda*/
 
 	switch(orden){
@@ -227,7 +228,17 @@ void interruptHandler(int socketAceptado,char orden){
 		//recv(socketAceptado,&espacioAReservar,size,0);
 		//reservar heap de ese espacio
 		//devolverle a la CPU el puntero que apunta a donde esta reservado ese espacio en heap
+		//creo que se tiene que guardar ese int del espacio para cuando se pida liberar
 		break;
+	case  'L':
+
+			//recv(socketAceptado,&size,sizeof(int),0);
+			//recv(socketAceptado,&punteroQueApuntaDondeLiberar,size,0);
+			//liberar heap tomando como inicio ese puntero y el espacio dado anteriormente por "reservar"
+			//devolverle a la CPU el resultado de la ejecucion (1 piola, 0 fuck)
+			break;
+
+
 	default:
 			break;
 	}

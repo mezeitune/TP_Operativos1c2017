@@ -592,6 +592,7 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
 	free(valor_variable);
 }
+
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	char** string_cortado = string_split(variable, "\n");
 	char* variable_string = string_new();
@@ -685,9 +686,23 @@ t_puntero reservar (t_valor_variable espacio){
 	send(socketKernel,&espacio,tamanio,0);
 	int* puntero;
 	//recibir el puntero del kernel donde almaceno ese espacio en memoria
+	//guardar ese puntero en una lista o estructura para hacer la comprobacion en liberar
 	return puntero;
 }
-
+void liberar (t_puntero puntero){
+	//list_find(listaPunterosHeap,puntero);
+	//if(list_size(listaPunterosHeap)){
+	char comandoLiberarMemoria = 'L';
+	int resultadoEjecucion;
+	int tamanio = sizeof(t_puntero);
+	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,&puntero,tamanio,0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
+	//}
+}
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
 	t_pcb* pcb_actual = list_get (listaPcb,0);
 	char *valor_variable = string_itoa(valor);
