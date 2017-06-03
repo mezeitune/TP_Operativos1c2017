@@ -31,6 +31,7 @@
 #include "planificacion.h"
 #include "configuraciones.h"
 #include "conexionMemoria.h"
+#include "capaFS.h"
 
 
 
@@ -47,7 +48,7 @@ t_list* listaTablasArchivosPorProceso;
 
 
 
-void validarArchivoFS();
+
 
 
 
@@ -73,11 +74,6 @@ fd_set master;
 int flagFinalizar;
 //---------Conexiones-------------//
 
-//------------Sockets unicos globales--------------------//
-void inicializarSockets();
-int socketFyleSys;
-int socketServidor; // Para CPUs y Consolas
-//------------Sockets unicos globales-------------------//
 
 
 void inicializarListas();
@@ -297,11 +293,7 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 }
 
 
-void inicializarSockets(){
-		socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
-		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
-		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
-}
+
 
 void inicializarListas(){
 	colaNuevos= list_create();
@@ -315,65 +307,7 @@ void inicializarListas(){
 }
 
 
-void validarArchivoFS(){
-	char orden = 'V';
-	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
-	int validado;
-	send(socketFyleSys,&orden,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion fue %d \n",validado);
-}
 
-void crearArchivoFS(){
-	char orden = 'V';
-	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
-	int validado;
-	send(socketFyleSys,&orden,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion fue %d \n",validado);
-}
-
-void borrarArchivoFS(){
-	char orden = 'V';
-	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
-	int validado;
-	send(socketFyleSys,&orden,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion fue %d \n",validado);
-}
-
-void obtenerArchivoFS(){
-	char orden = 'V';
-	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
-	int validado;
-	send(socketFyleSys,&orden,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion fue %d \n",validado);
-}
-
-void guardarArchivoFS(){
-	char orden = 'V';
-	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
-	int validado;
-	send(socketFyleSys,&orden,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion fue %d \n",validado);
-}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);

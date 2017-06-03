@@ -7,6 +7,7 @@
 #include "sincronizacion.h"
 #include "planificacion.h"
 #include "configuraciones.h"
+#include "capaFS.h"
 
 void interfazHandler();
 void imprimirInterfazUsuario();
