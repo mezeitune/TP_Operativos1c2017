@@ -154,9 +154,12 @@ void* planificarCortoPlazo(){
 	t_pcb* pcbListo;
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
+	char comandoEnviarPcb='S';
+
 	while(1){
-		sem_wait(&sem_colaReady);
+
 		sem_wait(&sem_CPU);
+		sem_wait(&sem_colaReady);
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
@@ -165,6 +168,7 @@ void* planificarCortoPlazo(){
 
 		pthread_mutex_lock(&mutexListaCPU);
 		cpuEnEjecucion = list_remove(listaCPU,0);
+		list_add_in_index(listaCPU, list_size(listaCPU), cpuEnEjecucion);
 		pthread_mutex_unlock(&mutexListaCPU);
 
 		cpuEnEjecucion->pid = pcbListo->pid;
@@ -172,6 +176,8 @@ void* planificarCortoPlazo(){
 		pthread_mutex_lock(&mutexColaEjecucion);
 		list_add(colaEjecucion, pcbListo);
 		pthread_mutex_unlock(&mutexColaEjecucion);
+
+		send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
 		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 	}
 }
@@ -238,12 +244,12 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 
 void terminarProceso(int socketCPU){
-	t_pcb* pcbProcesoTerminado;
+	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
 	t_consola* consolaAInformar;
 
 	_Bool verificarPidConsola(t_consola* consola){
 						return (consola->pid == pcbProcesoTerminado->pid);
-					}
+	}
 
 	_Bool verificarPid(t_pcb* pcb){
 		return (pcb->pid == pcbProcesoTerminado->pid);
@@ -261,11 +267,6 @@ void terminarProceso(int socketCPU){
 	pthread_mutex_unlock(&mutexColaEjecucion);
 
 
-	pthread_mutex_lock(&mutexListaCPU);
-	list_remove_by_condition(listaCPU,(void*)verificarCPU);
-	pthread_mutex_unlock(&mutexListaCPU);
-
-
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados, pcbProcesoTerminado);
 	pthread_mutex_unlock(&mutexColaTerminados);
@@ -280,6 +281,12 @@ void terminarProceso(int socketCPU){
 	gradoMultiProgramacion--;
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 	sem_post(&sem_admitirNuevoProceso);
+
+	printf("\n\nLista CPU: %d\n\n", list_size(listaCPU));
+	printf("\n\nLista Ready: %d\n\n", list_size(colaListos));
+	sem_post(&sem_CPU);
+
+	free(pcbProcesoTerminado);
 
 	/* TODO:Liberar recursos */
 	//free(consolaAInformar); //Ojo aca, si metes este free aca nomas, vas a ver que borras la consolaAInformar antes de que la Consola reciba el mensaje. Hay que hacer algun tipo de espera aca

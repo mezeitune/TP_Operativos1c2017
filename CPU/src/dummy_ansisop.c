@@ -25,3 +25,4 @@ t_valor_variable dummy_dereferenciar(t_puntero puntero) {
 void dummy_asignar(t_puntero puntero, t_valor_variable variable) {
 	printf("Asignando en %d el valor %d\n", puntero, variable);
 }
+

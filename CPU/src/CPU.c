@@ -16,9 +16,10 @@ int main(void) {
 	signal(SIGUSR1, signalHandler);
 
 
+	char comandoGetNuevoProceso = 'N';
+	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
+
 	esperarPCB();
-
-
 
 	return 0;
 }
@@ -35,8 +36,6 @@ void esperarPCB(){
 
 }
 void recibirPCB(){
-		char comandoGetNuevoProceso = 'N';
-		send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
 		char comandoRecibirPCB;
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
 		log_info(loggerConPantalla, "Se ha avisado que se quiere enviar un PCB...\n");

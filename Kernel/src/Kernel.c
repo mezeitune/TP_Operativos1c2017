@@ -87,7 +87,7 @@ int main(void) {
 
 void connectionHandler(int socketAceptado, char orden) {
 
-	char comandoEnviarPcb='S';
+
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
@@ -96,17 +96,15 @@ void connectionHandler(int socketAceptado, char orden) {
 			return (cpu->socket == socketAceptado);
 		}
 
+					t_cpu* cpu = malloc(sizeof(t_cpu));
 	switch (orden) {
 		case 'I':
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
-					pthread_mutex_lock(&mutexListaCPU);
-					t_cpu* cpu = malloc(sizeof(t_cpu));
+
 					cpu->socket = socketAceptado;
 					list_add(listaCPU,cpu);
-					pthread_mutex_unlock(&mutexListaCPU);
-					send(socketAceptado,&comandoEnviarPcb,sizeof(char),0);
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
