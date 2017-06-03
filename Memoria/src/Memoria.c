@@ -363,7 +363,7 @@ int main_solicitarBytesPagina(int sock)
 	printf("Offset:%d\n",offset);
 	printf("Size:%d\n",size);
 
-	bufferAEnviar=malloc((size)*sizeof(char));
+	bufferAEnviar=malloc((size+1)*sizeof(char));
 
 	int posicionEnCache = buscarEntradaDeProcesoEnCache(pid,pagina);
 	if(posicionEnCache != -1)
