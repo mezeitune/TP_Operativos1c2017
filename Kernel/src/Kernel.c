@@ -236,9 +236,10 @@ void interruptHandler(int socketAceptado,char orden){
 			//recv(socketAceptado,&punteroQueApuntaDondeLiberar,size,0);
 			//liberar heap tomando como inicio ese puntero y el espacio dado anteriormente por "reservar"
 			//devolverle a la CPU el resultado de la ejecucion (1 piola, 0 fuck)
-			break;
+		break;
+	case 'O' :
 
-
+		break;
 	default:
 			break;
 	}

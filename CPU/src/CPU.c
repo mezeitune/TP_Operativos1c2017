@@ -679,7 +679,9 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 }
 
 t_puntero reservar (t_valor_variable espacio){
+	char comandoInterruptHandler = 'X';
 	char comandoReservarMemoria = 'R';
+	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoReservarMemoria,sizeof(char),0);
 	int tamanio = sizeof(t_valor_variable);
 	send(socketKernel,&tamanio,sizeof(int),0);
@@ -692,16 +694,39 @@ t_puntero reservar (t_valor_variable espacio){
 void liberar (t_puntero puntero){
 	//list_find(listaPunterosHeap,puntero);
 	//if(list_size(listaPunterosHeap)){
+	char comandoInterruptHandler = 'X';
 	char comandoLiberarMemoria = 'L';
 	int resultadoEjecucion;
 	int tamanio = sizeof(t_puntero);
+	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,&puntero,tamanio,0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
 		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
+	else
+		log_info(loggerConPantalla,"No se ha podido liberar el heap apuntada por",puntero);
 	//}
+	//else
+	log_info(loggerConPantalla,"Primero se debe reservar para liberar el heap");
+}
+
+
+t_descriptor_archivo abrir_Archivo(t_direccion_archivo direccion, t_banderas flags){
+	t_descriptor_archivo descriptorArchivoAbierto;
+	char comandoCapaFS = 'F';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&direccion,sizeof(int),0);
+	//enviar los flags al kernel
+	recv(socketKernel,&descriptorArchivoAbierto,sizeof(int),0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1){
+		log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s");
+		return descriptorArchivoAbierto;
+	}
+	else return 0;
 }
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
 	t_pcb* pcb_actual = list_get (listaPcb,0);

@@ -92,6 +92,7 @@ void wait(t_nombre_semaforo identificador_semaforo);
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio);
 void signal_Ansisop(t_nombre_semaforo identificador_semaforo);
 t_puntero reservar (t_valor_variable espacio);
+void liberar (t_puntero puntero);
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
@@ -113,8 +114,8 @@ AnSISOP_kernel kernel_functions = {
 
 		.AnSISOP_signal = signal_Ansisop,
 		.AnSISOP_reservar = reservar,
-		/*.AnSISOP_liberar
-		.AnSISOP_abrir
+		.AnSISOP_liberar = liberar,
+		/*.AnSISOP_abrir
 		.AnSISOP_borrar
 		.AnSISOP_cerrar
 		.AnSISOP_moverCursor
