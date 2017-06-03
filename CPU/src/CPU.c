@@ -677,6 +677,17 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	free(string_cortado);
 }
 
+t_puntero reservar (t_valor_variable espacio){
+	char comandoReservarMemoria = 'R';
+	send(socketKernel,&comandoReservarMemoria,sizeof(char),0);
+	int tamanio = sizeof(t_valor_variable);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,&espacio,tamanio,0);
+	int* puntero;
+	//recibir el puntero del kernel donde almaceno ese espacio en memoria
+	return puntero;
+}
+
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
 	t_pcb* pcb_actual = list_get (listaPcb,0);
 	char *valor_variable = string_itoa(valor);
