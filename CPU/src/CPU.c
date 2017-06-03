@@ -61,8 +61,8 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 orden = '\0';
 return;
 }
-int cantidadPaginasTotales(t_pcb* pcb){
-	int paginasTotales= (stackSize + pcb->cantidadPaginasCodigo);
+int cantidadPaginasTotales(){
+	int paginasTotales= (stackSize + pcb_actual->cantidadPaginasCodigo);
 	return paginasTotales;
 }
 void establecerPCB(){
@@ -75,38 +75,39 @@ void establecerPCB(){
 
 
 	printf("\n\nPCB:%d\n\n", pcb_actual->pid);
-	EjecutarProgramaMedianteAlgoritmo(pcb_actual);
+	EjecutarProgramaMedianteAlgoritmo();
 
 
 }
-void EjecutarProgramaMedianteAlgoritmo(t_pcb* pcb){
+void EjecutarProgramaMedianteAlgoritmo(){
 	int i;
 			i = 0;
 	//recv(socketKernel,&ultimaInstruccion,sizeof(int),0);
-	int cantidadInstruccionesAEjecutar=pcb->cantidadInstrucciones;
+	int cantidadInstruccionesAEjecutar=pcb_actual->cantidadInstrucciones;
 
 	while((i < cantidadInstruccionesAEjecutar)){
-		ejecutarInstruccion(pcb);
+		ejecutarInstruccion(pcb_actual);
 		i++;
 	}
 	//if(i==(cantidadInstruccionesAEjecutar-1))
 	//expropiarPorQuantum(pcb);
 }
-void ejecutarInstruccion(t_pcb* pcb){
+void ejecutarInstruccion(){
 
-	char* instruccion = obtener_instruccion(pcb);
+	char* instruccion = obtener_instruccion();
 	printf("Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 	free(instruccion);
-	pcb->programCounter = pcb->programCounter + 1;
+	pcb_actual->programCounter = pcb_actual->programCounter + 1;
+
 }
 
 
-int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size){
+int conseguirDatosMemoria (char** instruccion, int paginaSolicitada,int offset,int size){
 	int resultadoEjecucion;
 	char comandoSolicitar = 'S';//comando que le solicito a la memoria para que ande el main_solicitarBytesPagina
 	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
-	send(socketMemoria,&pcb->pid,sizeof(int),0);
+	send(socketMemoria,&pcb_actual->pid,sizeof(int),0);
 	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
 	send(socketMemoria,&offset,sizeof(int),0);
 	send(socketMemoria,&size,sizeof(int),0);
@@ -117,11 +118,11 @@ int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,
 	return resultadoEjecucion;
 }
 
-int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar,int offset){
+int almacenarDatosEnMemoria(char* buffer, int size,int paginaAGuardar,int offset){
 		int resultadoEjecucion=1;
 		int comandoAlmacenar = 'C';
 		send(socketMemoria,&comandoAlmacenar,sizeof(char),0);
-		send(socketMemoria,&pcb->pid,sizeof(int),0);
+		send(socketMemoria,&pcb_actual->pid,sizeof(int),0);
 		send(socketMemoria,&paginaAGuardar,sizeof(int),0);
 		send(socketMemoria,&offset,sizeof(int),0);
 		send(socketMemoria,&size,sizeof(int),0);
@@ -132,10 +133,10 @@ int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar
 
 }
 
-char* obtener_instruccion(t_pcb * pcb){
-	int program_counter = pcb->programCounter;
-	int byte_inicio_instruccion = pcb->indiceCodigo[program_counter][0];
-	int bytes_tamanio_instruccion = pcb->indiceCodigo[program_counter][1];
+char* obtener_instruccion(){
+	int program_counter = pcb_actual->programCounter;
+	int byte_inicio_instruccion = pcb_actual->indiceCodigo[program_counter][0];
+	int bytes_tamanio_instruccion = pcb_actual->indiceCodigo[program_counter][1];
 	int num_pagina = byte_inicio_instruccion / config_paginaSize;
 	int offset = byte_inicio_instruccion - (num_pagina * config_paginaSize);//no es 0 porque evita el begin
 	char* mensajeRecibido;
@@ -148,7 +149,7 @@ char* obtener_instruccion(t_pcb * pcb){
 		printf("El tamanio de la instruccion es mayor al tamanio de pagina\n");
 	}
 	if ((offset + bytes_tamanio_instruccion) < config_paginaSize){
-		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_tamanio_instruccion)<0)
+		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, bytes_tamanio_instruccion)<0)
 			{
 			printf("No se pudo solicitar el contenido\n");
 			}
@@ -157,7 +158,7 @@ char* obtener_instruccion(t_pcb * pcb){
 				}
 	} else {
 		bytes_a_leer_primera_pagina = config_paginaSize - offset;
-		if ( conseguirDatosMemoria(&mensajeRecibido,pcb, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
+		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
 					{printf("No se pudo solicitar el contenido\n");}
 		else{
 				instruccion=mensajeRecibido;
@@ -165,7 +166,7 @@ char* obtener_instruccion(t_pcb * pcb){
 		//free(mensajeRecibido);
 		log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
 		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
-			if ( conseguirDatosMemoria(&mensajeRecibido2,pcb, (num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
+			if ( conseguirDatosMemoria(&mensajeRecibido2,(num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
 					{printf("No se pudo solicitar el contenido\n");}
 						else{
 						continuacion_instruccion=mensajeRecibido2;
@@ -239,15 +240,15 @@ void inicializarLog(char *rutaDeLog){
 	loggerSinPantalla = log_create(rutaDeLog,"CPU", false, LOG_LEVEL_INFO);
 	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
-void expropiarPorQuantum(t_pcb * pcb){
+void expropiarPorQuantum(){
 	//char comandoTerminoElQuantum= 'R';
 	//send(socketKernel,&comandoTerminoElQuantum , sizeof(char),0);
-	serializarPcbYEnviar(pcb,socketKernel);
-	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por fin de quantum", pcb->pid);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por fin de quantum", pcb_actual->pid);
 	//list_destroy_and_destroy_elements(listaPcb, free);
 	cpuOcupada=1;
 }
-void stackOverflow(t_pcb* pcb_actual){
+void stackOverflow(){
 		log_warning(loggerConPantalla, "Elproceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
 		finalizar();
 
@@ -474,7 +475,7 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 	char* mensajeRecibido;
 
 
-		if ( conseguirDatosMemoria(&mensajeRecibido,pcb_actual, num_pagina,offset, 4)<0){
+		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, 4)<0){
 				printf("No se pudo solicitar el contenido\n");
 		}else{
 				valor_variable_char=mensajeRecibido;
@@ -498,7 +499,7 @@ void retornar(t_valor_variable retorno){
 	int num_pagina = posicion_memoria->pagina;
 	int offset = posicion_memoria->offset;
 	char *valor_variable = string_itoa(retorno);
-	almacenarDatosEnMemoria(pcb_actual,valor_variable,4,num_pagina, offset);
+	almacenarDatosEnMemoria(valor_variable,4,num_pagina, offset);
 	free(valor_variable);
 	//pcb_actual->programCounter = nodo->retPos;// Puede ser la dir_retorno + 1
 	//Elimino el nodo de la lista
@@ -587,7 +588,7 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	int num_pagina = puntero / config_paginaSize;
 	int offset = puntero - (num_pagina * config_paginaSize);
 	char *valor_variable = string_itoa(variable);
-	almacenarDatosEnMemoria(pcb_actual,valor_variable,4,num_pagina, offset);
+	almacenarDatosEnMemoria(valor_variable,4,num_pagina, offset);
 	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
 	free(valor_variable);
 }
@@ -597,12 +598,12 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	char* variable_string = string_new();
 	string_append(&variable_string, "!");
 	string_append(&variable_string, string_cortado[0]);
-	void* variable_a_enviar;
-	int tamanio;
+	//void* variable_a_enviar;
+	//int tamanio;
 	//send(socketKernel,variable_a_enviar,tamanio,0);
 
 	free(variable_string);
-	free(variable_a_enviar);
+	//free(variable_a_enviar);
 
 	int* valor_variable_recibida = malloc(sizeof(int));
 	//valor_variable_recibida = (int*) recv(socketKernel,,,);
@@ -622,11 +623,11 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 	char* variable_string = string_new();
 	string_append(&variable_string, "!");
 	string_append(&variable_string, string_cortado[0]);
-	void* variable_a_enviar;
+	//void* variable_a_enviar;
 	//int tamanio = calcularTamanio(variable_string, valor, &variable_serializada);
 	//send(socketKernel,variable,tamanio,0);
 	free(variable_string);
-	free(variable_a_enviar);
+	//free(variable_a_enviar);
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
@@ -664,10 +665,10 @@ void wait(t_nombre_semaforo identificador_semaforo){
 void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	log_info(loggerConPantalla, "Semaforo a subir: %s", string_cortado[0]);
-	void* signal;
-	int tamanio;
+	//void* signal;
+	//int tamanio;
 	//send(socketKernel,signal,tamanio,0);
-	free(signal);
+	//free(signal);
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
@@ -719,7 +720,8 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	int resultadoEjecucion ;
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoAbrirArchivo,sizeof(char),0);
-	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	int pid= pcb_actual->pid;
+	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&direccion,sizeof(int),0);
 	//enviar los flags al kernel
 	recv(socketKernel,&descriptorArchivoAbierto,sizeof(int),0);
@@ -740,7 +742,8 @@ void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 	int resultadoEjecucion ;
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoBorrarArchivo,sizeof(char),0);
-	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	int pid= pcb_actual->pid;
+	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
@@ -755,7 +758,8 @@ void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
 	int resultadoEjecucion ;
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoCerrarArchivo,sizeof(char),0);
-	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	int pid= pcb_actual->pid;
+	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
@@ -772,7 +776,8 @@ void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_varia
 	int resultadoEjecucion ;
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoMoverCursorArchivo,sizeof(char),0);
-	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	int pid= pcb_actual->pid;
+	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	send(socketKernel,&posicion,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
@@ -787,7 +792,8 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	int resultadoEjecucion ;
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoLeerArchivo,sizeof(char),0);
-	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	int pid= pcb_actual->pid;
+	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	send(socketKernel,&informacion,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
 	send(socketKernel,&tamanio,sizeof(int),0); //tamanio de la instruccion en bytes que quiero leer
@@ -816,7 +822,8 @@ void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t
 			int resultadoEjecucion ;
 			send(socketKernel,&comandoCapaFS,sizeof(char),0);
 			send(socketKernel,&comandoEscribirArchivo,sizeof(char),0);
-			send(socketKernel,pcb_actual->pid,sizeof(int),0);
+			int pid= pcb_actual->pid;
+			send(socketKernel,&pid,sizeof(int),0);
 			send(socketKernel,&descriptor_archivo,sizeof(int),0);
 			//send(socketKernel,&valor,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			send(socketKernel,&tamanio,sizeof(int),0);

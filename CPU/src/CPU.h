@@ -30,28 +30,26 @@
 #include "PCB.h"
 //-----------------------------------------------------------------------------------------------------------------
 char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
-char* obtener_instruccion(t_pcb * pcb);
-int almacenarDatosEnMemoria(t_pcb* pcb,char* buffer, int size,int paginaAGuardar,int offset);
-int conseguirDatosMemoria (char** instruccion, t_pcb* pcb, int paginaSolicitada,int offset,int size);
+char* obtener_instruccion();
+int almacenarDatosEnMemoria(char* buffer, int size,int paginaAGuardar,int offset);
+int conseguirDatosMemoria (char** instruccion, int paginaSolicitada,int offset,int size);
 
 //-----------------------------------------------------------------------------------------------------------------
 void establecerPCB();
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
-void connectionHandler(t_pcb pcb);
-void cargarPcbActual(t_pcb* pidEstructura, int pid, int cantidadPaginas, int offset);
+void connectionHandler();
 void recibirTamanioPagina();
 void recibirPCB();
 void signalHandler(int signum);
-void imprimirPCB(t_pcb * pcb);
-int cantidadPaginasTotales(t_pcb * pcb);
+void imprimirPCB();
+int cantidadPaginasTotales();
 void esperarPCB();
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 void connectionHandlerKernel(int socketAceptado, char orden);
-void ejecutarInstruccion(t_pcb* pcb);
-void interfazHandler(t_pcb * pcb);
-void EjecutarProgramaMedianteAlgoritmo(t_pcb* pcb);
-void expropiarPorQuantum(t_pcb * pcb);
+void ejecutarInstruccion();
+void EjecutarProgramaMedianteAlgoritmo();
+void expropiarPorQuantum();
 void CerrarPorSignal();
 void stackOverflow();
 //-----------------------------------------------------------------------------------------------------------------
