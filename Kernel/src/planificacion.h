@@ -81,7 +81,7 @@ void* planificarLargoPlazo(int socket){
 	t_pcb* proceso;
 	while(1){
 		sem_wait(&sem_admitirNuevoProceso);
-			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0){
+			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0) {
 			log_info(loggerConPantalla,"Inicializando nuevo proceso desde cola de Nuevos");
 			proceso = list_get(colaNuevos,0);
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
@@ -261,6 +261,7 @@ void terminarProceso(int socketCPU){
 
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
+
 
 	pthread_mutex_lock(&mutexColaEjecucion);
 	list_remove_by_condition(colaEjecucion, (void*)verificarPid);
