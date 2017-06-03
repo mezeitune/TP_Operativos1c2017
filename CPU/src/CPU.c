@@ -782,17 +782,51 @@ void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_varia
 	log_info(loggerConPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d");
 	else log_info(loggerConPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d");
 }
+void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoCapaFS = 'F';
+	char comandoLeerArchivo = 'O';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoLeerArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&descriptor_archivo,sizeof(int),0);
+	send(socketKernel,&informacion,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
+	send(socketKernel,&tamanio,sizeof(int),0); //tamanio de la instruccion en bytes que quiero leer
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+	log_info(loggerConPantalla,"La informacion leida es %s");
+	else log_info(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
+}
+
 
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
-	t_pcb* pcb_actual = list_get (listaPcb,0);
-	char *valor_variable = string_itoa(valor);
-	char comandoImprimir = 'X';
-	char comandoImprimirPorConsola = 'P';
-	send(socketKernel,&comandoImprimir,sizeof(char),0);
-	send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
-	send(socketKernel,&tamanio,sizeof(t_valor_variable),0);
-	send(socketKernel,&valor_variable,tamanio,0);
-	send(socketKernel,&pcb_actual->pid,sizeof(int),0);
+	if(descriptor_archivo==DESCRIPTOR_SALIDA){
+		t_pcb* pcb_actual = list_get (listaPcb,0);
+		char *valor_variable = string_itoa(valor);
+		char comandoImprimir = 'X';
+		char comandoImprimirPorConsola = 'P';
+		send(socketKernel,&comandoImprimir,sizeof(char),0);
+		send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
+		send(socketKernel,&tamanio,sizeof(t_valor_variable),0);
+		send(socketKernel,&valor_variable,tamanio,0);
+		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
+	}else {
+		t_pcb* pcb_actual = list_get (listaPcb,0);
+			char comandoCapaFS = 'F';
+			char comandoEscribirArchivo = 'E';
+			int resultadoEjecucion ;
+			send(socketKernel,&comandoCapaFS,sizeof(char),0);
+			send(socketKernel,&comandoEscribirArchivo,sizeof(char),0);
+			send(socketKernel,pcb_actual->pid,sizeof(int),0);
+			send(socketKernel,&descriptor_archivo,sizeof(int),0);
+			//send(socketKernel,&valor,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
+			send(socketKernel,&tamanio,sizeof(int),0);
+			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+			if(resultadoEjecucion==1)
+			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d");
+			else log_info(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ");
+	}
 }
 
 

@@ -89,12 +89,15 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable);
 
 //---------Primitivas Kernel----------//
 void wait(t_nombre_semaforo identificador_semaforo);
-void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio);
 void signal_Ansisop(t_nombre_semaforo identificador_semaforo);
 t_puntero reservar (t_valor_variable espacio);
 void liberar (t_puntero puntero);
 t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas flags);
 void borrar_archivo (t_descriptor_archivo descriptor_archivo);
+void cerrar_archivo(t_descriptor_archivo descriptor_archivo);
+void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_variable posicion);
+void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio);
+void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio);
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
@@ -113,17 +116,14 @@ AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
 
 AnSISOP_kernel kernel_functions = {
 		.AnSISOP_wait= wait,
-
 		.AnSISOP_signal = signal_Ansisop,
 		.AnSISOP_reservar = reservar,
 		.AnSISOP_liberar = liberar,
 		.AnSISOP_abrir = abrir_archivo,
 		.AnSISOP_borrar = borrar_archivo,
-		/*.AnSISOP_cerrar
-		.AnSISOP_moverCursor
-		*/.AnSISOP_escribir = escribir
-		//.AnSISOP_leer
-
-
+		.AnSISOP_cerrar = cerrar_archivo,
+		.AnSISOP_moverCursor = moverCursor_archivo,
+		.AnSISOP_escribir = escribir,
+		.AnSISOP_leer = leer_archivo
 };
 
