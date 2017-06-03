@@ -7,6 +7,7 @@
 #include "sincronizacion.h"
 #include "planificacion.h"
 #include "configuraciones.h"
+#include "capaFS.h"
 
 void interfazHandler();
 void imprimirInterfazUsuario();
@@ -16,6 +17,7 @@ void mostrarProcesos(char orden);
 void imprimirListadoDeProcesos(t_list* listaPid);
 void filtrarPorPidYMostrar(t_list* cola);
 void interfazHandlerParaFileSystem(char orden);
+
 
 /*-------------LOG-----------------*/
 void inicializarLog(char *rutaDeLog);
@@ -85,21 +87,25 @@ void interfazHandlerParaFileSystem(char orden){
 
 
 		switch(orden){
-				case 'V'://validar archivo   TERMINADO (FALTA QUE RECIBA EL ARCHIVO QUE SOLICITE DESDE KERNEL)
-
-					printf("VVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
+				case 'V'://validar archivo
+					printf("Validando que el archivo indicado exista \n");
+					validarArchivoFS();
 					break;
 				case 'C'://crear archivo
-					printf("Enviando instrucciones a File System");
+					printf("Creando el archivo indacdo \n");
+					crearArchivoFS();
 					break;
 				case 'B'://borrar archivo
-					printf("Enviando instrucciones a File System");
+					printf("Borrando el archivo indacado \n");
+					borrarArchivoFS();
 					break;
 				case 'O'://obtener datos
-					printf("Enviando instrucciones a File System");
+					printf("Obteniendo datos del archivo indicado \n");
+					obtenerArchivoFS();
 					break;
 				case 'G'://guardar archivo
-					printf("Enviando instrucciones a File System");
+					printf("Guardando datos del archivo indicado \n");
+					guardarArchivoFS();
 					break;
 			default:
 				if(orden == '\0') break;

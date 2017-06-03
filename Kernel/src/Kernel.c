@@ -31,6 +31,7 @@
 #include "planificacion.h"
 #include "configuraciones.h"
 #include "conexionMemoria.h"
+#include "capaFS.h"
 
 
 
@@ -38,12 +39,11 @@
 
 
 
-char** tablaGlobalArchivos;
-typedef struct FS{//Para poder guardar en la lista
-	char** tablaArchivoPorProceso;
-}t_tablaArchivoPorProceso;
-t_list* listaTablasArchivosPorProceso;
-void handshakeFS();
+
+
+
+
+
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
@@ -67,11 +67,6 @@ fd_set master;
 int flagFinalizar;
 //---------Conexiones-------------//
 
-//------------Sockets unicos globales--------------------//
-void inicializarSockets();
-int socketFyleSys;
-int socketServidor; // Para CPUs y Consolas
-//------------Sockets unicos globales-------------------//
 
 
 void inicializarListas();
@@ -87,7 +82,6 @@ int main(void) {
 	inicializarLog("/home/utnso/Log/logKernel.txt");
 	inicializarListas();
 	handshakeMemoria();
-	handshakeFS();
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 
@@ -96,18 +90,6 @@ int main(void) {
 	return 0;
 }
 
-
-void handshakeFS(){
-	char comandoTamanioPagina = 'V';
-	char* archivoAVerificar="alumnoosdad.bin";
-	int tamano=strlen(archivoAVerificar);
-	int validado;
-	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-
-}
 
 
 void connectionHandler(int socketAceptado, char orden) {
@@ -138,6 +120,9 @@ void connectionHandler(int socketAceptado, char orden) {
 		case 'T':
 					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
 					terminarProceso(socketAceptado);
+					break;
+		case 'F'://Para el FS
+					interfazHandlerParaFileSystem('V');//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
 		case 'P':
 				send(socketAceptado,&config_paginaSize,sizeof(int),0);
@@ -313,11 +298,7 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 }
 
 
-void inicializarSockets(){
-		socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
-		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
-		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
-}
+
 
 void inicializarListas(){
 	colaNuevos= list_create();
@@ -329,6 +310,8 @@ void inicializarListas(){
 	listaTablasArchivosPorProceso=list_create();
 	colaEjecucion = list_create();
 }
+
+
 
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {

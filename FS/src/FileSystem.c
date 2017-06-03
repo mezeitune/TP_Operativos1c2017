@@ -93,7 +93,7 @@ void connection_handlerR(int socket_cliente)
 		case 'V'://validar archivo   TERMINADO (FALTA QUE RECIBA EL ARCHIVO QUE SOLICITE DESDE KERNEL)
 
 		    recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-		    char* nombreArchivo = malloc(tamanoArchivo);
+		    void* nombreArchivo = malloc(tamanoArchivo);
 		    recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
 
 		    printf("Recibi el nombre del archivo\n ");
