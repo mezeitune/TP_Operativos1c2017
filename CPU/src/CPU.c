@@ -25,7 +25,7 @@ int main(void) {
 }
 void esperarPCB(){
 
-				listaPcb = list_create();
+
 				while(cpuOcupada==1){
 
 					log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
@@ -67,15 +67,15 @@ int cantidadPaginasTotales(t_pcb* pcb){
 }
 void establecerPCB(){
 
-	t_pcb *pcb = malloc(sizeof(t_pcb));
-	pcb = recibirYDeserializarPcb(socketKernel);
+	pcb_actual= malloc(sizeof(t_pcb));
+	pcb_actual = recibirYDeserializarPcb(socketKernel);
 
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
 
 
-	list_add(listaPcb, pcb);
-	printf("\n\nPCB:%d\n\n", pcb->pid);
-	EjecutarProgramaMedianteAlgoritmo(pcb);
+
+	printf("\n\nPCB:%d\n\n", pcb_actual->pid);
+	EjecutarProgramaMedianteAlgoritmo(pcb_actual);
 
 
 }
@@ -258,8 +258,8 @@ void stackOverflow(t_pcb* pcb_actual){
 
 
 t_puntero definirVariable(t_nombre_variable variable) {
-	//t_pcb* pcb_actual = malloc(sizeof(t_pcb));
-	t_pcb*pcb_actual = list_get (listaPcb,0);
+
+
 	int nodos_stack = list_size(pcb_actual->indiceStack);
 	int posicion_stack;
 	int cantidad_variables;
@@ -408,7 +408,7 @@ return posicion;
 
 t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	log_info(loggerConPantalla, "Obteniendo la posicion de la variable: %c", variable);
-	 t_pcb* pcb_actual = list_get (listaPcb,0);
+
 	int nodos_stack = list_size(pcb_actual->indiceStack);//obtengo cantidad de nodos
 	int cantidad_variables;
 	int i;
@@ -446,7 +446,7 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	return posicion_serializada;
 }
 void finalizar (){
-		t_pcb * pcb_actual = list_get(listaPcb,0);
+
 		char comandoFinalizacion = 'T';
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
 
@@ -459,7 +459,7 @@ void finalizar (){
 
 
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado", pcb_actual->pid);
-		list_destroy_and_destroy_elements(listaPcb, free);
+		free(pcb_actual);
 		if(cpuFinalizada==0){
 		CerrarPorSignal();
 		}
@@ -472,8 +472,8 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 	int offset = puntero - (num_pagina * config_paginaSize);
 	char *valor_variable_char;
 	char* mensajeRecibido;
-	t_pcb* pcb_actual = malloc(sizeof(t_pcb));
-	pcb_actual = list_get (listaPcb,0);
+
+
 		if ( conseguirDatosMemoria(&mensajeRecibido,pcb_actual, num_pagina,offset, 4)<0){
 				printf("No se pudo solicitar el contenido\n");
 		}else{
@@ -489,7 +489,7 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 }
 
 void retornar(t_valor_variable retorno){
-	t_pcb *pcb_actual = list_get(listaPcb,0);
+
 	t_nodoStack *nodo;
 	int cantidad_nodos = list_size(pcb_actual->indiceStack);
 	nodo = list_remove(pcb_actual->indiceStack, (cantidad_nodos - 1));
@@ -528,7 +528,7 @@ void retornar(t_valor_variable retorno){
 
 
 void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
-t_pcb *pcb_actual = list_get(listaPcb,0);
+
 t_nodoStack *nodo = malloc(sizeof(t_nodoStack));
 nodo->args = list_create();
 nodo->vars = list_create();
@@ -563,7 +563,7 @@ void llamarSinRetorno(t_nombre_etiqueta etiqueta){
 
 void irAlLabel(t_nombre_etiqueta etiqueta){
 
-t_pcb * pcb_actual = list_get(listaPcb,0);
+
 char** string_cortado = string_split(etiqueta, "\n");
 int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
 	if(program_counter == -1){
@@ -583,7 +583,7 @@ free(string_cortado);
 
 void asignar(t_puntero puntero, t_valor_variable variable) {
 
-	t_pcb *pcb_actual = list_get (listaPcb,0);
+
 	int num_pagina = puntero / config_paginaSize;
 	int offset = puntero - (num_pagina * config_paginaSize);
 	char *valor_variable = string_itoa(variable);
@@ -641,7 +641,6 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 
 void wait(t_nombre_semaforo identificador_semaforo){
 
-	t_pcb* pcb_actual = list_get (listaPcb,0);
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
 	//void* wait_serializado;
@@ -713,7 +712,7 @@ void liberar (t_puntero puntero){
 
 
 t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas flags){
-	t_pcb* pcb_actual = list_get (listaPcb,0);
+
 	t_descriptor_archivo descriptorArchivoAbierto;
 	char comandoCapaFS = 'F';
 	char comandoAbrirArchivo = 'A';
@@ -735,7 +734,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	}
 }
 void borrar_archivo (t_descriptor_archivo descriptor_archivo){
-	t_pcb* pcb_actual = list_get (listaPcb,0);
+
 	char comandoCapaFS = 'F';
 	char comandoBorrarArchivo = 'B';
 	int resultadoEjecucion ;
@@ -750,7 +749,7 @@ void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 }
 
 void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
-	t_pcb* pcb_actual = list_get (listaPcb,0);
+
 	char comandoCapaFS = 'F';
 	char comandoCerrarArchivo = 'P';
 	int resultadoEjecucion ;
@@ -767,7 +766,7 @@ void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
 
 
 void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_variable posicion){
-	t_pcb* pcb_actual = list_get (listaPcb,0);
+
 	char comandoCapaFS = 'F';
 	char comandoMoverCursorArchivo = 'M';
 	int resultadoEjecucion ;
@@ -782,7 +781,7 @@ void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_varia
 	else log_info(loggerConPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d");
 }
 void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio){
-	t_pcb* pcb_actual = list_get (listaPcb,0);
+
 	char comandoCapaFS = 'F';
 	char comandoLeerArchivo = 'O';
 	int resultadoEjecucion ;
@@ -801,7 +800,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
 	if(descriptor_archivo==DESCRIPTOR_SALIDA){
-		t_pcb* pcb_actual = list_get (listaPcb,0);
+
 		char *valor_variable = string_itoa(valor);
 		char comandoImprimir = 'X';
 		char comandoImprimirPorConsola = 'P';
@@ -811,7 +810,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t
 		send(socketKernel,&valor_variable,tamanio,0);
 		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 	}else {
-		t_pcb* pcb_actual = list_get (listaPcb,0);
+
 			char comandoCapaFS = 'F';
 			char comandoEscribirArchivo = 'E';
 			int resultadoEjecucion ;

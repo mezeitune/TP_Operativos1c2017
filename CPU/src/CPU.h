@@ -68,7 +68,7 @@ int socketMemoria;
 int socketKernel;
 //-----------------------------------------//
 
-t_list* listaPcb;
+t_pcb *pcb_actual;
 int cpuOcupada=1;
 int cpuFinalizada=1;
 
@@ -100,7 +100,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio);
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 
-AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
+AnSISOP_funciones functions = {
 	.AnSISOP_definirVariable	=definirVariable,
 	.AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,
 	.AnSISOP_finalizar =finalizar,
