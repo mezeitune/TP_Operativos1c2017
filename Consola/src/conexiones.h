@@ -141,3 +141,5 @@ void* recibir(int socket){
 	return !checkSocket ? NULL:recibido;
 }
 
+
+

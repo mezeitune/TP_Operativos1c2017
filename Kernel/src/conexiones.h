@@ -1,9 +1,25 @@
+#ifndef _CONEXIONES_
+#define _CONEXIONES_
 int crear_socket_servidor(char *ip, char *puerto);
 int crear_socket_cliente(char * ip, char * puerto);
 char* recibir_string(int socket_aceptado);
 void enviar_string(int socket, char * mensaje);
 void* recibir(int socket);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
+
+
+//------------Sockets unicos globales--------------------//
+void inicializarSockets();
+int socketFyleSys;
+int socketMemoria;
+int socketServidor; // Para CPUs y Consolas
+//------------Sockets unicos globales-------------------//
+
+void inicializarSockets(){
+		socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
+		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
+		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
+}
 
 int crear_socket_cliente(char * ip, char * puerto){
 
@@ -141,3 +157,4 @@ void* recibir(int socket){
 	return !checkSocket ? NULL:recibido;
 }
 
+#endif

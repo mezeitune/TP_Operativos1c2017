@@ -31,13 +31,12 @@
 #include "planificacion.h"
 #include "configuraciones.h"
 #include "conexionMemoria.h"
+#include "capaFS.h"
 
-char** tablaGlobalArchivos;
-typedef struct FS{//Para poder guardar en la lista
-	char** tablaArchivoPorProceso;
-}t_tablaArchivoPorProceso;
-t_list* listaTablasArchivosPorProceso;
-void handshakeFS();
+
+
+
+
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
@@ -61,11 +60,6 @@ fd_set master;
 int flagFinalizar;
 //---------Conexiones-------------//
 
-//------------Sockets unicos globales--------------------//
-void inicializarSockets();
-int socketFyleSys;
-int socketServidor; // Para CPUs y Consolas
-//------------Sockets unicos globales-------------------//
 
 
 void inicializarListas();
@@ -81,7 +75,6 @@ int main(void) {
 	inicializarLog("/home/utnso/Log/logKernel.txt");
 	inicializarListas();
 	handshakeMemoria();
-	handshakeFS();
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 
@@ -90,18 +83,6 @@ int main(void) {
 	return 0;
 }
 
-
-void handshakeFS(){
-	char comandoTamanioPagina = 'V';
-	char* archivoAVerificar="alumnoosdad.bin";
-	int tamano=strlen(archivoAVerificar);
-	int validado;
-	send(socketFyleSys,&comandoTamanioPagina,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-
-}
 
 
 void connectionHandler(int socketAceptado, char orden) {
@@ -132,6 +113,9 @@ void connectionHandler(int socketAceptado, char orden) {
 					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
 					terminarProceso(socketAceptado);
 					break;
+		case 'F'://Para el FS
+					interfazHandlerParaFileSystem('V');//En vez de la V , poner el recv de la orden que quieras hacer con FS
+					break;
 		case 'P':
 				send(socketAceptado,&config_paginaSize,sizeof(int),0);
 				send(socketAceptado,&stackSize,sizeof(int),0);
@@ -158,6 +142,7 @@ void interruptHandler(int socketAceptado,char orden){
 	int pid;
 	int socketHiloPrograma;
 	int i=0;
+	int resultadoEjecucion;
 	char* mensaje; /*TODO: Ver el tema de pedir memoria y liberar esta variable siempre que se pueda*/
 
 	switch(orden){
@@ -213,6 +198,24 @@ void interruptHandler(int socketAceptado,char orden){
 		size=strlen(mensaje);
 		informarConsola(socketAceptado,mensaje,size);
 		log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
+		break;
+	case  'R':
+
+		//recv(socketAceptado,&size,sizeof(int),0);
+		//recv(socketAceptado,&espacioAReservar,size,0);
+		//reservar heap de ese espacio
+		//devolverle a la CPU el puntero que apunta a donde esta reservado ese espacio en heap
+		//creo que se tiene que guardar ese int del espacio para cuando se pida liberar
+		break;
+	case  'L':
+
+			//recv(socketAceptado,&size,sizeof(int),0);
+			//recv(socketAceptado,&punteroQueApuntaDondeLiberar,size,0);
+			//liberar heap tomando como inicio ese puntero y el espacio dado anteriormente por "reservar"
+			//devolverle a la CPU el resultado de la ejecucion (1 piola, 0 fuck)
+		break;
+	case 'O' :
+
 		break;
 	default:
 			break;
@@ -287,11 +290,7 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 }
 
 
-void inicializarSockets(){
-		socketServidor = crear_socket_servidor(ipServidor, puertoServidor);
-		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
-		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
-}
+
 
 void inicializarListas(){
 	colaNuevos= list_create();
@@ -303,6 +302,8 @@ void inicializarListas(){
 	listaTablasArchivosPorProceso=list_create();
 	colaEjecucion = list_create();
 }
+
+
 
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {

@@ -7,6 +7,7 @@
 #include "sincronizacion.h"
 #include "planificacion.h"
 #include "configuraciones.h"
+#include "capaFS.h"
 
 void interfazHandler();
 void imprimirInterfazUsuario();
@@ -15,6 +16,8 @@ void obtenerListadoProcesos();
 void mostrarProcesos(char orden);
 void imprimirListadoDeProcesos(t_list* listaPid);
 void filtrarPorPidYMostrar(t_list* cola);
+void interfazHandlerParaFileSystem(char orden);
+
 
 /*-------------LOG-----------------*/
 void inicializarLog(char *rutaDeLog);
@@ -61,6 +64,10 @@ void interfazHandler(){
 			case 'I':
 					imprimirInterfazUsuario();
 				break;
+			case 'F':
+				printf("Enviando instrucciones a File System");
+				interfazHandlerParaFileSystem('V');
+				break;
 			default:
 				if(orden == '\0') break;
 				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
@@ -69,6 +76,45 @@ void interfazHandler(){
 	orden = '\0';
 	log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler\n");
 	return;
+
+}
+
+
+void interfazHandlerParaFileSystem(char orden){
+		log_info(loggerConPantalla,"Iniciando Interfaz Handler Para File System\n");
+		//int pid;
+		char* mensajeRecibido;
+
+
+		switch(orden){
+				case 'V'://validar archivo
+					printf("Validando que el archivo indicado exista \n");
+					validarArchivoFS();
+					break;
+				case 'C'://crear archivo
+					printf("Creando el archivo indacdo \n");
+					crearArchivoFS();
+					break;
+				case 'B'://borrar archivo
+					printf("Borrando el archivo indacado \n");
+					borrarArchivoFS();
+					break;
+				case 'O'://obtener datos
+					printf("Obteniendo datos del archivo indicado \n");
+					obtenerArchivoFS();
+					break;
+				case 'G'://guardar archivo
+					printf("Guardando datos del archivo indicado \n");
+					guardarArchivoFS();
+					break;
+			default:
+				if(orden == '\0') break;
+				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
+				break;
+			}
+			orden = '\0';
+			log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler de File System\n");
+			return;
 
 }
 

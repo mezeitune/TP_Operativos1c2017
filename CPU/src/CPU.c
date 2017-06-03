@@ -592,6 +592,7 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
 	free(valor_variable);
 }
+
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	char** string_cortado = string_split(variable, "\n");
 	char* variable_string = string_new();
@@ -677,16 +678,155 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	free(string_cortado);
 }
 
-void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
+t_puntero reservar (t_valor_variable espacio){
+	char comandoInterruptHandler = 'X';
+	char comandoReservarMemoria = 'R';
+	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
+	send(socketKernel,&comandoReservarMemoria,sizeof(char),0);
+	int tamanio = sizeof(t_valor_variable);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,&espacio,tamanio,0);
+	int* puntero;
+	//recibir el puntero del kernel donde almaceno ese espacio en memoria
+	//guardar ese puntero en una lista o estructura para hacer la comprobacion en liberar
+	return puntero;
+}
+void liberar (t_puntero puntero){
+	//list_find(listaPunterosHeap,puntero);
+	//if(list_size(listaPunterosHeap)){
+	char comandoInterruptHandler = 'X';
+	char comandoLiberarMemoria = 'L';
+	int resultadoEjecucion;
+	int tamanio = sizeof(t_puntero);
+	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
+	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,&puntero,tamanio,0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
+	else
+		log_info(loggerConPantalla,"No se ha podido liberar el heap apuntada por",puntero);
+	//}
+	//else
+	log_info(loggerConPantalla,"Primero se debe reservar para liberar el heap");
+}
+
+
+t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas flags){
 	t_pcb* pcb_actual = list_get (listaPcb,0);
-	char *valor_variable = string_itoa(valor);
-	char comandoImprimir = 'X';
-	char comandoImprimirPorConsola = 'P';
-	send(socketKernel,&comandoImprimir,sizeof(char),0);
-	send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
-	send(socketKernel,&tamanio,sizeof(t_valor_variable),0);
-	send(socketKernel,&valor_variable,tamanio,0);
-	send(socketKernel,&pcb_actual->pid,sizeof(int),0);
+	t_descriptor_archivo descriptorArchivoAbierto;
+	char comandoCapaFS = 'F';
+	char comandoAbrirArchivo = 'A';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoAbrirArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&direccion,sizeof(int),0);
+	//enviar los flags al kernel
+	recv(socketKernel,&descriptorArchivoAbierto,sizeof(int),0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1){
+		log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s");
+		return descriptorArchivoAbierto;
+	}
+	else {
+		log_info(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s");
+		return 0;
+	}
+}
+void borrar_archivo (t_descriptor_archivo descriptor_archivo){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoCapaFS = 'F';
+	char comandoBorrarArchivo = 'B';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoBorrarArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&descriptor_archivo,sizeof(int),0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+		log_info(loggerConPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d");
+	else log_info(loggerConPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d");
+}
+
+void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoCapaFS = 'F';
+	char comandoCerrarArchivo = 'P';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoCerrarArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&descriptor_archivo,sizeof(int),0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+	log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d");
+	else log_info(loggerConPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d");
+
+}
+
+
+void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_variable posicion){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoCapaFS = 'F';
+	char comandoMoverCursorArchivo = 'M';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoMoverCursorArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&descriptor_archivo,sizeof(int),0);
+	send(socketKernel,&posicion,sizeof(int),0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+	log_info(loggerConPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d");
+	else log_info(loggerConPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d");
+}
+void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoCapaFS = 'F';
+	char comandoLeerArchivo = 'O';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoLeerArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&descriptor_archivo,sizeof(int),0);
+	send(socketKernel,&informacion,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
+	send(socketKernel,&tamanio,sizeof(int),0); //tamanio de la instruccion en bytes que quiero leer
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+	log_info(loggerConPantalla,"La informacion leida es %s");
+	else log_info(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
+}
+
+
+void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
+	if(descriptor_archivo==DESCRIPTOR_SALIDA){
+		t_pcb* pcb_actual = list_get (listaPcb,0);
+		char *valor_variable = string_itoa(valor);
+		char comandoImprimir = 'X';
+		char comandoImprimirPorConsola = 'P';
+		send(socketKernel,&comandoImprimir,sizeof(char),0);
+		send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
+		send(socketKernel,&tamanio,sizeof(t_valor_variable),0);
+		send(socketKernel,&valor_variable,tamanio,0);
+		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
+	}else {
+		t_pcb* pcb_actual = list_get (listaPcb,0);
+			char comandoCapaFS = 'F';
+			char comandoEscribirArchivo = 'E';
+			int resultadoEjecucion ;
+			send(socketKernel,&comandoCapaFS,sizeof(char),0);
+			send(socketKernel,&comandoEscribirArchivo,sizeof(char),0);
+			send(socketKernel,pcb_actual->pid,sizeof(int),0);
+			send(socketKernel,&descriptor_archivo,sizeof(int),0);
+			//send(socketKernel,&valor,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
+			send(socketKernel,&tamanio,sizeof(int),0);
+			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+			if(resultadoEjecucion==1)
+			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d");
+			else log_info(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ");
+	}
 }
 
 
