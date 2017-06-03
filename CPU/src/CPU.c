@@ -730,7 +730,10 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 		log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s");
 		return descriptorArchivoAbierto;
 	}
-	else return 0;
+	else {
+		log_info(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s");
+		return 0;
+	}
 }
 void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 	t_pcb* pcb_actual = list_get (listaPcb,0);
@@ -741,11 +744,9 @@ void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 	send(socketKernel,&comandoBorrarArchivo,sizeof(char),0);
 	send(socketKernel,pcb_actual->pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
-
-	recv(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
-		log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s");
+		log_info(loggerConPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d");
 	else log_info(loggerConPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d");
 }
 
@@ -758,13 +759,28 @@ void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
 	send(socketKernel,&comandoCerrarArchivo,sizeof(char),0);
 	send(socketKernel,pcb_actual->pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
-
-	recv(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
-	log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d en modo %s");
+	log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d");
 	else log_info(loggerConPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d");
 
+}
+
+
+void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_variable posicion){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoCapaFS = 'F';
+	char comandoMoverCursorArchivo = 'M';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoMoverCursorArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&descriptor_archivo,sizeof(int),0);
+	send(socketKernel,&posicion,sizeof(int),0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+	log_info(loggerConPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d");
+	else log_info(loggerConPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d");
 }
 
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
