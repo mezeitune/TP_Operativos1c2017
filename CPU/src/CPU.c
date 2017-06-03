@@ -741,13 +741,32 @@ void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 	send(socketKernel,&comandoBorrarArchivo,sizeof(char),0);
 	send(socketKernel,pcb_actual->pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
-	//enviar los flags al kernel
+
 	recv(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
 		log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s");
 	else log_info(loggerConPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d");
 }
+
+void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
+	t_pcb* pcb_actual = list_get (listaPcb,0);
+	char comandoCapaFS = 'F';
+	char comandoCerrarArchivo = 'P';
+	int resultadoEjecucion ;
+	send(socketKernel,&comandoCapaFS,sizeof(char),0);
+	send(socketKernel,&comandoCerrarArchivo,sizeof(char),0);
+	send(socketKernel,pcb_actual->pid,sizeof(int),0);
+	send(socketKernel,&descriptor_archivo,sizeof(int),0);
+
+	recv(socketKernel,&descriptor_archivo,sizeof(int),0);
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion==1)
+	log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d en modo %s");
+	else log_info(loggerConPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d");
+
+}
+
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
 	t_pcb* pcb_actual = list_get (listaPcb,0);
 	char *valor_variable = string_itoa(valor);
