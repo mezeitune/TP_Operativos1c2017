@@ -32,6 +32,7 @@ char *puertoFileSys;
 
 
 
+
 void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
 	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
