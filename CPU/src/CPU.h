@@ -91,6 +91,7 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable);
 void wait(t_nombre_semaforo identificador_semaforo);
 void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio);
 void signal_Ansisop(t_nombre_semaforo identificador_semaforo);
+t_puntero reservar (t_valor_variable espacio);
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 
 AnSISOP_funciones functions = {  //TODAS LAS PRIMITIVAS TIENEN QUE ESTAR ACA
@@ -111,8 +112,8 @@ AnSISOP_kernel kernel_functions = {
 		.AnSISOP_wait= wait,
 
 		.AnSISOP_signal = signal_Ansisop,
-		/*.AnSISOP_reservar
-		.AnSISOP_liberar
+		.AnSISOP_reservar = reservar,
+		/*.AnSISOP_liberar
 		.AnSISOP_abrir
 		.AnSISOP_borrar
 		.AnSISOP_cerrar
