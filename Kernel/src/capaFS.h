@@ -2,10 +2,20 @@
 #define _CAPAFS_
 #include "conexiones.h"
 
+
+
+//--------Capa FS--------//
+
+char** tablaGlobalArchivos;
+typedef struct FS{//Para poder guardar en la lista
+	char** tablaArchivoPorProceso;
+}t_tablaArchivoPorProceso;
+t_list* listaTablasArchivosPorProceso;
+
 void validarArchivoFS(){
 	char orden = 'V';
 	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
+	int tamano=sizeof(int)*strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&orden,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
@@ -17,7 +27,7 @@ void validarArchivoFS(){
 void crearArchivoFS(){
 	char orden = 'V';
 	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
+	int tamano=sizeof(int)*strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&orden,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
@@ -29,7 +39,7 @@ void crearArchivoFS(){
 void borrarArchivoFS(){
 	char orden = 'V';
 	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
+	int tamano=sizeof(int)*strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&orden,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
@@ -41,7 +51,7 @@ void borrarArchivoFS(){
 void obtenerArchivoFS(){
 	char orden = 'V';
 	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
+	int tamano=sizeof(int)*strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&orden,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
@@ -53,7 +63,7 @@ void obtenerArchivoFS(){
 void guardarArchivoFS(){
 	char orden = 'V';
 	char* archivoAVerificar="alumno.bin";
-	int tamano=strlen(archivoAVerificar)-3;
+	int tamano=sizeof(int)*strlen(archivoAVerificar);
 	int validado;
 	send(socketFyleSys,&orden,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);

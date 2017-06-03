@@ -38,13 +38,6 @@
 
 
 
-//--------Capa FS--------//
-
-char** tablaGlobalArchivos;
-typedef struct FS{//Para poder guardar en la lista
-	char** tablaArchivoPorProceso;
-}t_tablaArchivoPorProceso;
-t_list* listaTablasArchivosPorProceso;
 
 
 
