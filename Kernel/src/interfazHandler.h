@@ -19,6 +19,8 @@ void filtrarPorPidYMostrar(t_list* cola);
 void interfazHandlerParaFileSystem(char orden);
 
 
+pthread_t interfaz;
+
 /*-------------LOG-----------------*/
 void inicializarLog(char *rutaDeLog);
 t_log *loggerSinPantalla;
@@ -26,56 +28,69 @@ t_log *loggerConPantalla;
 
 
 void interfazHandler(){
-	log_info(loggerConPantalla,"Iniciando Interfaz Handler\n");
+
 	char orden;
-	//int pid;
-	char* mensajeRecibido;
+	char *mensajeRecibido;
 
-	scanf("%c",&orden);
+	while(1){
+		sem_wait(&sem_ordenSelect);
+		read(0,&orden,sizeof(char));
 
-	switch(orden){
-			case 'O':
-				obtenerListadoProcesos();
-				break;
-			case 'P':
-				/*obtenerProcesoDato(int pid); TODO HAY QUE IMPLEMENTAR*/
-				break;
-			case 'G':
-				/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
-				break;
-			case 'M':
-				modificarGradoMultiprogramacion();
-				break;
-			case 'K':
-				/*finalizarProceso(int pid) TODO HAY QUE IMPLEMENTAR*/
-				break;
-			case 'D':
-				/*pausarPlanificacion() TODO HAY QUE IMPLEMENTAR*/
-				break;
-			case 'S':
-				if((solicitarContenidoAMemoria(&mensajeRecibido))<0){
-					printf("No se pudo solicitar el contenido\n");
+		switch(orden){
+				case 'O':
+					obtenerListadoProcesos();
 					break;
-				}
-				else{
-					printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
+				case 'P':
+					if(orden == 'P' && flagPlanificacion == 0){
+						log_warning(loggerConPantalla, "Planificacion ya pausada");
+						break;
 					}
-				break;
-			case 'I':
-					imprimirInterfazUsuario();
-				break;
-			case 'F':
-				printf("Enviando instrucciones a File System");
-				interfazHandlerParaFileSystem('V');
-				break;
-			default:
-				if(orden == '\0') break;
-				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
-				break;
+					log_info(loggerConPantalla, "Se pauso la planificacion");
+					pausarPlanificacion();
+					orden = '\0';
+					break;
+				case 'R':
+					if(orden == 'R' && flagPlanificacion == 1){
+						log_warning(loggerConPantalla, "Planificacion no se encuentra pausada");
+						break;
+					}
+					log_info(loggerConPantalla, "Se reanudo la planificacion");
+					reanudarPLanificacion();
+					orden = '\0';
+					break;
+				case 'G':
+					/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
+					break;
+				case 'M':
+					modificarGradoMultiprogramacion();
+					break;
+				case 'K':
+					/*finalizarProceso(int pid) TODO HAY QUE IMPLEMENTAR*/
+					break;
+				case 'D':
+					/*pausarPlanificacion() TODO HAY QUE IMPLEMENTAR*/
+					break;
+				case 'S':
+					if((solicitarContenidoAMemoria(&mensajeRecibido))<0){
+						printf("No se pudo solicitar el contenido\n");
+						break;
+					}
+					else{
+						printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
+						}
+					break;
+				case 'I':
+						imprimirInterfazUsuario();
+						break;
+				case 'F':
+					printf("Enviando instrucciones a File System");
+					interfazHandlerParaFileSystem('V');
+					break;
+				default:
+					log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
+					break;
+		}
 	}
-	orden = '\0';
-	log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler\n");
-	return;
 
 }
 
@@ -196,11 +211,12 @@ void imprimirListadoDeProcesos(t_list* listaPid){
 
 void modificarGradoMultiprogramacion(){
 	int nuevoGrado;
-	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion");
+	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
 	pthread_mutex_lock(&mutexGradoMultiProgramacion);
 	config_gradoMultiProgramacion= nuevoGrado;
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+	log_info(loggerConPantalla,"Se cambio el GradoMultiProg a:%d\n",nuevoGrado);
 }
 
 void inicializarLog(char *rutaDeLog){
@@ -216,7 +232,7 @@ void imprimirInterfazUsuario(){
 	/**************************************Printea interfaz Usuario Kernel*******************************************************/
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Obtener datos proceso\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nD - Pausar planificacion\n");
+	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\n");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
 }

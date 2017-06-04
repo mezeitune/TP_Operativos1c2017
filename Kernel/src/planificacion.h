@@ -41,6 +41,17 @@ typedef struct {
 	int socketHiloConsola;
 }t_codigoPrograma;
 
+
+/*---PAUSA PLANIFICACION---*/
+
+int flagPlanificacion = 1;
+
+void reanudarPLanificacion();
+void pausarPlanificacion();
+
+void listaEsperaATerminados();
+/*-------------------------*/
+
 /*----LARGO PLAZO--------*/
 void* planificarLargoPlazo();
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
@@ -72,6 +83,7 @@ t_list* colaListos;
 t_list* colaTerminados;
 t_list* listaConsolas;
 t_list* listaCPU;
+t_list* listaEnEspera;
 t_list* colaEjecucion;
 /*---PLANIFICACION GENERAL-------*/
 
@@ -141,6 +153,20 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
 
+void pausarPlanificacion(){
+
+	flagPlanificacion = 0;
+	sem_wait(&sem_planificacion);
+
+}
+
+void reanudarPLanificacion(){
+	flagPlanificacion = 1;
+	sem_post(&sem_planificacion);
+}
+
+
+
 /*------------------------CORTO PLAZO-----------------------------------------*/
 
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
@@ -154,12 +180,14 @@ void* planificarCortoPlazo(){
 	t_pcb* pcbListo;
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
-	char comandoEnviarPcb='S';
+	char comandoEnviarPcb ='S';
 
 	while(1){
 
 		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaReady);
+		sem_wait(&sem_planificacion);
+
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
@@ -173,12 +201,17 @@ void* planificarCortoPlazo(){
 
 		cpuEnEjecucion->pid = pcbListo->pid;
 
+		printf("\n\nPID:%d\n\n", cpuEnEjecucion->pid);
+
 		pthread_mutex_lock(&mutexColaEjecucion);
 		list_add(colaEjecucion, pcbListo);
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
 		send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
 		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+
+		if(flagPlanificacion) sem_post(&sem_planificacion);
+
 	}
 }
 
@@ -244,7 +277,7 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 
 void terminarProceso(int socketCPU){
-	t_pcb* pcbProcesoTerminado = malloc(sizeof(t_pcb));
+	t_pcb* pcbProcesoTerminado;
 	t_consola* consolaAInformar;
 
 	_Bool verificarPidConsola(t_consola* consola){
@@ -262,36 +295,77 @@ void terminarProceso(int socketCPU){
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
-
-	pthread_mutex_lock(&mutexColaEjecucion);
-	list_remove_by_condition(colaEjecucion, (void*)verificarPid);
-	pthread_mutex_unlock(&mutexColaEjecucion);
+	if(flagPlanificacion){
 
 
-	pthread_mutex_lock(&mutexColaTerminados);
-	list_add(colaTerminados, pcbProcesoTerminado);
-	pthread_mutex_unlock(&mutexColaTerminados);
 
-	consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPidConsola);
+		pthread_mutex_lock(&mutexListaEspera);
+		listaEsperaATerminados();
+		pthread_mutex_unlock(&mutexListaEspera);
 
-	char* mensaje= "El proceso ha finalizado correctamente"; /*TODO:Meterle el PID a este string*/
-	int size= strlen(mensaje);
-	informarConsola(consolaAInformar->socketHiloPrograma,mensaje,size);
+		pthread_mutex_lock(&mutexColaEjecucion);
+		list_remove_by_condition(colaEjecucion, (void*)verificarPid);
+		pthread_mutex_unlock(&mutexColaEjecucion);
 
-	pthread_mutex_lock(&mutexGradoMultiProgramacion);
-	gradoMultiProgramacion--;
-	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-	sem_post(&sem_admitirNuevoProceso);
+		pthread_mutex_lock(&mutexColaTerminados);
+		list_add(colaTerminados, pcbProcesoTerminado);
+		pthread_mutex_unlock(&mutexColaTerminados);
 
-	printf("\n\nLista CPU: %d\n\n", list_size(listaCPU));
-	printf("\n\nLista Ready: %d\n\n", list_size(colaListos));
-	sem_post(&sem_CPU);
+		consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPidConsola);
 
-	free(pcbProcesoTerminado);
+		char* mensaje = "El proceso ha finalizado correctamente"; /*TODO:Meterle el PID a este string*/
+		int size= strlen(mensaje);
+		informarConsola(consolaAInformar->socketHiloPrograma,mensaje,size);
+
+		pthread_mutex_lock(&mutexGradoMultiProgramacion);
+		gradoMultiProgramacion--;
+		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+		sem_post(&sem_admitirNuevoProceso);
+
+		sem_post(&sem_CPU);
+
+	}else {
+
+		pthread_mutex_lock(&mutexListaEspera);
+		list_add(listaEnEspera, pcbProcesoTerminado);
+		pthread_mutex_unlock(&mutexListaEspera);
+
+		pthread_mutex_lock(&mutexGradoMultiProgramacion);
+		gradoMultiProgramacion--;
+		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+
+		sem_post(&sem_CPU);
+
+	}
 
 	/* TODO:Liberar recursos */
 	//free(consolaAInformar); //Ojo aca, si metes este free aca nomas, vas a ver que borras la consolaAInformar antes de que la Consola reciba el mensaje. Hay que hacer algun tipo de espera aca
 }
+
+void listaEsperaATerminados(){
+	int indice;
+	t_pcb* pcbBuffer;
+	t_pcb* aux;
+
+	if(!list_is_empty(listaEnEspera)){
+
+		list_add_all(listaEnEspera, colaTerminados);
+
+		for (indice = 0; indice < list_size(listaEnEspera)-1; indice++) {
+
+			pcbBuffer = list_remove(listaEnEspera,indice);
+
+			for (indice = 0; indice < list_size(colaEjecucion)-1; ++indice) {
+				aux = list_get(colaEjecucion,indice);
+				if(aux->pid == pcbBuffer->pid) list_remove(colaEjecucion, indice);
+
+			}
+		}
+	}
+}
+
+
+
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
 	send(socketHiloPrograma,&size,sizeof(int),0);

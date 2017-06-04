@@ -1,5 +1,8 @@
 #include "CPU.h"
 
+
+pthread_mutex_t mutexEnvioKernel;
+
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
@@ -8,12 +11,13 @@ int main(void) {
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
-
 	log_info(loggerConPantalla, "Inicia proceso CPU");
 	recibirTamanioPagina(socketKernel);
 
 	signal(SIGINT, signalHandler);
 	signal(SIGUSR1, signalHandler);
+
+	pthread_mutex_init(&mutexEnvioKernel,NULL);
 
 
 	char comandoGetNuevoProceso = 'N';
@@ -67,12 +71,8 @@ int cantidadPaginasTotales(t_pcb* pcb){
 }
 void establecerPCB(){
 
-	pcb_actual= malloc(sizeof(t_pcb));
 	pcb_actual = recibirYDeserializarPcb(socketKernel);
-
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
-
-
 
 	printf("\n\nPCB:%d\n\n", pcb_actual->pid);
 	EjecutarProgramaMedianteAlgoritmo(pcb_actual);
@@ -450,13 +450,7 @@ void finalizar (){
 		char comandoFinalizacion = 'T';
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
 
-
-
 		serializarPcbYEnviar(pcb_actual,socketKernel);
-
-
-
-
 
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado", pcb_actual->pid);
 		free(pcb_actual);
