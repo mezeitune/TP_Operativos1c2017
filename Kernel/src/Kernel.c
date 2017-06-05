@@ -75,10 +75,13 @@ int main(void) {
 	inicializarLog("/home/utnso/Log/logKernel.txt");
 	inicializarListas();
 	handshakeMemoria();
+
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
+	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
 
 	selectorConexiones(socketServidor);
+
 
 	return 0;
 }
@@ -89,12 +92,13 @@ void connectionHandler(int socketAceptado, char orden) {
 
 
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
+
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
 	_Bool verificaSocket(t_cpu* cpu){
 			return (cpu->socket == socketAceptado);
-		}
+	}
 
 					t_cpu* cpu = malloc(sizeof(t_cpu));
 	switch (orden) {
@@ -299,6 +303,7 @@ void inicializarListas(){
 	listaCodigosProgramas=list_create();
 	listaTablasArchivosPorProceso=list_create();
 	colaEjecucion = list_create();
+	listaEnEspera = list_create();
 }
 
 
@@ -338,9 +343,8 @@ void selectorConexiones() {
 					for (i = 0; i <= fdMax; i++) {
 							if (FD_ISSET(i, &readFds)) { // we got one!!
 							/**********************************************************/
-										if(i == 0){
-										interfazHandler();//Recibe a si mismo
-										}
+									if(i == 0) sem_post(&sem_ordenSelect);//Cuando recibe orden de STDIN desbloquea al interfazHandler
+
 									/************************************************************/
 									if (i == socketServidor) {
 									addrlen = sizeof remoteaddr;

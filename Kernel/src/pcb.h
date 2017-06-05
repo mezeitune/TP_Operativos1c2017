@@ -181,7 +181,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 	imprimirPcb(pcb);
 
-	free(pcbEnviar);
+	//free(pcbEnviar);
 
 }
 
