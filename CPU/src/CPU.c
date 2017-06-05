@@ -95,7 +95,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 void ejecutarInstruccion(){
 
 	char* instruccion = obtener_instruccion();
-	printf("Evaluando -> %s\n", instruccion );
+	log_warning(loggerConPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 	free(instruccion);
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
@@ -183,7 +183,7 @@ char* obtener_instruccion(){
 	free(instruccion);
 	instruccion= string_new();
 	string_append(&instruccion, string_cortado[0]);
-	log_info(loggerConPantalla, "\nInstruccion obtenida: %s", instruccion);
+	//log_info(loggerConPantalla, "Instruccion obtenida: %s", instruccion);
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
@@ -304,7 +304,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 				encontre_valor = 0;//encontre un argumentoooooooooo!!
 			}
 		}
-		//reconozco la variable ANSISOP
+		//reconozco un argumento ANSISOP
 		if((variable >= '0') && (variable <= '9')){
 				nueva_posicion_memoria = malloc(sizeof(t_posMemoria));//creo una nueva posicion en memoria para la variable ANSISOP
 				nodo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));//agarro un nodo de mi stack (el indice es la cantidad-1)
@@ -319,7 +319,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 							if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){//si la pagina excede la cantidad de paginas totales
 								stackOverflow(pcb_actual);
 							} else {
-							list_add(nodo->args, nueva_posicion_memoria);//sino agrego en la lista de argumentos la posicion en memoria de esa variaable
+							list_add(nodo->args, nueva_posicion_memoria);//sino agrego en la lista de argumentos la posicion en memoria de ese argumento
 							}
 					}
 					//si me excedi del tamaño de la pagina
@@ -350,7 +350,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								}
 							}
 						}
-		}//si mi variable no esta entre 0 y 9
+		}//si es una variable propiamente dicha
 				else {
 						nueva_posicion_memoria = malloc(sizeof(t_posMemoria));
 						nueva_variable = malloc(sizeof(t_variable));
@@ -408,7 +408,7 @@ return posicion;
 
 
 t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
-	log_info(loggerConPantalla, "Obteniendo la posicion de la variable: %c", variable);
+	log_info(loggerConPantalla, "Obteniendo la posicion de la variable: %c\n", variable);
 
 	int nodos_stack = list_size(pcb_actual->indiceStack);//obtengo cantidad de nodos
 	int cantidad_variables;
@@ -416,11 +416,9 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	int encontre_valor = 1;
 	t_nodoStack *nodoUltimo;
 	t_posMemoria *posicion_memoria;
-	//t_posMemoria* nueva_posicion_memoria;
-//	t_variable *nueva_variable;
 	t_variable *var;
 	nodoUltimo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));//obtengo el ultimo nodo de la lista
-	if((variable >= '0') && (variable <= '9')){//si esta entre 0 y 9 significa que es un argumento de una funcion
+	if((variable >= '0') && (variable <= '9')){// argumento de una funcion
 		int variable_int = variable - '0';//lo pasa a int
 
 		posicion_memoria = list_get(nodoUltimo->args, variable_int);//lo busca en la lista de argumentos
@@ -428,6 +426,7 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 			encontre_valor = 0;
 		}
 	} else {//si es una variable propiamente dicha
+
 		cantidad_variables = list_size(nodoUltimo->vars);
 		for(i = 0; i < cantidad_variables; i++){
 			var = list_get(nodoUltimo->vars, i);
@@ -441,25 +440,17 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 		log_info(loggerConPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
 		return -1;
 	}
-	int posicion_serializada = (posicion_memoria->pagina * config_paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
-	//free(pcb_actual);
 
+	int posicion_serializada = (posicion_memoria->pagina * config_paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
+	//free(pcb_actual);}
+	log_info(loggerConPantalla,"La posicion de la variable es %d\n",posicion_serializada);
 	return posicion_serializada;
 }
 void finalizar (){
-
 		char comandoFinalizacion = 'T';
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
-
-
-
 		serializarPcbYEnviar(pcb_actual,socketKernel);
-
-
-
-
-
-		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado", pcb_actual->pid);
+		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 		free(pcb_actual);
 		if(cpuFinalizada==0){
 		CerrarPorSignal();
@@ -469,26 +460,35 @@ void finalizar (){
 }
 
 t_valor_variable dereferenciar(t_puntero puntero) {
+
 	int num_pagina = puntero / config_paginaSize;
 	int offset = puntero - (num_pagina * config_paginaSize);
 	char *valor_variable_char;
 	char* mensajeRecibido;
 
 
-		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, 4)<0){
+		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, sizeof(t_valor_variable))<0){
 				printf("No se pudo solicitar el contenido\n");
 		}else{
 				valor_variable_char=mensajeRecibido;
 		}
-	log_info(loggerConPantalla, "Valor Obtenido de la Memoria: %s", valor_variable_char);
+	//log_info(loggerConPantalla, "Valor Obtenido de la Memoria: %s", valor_variable_char);
 	char *ptr;
 	int valor_variable = strtol(valor_variable_char, &ptr, 10);
 	free(valor_variable_char);
-	log_info(loggerConPantalla, "dereferenciar: Valor Obtenido: %d", valor_variable);
+	log_info(loggerConPantalla, "Dereferenciar: Valor Obtenido: %d en la posicion %d\n", valor_variable,puntero);
 	return valor_variable;
 
 }
 
+void asignar(t_puntero puntero, t_valor_variable variable) {
+	int num_pagina = puntero / config_paginaSize;
+	int offset = puntero - (num_pagina * config_paginaSize);
+	char *valor_variable = string_itoa(variable);
+	almacenarDatosEnMemoria(valor_variable,sizeof(t_valor_variable),num_pagina, offset);
+	log_info(loggerConPantalla, "Valor a Asignar: %s en la posicion %d\n", valor_variable,puntero);
+	free(valor_variable);
+}
 void retornar(t_valor_variable retorno){
 
 	t_nodoStack *nodo;
@@ -499,9 +499,10 @@ void retornar(t_valor_variable retorno){
 	int num_pagina = posicion_memoria->pagina;
 	int offset = posicion_memoria->offset;
 	char *valor_variable = string_itoa(retorno);
-	almacenarDatosEnMemoria(valor_variable,4,num_pagina, offset);
+	almacenarDatosEnMemoria(valor_variable,sizeof(t_valor_variable),num_pagina, offset);
 	free(valor_variable);
-	//pcb_actual->programCounter = nodo->retPos;// Puede ser la dir_retorno + 1
+	pcb_actual->programCounter = nodo->retPos;// Puede ser la dir_retorno + 1
+	printf("el PC es %d",pcb_actual->programCounter);
 	//Elimino el nodo de la lista
 	int cantidad_argumentos;
 	int cantidad_variables;
@@ -523,7 +524,7 @@ void retornar(t_valor_variable retorno){
 	list_destroy(nodo->vars);
 	free(nodo->retVar);
 	free(nodo);
-	imprimirPcb(pcb_actual);
+
 
 }
 
@@ -582,16 +583,6 @@ free(string_cortado);
 
 }
 
-void asignar(t_puntero puntero, t_valor_variable variable) {
-
-
-	int num_pagina = puntero / config_paginaSize;
-	int offset = puntero - (num_pagina * config_paginaSize);
-	char *valor_variable = string_itoa(variable);
-	almacenarDatosEnMemoria(valor_variable,4,num_pagina, offset);
-	log_info(loggerConPantalla, "asignar: Valor a Asignar: %s", valor_variable);
-	free(valor_variable);
-}
 
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	char** string_cortado = string_split(variable, "\n");

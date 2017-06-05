@@ -107,9 +107,9 @@ AnSISOP_funciones functions = {
 	 .AnSISOP_obtenerValorCompartida = obtenerValorCompartida,
 	 .AnSISOP_asignarValorCompartida = asignarValorCompartida,
 	 .AnSISOP_irAlLabel = irAlLabel,
-	 .AnSISOP_llamarSinRetorno=llamarSinRetorno,
-	 .AnSISOP_llamarConRetorno = llamarConRetorno,
-	 .AnSISOP_retornar = retornar
+	 .AnSISOP_llamarSinRetorno=llamarSinRetorno, .AnSISOP_retornar = retornar,
+	 .AnSISOP_llamarConRetorno = llamarConRetorno
+
 };
 
 AnSISOP_kernel kernel_functions = {
