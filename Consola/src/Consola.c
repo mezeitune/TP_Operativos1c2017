@@ -12,22 +12,20 @@
 #include <time.h>
 
 void signalSigIntHandler(int signum);
-void finalizarPrograma();
 
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
-
 	inicializarLog("/home/utnso/Log/logConsola.txt");
 	inicializarListas();
-	pthread_mutex_init(&mutex_crearHilo,NULL);
-	pthread_mutex_init(&mutexListaHilos,NULL);
-	sem_init(&sem_crearHilo,0,1);
+	inicializarSemaforos();
+	flagCerrarConsola = 1;
 	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 
 	int err = pthread_create(&hiloInterfazUsuario, NULL, connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
+
 	signal(SIGINT, signalSigIntHandler);
 
 	pthread_join(hiloInterfazUsuario, NULL);
@@ -49,7 +47,7 @@ void signalSigIntHandler(int signum)
 
 void *connectionHandler() {
 
-	while (1) {
+	while (flagCerrarConsola) {
 		char orden;
 		sem_wait(&sem_crearHilo);
 
@@ -61,14 +59,13 @@ void *connectionHandler() {
 				crearHiloPrograma();
 				break;
 			case 'F':
-				finalizarPrograma(); /*TODO:Faltan liberar recursos */
+				finalizarPrograma();
 				break;
 			case 'C':
-				system("clear");
-				sem_post(&sem_crearHilo);
+				limpiarPantalla();
 				break;
 			case 'Q':
-				cerrarTodo(); /*TODO: Verificar que los hilos terminen y liberen sus recursos*/
+				cerrarTodo(); /*TODO: Resolver el tema de cerrar todos los hilos*/
 				exit(1);
 				break;
 			default:
@@ -79,51 +76,17 @@ void *connectionHandler() {
 		orden = '\0';
 	}
 }
-void imprimirHandler(int socket, char *orden) {// Recibe un char* para tener la variable modificada cuando vuelva a selectorConexiones()
-
-	recv(socket,orden,sizeof(int)  ,0);
-	//printf( "El nuevo cliente %d ha enviado la orden: %c\n",socketAceptado, *(char*)orden);
-
-
-	switch (*(char*)orden) {
-
-		case 'I':
-				imprimir(socket);
-
-		break;
-
-
-		default:
-				if(*orden == '\0') break;
-				log_warning(loggerConPantalla,"\nOrden %c no definida\n", *(char*)orden);
-				break;
-		} // END switch de la consola
-
-	*orden = '\0';
-	return;
-
-}
-void *imprimir(int socket){
-
-				int bytesARecibir=0;
-
-				char* buffer;
-				recv(socket ,&bytesARecibir, sizeof(int),0); //recibo la cantidad de bytes del mensaje del kernel
-				buffer = malloc(bytesARecibir); // Pido memoria para recibir el contenido del mensaje con los bytes que recibi antes
-				recv(socket,buffer,bytesARecibir ,0);//recibo el mensaje de la kenrel con el tamaño de bytesArecibir
-
-				printf("%s",buffer);
-				return 0;
+void limpiarPantalla(){
+	system("clear");
+	sem_post(&sem_crearHilo);
 }
 
 void finalizarPrograma(){
 	char comandoInterruptHandler = 'X';
 	char comandoFinalizarPrograma= 'F';
-	int size;
 	int procesoATerminar;
 	log_info(loggerConPantalla,"Ingresar el PID del programa a finalizar\n");
 	scanf("%d", &procesoATerminar);
-
 
 		bool verificarPid(t_hiloPrograma* proceso){
 			return (proceso->pid == procesoATerminar);
@@ -131,39 +94,14 @@ void finalizarPrograma(){
 
 		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
 
-				t_hiloPrograma* programaAFinalizar = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
 				send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 				send(socketKernel,&comandoFinalizarPrograma,sizeof(char),0);
 				send(socketKernel, (void*) &procesoATerminar, sizeof(int), 0);
-
-				time_t tiempoFinalizacion = time(0);
-				struct tm* fechaFinalizacion = malloc(sizeof(struct tm));
-				fechaFinalizacion=localtime(&tiempoFinalizacion);
-				double tiempoEjecucion= difftime(tiempoFinalizacion,mktime(programaAFinalizar->fechaInicio));
-
-				printf("----------------------------------------------------------------------\n");
-				printf("Hora de inicializacion : %s \n Hora de finalizacion: %s\nTiempo de ejecucion: %e \nCantidad de impresiones: %d\n",asctime(programaAFinalizar->fechaInicio),asctime(fechaFinalizacion),tiempoEjecucion,programaAFinalizar->cantImpresiones);
-				printf("----------------------------------------------------------------------\n");
-
-
-				recv(socketKernel,&size,sizeof(int),0);
-				char* mensajeResultado=malloc(size);
-				recv(socketKernel,mensajeResultado,size,0);
-				printf("%s\n",mensajeResultado);
-
-				/*TODO: Tenemos que finalizar el hilo Programa*/
-
-				log_info(loggerConPantalla,"El hilo programa del proceso PID:%d ha finalizado con exito",programaAFinalizar->pid);
-				free(mensajeResultado);
-				free(programaAFinalizar);
-				//free(fechaFinalizacion); TODO: Solucionar este free
-
 			}else{
-						log_info(loggerConPantalla,"\nPID incorrecto\n");
+						log_error(loggerConPantalla,"\nPID incorrecto\n");
 			}
 		sem_post(&sem_crearHilo);
 }
-
 
 void cerrarTodo(){
 	char comandoInterruptHandler='X';
@@ -179,18 +117,16 @@ void cerrarTodo(){
 		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
 		memcpy(procesosATerminar,&procesoACerrar->pid,sizeof(int));
 		procesosATerminar += sizeof(int);
-		pthread_detach(procesoACerrar->idHilo); /*TODO: Matar bien los hilos */
 	}
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreConsola,sizeof(char),0);
 	send(socketKernel,&mensajeSize,sizeof(int),0);
 	send(socketKernel,mensaje,mensajeSize,0);
+	/*TODO: Mandar al Kernel una orden para que cierre a todos los hilos y quedarse a la espera de el OK con un recv*/
 	free(mensaje);
-
-			log_info(loggerSinPantalla,"Los hilos se han finalizado con exito");
-
-			list_destroy_and_destroy_elements(listaHilosProgramas,free);
-			pthread_mutex_unlock(&mutex_crearHilo);
+	list_destroy_and_destroy_elements(listaHilosProgramas,free);
+	flagCerrarConsola = 0;
+	pthread_mutex_unlock(&mutex_crearHilo);
 }
 
 void leerConfiguracion(char* ruta) {
@@ -221,4 +157,10 @@ void inicializarLog(char *rutaDeLog){
 
 void inicializarListas(){
 	listaHilosProgramas= list_create();
+}
+
+void inicializarSemaforos(){
+	pthread_mutex_init(&mutex_crearHilo,NULL);
+	pthread_mutex_init(&mutexListaHilos,NULL);
+	sem_init(&sem_crearHilo,0,1);
 }

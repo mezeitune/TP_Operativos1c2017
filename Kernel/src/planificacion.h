@@ -108,9 +108,9 @@ t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
 	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
 	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
 	codigoPrograma->codigo = malloc(codigoPrograma->size);
-	recv(socketHiloConsola,codigoPrograma->codigo,codigoPrograma->size  ,0);
+	recv(socketHiloConsola,codigoPrograma->codigo,codigoPrograma->size,0);
+	strcpy(codigoPrograma->codigo + codigoPrograma->size , "\0");
 	codigoPrograma->socketHiloConsola=socketHiloConsola;
-
 	return codigoPrograma;
 }
 
@@ -315,7 +315,7 @@ void terminarProceso(int socketCPU){
 
 		consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPidConsola);
 
-		char* mensaje = "El proceso ha finalizado correctamente"; /*TODO:Meterle el PID a este string*/
+		char* mensaje = "Finalizar";
 		int size= strlen(mensaje);
 		informarConsola(consolaAInformar->socketHiloPrograma,mensaje,size);
 
