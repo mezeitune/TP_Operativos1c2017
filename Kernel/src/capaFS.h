@@ -5,11 +5,12 @@
 
 
 //--------Capa FS--------//
-
+int contadorFilasTablaGlobal=0;
 char** tablaGlobalArchivos;
 typedef struct FS{//Para poder guardar en la lista
 	int pid;
 	char** tablaArchivoPorProceso;
+	int contadorFilasTablaPorProceso=0;
 }t_tablaArchivoPorProceso;
 t_list* listaTablasArchivosPorProceso;
 
@@ -100,17 +101,37 @@ void abrirArchivoEnTablas(int socket_aceptado){
 	if(elArchivoExiste==1){
 
 		//me fijo que exista en la tabla global de archivos
-		/*int j,i;
-		for(i = 0; i < nrows; ++i)
+		int j,i;
+		int encontro=0;
+		for(i = 0; i < contadorFilasTablaGlobal; ++i)
 		{
 		   for(j = 0; j<3 ; j++)
 		   {
-		      printf("%d\t",tablaGlobalArchivos[i][0]);
-		   }
-		printf("\n");
-		}*/
 
-		//sino existe , la agrego al ultimo coso
+		      if(strcmp(tablaGlobalArchivos[i][0],direccionAValidar) == 0){
+		    	  encontro=1;
+		    	  tablaGlobalArchivos[i][1]=tablaGlobalArchivos[i][1]+1;//aumento el open
+
+		    	  //agregarlo en la tabla del proceso
+		    	  //verificar que la tabla de ese pid exista
+		    	  //y agregarlo con el flag y el file descriptor y el indice hacia la tabla global
+
+		      }
+		   }
+		}
+
+		if(encontro==0){
+	    	  contadorFilasTablaGlobal++;
+	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccionAValidar;
+	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
+	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
+
+	    	  //agregarlo en la tabla del proceso
+		}
+
+
+
+
 
 		//si existe le aumento el Open y lo abro en su tabla con su pid correspondiente y sus flags
 
