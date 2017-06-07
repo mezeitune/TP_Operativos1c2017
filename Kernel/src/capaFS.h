@@ -79,6 +79,56 @@ void guardarArchivoFS(){
 	printf("La validacion fue %d \n",validado);
 }
 
+int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
+	int k;
+	int descriptorADevolver;
+	//agregarlo en la tabla del proceso
+			    	  //y agregarlo con el flag y el file descriptor y el indice hacia la tabla global
+
+			    	  t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
+			    	  int tablaExiste=0;
+			    	  int dondeEstaElPid;
+			    	  //verificar que la tabla de ese pid exista
+			    	  for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
+			    		  tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
+			    		  if(tablaAVerificar->pid==pid){
+			    			  tablaExiste=1;
+			    			  dondeEstaElPid=k;
+			    		  }
+			    	  }
+
+			    	  if(tablaExiste==0){
+			    		  //tabla no existe
+			    		  t_tablaArchivoPorProceso* tablaAAgregar = malloc(sizeof(t_tablaArchivoPorProceso));
+			    		  tablaAAgregar->pid=pid;
+			    		  tablaAAgregar->tablaArchivoPorProceso;
+			    		  tablaAAgregar->contadorFilasTablaPorProceso=0;
+			    		  list_add(listaTablasArchivosPorProceso,tablaAAgregar);
+			    		  int ultimoElemento=list_size(listaTablasArchivosPorProceso)-1;
+			    		  t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
+			    		  tablaAVer=list_get(listaTablasArchivosPorProceso,ultimoElemento);
+
+			    		  tablaAVer->tablaArchivoPorProceso[0][0]=flags;
+			    		  tablaAVer->tablaArchivoPorProceso[0][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
+			    		  tablaAVer->tablaArchivoPorProceso[0][2]=3;//FileDescriptor siempre empieza en 3
+
+			    		  descriptorADevolver=3;
+
+			    	  }else{
+			    		  //tabla existe
+			    		  t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
+			    		  tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+			    		  tablaAVer->contadorFilasTablaPorProceso++;
+			    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][0]=flags;
+			    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
+			    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2]=tablaAVer->contadorFilasTablaPorProceso+3;//FileDescriptor siempre empieza en 3
+
+			    		  descriptorADevolver=tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2];
+			    	  }
+
+			 return descriptorADevolver;
+}
+
 void abrirArchivoEnTablas(int socket_aceptado){
 	int pid;
 	int tamanoDireccion;
@@ -113,50 +163,8 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		    	  encontro=1;
 		    	  tablaGlobalArchivos[i][1]=tablaGlobalArchivos[i][1]+1;//aumento el open
 
+		    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,i);
 
-		    	  //agregarlo en la tabla del proceso
-		    	  //y agregarlo con el flag y el file descriptor y el indice hacia la tabla global
-
-		    	  t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
-		    	  int tablaExiste=0;
-		    	  int dondeEstaElPid;
-		    	  //verificar que la tabla de ese pid exista
-		    	  for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
-		    		  tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
-		    		  if(tablaAVerificar->pid==pid){
-		    			  tablaExiste=1;
-		    			  dondeEstaElPid=k;
-		    		  }
-		    	  }
-
-		    	  if(tablaExiste==0){
-		    		  //tabla no existe
-		    		  t_tablaArchivoPorProceso* tablaAAgregar = malloc(sizeof(t_tablaArchivoPorProceso));
-		    		  tablaAAgregar->pid=pid;
-		    		  tablaAAgregar->tablaArchivoPorProceso;
-		    		  tablaAAgregar->contadorFilasTablaPorProceso=0;
-		    		  list_add(listaTablasArchivosPorProceso,tablaAAgregar);
-		    		  int ultimoElemento=list_size(listaTablasArchivosPorProceso)-1;
-		    		  t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-		    		  tablaAVer=list_get(listaTablasArchivosPorProceso,ultimoElemento);
-
-		    		  tablaAVer->tablaArchivoPorProceso[0][0]=flags;
-		    		  tablaAVer->tablaArchivoPorProceso[0][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
-		    		  tablaAVer->tablaArchivoPorProceso[0][2]=3;//FileDescriptor siempre empieza en 3
-
-		    		  descriptorADevolver=3;
-
-		    	  }else{
-		    		  //tabla existe
-		    		  t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-		    		  tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
-		    		  tablaAVer->contadorFilasTablaPorProceso++;
-		    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][0]=flags;
-		    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
-		    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2]=tablaAVer->contadorFilasTablaPorProceso+3;//FileDescriptor siempre empieza en 3
-
-		    		  descriptorADevolver=tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2];
-		    	  }
 
 
 		      }
@@ -174,50 +182,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
 
 	    	  //agregarlo en la tabla del proceso
-
-	    	  //agregarlo en la tabla del proceso
-	    	  //y agregarlo con el flag y el file descriptor y el indice hacia la tabla global
-
-	    	  t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
-	    	  int tablaExiste=0;
-	    	  int dondeEstaElPid;
-	    	  //verificar que la tabla de ese pid exista
-	    	  for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
-	    		  tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
-	    		  if(tablaAVerificar->pid==pid){
-	    			  tablaExiste=1;
-	    			  dondeEstaElPid=k;
-	    		  }
-	    	  }
-
-	    	  if(tablaExiste==0){
-	    		  //tabla no existe
-	    		  t_tablaArchivoPorProceso* tablaAAgregar = malloc(sizeof(t_tablaArchivoPorProceso));
-	    		  tablaAAgregar->pid=pid;
-	    		  tablaAAgregar->tablaArchivoPorProceso;
-	    		  tablaAAgregar->contadorFilasTablaPorProceso;
-	    		  list_add(listaTablasArchivosPorProceso,tablaAAgregar);
-	    		  int ultimoElemento=list_size(listaTablasArchivosPorProceso)-1;
-	    		  t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-	    		  tablaAVer=list_get(listaTablasArchivosPorProceso,ultimoElemento);
-
-	    		  tablaAVer->tablaArchivoPorProceso[0][0]=flags;
-	    		  tablaAVer->tablaArchivoPorProceso[0][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
-	    		  tablaAVer->tablaArchivoPorProceso[0][2]=3;//FileDescriptor siempre empieza en 3
-
-	    		  descriptorADevolver=3;
-
-	    	  }else{
-	    		  //tabla existe
-	    		  t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-	    		  tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
-	    		  tablaAVer->contadorFilasTablaPorProceso++;
-	    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][0]=flags;
-	    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
-	    		  tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2]=tablaAVer->contadorFilasTablaPorProceso+3;//FileDescriptor siempre empieza en 3
-
-	    		  descriptorADevolver=tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2];
-	    	  }
+	    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal);
 
 		}
 
