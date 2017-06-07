@@ -24,6 +24,7 @@
 #include <commons/log.h>
 #include <parser/metadata_program.h>
 #include <parser/parser.h>
+#include <signal.h>
 #include "pcb.h"
 #include "conexiones.h"
 #include "interfazHandler.h"
@@ -35,8 +36,7 @@
 
 
 
-
-
+void recibirPidDeCpu(int socket);
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
@@ -67,9 +67,10 @@ void inicializarListas();
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
+	printf("\n\nholaaa\n\n");
 	imprimirInterfazUsuario();
 	inicializarSockets();
-	gradoMultiProgramacion=0;
+	//gradoMultiProgramacion=0;
 	inicializarSemaforos();
 
 	inicializarLog("/home/utnso/Log/logKernel.txt");
@@ -96,11 +97,14 @@ void connectionHandler(int socketAceptado, char orden) {
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
-	_Bool verificaSocket(t_cpu* cpu){
-			return (cpu->socket == socketAceptado);
+	_Bool verificaSocket(t_cpu* unaCpu){
+		return (unaCpu->socket == socketAceptado);
 	}
 
-					t_cpu* cpu = malloc(sizeof(t_cpu));
+	t_pcb* pcb;
+
+	t_cpu* cpu = malloc(sizeof(t_cpu));
+
 	switch (orden) {
 		case 'I':
 					atenderNuevoPrograma(socketAceptado);
@@ -119,25 +123,37 @@ void connectionHandler(int socketAceptado, char orden) {
 					interfazHandlerParaFileSystem('V');//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
 		case 'P':
-				send(socketAceptado,&config_paginaSize,sizeof(int),0);
-				send(socketAceptado,&stackSize,sizeof(int),0);
-				break;
+					send(socketAceptado,&config_paginaSize,sizeof(int),0);
+					send(socketAceptado,&stackSize,sizeof(int),0);
+					break;
 		case 'X':
-				recv(socketAceptado,&orden,sizeof(char),0);
-				interruptHandler(socketAceptado,orden);
+					recv(socketAceptado,&orden,sizeof(char),0);
+					interruptHandler(socketAceptado,orden);
 			break;
+		case 'R':
+					pcb = recibirYDeserializarPcb(socketAceptado);
+
+					agregarAFinQuantum(pcb);
+
+					break;
+		case 'K':
+					recibirPidDeCpu(socketAceptado);
+					break;
 		default:
-				if(orden == '\0') break;
-				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
-				break;
-		} // END switch de la consola
+					if(orden == '\0') break;
+					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
+					break;
+		}
 
 	pthread_mutex_unlock(&mutexConexion);
 	orden = '\0';
 	return;
 
 }
+void recibirPidDeCpu(int socket){
 
+	recv(socket,&pid,sizeof(int),0);
+}
 void interruptHandler(int socketAceptado,char orden){
 	log_info(loggerConPantalla,"Ejecutando interrupt handler\n");
 	int size;
@@ -303,6 +319,7 @@ void inicializarListas(){
 	listaCPU = list_create();
 	listaCodigosProgramas=list_create();
 	listaTablasArchivosPorProceso=list_create();
+	listaFinQuantum = list_create();
 	colaEjecucion = list_create();
 	listaEnEspera = list_create();
 }
@@ -370,18 +387,18 @@ void selectorConexiones() {
 											//close(i);
 											//FD_CLR(i, &master);
 												}
-									else {
+											else {
 									/*
 									for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
 									if (FD_ISSET(j, &master)) {
 									if (j != socket && j != i) {*/
-									pthread_mutex_lock(&mutexConexion);
-									connectionHandler(i, orden);
-								}
+													pthread_mutex_lock(&mutexConexion);
+													connectionHandler(i, orden);
+											}
 									}
 							}
 					}
-			}
+		}
 } // END handle data from client
 //} // END got new incoming connection
 //} // END looping through file descriptors

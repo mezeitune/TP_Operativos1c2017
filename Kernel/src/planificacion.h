@@ -28,7 +28,7 @@ typedef struct CPU {
 	int pid;
 	int socket;
 }t_cpu;
-
+int pid=0;
 typedef struct CONSOLA{
 	int pid;
 	int socketHiloPrograma;
@@ -68,6 +68,9 @@ pthread_t planificadorLargoPlazo;
 void* planificarCortoPlazo();
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex);
 pthread_t planificadorCortoPlazo;
+t_list* listaFinQuantum;
+void finQuantumAReady();
+void agregarAFinQuantum(t_pcb* pcb);
 /*----CORTO PLAZO--------*/
 
 /*---PLANIFICACION GENERAL-------*/
@@ -179,8 +182,11 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 void* planificarCortoPlazo(){
 	t_pcb* pcbListo;
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
-
+	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
 	char comandoEnviarPcb ='S';
+	char comandoExpropiar ='E';
+
+	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
 
 	while(1){
 
@@ -208,13 +214,58 @@ void* planificarCortoPlazo(){
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
 		send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
+		send(cpuEnEjecucion->socket,&quantum,sizeof(int),0);
+
 		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+
+		finQuantumAReady();
 
 		if(flagPlanificacion) sem_post(&sem_planificacion);
 
 	}
 }
 
+
+
+void finQuantumAReady(){
+
+
+	int indice;
+	t_pcb* pcbBuffer;
+
+	if(!list_is_empty(listaFinQuantum)){
+
+		for (indice = 0; indice < list_size(listaFinQuantum)-1; indice++) {
+				pthread_mutex_lock(&mutexListaFinQuantum);
+				pcbBuffer = list_remove(listaFinQuantum,indice);
+				pthread_mutex_unlock(&mutexListaFinQuantum);
+
+				pthread_mutex_lock(&mutexColaListos);
+				list_add(colaListos, pcbBuffer);
+				pthread_mutex_unlock(&mutexColaListos);
+				sem_post(&sem_colaReady);
+		}
+	}
+}
+
+
+void agregarAFinQuantum(t_pcb* pcb){
+
+	_Bool verificarPidPcb(t_pcb* unPcb){
+		return (unPcb->pid == pcb->pid);
+	}
+
+	pthread_mutex_lock(&mutexListaFinQuantum);
+	list_add(listaFinQuantum, pcb);
+	pthread_mutex_unlock(&mutexListaFinQuantum);
+
+	pthread_mutex_lock(&mutexColaEjecucion);
+	list_remove_by_condition(colaEjecucion, (void*)verificarPidPcb);
+	pthread_mutex_unlock(&mutexColaEjecucion);
+
+	sem_post(&sem_CPU);
+
+}
 
 /*------------------------CORTO PLAZO-----------------------------------------*/
 
@@ -230,7 +281,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		codigoPrograma->pid=contadorPid;
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
 
-		if(verificarGradoDeMultiprogramacion() <0 ){
+		if(verificarGradoDeMultiprogramacion() < 0 ){
 					list_add(colaNuevos,proceso);
 					list_add(listaCodigosProgramas,codigoPrograma);
 					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion

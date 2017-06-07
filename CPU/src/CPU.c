@@ -16,8 +16,9 @@ int main(void) {
 
 	signal(SIGINT, signalHandler);
 	signal(SIGUSR1, signalHandler);
-
+	signal(SIGUSR2, signalHandler);
 	pthread_mutex_init(&mutexEnvioKernel,NULL);
+	generarIdCpu();
 
 
 	char comandoGetNuevoProceso = 'N';
@@ -55,7 +56,8 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 	switch (orden) {
 		case 'S':
 			log_info(loggerConPantalla, "Se esta por asignar un PCB");
-				establecerPCB(socketAceptado);
+			recv(socketKernel,&cantidadInstruccionesAEjecutarPorKernel,sizeof(int),0);
+			establecerPCB(socketAceptado);
 					break;
 		default:
 				if(orden == '\0') break;
@@ -69,9 +71,16 @@ int cantidadPaginasTotales(){
 	int paginasTotales= (stackSize + pcb_actual->cantidadPaginasCodigo);
 	return paginasTotales;
 }
+void generarIdCpu(){
+	char comandoParaGenerarPid = 'K';
+	int pid= getpid();
+	send(socketKernel,&comandoParaGenerarPid,sizeof(char),0);
+	send(socketKernel,&pid,sizeof(int),0);
+}
 void establecerPCB(){
 
 	pcb_actual = recibirYDeserializarPcb(socketKernel);
+
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
 
 	printf("\n\nPCB:%d\n\n", pcb_actual->pid);
@@ -80,17 +89,22 @@ void establecerPCB(){
 
 }
 void EjecutarProgramaMedianteAlgoritmo(){
-	int i;
-			i = 0;
-	//recv(socketKernel,&ultimaInstruccion,sizeof(int),0);
-	int cantidadInstruccionesAEjecutar=pcb_actual->cantidadInstrucciones;
 
-	while((i < cantidadInstruccionesAEjecutar)){
-		ejecutarInstruccion(pcb_actual);
-		i++;
+	int cantidadInstruccionesAEjecutarPcb_Actual=pcb_actual->cantidadInstrucciones;
+
+	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
+		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarPcb_Actual){
+
+			ejecutarInstruccion();
+			cantidadInstruccionesAEjecutarPorKernel++;
+		}
+	} else{
+		while (cantidadInstruccionesAEjecutarPorKernel > 0){
+			ejecutarInstruccion();
+			cantidadInstruccionesAEjecutarPorKernel--;
+		}
+		expropiar();
 	}
-	//if(i==(cantidadInstruccionesAEjecutar-1))
-	//expropiarPorQuantum(pcb);
 }
 void ejecutarInstruccion(){
 
@@ -99,7 +113,9 @@ void ejecutarInstruccion(){
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 	free(instruccion);
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
-
+	if(cpuExpropiada==0){
+		expropiar();
+	}
 }
 
 
@@ -197,10 +213,14 @@ char* obtener_instruccion(){
 
 void signalHandler(int signum)
 {
-    if (signum == SIGUSR1 || signum == SIGINT)
+    if (signum == SIGUSR1 || signum == SIGINT )
     {
-    	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del pcb actual y cerrando CPU ...");
+    	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso de PID %d y cerrando CPU ...",pcb_actual->pid);
     	cpuFinalizada=0;
+    }
+    if (signum == SIGUSR2){
+    	log_warning(loggerConPantalla,"Se esta expropiando el proceso de PID %d ejecutando ultima instruccion y desalojandolo de CPU ...",pcb_actual->pid);
+    	cpuExpropiada=0;
     }
 }
 void CerrarPorSignal(){
@@ -240,16 +260,16 @@ void inicializarLog(char *rutaDeLog){
 	loggerSinPantalla = log_create(rutaDeLog,"CPU", false, LOG_LEVEL_INFO);
 	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
-void expropiarPorQuantum(){
-	//char comandoTerminoElQuantum= 'R';
-	//send(socketKernel,&comandoTerminoElQuantum , sizeof(char),0);
+void expropiar(){
+	char comandoExpropiarCpu= 'R';
+	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por fin de quantum", pcb_actual->pid);
-	//list_destroy_and_destroy_elements(listaPcb, free);
-	cpuOcupada=1;
+	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d", pcb_actual->pid, pcb_actual->programCounter);
+	free(pcb_actual);
+	esperarPCB();
 }
 void stackOverflow(){
-		log_warning(loggerConPantalla, "Elproceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
+		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
 		finalizar();
 
 }

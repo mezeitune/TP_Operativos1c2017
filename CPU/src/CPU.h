@@ -49,9 +49,10 @@ void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 void connectionHandlerKernel(int socketAceptado, char orden);
 void ejecutarInstruccion();
 void EjecutarProgramaMedianteAlgoritmo();
-void expropiarPorQuantum();
+void expropiar();
 void CerrarPorSignal();
 void stackOverflow();
+void generarIdCpu();
 //-----------------------------------------------------------------------------------------------------------------
 
 t_config* configuracion_memoria;
@@ -69,8 +70,8 @@ int socketKernel;
 t_pcb *pcb_actual;
 int cpuOcupada=1;
 int cpuFinalizada=1;
-
-
+int cantidadInstruccionesAEjecutarPorKernel=0;
+int cpuExpropiada=1;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 //---------Primitivas Comunes----------//
 t_puntero definirVariable(t_nombre_variable variable);
