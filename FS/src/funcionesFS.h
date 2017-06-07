@@ -2,6 +2,8 @@ void validarArchivoFunction(int socket_cliente){
 	int tamanoArchivo;
 	int validado;
 
+
+
 	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
     void* nombreArchivo = malloc(tamanoArchivo);
     recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
