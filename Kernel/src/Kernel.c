@@ -103,10 +103,6 @@ void connectionHandler(int socketAceptado, char orden) {
 
 	t_pcb* pcb;
 
-	_Bool verificarPidPcb(t_pcb* unPcb){
-		return (unPcb->pid == pcb->pid);
-	}
-
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 
 	switch (orden) {
@@ -136,30 +132,8 @@ void connectionHandler(int socketAceptado, char orden) {
 			break;
 		case 'R':
 					pcb = recibirYDeserializarPcb(socketAceptado);
-					printf("\n\nPCB RR:%d\n\n",pcb->pid);
 
-
-					pthread_mutex_lock(&mutexColaEjecucion);
-					list_remove_by_condition(colaEjecucion, (void*)verificarPidPcb);
-					pthread_mutex_unlock(&mutexColaEjecucion);
-
-
-					pthread_mutex_lock(&mutexGradoMultiProgramacion);
-					gradoMultiProgramacion--;
-					pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-
-
-					if(!verificarGradoDeMultiprogramacion()  < 0){
-						pthread_mutex_lock(&mutexColaNuevos);
-						list_add(colaNuevos, pcb);
-						pthread_mutex_unlock(&mutexColaNuevos);
-					}else{
-						pthread_mutex_lock(&mutexColaListos);
-						list_add(colaListos, pcb);
-						pthread_mutex_unlock(&mutexColaListos);
-						sem_post(&sem_colaReady);
-						sem_post(&sem_CPU);
-					}
+					agregarAFinQuantum(pcb);
 
 					break;
 		case 'K':
@@ -345,6 +319,7 @@ void inicializarListas(){
 	listaCPU = list_create();
 	listaCodigosProgramas=list_create();
 	listaTablasArchivosPorProceso=list_create();
+	listaFinQuantum = list_create();
 	colaEjecucion = list_create();
 	listaEnEspera = list_create();
 }

@@ -68,6 +68,9 @@ pthread_t planificadorLargoPlazo;
 void* planificarCortoPlazo();
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex);
 pthread_t planificadorCortoPlazo;
+t_list* listaFinQuantum;
+void finQuantumAReady();
+void agregarAFinQuantum(t_pcb* pcb);
 /*----CORTO PLAZO--------*/
 
 /*---PLANIFICACION GENERAL-------*/
@@ -215,11 +218,54 @@ void* planificarCortoPlazo(){
 
 		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 
+		finQuantumAReady();
+
 		if(flagPlanificacion) sem_post(&sem_planificacion);
 
 	}
 }
 
+
+
+void finQuantumAReady(){
+
+
+	int indice;
+	t_pcb* pcbBuffer;
+
+	if(!list_is_empty(listaFinQuantum)){
+
+		for (indice = 0; indice < list_size(listaFinQuantum)-1; indice++) {
+				pthread_mutex_lock(&mutexListaFinQuantum);
+				pcbBuffer = list_remove(listaFinQuantum,indice);
+				pthread_mutex_unlock(&mutexListaFinQuantum);
+
+				pthread_mutex_lock(&mutexColaListos);
+				list_add(colaListos, pcbBuffer);
+				pthread_mutex_unlock(&mutexColaListos);
+				sem_post(&sem_colaReady);
+		}
+	}
+}
+
+
+void agregarAFinQuantum(t_pcb* pcb){
+
+	_Bool verificarPidPcb(t_pcb* unPcb){
+		return (unPcb->pid == pcb->pid);
+	}
+
+	pthread_mutex_lock(&mutexListaFinQuantum);
+	list_add(listaFinQuantum, pcb);
+	pthread_mutex_unlock(&mutexListaFinQuantum);
+
+	pthread_mutex_lock(&mutexColaEjecucion);
+	list_remove_by_condition(colaEjecucion, (void*)verificarPidPcb);
+	pthread_mutex_unlock(&mutexColaEjecucion);
+
+	sem_post(&sem_CPU);
+
+}
 
 /*------------------------CORTO PLAZO-----------------------------------------*/
 
