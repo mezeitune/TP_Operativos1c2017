@@ -24,6 +24,7 @@
 #include <commons/log.h>
 #include <parser/metadata_program.h>
 #include <parser/parser.h>
+#include <signal.h>
 #include "pcb.h"
 #include "conexiones.h"
 #include "interfazHandler.h"
@@ -35,8 +36,7 @@
 
 
 
-
-
+void recibirPidDeCpu(int socket);
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
@@ -126,6 +126,13 @@ void connectionHandler(int socketAceptado, char orden) {
 				recv(socketAceptado,&orden,sizeof(char),0);
 				interruptHandler(socketAceptado,orden);
 			break;
+		case 'V':
+			//recibirYDeserializarPcb();
+			log_warning(loggerConPantalla,"La cpu ha sido expropiada con exito\n");
+			break;
+		case 'K':
+				recibirPidDeCpu(socketAceptado);
+			break;
 		default:
 				if(orden == '\0') break;
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
@@ -137,7 +144,10 @@ void connectionHandler(int socketAceptado, char orden) {
 	return;
 
 }
+void recibirPidDeCpu(int socket){
 
+	recv(socket,&pid,sizeof(int),0);
+}
 void interruptHandler(int socketAceptado,char orden){
 	log_info(loggerConPantalla,"Ejecutando interrupt handler\n");
 	int size;

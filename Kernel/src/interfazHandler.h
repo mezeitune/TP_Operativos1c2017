@@ -28,7 +28,7 @@ t_log *loggerConPantalla;
 
 
 void interfazHandler(){
-
+	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 	char orden;
 	char *mensajeRecibido;
 
@@ -85,6 +85,9 @@ void interfazHandler(){
 				case 'F':
 					printf("Enviando instrucciones a File System");
 					interfazHandlerParaFileSystem('V');
+					break;
+				case 'Z':
+					kill(pid,SIGUSR2);
 					break;
 				default:
 					log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
