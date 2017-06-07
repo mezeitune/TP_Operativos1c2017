@@ -5,11 +5,12 @@
 
 
 //--------Capa FS--------//
-
+int contadorFilasTablaGlobal=0;
 char** tablaGlobalArchivos;
 typedef struct FS{//Para poder guardar en la lista
 	int pid;
 	char** tablaArchivoPorProceso;
+	int contadorFilasTablaPorProceso;
 }t_tablaArchivoPorProceso;
 t_list* listaTablasArchivosPorProceso;
 
@@ -78,11 +79,62 @@ void guardarArchivoFS(){
 	printf("La validacion fue %d \n",validado);
 }
 
+int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
+	int k;
+	int descriptorADevolver;
+	//agregarlo en la tabla del proceso
+	//y agregarlo con el flag y el file descriptor y el indice hacia la tabla global
+
+	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
+	int tablaExiste=0;
+	int dondeEstaElPid;
+	//verificar que la tabla de ese pid exista
+	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
+		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
+		if(tablaAVerificar->pid==pid){
+			tablaExiste=1;
+			dondeEstaElPid=k;
+		}
+	}
+
+	 if(tablaExiste==0){
+		//tabla no existe
+		t_tablaArchivoPorProceso* tablaAAgregar = malloc(sizeof(t_tablaArchivoPorProceso));
+		tablaAAgregar->pid=pid;
+		tablaAAgregar->tablaArchivoPorProceso;
+		tablaAAgregar->contadorFilasTablaPorProceso=0;
+		list_add(listaTablasArchivosPorProceso,tablaAAgregar);
+		int ultimoElemento=list_size(listaTablasArchivosPorProceso)-1;
+		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
+		tablaAVer=list_get(listaTablasArchivosPorProceso,ultimoElemento);
+
+		tablaAVer->tablaArchivoPorProceso[0][0]=flags;
+		tablaAVer->tablaArchivoPorProceso[0][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
+		tablaAVer->tablaArchivoPorProceso[0][2]=3;//FileDescriptor siempre empieza en 3
+
+		descriptorADevolver=3;
+
+	}else{
+		//tabla existe
+		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
+		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+		tablaAVer->contadorFilasTablaPorProceso++;
+		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][0]=flags;
+		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
+		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2]=tablaAVer->contadorFilasTablaPorProceso+3;//FileDescriptor siempre empieza en 3
+
+		descriptorADevolver=tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2];
+	}
+
+	return descriptorADevolver;
+}
+
 void abrirArchivoEnTablas(int socket_aceptado){
 	int pid;
 	int tamanoDireccion;
 	int tamanoFlags;
 	void* direccion = malloc(tamanoDireccion);
+	int descriptorADevolver;
 	void* flags = malloc(tamanoFlags);
 	recv(socket_aceptado,&pid,sizeof(int),0);
 	recv(socket_aceptado,&tamanoDireccion,sizeof(int),0);
@@ -100,24 +152,35 @@ void abrirArchivoEnTablas(int socket_aceptado){
 	if(elArchivoExiste==1){
 
 		//me fijo que exista en la tabla global de archivos
-		/*int j,i;
-		for(i = 0; i < nrows; ++i)
+		int j,i,k;
+		int encontro=0;
+		for(i = 0; i < contadorFilasTablaGlobal; ++i)
 		{
 		   for(j = 0; j<3 ; j++)
 		   {
-		      printf("%d\t",tablaGlobalArchivos[i][0]);
+
+		      if(strcmp(tablaGlobalArchivos[i][0],direccionAValidar) == 0){
+		    	  encontro=1;
+		    	  tablaGlobalArchivos[i][1]=tablaGlobalArchivos[i][1]+1;//aumento el open
+
+		    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,i);
+		      }
 		   }
-		printf("\n");
-		}*/
+		}
 
-		//sino existe , la agrego al ultimo coso
+		if(encontro==0){
+	    	  contadorFilasTablaGlobal++;
+	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccionAValidar;
+	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
+	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
 
-		//si existe le aumento el Open y lo abro en su tabla con su pid correspondiente y sus flags
+	    	  //agregarlo en la tabla del proceso
+	    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal);
 
+		}
 
 		int validado=1;
-		int descriptor=2;
-		send(socket_aceptado,&descriptor,sizeof(int),0);
+		send(socket_aceptado,&descriptorADevolver,sizeof(int),0);
 		send(socket_aceptado,&validado,sizeof(int),0);
 	}else{
 		int validado=0;
