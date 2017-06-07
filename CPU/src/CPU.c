@@ -735,8 +735,19 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	send(socketKernel,&comandoAbrirArchivo,sizeof(char),0);
 	int pid= pcb_actual->pid;
 	send(socketKernel,&pid,sizeof(int),0);
-	send(socketKernel,&direccion,sizeof(int),0);
+	int tamanoDireccion=sizeof(int)*strlen(direccion);
+	send(socketKernel,&tamanoDireccion,sizeof(int),0);
+	send(socketKernel,direccion,tamanoDireccion,0);
+
 	//enviar los flags al kernel
+	char* flagsAEnviar;
+	flagsAEnviar = devolverStringFlags(flags);
+	int tamanoFlags=sizeof(int)*strlen(flagsAEnviar);
+	send(socketKernel,&tamanoFlags,sizeof(int),0);
+	send(socketKernel,flagsAEnviar,tamanoFlags,0);
+
+
+
 	recv(socketKernel,&descriptorArchivoAbierto,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1){
@@ -748,6 +759,23 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 		return 0;
 	}
 }
+
+char* devolverStringFlags(t_banderas flags){
+	char *flagss = string_new();
+	if(flags.creacion==true){
+		string_append(&flagss, "c");
+	}
+	if(flags.lectura==true){
+		string_append(&flagss, "r");
+	}
+	if(flags.escritura==true){
+		string_append(&flagss, "w");
+	}
+
+
+	return flagss;
+}
+
 void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 
 	char comandoCapaFS = 'F';
