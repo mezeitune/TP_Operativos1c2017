@@ -104,6 +104,7 @@ void connectionHandler(int socketAceptado, char orden) {
 	t_pcb* pcb;
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
+	char comandoDesdeCPU;
 
 	switch (orden) {
 		case 'I':
@@ -120,7 +121,8 @@ void connectionHandler(int socketAceptado, char orden) {
 					terminarProceso(socketAceptado);
 					break;
 		case 'F'://Para el FS
-					interfazHandlerParaFileSystem('V');//En vez de la V , poner el recv de la orden que quieras hacer con FS
+					recv(socketAceptado,&comandoDesdeCPU,sizeof(char),0);
+					interfazHandlerParaFileSystem(comandoDesdeCPU,socketAceptado);//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
 		case 'P':
 					send(socketAceptado,&config_paginaSize,sizeof(int),0);

@@ -16,7 +16,7 @@ void obtenerListadoProcesos();
 void mostrarProcesos(char orden);
 void imprimirListadoDeProcesos(t_list* listaPid);
 void filtrarPorPidYMostrar(t_list* cola);
-void interfazHandlerParaFileSystem(char orden);
+void interfazHandlerParaFileSystem(char orden,int socket_aceptado);
 
 
 pthread_t interfaz;
@@ -84,7 +84,7 @@ void interfazHandler(){
 						break;
 				case 'F':
 					printf("Enviando instrucciones a File System");
-					interfazHandlerParaFileSystem('V');
+					interfazHandlerParaFileSystem('V',1);
 					break;
 				case 'Z':
 					kill(pid,SIGUSR2);

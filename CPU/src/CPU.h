@@ -53,6 +53,7 @@ void expropiar();
 void CerrarPorSignal();
 void stackOverflow();
 void generarIdCpu();
+char* devolverStringFlags(t_banderas flags);
 //-----------------------------------------------------------------------------------------------------------------
 
 t_config* configuracion_memoria;
