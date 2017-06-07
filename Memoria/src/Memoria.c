@@ -128,6 +128,8 @@ void inicializarCache();
 int buscarEntradaDeProcesoEnCache(int pid, int pagina);
 void leerContenidoEnCache(int entrada,char** buffer, int size, int offset);
 void iniciarEntradaEnCache(int pid, int pagina);
+void borrarEntradasDeProcesoEnCache(int pid);
+
 
 int main(void)
 {
@@ -256,6 +258,8 @@ int finalizarPrograma(int pid)
 {
 	log_info(loggerConPantalla,"\nFinalizar Programa:%d\n",pid);
 	borrarProgramDeStructAdms(pid);
+	borrarEntradasDeProcesoEnCache(pid);
+
 
 	return EXIT_SUCCESS;
 }
@@ -819,7 +823,26 @@ void size()
 
 void dumpCache()
 {
-	printf("--Dump De Cache--\n");
+
+	int i = 0;
+	int desplazamiento = sizeof(int)*2+marco_size;
+	char*contenido = malloc(marco_size);
+	int pid;
+	int pagina;
+
+
+	while(i < entradas_cache)
+	{
+		memcpy(&pid,bloque_Cache + i*desplazamiento,marco_size);
+		memcpy(&pagina,bloque_Cache + i*desplazamiento + sizeof(int),marco_size);
+		memcpy(contenido,bloque_Cache + i*desplazamiento + sizeof(int)*2,marco_size);
+		printf("PID:%d\n",pid);
+		printf("Pagina:%d\n",pagina);
+		printf("Contenido:%s\n",contenido);
+		i++;
+	}
+	free(contenido);
+
 }
 
 void contenidoDeMemoria()
@@ -864,7 +887,7 @@ void datosAlmacenadosDeProceso()
 		memcpy(&aux, bloque_Memoria + i*desplazamientoStruct, sizeof(struct_adm_memoria));
 		if(aux.pid == pid)
 		{
-			memcpy(&datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
+			memcpy(datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
 			printf("%s\n",datosFrame);
 		}
 		i++;
@@ -886,7 +909,7 @@ void datosAlmacenadosEnMemoria()
 		if(aux.pid != -9 && aux.pid != -1)
 		{
 			printf("PID:%d\nFrame:%d\n",aux.pid,aux.frame);
-			memcpy(&datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
+			memcpy(datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
 			printf("Datos:%s\n",datosFrame);
 		}
 		i++;
@@ -896,7 +919,29 @@ void datosAlmacenadosEnMemoria()
 
 void vaciarCache()
 {
-	printf("--Vaciar Cache--\n");
+	int i = 0;
+	int desplazamiento = sizeof(int)*2+marco_size;
+	int pid = -1;
+	int pagina = -1;
+
+	while(i < entradas_cache)
+	{
+		memcpy(bloque_Cache + i*desplazamiento,&pid , sizeof(int));
+		memcpy(bloque_Cache + i*desplazamiento+sizeof(int),&pagina , sizeof(int));
+		i++;
+	}
+
+	i = 0;
+	int bitUso = -1;
+	desplazamiento = sizeof(int);
+
+	while(i < entradas_cache)
+	{
+		memcpy(bloqueBitUsoCache + i*desplazamiento,&bitUso , sizeof(int));
+		i++;
+	}
+	printf("Cache Vaciada\n");
+
 }
 
 void tamanioProceso()
@@ -968,7 +1013,7 @@ int buscarEntradaDeProcesoEnCache(int pid, int pagina)
 	{
 		memcpy(&pidProc, bloque_Cache + i*desplazamiento,sizeof(int));
 		memcpy(&paginaProc, bloque_Cache + i*desplazamiento+sizeof(int),sizeof(int));
-		if(pidProc == pid && paginaProc == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
+		if(pidProc == pid && paginaProc == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero buscar
 		{
 			return i;
 		}
@@ -1040,6 +1085,24 @@ int buscarUnaEntradaParaProcesoEnCache()
 	return entrada;
 }
 
+void borrarEntradasDeProcesoEnCache(int pid)
+{
+	int desplazamiento = marco_size + sizeof(int)*2;
+	int pidAux;
+	int i = 0;
+	while(i < entradas_cache)
+	{
+		memcpy(&pidAux, bloque_Cache + i*desplazamiento,sizeof(int));
+		if(pidAux == pid) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
+		{
+			pidAux = -1;
+			memcpy(bloque_Cache + i*desplazamiento,&pidAux ,sizeof(int));
+			memcpy(bloque_Cache + i*desplazamiento + sizeof(int),&pidAux ,sizeof(int));
+			//Marco esa entrada como vacía
+		}
+		i++;
+	}
+}
 
 
 
