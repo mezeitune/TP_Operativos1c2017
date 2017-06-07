@@ -154,13 +154,15 @@ void mostrarProcesos(char orden){
 }
 
 void filtrarPorPidYMostrar(t_list* colaEstados){
-	t_list* cola=colaEstados;
+	t_list* cola= list_create();
+	list_add_all(colaEstados,cola);
 	int transformarPid(t_pcb* pcb){
 			return pcb->pid;
 		}
 		void liberar(int* pid){
 			free(pid);
 		}
+		printf("Cantidad de procesos: %d", cola->elements_count);
 		imprimirListadoDeProcesos(list_map(cola,(void*)transformarPid));
 			//list_destroy_and_destroy_elements(listaPid, (void*)liberar);
 			/*TODO:PREGUNTAR QUE PASA CON ESTA NUEVA LISTA CREADA*/

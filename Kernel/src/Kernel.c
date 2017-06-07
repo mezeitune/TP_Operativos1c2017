@@ -47,7 +47,9 @@ void interruptHandler(int socket,char orden);
 int buscarSocketHiloPrograma(int pid);
 void buscarProcesoYTerminarlo(int pid);
 void eliminarSocket(int socket);
-
+void gestionarCierreConsola(int socket);
+void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad);
+void eliminarHiloPrograma(int pid);
 //------InterruptHandler-----//
 
 
@@ -151,7 +153,7 @@ void connectionHandler(int socketAceptado, char orden) {
 
 }
 void recibirPidDeCpu(int socket){
-
+int pid;
 	recv(socket,&pid,sizeof(int),0);
 }
 void interruptHandler(int socketAceptado,char orden){
@@ -193,20 +195,8 @@ void interruptHandler(int socketAceptado,char orden){
 		/*TODO: Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
 		break;
 	case 'E':
-		log_info(loggerConPantalla,"La Consola con socket %d asignado se ha cerrado por signal \n",socketAceptado);
-		recv(socketAceptado,&size,sizeof(int),0);
-		mensaje = malloc(size);
-		recv(socketAceptado,mensaje,size,0);
-		strcpy(mensaje+size,"\0");
-		int* procesosAFinalizar = malloc(size);
-		for(i=0;i<size;i++){
-			memcpy(procesosAFinalizar,mensaje,sizeof(int));
-			mensaje += sizeof(int);
-		}
-		//printf("%d\n", procesosAFinalizar[0]);
-		/*TODO:Hay que buscar a todos los procesosAFinalizar en la cola de los estados, y llevarlos a la cola de terminados*/
-
-		eliminarSockets(socketAceptado,procesosAFinalizar);
+		log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socketAceptado);
+		gestionarCierreConsola(socketAceptado);
 		break;
 	case 'F':
 		log_info(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
@@ -241,11 +231,57 @@ void interruptHandler(int socketAceptado,char orden){
 	}
 }
 
+void gestionarCierreConsola(int socket){
+	log_info(loggerConPantalla,"Gestionando cierre de consola %d",socket);
+	int size, cantidad;
+	char* procesosAFinalizar;
+	int i;
+		recv(socket,&size,sizeof(int),0);
+		procesosAFinalizar = malloc(size);
+		recv(socket,&cantidad,sizeof(int),0);
+		recv(socket,procesosAFinalizar,size,0);
+
+			/*TODO:Hay que buscar a todos los procesosAFinalizar en la cola de los estados, y llevarlos a la cola de terminados*/
+			cerrarHilosProgramas(procesosAFinalizar,cantidad);
+			send(socket,&i,sizeof(int),0);
+			eliminarSocket(socket);
+			free(procesosAFinalizar);
+}
+
+void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad){
+	log_info(loggerConPantalla,"Finalizando hilos programas de Consola");
+	int i;
+	int pid;
+	char* mensaje = malloc(sizeof(char)*10);
+	mensaje = "Finalizar";
+
+	for(i=0;i<cantidad;i++){
+		pid = *((int*)procesosAFinalizar);
+		procesosAFinalizar += sizeof(int);
+		log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
+		informarConsola(buscarSocketHiloPrograma(pid),mensaje,strlen(mensaje));
+		eliminarSocket(buscarSocketHiloPrograma(pid));
+		eliminarHiloPrograma(pid);
+	}
+	//free(mensaje); TODO: Ver este free
+
+}
+
+void eliminarHiloPrograma(int pid){
+	_Bool verificaPid(t_consola* consolathread){
+			return (consolathread->pid == pid);
+		}
+		t_consola* consolathread = list_remove_by_condition(listaConsolas,(void*)verificaPid);
+		free(consolathread);
+}
+
+
 void eliminarSocket(int socket){
-	close(socket);
 	pthread_mutex_lock(&mutex_FDSET);
 	FD_CLR(socket,&master);
 	pthread_mutex_unlock(&mutex_FDSET);
+	log_info(loggerConPantalla,"Socket %d cerrado",socket);
+	close(socket);
 }
 
 void buscarProcesoYTerminarlo(int pid){
@@ -282,11 +318,6 @@ void buscarProcesoYTerminarlo(int pid){
 	pthread_mutex_unlock(&mutexColaTerminados);
 }
 
-void eliminarSockets(int socketConsolaGlobal,int* procesosAFinalizar){
-			eliminarSocket(socketConsolaGlobal);
-
-	/*TODO: Buscar por pid y borrar los socket de los hilos programas*/
-}
 
 int buscarSocketHiloPrograma(int pid){
 
