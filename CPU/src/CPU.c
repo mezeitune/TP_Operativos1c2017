@@ -57,7 +57,7 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 		case 'S':
 			log_info(loggerConPantalla, "Se esta por asignar un PCB");
 			recv(socketKernel,&cantidadInstruccionesAEjecutarPorKernel,sizeof(int),0);
-				establecerPCB(socketAceptado);
+			establecerPCB(socketAceptado);
 					break;
 		default:
 				if(orden == '\0') break;
@@ -261,9 +261,9 @@ void inicializarLog(char *rutaDeLog){
 	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
 void expropiar(){
-	char comandoExpropiarCpu= 'V';
+	char comandoExpropiarCpu= 'R';
 	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	//serializarPcbYEnviar(pcb_actual,socketKernel);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d", pcb_actual->pid, pcb_actual->programCounter);
 	free(pcb_actual);
 	esperarPCB();

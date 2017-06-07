@@ -13,9 +13,9 @@ void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 t_config* configuracion_kernel;
 
-char *quantum;
+int config_quantum;
 char *quantumSleep;
-char *algoritmo;
+char *config_algoritmo;
 char *semIds;
 char *semInit;
 char *sharedVars;
@@ -37,7 +37,7 @@ void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
 	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
 	printf("---------------------------------------------------\n");
-	printf(	"QUANTUM:%s\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	quantum, quantumSleep, algoritmo, config_gradoMultiProgramacion, semIds, semInit, sharedVars, stackSize, config_paginaSize);
+	printf(	"QUANTUM:%d\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	config_quantum, quantumSleep, config_algoritmo, config_gradoMultiProgramacion, semIds, semInit, sharedVars, stackSize, config_paginaSize);
 	printf("---------------------------------------------------\n");
 
 }
@@ -46,15 +46,16 @@ void leerConfiguracion(char* ruta) {
 
 	configuracion_kernel = config_create(ruta);
 
+
 	ipServidor = config_get_string_value(configuracion_kernel, "IP_SERVIDOR");
 	puertoServidor = config_get_string_value(configuracion_kernel,"PUERTO_SERVIDOR");
 	ipMemoria = config_get_string_value(configuracion_kernel, "IP_MEMORIA");
 	puertoMemoria = config_get_string_value(configuracion_kernel,"PUERTO_MEMORIA");
 	ipFileSys = config_get_string_value(configuracion_kernel, "IP_FS");
 	puertoFileSys = config_get_string_value(configuracion_kernel, "PUERTO_FS");
-	quantum = config_get_string_value(configuracion_kernel, "QUANTUM");
+	config_quantum = atoi(config_get_string_value(configuracion_kernel, "QUANTUM"));
 	quantumSleep = config_get_string_value(configuracion_kernel,"QUANTUM_SLEEP");
-	algoritmo = config_get_string_value(configuracion_kernel, "ALGORTIMO");
+	config_algoritmo = config_get_string_value(configuracion_kernel, "ALGORITMO");
 	config_gradoMultiProgramacion = atoi(config_get_string_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION"));
 	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
 	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");

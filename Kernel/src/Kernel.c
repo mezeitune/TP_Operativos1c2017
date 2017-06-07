@@ -67,9 +67,10 @@ void inicializarListas();
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
+	printf("\n\nholaaa\n\n");
 	imprimirInterfazUsuario();
 	inicializarSockets();
-	gradoMultiProgramacion=0;
+	//gradoMultiProgramacion=0;
 	inicializarSemaforos();
 
 	inicializarLog("/home/utnso/Log/logKernel.txt");
@@ -96,11 +97,18 @@ void connectionHandler(int socketAceptado, char orden) {
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
-	_Bool verificaSocket(t_cpu* cpu){
-			return (cpu->socket == socketAceptado);
+	_Bool verificaSocket(t_cpu* unaCpu){
+		return (unaCpu->socket == socketAceptado);
 	}
 
-					t_cpu* cpu = malloc(sizeof(t_cpu));
+	t_pcb* pcb;
+
+	_Bool verificarPidPcb(t_pcb* unPcb){
+		return (unPcb->pid == pcb->pid);
+	}
+
+	t_cpu* cpu = malloc(sizeof(t_cpu));
+
 	switch (orden) {
 		case 'I':
 					atenderNuevoPrograma(socketAceptado);
@@ -119,25 +127,49 @@ void connectionHandler(int socketAceptado, char orden) {
 					interfazHandlerParaFileSystem('V');//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
 		case 'P':
-				send(socketAceptado,&config_paginaSize,sizeof(int),0);
-				send(socketAceptado,&stackSize,sizeof(int),0);
-				break;
+					send(socketAceptado,&config_paginaSize,sizeof(int),0);
+					send(socketAceptado,&stackSize,sizeof(int),0);
+					break;
 		case 'X':
-				recv(socketAceptado,&orden,sizeof(char),0);
-				interruptHandler(socketAceptado,orden);
+					recv(socketAceptado,&orden,sizeof(char),0);
+					interruptHandler(socketAceptado,orden);
 			break;
-		case 'V':
-			//recibirYDeserializarPcb();
-			log_warning(loggerConPantalla,"La cpu ha sido expropiada con exito\n");
-			break;
+		case 'R':
+					pcb = recibirYDeserializarPcb(socketAceptado);
+					printf("\n\nPCB RR:%d\n\n",pcb->pid);
+
+
+					pthread_mutex_lock(&mutexColaEjecucion);
+					list_remove_by_condition(colaEjecucion, (void*)verificarPidPcb);
+					pthread_mutex_unlock(&mutexColaEjecucion);
+
+
+					pthread_mutex_lock(&mutexGradoMultiProgramacion);
+					gradoMultiProgramacion--;
+					pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+
+
+					if(!verificarGradoDeMultiprogramacion()  < 0){
+						pthread_mutex_lock(&mutexColaNuevos);
+						list_add(colaNuevos, pcb);
+						pthread_mutex_unlock(&mutexColaNuevos);
+					}else{
+						pthread_mutex_lock(&mutexColaListos);
+						list_add(colaListos, pcb);
+						pthread_mutex_unlock(&mutexColaListos);
+						sem_post(&sem_colaReady);
+						sem_post(&sem_CPU);
+					}
+
+					break;
 		case 'K':
-				recibirPidDeCpu(socketAceptado);
-			break;
+					recibirPidDeCpu(socketAceptado);
+					break;
 		default:
-				if(orden == '\0') break;
-				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
-				break;
-		} // END switch de la consola
+					if(orden == '\0') break;
+					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
+					break;
+		}
 
 	pthread_mutex_unlock(&mutexConexion);
 	orden = '\0';
@@ -380,18 +412,18 @@ void selectorConexiones() {
 											//close(i);
 											//FD_CLR(i, &master);
 												}
-									else {
+											else {
 									/*
 									for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
 									if (FD_ISSET(j, &master)) {
 									if (j != socket && j != i) {*/
-									pthread_mutex_lock(&mutexConexion);
-									connectionHandler(i, orden);
-								}
+													pthread_mutex_lock(&mutexConexion);
+													connectionHandler(i, orden);
+											}
 									}
 							}
 					}
-			}
+		}
 } // END handle data from client
 //} // END got new incoming connection
 //} // END looping through file descriptors

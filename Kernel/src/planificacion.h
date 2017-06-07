@@ -179,9 +179,12 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 void* planificarCortoPlazo(){
 	t_pcb* pcbListo;
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
-	int comandoPlanificacion = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
+	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
 	char comandoEnviarPcb ='S';
 	char comandoExpropiar ='E';
+
+	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
+
 	while(1){
 
 		sem_wait(&sem_CPU);
@@ -208,7 +211,7 @@ void* planificarCortoPlazo(){
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
 		send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
-		send(cpuEnEjecucion->socket,&comandoPlanificacion,sizeof(int),0);
+		send(cpuEnEjecucion->socket,&quantum,sizeof(int),0);
 
 		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 
@@ -232,7 +235,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		codigoPrograma->pid=contadorPid;
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
 
-		if(verificarGradoDeMultiprogramacion() <0 ){
+		if(verificarGradoDeMultiprogramacion() < 0 ){
 					list_add(colaNuevos,proceso);
 					list_add(listaCodigosProgramas,codigoPrograma);
 					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
