@@ -15,9 +15,11 @@
 void inicializarSemaforos();
 pthread_mutex_t mutexColaNuevos;
 pthread_mutex_t mutexColaListos;
-pthread_mutex_t mutexListaFinQuantum;
 pthread_mutex_t mutexColaTerminados;
 pthread_mutex_t mutexColaEjecucion;
+pthread_mutex_t mutexColaBloqueados;
+
+pthread_mutex_t mutexListaFinQuantum;
 pthread_mutex_t mutexListaConsolas;
 pthread_mutex_t mutexListaCPU;
 pthread_mutex_t mutexConexion;
@@ -35,6 +37,9 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexColaNuevos,NULL);
 		pthread_mutex_init(&mutexColaListos, NULL);
 		pthread_mutex_init(&mutexColaTerminados, NULL);
+		pthread_mutex_init(&mutexColaEjecucion,NULL);
+		pthread_mutex_init(&mutexColaBloqueados,NULL);
+
 		pthread_mutex_init(&mutexListaConsolas,NULL);
 		pthread_mutex_init(&mutexListaCPU,NULL);
 		pthread_mutex_init(&mutexListaEspera,NULL);

@@ -84,10 +84,12 @@ int contadorPid=0;
 t_list* colaNuevos;
 t_list* colaListos;
 t_list* colaTerminados;
+t_list* colaEjecucion;
+t_list* colaBloqueados;
+
 t_list* listaConsolas;
 t_list* listaCPU;
 t_list* listaEnEspera;
-t_list* colaEjecucion;
 /*---PLANIFICACION GENERAL-------*/
 
 
@@ -96,12 +98,11 @@ void* planificarLargoPlazo(int socket){
 	t_pcb* proceso;
 	while(1){
 		sem_wait(&sem_admitirNuevoProceso);
-			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0) {
+			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0 && flagPlanificacion) {
 			log_info(loggerConPantalla,"Inicializando nuevo proceso desde cola de Nuevos");
-			proceso = list_get(colaNuevos,0);
+			proceso = list_remove(colaNuevos,0);
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
 			crearProceso(proceso,codigoPrograma);
-			list_remove(colaNuevos,0);
 			}
 	}
 }
@@ -278,16 +279,26 @@ int atenderNuevoPrograma(int socketAceptado){
 		send(socketAceptado,&contadorPid,sizeof(int),0);
 
 		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
-		codigoPrograma->pid=contadorPid;
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
+		codigoPrograma->pid=proceso->pid;
+
+		if(!flagPlanificacion) {
+					contadorPid--;
+					free(proceso);
+					free(codigoPrograma);
+					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
+					interruptHandler(socketAceptado,'D'); // Informa a consola error por planificacion detenida
+					return -1;
+						}
 
 		if(verificarGradoDeMultiprogramacion() < 0 ){
 					list_add(colaNuevos,proceso);
 					list_add(listaCodigosProgramas,codigoPrograma);
 					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
-					return -1;
+					return -2;
 				}
 
+		/*Si la planificacion no esta detenida*/
 		pthread_mutex_lock(&mutexGradoMultiProgramacion);
 		gradoMultiProgramacion++;
 		pthread_mutex_unlock(&mutexGradoMultiProgramacion);

@@ -57,7 +57,6 @@ void eliminarHiloPrograma(int pid);
 void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
-void eliminarSockets(int socketConsolaGlobal,int* procesosAFinales);
 fd_set master;
 int flagFinalizar;
 //---------Conexiones-------------//
@@ -69,7 +68,6 @@ void inicializarListas();
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
-	printf("\n\nholaaa\n\n");
 	imprimirInterfazUsuario();
 	inicializarSockets();
 	//gradoMultiProgramacion=0;
@@ -228,6 +226,15 @@ void interruptHandler(int socketAceptado,char orden){
 	case 'O' :
 
 		break;
+	case 'D':
+		log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido\n");
+				mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
+				size=strlen(mensaje);
+				informarConsola(socketAceptado,mensaje,size);
+				mensaje = "Finalizar";
+				size=strlen(mensaje);
+				informarConsola(socketAceptado,mensaje,size);
+		break;
 	default:
 			break;
 	}
@@ -348,12 +355,14 @@ void inicializarListas(){
 	colaNuevos= list_create();
 	colaListos= list_create();
 	colaTerminados= list_create();
+	colaEjecucion = list_create();
+	colaBloqueados=list_create();
+
 	listaConsolas = list_create();
 	listaCPU = list_create();
 	listaCodigosProgramas=list_create();
 	listaTablasArchivosPorProceso=list_create();
 	listaFinQuantum = list_create();
-	colaEjecucion = list_create();
 	listaEnEspera = list_create();
 }
 
@@ -394,7 +403,10 @@ void selectorConexiones() {
 					for (i = 0; i <= fdMax; i++) {
 							if (FD_ISSET(i, &readFds)) { // we got one!!
 							/**********************************************************/
-									if(i == 0) sem_post(&sem_ordenSelect);//Cuando recibe orden de STDIN desbloquea al interfazHandler
+									if(i == 0){
+										sem_post(&sem_ordenSelect);//Cuando recibe orden de STDIN desbloquea al interfazHandler
+										break;
+									}
 
 									/************************************************************/
 									if (i == socketServidor) {

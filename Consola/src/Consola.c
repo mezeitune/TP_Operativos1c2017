@@ -109,7 +109,6 @@ void cerrarTodo(){
 	int i;
 	int ok;
 
-
 	int mensajeSize = sizeof(int)* listaHilosProgramas->elements_count;
 	char* mensaje= malloc(mensajeSize);
 	char* procesosATerminar = mensaje;
