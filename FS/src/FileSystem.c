@@ -83,9 +83,6 @@ void connection_handlerR(int socket_cliente)
 
     while(orden != 'Q'){
 
-    			//printf("\nIngresar orden:\n");
-    			//scanf(" %c", &orden);
-
     	switch(orden){
 		case 'V'://validar archivo
 			validarArchivoFunction(socket_cliente);
