@@ -179,7 +179,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 	send(socketCPU,pcbEnviar,pcbSerializadoSize,0);
 	log_info(loggerConPantalla, "Pcb serializado y enviado ----- PID: %d ------ socketCPU: %d-----Tamano: %d ", pcb->pid, socketCPU,pcbSerializadoSize);
 
-	//imprimirPcb(pcb);
+	imprimirPcb(pcb);
 
 	//free(pcbEnviar);
 

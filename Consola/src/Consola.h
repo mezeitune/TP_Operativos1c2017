@@ -26,20 +26,18 @@ t_log *loggerConPantalla;
 //--------Configuraciones--------------//
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
+t_config* configuracion_Consola;
 void imprimirInterfaz();
 //--------Configuraciones--------------//
 
-
 void inicializarListas();
-
-//funciones
-//int obtenerTiempoEjecucion(char *fechaInicio,char fechaActual);
+void inicializarSemaforos();
 void* connectionHandler();
-void* imprimir(int socket);
+void finalizarPrograma();
 void cerrarTodo();
-t_config* configuracion_Consola;
+void limpiarPantalla();
 char* ipKernel;
 char* puertoKernel;
 int socketKernel;
-
 pthread_t hiloInterfazUsuario;
+int flagCerrarConsola;

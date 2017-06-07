@@ -193,12 +193,13 @@ void interruptHandler(int socketAceptado,char orden){
 		eliminarSockets(socketAceptado,procesosAFinalizar);
 		break;
 	case 'F':
-		log_info(loggerConPantalla,"La consola con socket: %d asignado ha solicitado finalizar un proceso ",socketAceptado);
+		log_info(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
 		recv(socketAceptado,&pid,sizeof(int),0);
+		socketHiloPrograma = buscarSocketHiloPrograma(pid); /*TODO: Eliminar la Consola-PID de la lista de hilosProgramas*/
 		buscarProcesoYTerminarlo(pid);
-		mensaje = "El proceso ha sido finalizado";
+		mensaje = "Finalizar";
 		size=strlen(mensaje);
-		informarConsola(socketAceptado,mensaje,size);
+		informarConsola(socketHiloPrograma,mensaje,size);
 		log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
 		break;
 	case  'R':
@@ -273,13 +274,13 @@ void eliminarSockets(int socketConsolaGlobal,int* procesosAFinalizar){
 
 int buscarSocketHiloPrograma(int pid){
 
-	_Bool verificarPid(t_consola* consolathread,int pid){
+	_Bool verificarPid(t_consola* consolathread){
 		return (consolathread->pid == pid);
 	}
 	int socketHiloConsola;
 	t_consola* consolathread = list_find(listaConsolas,(void*)verificarPid);
 	socketHiloConsola =consolathread->socketHiloPrograma;
-	free(consolathread);
+	/*free(consolathread);*/ //TODO: Ver si aca hay que liberar o no
 	return socketHiloConsola;
 }
 
