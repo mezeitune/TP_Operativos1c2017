@@ -29,7 +29,7 @@ int main(void) {
 	signal(SIGINT, signalSigIntHandler);
 
 	pthread_join(hiloInterfazUsuario, NULL);
-
+	log_info(loggerConPantalla,"La Consola ha finalizado");
 	return 0;
 
 }
@@ -38,17 +38,16 @@ void signalSigIntHandler(int signum)
 {
     if (signum == SIGINT)
     {
-    	log_warning(loggerConPantalla,"Cierre por signal, cerrando hilos programa y avisando a kernel \n");
+    	log_warning(loggerConPantalla,"Finalizando consola \n");
     	cerrarTodo();
-    	log_warning(loggerConPantalla,"La consola se ha cerrado por signal correctamente \n");
-    	exit(1);
+    	exit(1); /* TODO: Hacer que se termine el hilo interfaz tambien*/
+
     }
 }
 
 void *connectionHandler() {
-
+	char orden;
 	while (flagCerrarConsola) {
-		char orden;
 		sem_wait(&sem_crearHilo);
 
 		imprimirInterfaz();
@@ -65,8 +64,7 @@ void *connectionHandler() {
 				limpiarPantalla();
 				break;
 			case 'Q':
-				cerrarTodo(); /*TODO: Resolver el tema de cerrar todos los hilos*/
-				exit(1);
+				cerrarTodo();
 				break;
 			default:
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
@@ -75,7 +73,9 @@ void *connectionHandler() {
 			}
 		orden = '\0';
 	}
+	log_info(loggerConPantalla,"Hilo Interfaz de Usuario de Consola finalizado");
 }
+
 void limpiarPantalla(){
 	system("clear");
 	sem_post(&sem_crearHilo);
@@ -107,6 +107,7 @@ void cerrarTodo(){
 	char comandoInterruptHandler='X';
 	char comandoCierreConsola = 'E';
 	int i;
+	int ok;
 
 	int mensajeSize = sizeof(int)* listaHilosProgramas->elements_count;
 	char* mensaje= malloc(mensajeSize);
@@ -120,13 +121,16 @@ void cerrarTodo(){
 	}
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreConsola,sizeof(char),0);
+
 	send(socketKernel,&mensajeSize,sizeof(int),0);
+	send(socketKernel,&listaHilosProgramas->elements_count,sizeof(int),0);
 	send(socketKernel,mensaje,mensajeSize,0);
-	/*TODO: Mandar al Kernel una orden para que cierre a todos los hilos y quedarse a la espera de el OK con un recv*/
+	recv(socketKernel,&ok,sizeof(int),0);
+
+
 	free(mensaje);
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
 	flagCerrarConsola = 0;
-	pthread_mutex_unlock(&mutex_crearHilo);
 }
 
 void leerConfiguracion(char* ruta) {

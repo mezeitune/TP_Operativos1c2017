@@ -43,7 +43,7 @@ typedef struct {
 
 
 /*---PAUSA PLANIFICACION---*/
-
+int flagTerminarPlanificadorLargoPlazo = 1;
 int flagPlanificacion = 1;
 
 void reanudarPLanificacion();
@@ -84,30 +84,36 @@ int contadorPid=0;
 t_list* colaNuevos;
 t_list* colaListos;
 t_list* colaTerminados;
+t_list* colaEjecucion;
+t_list* colaBloqueados;
+
 t_list* listaConsolas;
 t_list* listaCPU;
 t_list* listaEnEspera;
-t_list* colaEjecucion;
 /*---PLANIFICACION GENERAL-------*/
 
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
 void* planificarLargoPlazo(int socket){
 	t_pcb* proceso;
-	while(1){
+	while(flagTerminarPlanificadorLargoPlazo){
 		sem_wait(&sem_admitirNuevoProceso);
-			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0) {
+			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0 && flagPlanificacion) {
 			log_info(loggerConPantalla,"Inicializando nuevo proceso desde cola de Nuevos");
-			proceso = list_get(colaNuevos,0);
+
+			pthread_mutex_lock(&mutexColaNuevos);
+			proceso = list_remove(colaNuevos,0);
+			pthread_mutex_unlock(&mutexColaNuevos);
+
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
 			crearProceso(proceso,codigoPrograma);
-			list_remove(colaNuevos,0);
 			}
 	}
+	log_info(loggerConPantalla,"Planificador largo palzo finalizado");
 }
 
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
-	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP\n");
+	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP");
 	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
 	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
 	codigoPrograma->codigo = malloc(codigoPrograma->size);
@@ -127,22 +133,25 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 
 void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
-				log_error(loggerConPantalla ,"\nNo se pudo reservar recursos para ejecutar el programa");
+				log_error(loggerConPantalla ,"No se pudo reservar recursos para ejecutar el programa");
 				interruptHandler(codigoPrograma->socketHiloConsola,'A'); // Informa a consola error por no poder reservar recursos
+				eliminarHiloPrograma(proceso->pid);
 				free(proceso);
 				free(codigoPrograma);
 			}
 	else{
 			encolarProcesoListo(proceso);
-			cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 			free(codigoPrograma);
 			log_info(loggerConPantalla, "PCB encolado en cola de listos ---- PID: %d", proceso->pid);
+			pthread_mutex_lock(&mutexGradoMultiProgramacion);
+			gradoMultiProgramacion++;
+			pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 			sem_post(&sem_colaReady);
 	}
 }
 
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
-	log_info(loggerConPantalla, "Inicializando proceso en memoria ---- PID: %d \n", proceso->pid);
+	log_info(loggerConPantalla, "Inicializando proceso en memoria--->PID: %d", proceso->pid);
 	if((pedirMemoria(proceso))< 0){
 				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
 				return -1;
@@ -153,6 +162,8 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 				}
 	return 0;
 }
+
+
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
 
@@ -272,32 +283,39 @@ void agregarAFinQuantum(t_pcb* pcb){
 /*-------------------PLANIFICACION GENERAL------------------------------------*/
 
 int atenderNuevoPrograma(int socketAceptado){
-		log_info(loggerConPantalla,"Atendiendo nuevo programa\n");
+		log_info(loggerConPantalla,"Atendiendo nuevo programa");
 
 		contadorPid++; // VAR GLOBAL
 		send(socketAceptado,&contadorPid,sizeof(int),0);
 
 		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
-		codigoPrograma->pid=contadorPid;
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
+		codigoPrograma->pid=proceso->pid;
+
+		if(!flagPlanificacion) {
+					contadorPid--;
+					free(proceso);
+					free(codigoPrograma);
+					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
+					interruptHandler(socketAceptado,'D'); // Informa a consola error por planificacion detenida
+					return -1;
+						}
+		list_add(colaNuevos,proceso);
+		list_add(listaCodigosProgramas,codigoPrograma);
+		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 
 		if(verificarGradoDeMultiprogramacion() < 0 ){
-					list_add(colaNuevos,proceso);
-					list_add(listaCodigosProgramas,codigoPrograma);
 					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
-					return -1;
+					return -2;
 				}
-
-		pthread_mutex_lock(&mutexGradoMultiProgramacion);
-		gradoMultiProgramacion++;
-		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-		crearProceso(proceso, codigoPrograma);
+		else{
+			sem_post(&sem_admitirNuevoProceso);
+		}
 		return 0;
 }
 
 
 int verificarGradoDeMultiprogramacion(){
-	//log_info(loggerConPantalla, "Verificando grado de multiprogramacion");
 	pthread_mutex_lock(&mutexGradoMultiProgramacion);
 	if(gradoMultiProgramacion >= config_gradoMultiProgramacion) {
 		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
@@ -305,7 +323,6 @@ int verificarGradoDeMultiprogramacion(){
 		return -1;
 	}
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-
 	return 0;
 }
 
@@ -317,7 +334,6 @@ void cargarConsola(int pid, int socketHiloPrograma) {
 	pthread_mutex_lock(&mutexListaConsolas);
 	list_add(listaConsolas,infoConsola);
 	pthread_mutex_unlock(&mutexListaConsolas);
-	//free(infoConsola);
 }
 
 void encolarProcesoListo(t_pcb *procesoListo){

@@ -35,11 +35,11 @@
 #include "capaFS.h"
 
 
-
 void recibirPidDeCpu(int socket);
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
+void inicializarListas();
 //---------ConnectionHandler-------//
 
 //------InterruptHandler-----//
@@ -47,7 +47,9 @@ void interruptHandler(int socket,char orden);
 int buscarSocketHiloPrograma(int pid);
 void buscarProcesoYTerminarlo(int pid);
 void eliminarSocket(int socket);
-
+void gestionarCierreConsola(int socket);
+void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad);
+void eliminarHiloPrograma(int pid);
 //------InterruptHandler-----//
 
 
@@ -55,19 +57,15 @@ void eliminarSocket(int socket);
 void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
-void eliminarSockets(int socketConsolaGlobal,int* procesosAFinales);
 fd_set master;
-int flagFinalizar;
+int flagFinalizarKernel=0;
 //---------Conexiones-------------//
 
-
-
-void inicializarListas();
+int instruccionesEjecutadasPorCpu;
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
-	printf("\n\nholaaa\n\n");
 	imprimirInterfazUsuario();
 	inicializarSockets();
 	//gradoMultiProgramacion=0;
@@ -117,6 +115,8 @@ void connectionHandler(int socketAceptado, char orden) {
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
+					recv(socketAceptado,&instruccionesEjecutadasPorCpu,sizeof(int),0);
+					printf("la cant es %d",instruccionesEjecutadasPorCpu);
 					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
 					terminarProceso(socketAceptado);
 					break;
@@ -133,9 +133,11 @@ void connectionHandler(int socketAceptado, char orden) {
 					interruptHandler(socketAceptado,orden);
 			break;
 		case 'R':
-					pcb = recibirYDeserializarPcb(socketAceptado);
+				recv(socketAceptado,&instruccionesEjecutadasPorCpu,sizeof(int),0);
 
-					agregarAFinQuantum(pcb);
+				pcb = recibirYDeserializarPcb(socketAceptado);
+
+				agregarAFinQuantum(pcb);
 
 					break;
 		case 'K':
@@ -153,7 +155,7 @@ void connectionHandler(int socketAceptado, char orden) {
 
 }
 void recibirPidDeCpu(int socket){
-
+int pid;
 	recv(socket,&pid,sizeof(int),0);
 }
 void interruptHandler(int socketAceptado,char orden){
@@ -161,8 +163,6 @@ void interruptHandler(int socketAceptado,char orden){
 	int size;
 	int pid;
 	int socketHiloPrograma;
-	int i=0;
-	int resultadoEjecucion;
 	char* mensaje; /*TODO: Ver el tema de pedir memoria y liberar esta variable siempre que se pueda*/
 
 	switch(orden){
@@ -195,20 +195,8 @@ void interruptHandler(int socketAceptado,char orden){
 		/*TODO: Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
 		break;
 	case 'E':
-		log_info(loggerConPantalla,"La Consola con socket %d asignado se ha cerrado por signal \n",socketAceptado);
-		recv(socketAceptado,&size,sizeof(int),0);
-		mensaje = malloc(size);
-		recv(socketAceptado,mensaje,size,0);
-		strcpy(mensaje+size,"\0");
-		int* procesosAFinalizar = malloc(size);
-		for(i=0;i<size;i++){
-			memcpy(procesosAFinalizar,mensaje,sizeof(int));
-			mensaje += sizeof(int);
-		}
-		//printf("%d\n", procesosAFinalizar[0]);
-		/*TODO:Hay que buscar a todos los procesosAFinalizar en la cola de los estados, y llevarlos a la cola de terminados*/
-
-		eliminarSockets(socketAceptado,procesosAFinalizar);
+		log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socketAceptado);
+		gestionarCierreConsola(socketAceptado);
 		break;
 	case 'F':
 		log_info(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
@@ -238,20 +226,75 @@ void interruptHandler(int socketAceptado,char orden){
 	case 'O' :
 
 		break;
+	case 'D':
+		log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido\n");
+				mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
+				size=strlen(mensaje);
+				informarConsola(socketAceptado,mensaje,size);
+				mensaje = "Finalizar";
+				size=strlen(mensaje);
+				informarConsola(socketAceptado,mensaje,size);
+		break;
 	default:
 			break;
 	}
 }
 
+void gestionarCierreConsola(int socket){
+	log_info(loggerConPantalla,"Gestionando cierre de consola %d",socket);
+	int size, cantidad;
+	char* procesosAFinalizar;
+	int i;
+		recv(socket,&size,sizeof(int),0);
+		procesosAFinalizar = malloc(size);
+		recv(socket,&cantidad,sizeof(int),0);
+		recv(socket,procesosAFinalizar,size,0);
+
+			/*TODO:Hay que buscar a todos los procesosAFinalizar en la cola de los estados, y llevarlos a la cola de terminados*/
+			cerrarHilosProgramas(procesosAFinalizar,cantidad);
+			send(socket,&i,sizeof(int),0);
+			eliminarSocket(socket);
+			free(procesosAFinalizar);
+}
+
+void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad){
+	log_info(loggerConPantalla,"Finalizando hilos programas de Consola");
+	int i;
+	int pid;
+	char* mensaje = malloc(sizeof(char)*10);
+	mensaje = "Finalizar";
+
+	for(i=0;i<cantidad;i++){
+		pid = *((int*)procesosAFinalizar);
+		procesosAFinalizar += sizeof(int);
+		log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
+		informarConsola(buscarSocketHiloPrograma(pid),mensaje,strlen(mensaje));
+		eliminarSocket(buscarSocketHiloPrograma(pid));
+		eliminarHiloPrograma(pid);
+	}
+	//free(mensaje); TODO: Ver este free
+
+}
+
+void eliminarHiloPrograma(int pid){
+	_Bool verificaPid(t_consola* consolathread){
+			return (consolathread->pid == pid);
+		}
+		t_consola* consolathread = list_remove_by_condition(listaConsolas,(void*)verificaPid);
+		free(consolathread);
+}
+
+
 void eliminarSocket(int socket){
-	close(socket);
 	pthread_mutex_lock(&mutex_FDSET);
 	FD_CLR(socket,&master);
 	pthread_mutex_unlock(&mutex_FDSET);
+	log_info(loggerConPantalla,"Socket %d cerrado",socket);
+	close(socket);
 }
 
 void buscarProcesoYTerminarlo(int pid){
-	t_pcb* procesoAEliminar;
+	t_pcb* procesoATerminar;
 	_Bool verificarPid(t_pcb* pcb){
 			return (pcb->pid==pid);
 		}
@@ -261,12 +304,12 @@ void buscarProcesoYTerminarlo(int pid){
 
 	pthread_mutex_lock(&mutexColaNuevos);
 	if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
-		procesoAEliminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
+		procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
 	}
 	pthread_mutex_unlock(&mutexColaNuevos);
 	pthread_mutex_lock(&mutexColaListos);
 	if(list_any_satisfy(colaListos,(void*)verificarPid)){
-			procesoAEliminar=list_remove_by_condition(colaListos,(void*)verificarPid);
+			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
 		}
 	pthread_mutex_unlock(&mutexColaListos);
 	sem_wait(&sem_colaReady);
@@ -280,15 +323,10 @@ void buscarProcesoYTerminarlo(int pid){
 	pthread_mutex_unlock(&mutexColaEjecucion);*/
 
 	pthread_mutex_lock(&mutexColaTerminados);
-	list_add(colaTerminados,procesoAEliminar);
+	list_add(colaTerminados,procesoATerminar);
 	pthread_mutex_unlock(&mutexColaTerminados);
 }
 
-void eliminarSockets(int socketConsolaGlobal,int* procesosAFinalizar){
-			eliminarSocket(socketConsolaGlobal);
-
-	/*TODO: Buscar por pid y borrar los socket de los hilos programas*/
-}
 
 int buscarSocketHiloPrograma(int pid){
 
@@ -317,12 +355,14 @@ void inicializarListas(){
 	colaNuevos= list_create();
 	colaListos= list_create();
 	colaTerminados= list_create();
+	colaEjecucion = list_create();
+	colaBloqueados=list_create();
+
 	listaConsolas = list_create();
 	listaCPU = list_create();
 	listaCodigosProgramas=list_create();
 	listaTablasArchivosPorProceso=list_create();
 	listaFinQuantum = list_create();
-	colaEjecucion = list_create();
 	listaEnEspera = list_create();
 }
 
@@ -340,7 +380,6 @@ void selectorConexiones() {
 	int newfd; // newly accept()ed socket descriptor
 	struct sockaddr_storage remoteaddr; // client address
 	int i; // Contador para las iteracion dentro del FDSET
-	int nbytes; // El tamanio de los datos que se recibe por recv
 	char orden;
 	char remoteIP[INET6_ADDRSTRLEN];
 	socklen_t addrlen;
@@ -353,19 +392,20 @@ void selectorConexiones() {
 	FD_SET(socketServidor, &master); // add the listener to the master set
 	FD_SET(0, &master); // Agrega el fd del teclado.
 	fdMax = socketServidor; // keep track of the biggest file descriptor so far, it's this one
-	for (;;) {
+
+	while(!flagFinalizarKernel) {
 					readFds = master;
 					if (select(fdMax + 1, &readFds, NULL, NULL, NULL) == -1) {
-					perror("select");
-					log_error(loggerSinPantalla,"Error en select\n");
-					exit(2);
+						perror("select");
+						log_error(loggerSinPantalla,"Error en select\n");
+						exit(2);
 					}
 					for (i = 0; i <= fdMax; i++) {
 							if (FD_ISSET(i, &readFds)) { // we got one!!
-							/**********************************************************/
-									if(i == 0) sem_post(&sem_ordenSelect);//Cuando recibe orden de STDIN desbloquea al interfazHandler
-
-									/************************************************************/
+									if(i == 0){
+										sem_post(&sem_ordenSelect);//Cuando recibe orden de STDIN desbloquea al interfazHandler
+										break;
+									}
 									if (i == socketServidor) {
 									addrlen = sizeof remoteaddr;
 									newfd = accept(socketServidor, (struct sockaddr *) &remoteaddr,&addrlen);
@@ -376,35 +416,19 @@ void selectorConexiones() {
 											if (newfd > fdMax) {
 											fdMax = newfd;
 											}
-									log_info(loggerConPantalla,"\nSelectserver: nueva conexion desde %s en " "socket %d\n\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
+									log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
 												}
 									}
 									else if(i!=0) {
-											if ((nbytes = recv(i, &orden, sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
-											//if (nbytes == 0) {
-											//	log_error(loggerConPantalla,"selectserver: socket %d hung up\n", i);
-											//} else {
-											//	perror("recv");
-											//}
-											//close(i);
-											//FD_CLR(i, &master);
-												}
-											else {
-									/*
-									for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
-									if (FD_ISSET(j, &master)) {
-									if (j != socket && j != i) {*/
-													pthread_mutex_lock(&mutexConexion);
-													connectionHandler(i, orden);
-											}
+											recv(i, &orden, sizeof orden, 0);
+											pthread_mutex_lock(&mutexConexion);
+											connectionHandler(i, orden);
 									}
 							}
 					}
 		}
-} // END handle data from client
-//} // END got new incoming connection
-//} // END looping through file descriptors
-//}
+	log_info(loggerConPantalla,"Finalizando selector de conexiones");
+}
 
 void *get_in_addr(struct sockaddr *sa) {
 	if (sa->sa_family == AF_INET) {

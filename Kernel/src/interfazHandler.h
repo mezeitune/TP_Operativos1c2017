@@ -28,7 +28,6 @@ t_log *loggerConPantalla;
 
 
 void interfazHandler(){
-	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 	char orden;
 	char *mensajeRecibido;
 
@@ -67,9 +66,6 @@ void interfazHandler(){
 				case 'K':
 					/*finalizarProceso(int pid) TODO HAY QUE IMPLEMENTAR*/
 					break;
-				case 'D':
-					/*pausarPlanificacion() TODO HAY QUE IMPLEMENTAR*/
-					break;
 				case 'S':
 					if((solicitarContenidoAMemoria(&mensajeRecibido))<0){
 						printf("No se pudo solicitar el contenido\n");
@@ -102,16 +98,14 @@ void interfazHandler(){
 
 void obtenerListadoProcesos(){
 	char orden;
-	log_info(loggerConPantalla,"T: Mostrar todos los procesos\nC: Mostrar procesos de un estado\n");
-	scanf("%c",&orden);
+	read(0,&orden,sizeof(char));
 	switch(orden){
 	case 'T':
 		orden = 'T';
 		mostrarProcesos(orden);
 		break;
 	case 'C':
-		log_info(loggerConPantalla,"N:New\nR:Ready\nE:Exec\nF:Finished\nB:Blocked\n");
-		scanf("%c",&orden);
+		read(0,&orden,sizeof(char));
 		mostrarProcesos(orden);
 		break;
 	default:
@@ -122,29 +116,40 @@ void obtenerListadoProcesos(){
 
 void mostrarProcesos(char orden){
 
+	int transformarPid(t_pcb* pcb){
+				return pcb->pid;
+			}
+
 	switch(orden){
 	case 'N':
+		log_info(loggerConPantalla,"Procesos en estado ---> NEW");
 		pthread_mutex_lock(&mutexColaNuevos);
-		filtrarPorPidYMostrar(colaNuevos);
+		imprimirListadoDeProcesos(list_map(colaNuevos,(void*)transformarPid));
 		pthread_mutex_unlock(&mutexColaNuevos);
 		break;
 	case 'R':
+		log_info(loggerConPantalla,"Procesos en estado ---> READY");
 		pthread_mutex_lock(&mutexColaListos);
-		filtrarPorPidYMostrar(colaListos);
+		imprimirListadoDeProcesos(list_map(colaListos,(void*)transformarPid));
 		pthread_mutex_unlock(&mutexColaListos);
 		break;
 	case 'E':
-		pthread_mutex_lock(&mutexColaNuevos);
-		pthread_mutex_unlock(&mutexColaNuevos);
+		log_info(loggerConPantalla,"Procesos en estado ---> EXEC");
+		pthread_mutex_lock(&mutexColaEjecucion);
+		imprimirListadoDeProcesos(list_map(colaEjecucion,(void*)transformarPid));
+		pthread_mutex_unlock(&mutexColaEjecucion);
 		break;
 	case 'F':
+		log_info(loggerConPantalla,"Procesos en estado ---> FINISHED");
 		pthread_mutex_lock(&mutexColaTerminados);
-		filtrarPorPidYMostrar(colaTerminados);
+		imprimirListadoDeProcesos(list_map(colaTerminados,(void*)transformarPid));
 		pthread_mutex_unlock(&mutexColaTerminados);
 		break;
 	case 'B':
-		pthread_mutex_lock(&mutexColaNuevos);
-		pthread_mutex_unlock(&mutexColaNuevos);
+		log_info(loggerConPantalla,"Procesos en estado ---> BLOCKED");
+		pthread_mutex_lock(&mutexColaBloqueados);
+		imprimirListadoDeProcesos(list_map(colaBloqueados,(void*)transformarPid));
+		pthread_mutex_unlock(&mutexColaBloqueados);
 		break;
 	case 'T':
 		break;
@@ -153,33 +158,28 @@ void mostrarProcesos(char orden){
 	}
 }
 
-void filtrarPorPidYMostrar(t_list* colaEstados){
-	t_list* cola=colaEstados;
-	int transformarPid(t_pcb* pcb){
-			return pcb->pid;
-		}
-		void liberar(int* pid){
-			free(pid);
-		}
-		imprimirListadoDeProcesos(list_map(cola,(void*)transformarPid));
-			//list_destroy_and_destroy_elements(listaPid, (void*)liberar);
-			/*TODO:PREGUNTAR QUE PASA CON ESTA NUEVA LISTA CREADA*/
-}
-
 void imprimirListadoDeProcesos(t_list* listaPid){
-	printf("PID\n");
+	printf("Cantidad de procesos: %d\n", listaPid->elements_count);
+	printf("\tPID\n");
 	int pid;
 	int i;
 	for(i=0 ; i<listaPid->elements_count ; i++){
-		pid = *(int*)list_get(listaPid,i);
-		printf("%d\n",pid);
+		pid = list_get(listaPid,i);
+		printf("\t%d\n",pid);
 	}
+	list_destroy(listaPid);
 }
 
 void modificarGradoMultiprogramacion(){
 	int nuevoGrado;
 	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
+
+	if(nuevoGrado < gradoMultiProgramacion) {
+		log_error(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
+		return;
+	}
+
 	pthread_mutex_lock(&mutexGradoMultiProgramacion);
 	config_gradoMultiProgramacion= nuevoGrado;
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
@@ -199,7 +199,7 @@ void imprimirInterfazUsuario(){
 	/**************************************Printea interfaz Usuario Kernel*******************************************************/
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener listado programas\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\n");
+	printf("\nIngresar orden de accion:\nO - Obtener listado programas\n\tT - Obtener todos los procesos\n\tC - Obtener procesos de un estado\n\t\tN - New\n\t\tR - Ready\n\t\tE - Exec\n\t\tB - Blocked\n\t\tF - Finished\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\n");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
 }
