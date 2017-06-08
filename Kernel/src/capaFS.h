@@ -111,6 +111,7 @@ int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
 		tablaAVer->tablaArchivoPorProceso[0][0]=flags;
 		tablaAVer->tablaArchivoPorProceso[0][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
 		tablaAVer->tablaArchivoPorProceso[0][2]=3;//FileDescriptor siempre empieza en 3
+		tablaAVer->tablaArchivoPorProceso[0][3]=0;//Puntero siempre empieza en 0
 
 		descriptorADevolver=3;
 
@@ -122,6 +123,7 @@ int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
 		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][0]=flags;
 		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
 		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2]=tablaAVer->contadorFilasTablaPorProceso+3;//FileDescriptor siempre empieza en 3
+		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][3]=0;//Puntero siempre empieza en 0
 
 		descriptorADevolver=tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][2];
 	}
