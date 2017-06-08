@@ -19,15 +19,14 @@ t_list* listaTablasArchivosPorProceso;
 
 int validarArchivoFS(char* ruta){
 	char orden = 'V';
-	char* archivoAVerificar=ruta;
-	int tamano=sizeof(int)*strlen(archivoAVerificar);
+	int tamano=sizeof(int)*strlen(ruta);
 	int validado;
 	send(socketFyleSys,&orden,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
+	send(socketFyleSys,ruta,tamano,0);
 	recv(socketFyleSys,&validado,sizeof(int),0);
 
-
+	//printf("\n \n %d \n \n ",validado);
 	return validado;
 }
 
