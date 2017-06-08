@@ -834,6 +834,8 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	char comandoCapaFS = 'F';
 	char comandoLeerArchivo = 'O';
 	int resultadoEjecucion ;
+	int tamanioInfoLeida;
+
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoLeerArchivo,sizeof(char),0);
 	int pid= pcb_actual->pid;
@@ -842,9 +844,17 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	send(socketKernel,&informacion,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
 	send(socketKernel,&tamanio,sizeof(int),0); //tamanio de la instruccion en bytes que quiero leer
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion==1)
-	log_info(loggerConPantalla,"La informacion leida es %s");
-	else log_info(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
+
+	if(resultadoEjecucion==1){
+		recv(socketKernel,&tamanioInfoLeida,sizeof(int),0);
+		void* infoLeida = malloc(tamanioInfoLeida);
+		recv(socketKernel,&infoLeida,tamanioInfoLeida,0);
+		char *infoLeidaChar = string_new();
+		string_append(&infoLeidaChar, infoLeida);
+		log_info(loggerConPantalla,"La informacion leida es %s",infoLeidaChar);
+	}else{
+		log_info(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
+	}
 }
 
 
