@@ -42,16 +42,121 @@ void crearArchivoFS(){
 	printf("La validacion fue %d \n",validado);
 }
 
-void borrarArchivoFS(){
-	char orden = 'V';
-	char* archivoAVerificar="alumno.bin";
-	int tamano=sizeof(int)*strlen(archivoAVerificar);
-	int validado;
-	send(socketFyleSys,&orden,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion fue %d \n",validado);
+void borrarArchivoFS(int socket_aceptado){
+	int pid;
+	int descriptorArchivo;
+	int resultadoEjecucion ;
+	recv(socket_aceptado,&pid,sizeof(int),0);
+	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
+
+	int k;
+	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
+	int tablaExiste=0;
+	int dondeEstaElPid;
+	//verificar que la tabla de ese pid exista
+	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
+		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
+		if(tablaAVerificar->pid==pid){
+			tablaExiste=1;
+			dondeEstaElPid=k;
+		}
+	}
+
+
+
+
+	if(tablaExiste==0){
+		resultadoEjecucion=0;
+	}else{
+		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
+		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+
+
+		int j,i,posicion;
+		int encontro=0;
+		for(i = 0; i < contadorFilasTablaGlobal; ++i)
+		{
+		   for(j = 0; j<4 ; j++)
+		   {
+			   if(tablaAVer->tablaArchivoPorProceso[i][2]==descriptorArchivo){
+				   encontro=1;
+				   posicion=i;
+			   }
+		   }
+		}
+
+		if(encontro==0){
+			resultadoEjecucion=0;
+		}else{
+			//borrar de la tabla de archivo por proceso
+			//borrar de la tabla global
+
+			//hacer los sends para que el FS borre ese archivo y deje los bloques libres
+
+			resultadoEjecucion=1;
+		}
+
+	}
+
+	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
+}
+
+void cerrarArchivoFS(int socket_aceptado){
+	int pid;
+	int descriptorArchivo;
+	int resultadoEjecucion ;
+	recv(socket_aceptado,&pid,sizeof(int),0);
+	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
+
+	int k;
+	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
+	int tablaExiste=0;
+	int dondeEstaElPid;
+	//verificar que la tabla de ese pid exista
+	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
+		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
+		if(tablaAVerificar->pid==pid){
+			tablaExiste=1;
+			dondeEstaElPid=k;
+		}
+	}
+
+
+
+
+	if(tablaExiste==0){
+		resultadoEjecucion=0;
+	}else{
+		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
+		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+
+
+		int j,i,posicion;
+		int encontro=0;
+		for(i = 0; i < contadorFilasTablaGlobal; ++i)
+		{
+		   for(j = 0; j<4 ; j++)
+		   {
+			   if(tablaAVer->tablaArchivoPorProceso[i][2]==descriptorArchivo){
+				   encontro=1;
+				   posicion=i;
+			   }
+		   }
+		}
+
+		if(encontro==0){
+			resultadoEjecucion=0;
+		}else{
+			//borrar de la tabla de archivo por proceso
+			//borrar de la tabla global
+
+
+			resultadoEjecucion=1;
+		}
+
+	}
+
+	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
 }
 
 void obtenerArchivoFS(){
@@ -214,7 +319,7 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
 					break;
 				case 'B'://borrar archivo
 					printf("Borrando el archivo indacado \n");
-					borrarArchivoFS();
+					borrarArchivoFS(socket_aceptado);
 					break;
 				case 'O'://obtener datos
 					printf("Obteniendo datos del archivo indicado \n");
@@ -223,6 +328,10 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
 				case 'G'://guardar archivo
 					printf("Guardando datos del archivo indicado \n");
 					guardarArchivoFS();
+					break;
+				case 'P'://guardar archivo
+					printf("Cerrando el archivo indicado \n");
+					cerrarArchivoFS(socket_aceptado);
 					break;
 			default:
 				if(orden == '\0') break;
