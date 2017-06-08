@@ -80,6 +80,7 @@ t_pcb* crearPcb (char* programa, int programSize){
 	memcpy(pcb->indiceEtiquetas,metadata->etiquetas,sizeof(char)* pcb->indiceEtiquetasSize);
 	strcpy(pcb->indiceEtiquetas+sizeof(char)*pcb->indiceEtiquetasSize, "\0");
 	pcb->indiceStack = list_create();
+	pcb->exitCode=1;
 
 	metadata_destruir(metadata);
 	return pcb;

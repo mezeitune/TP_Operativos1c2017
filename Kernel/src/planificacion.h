@@ -23,6 +23,7 @@
 #include "configuraciones.h"
 #include "pcb.h"
 #include "conexionMemoria.h"
+#include "contabilidad.h"
 
 typedef struct CPU {
 	int pid;
@@ -40,6 +41,7 @@ typedef struct {
 	int pid;
 	int socketHiloConsola;
 }t_codigoPrograma;
+
 
 
 /*---PAUSA PLANIFICACION---*/
@@ -76,9 +78,14 @@ void agregarAFinQuantum(t_pcb* pcb);
 /*---PLANIFICACION GENERAL-------*/
 int atenderNuevoPrograma(int socketAceptado);
 int verificarGradoDeMultiprogramacion();
+void aumentarGradoMultiprogramacion();
+void disminuirGradoMultiprogramacion();
 void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
 void terminarProceso(int socket);
+void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
+void eliminarHiloPrograma(int pid);
+
 
 int contadorPid=0;
 t_list* colaNuevos;
@@ -90,6 +97,7 @@ t_list* colaBloqueados;
 t_list* listaConsolas;
 t_list* listaCPU;
 t_list* listaEnEspera;
+
 /*---PLANIFICACION GENERAL-------*/
 
 
@@ -106,10 +114,12 @@ void* planificarLargoPlazo(int socket){
 			pthread_mutex_unlock(&mutexColaNuevos);
 
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
-			crearProceso(proceso,codigoPrograma);
+
+			crearProceso(proceso,codigoPrograma); /*TODO: Ver de agregar un mutex cuando creamos un proceso. Ver donde mas se deberia usar. */
+													/*Por ejemplo cuando se quiero finalizar un proceso, o cuando muere una consola*/
 			}
 	}
-	log_info(loggerConPantalla,"Planificador largo palzo finalizado");
+	log_info(loggerConPantalla,"Planificador largo plazo finalizado");
 }
 
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
@@ -135,20 +145,46 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
 				log_error(loggerConPantalla ,"No se pudo reservar recursos para ejecutar el programa");
 				interruptHandler(codigoPrograma->socketHiloConsola,'A'); // Informa a consola error por no poder reservar recursos
+				cambiarEstadoATerminado(proceso,-1); /*TODO:Cambiar exitCODE*/
 				eliminarHiloPrograma(proceso->pid);
-				free(proceso);
-				free(codigoPrograma);
 			}
 	else{
 			encolarProcesoListo(proceso);
-			free(codigoPrograma);
-			log_info(loggerConPantalla, "PCB encolado en cola de listos ---- PID: %d", proceso->pid);
-			pthread_mutex_lock(&mutexGradoMultiProgramacion);
-			gradoMultiProgramacion++;
-			pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+			crearInformacionContable(proceso->pid);
+			aumentarGradoMultiprogramacion();
 			sem_post(&sem_colaReady);
 	}
+	free(codigoPrograma);
 }
+
+void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
+	_Bool verificaPid(t_pcb* pcb){
+			return (pcb->pid == procesoTerminar->pid);
+		}
+
+	procesoTerminar->exitCode=exit;
+	pthread_mutex_lock(&mutexColaTerminados);
+	list_add(colaTerminados,procesoTerminar);
+	pthread_mutex_unlock(&mutexColaTerminados);
+
+
+}
+
+void eliminarHiloPrograma(int pid){
+	char* mensaje = malloc(sizeof(char)*10);
+	mensaje = "Finalizar";
+
+	_Bool verificaPid(t_consola* consolathread){
+			return (consolathread->pid == pid);
+		}
+	t_consola* consola=list_remove_by_condition(listaConsolas,(void*)verificaPid);
+	informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
+	eliminarSocket(consola->socketHiloPrograma);
+	//free(mensaje); TODO: Ver porque rompe este free;
+	free(consola);
+}
+
+
 
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
 	log_info(loggerConPantalla, "Inicializando proceso en memoria--->PID: %d", proceso->pid);
@@ -340,12 +376,12 @@ void encolarProcesoListo(t_pcb *procesoListo){
 	pthread_mutex_lock(&mutexColaListos);
 	list_add(colaListos,procesoListo);
 	pthread_mutex_unlock(&mutexColaListos);
+	log_info(loggerConPantalla, "Pcb encolado en Listos--->PID: %d", procesoListo->pid);
 }
 
 
 void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado;
-	t_consola* consolaAInformar;
 
 	_Bool verificarPidConsola(t_consola* consola){
 						return (consola->pid == pcbProcesoTerminado->pid);
@@ -362,9 +398,9 @@ void terminarProceso(int socketCPU){
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
+	actualizarRafagas(pcbProcesoTerminado->pid,pcbProcesoTerminado->cantidadInstrucciones);
+
 	if(flagPlanificacion){
-
-
 
 		pthread_mutex_lock(&mutexListaEspera);
 		listaEsperaATerminados();
@@ -374,21 +410,13 @@ void terminarProceso(int socketCPU){
 		list_remove_by_condition(colaEjecucion, (void*)verificarPid);
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
-		pthread_mutex_lock(&mutexColaTerminados);
-		list_add(colaTerminados, pcbProcesoTerminado);
-		pthread_mutex_unlock(&mutexColaTerminados);
+		cambiarEstadoATerminado(pcbProcesoTerminado,0); /*TODO: Cambiar exitCode*/
+		eliminarHiloPrograma(pcbProcesoTerminado->pid);
+		/*TODO: Liberar recursos en memoria */
 
-		consolaAInformar = list_remove_by_condition(listaConsolas,(void*) verificarPidConsola);
+		disminuirGradoMultiprogramacion();
 
-		char* mensaje = "Finalizar";
-		int size= strlen(mensaje);
-		informarConsola(consolaAInformar->socketHiloPrograma,mensaje,size);
-
-		pthread_mutex_lock(&mutexGradoMultiProgramacion);
-		gradoMultiProgramacion--;
-		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 		sem_post(&sem_admitirNuevoProceso);
-
 		sem_post(&sem_CPU);
 
 	}else {
@@ -397,16 +425,22 @@ void terminarProceso(int socketCPU){
 		list_add(listaEnEspera, pcbProcesoTerminado);
 		pthread_mutex_unlock(&mutexListaEspera);
 
-		pthread_mutex_lock(&mutexGradoMultiProgramacion);
-		gradoMultiProgramacion--;
-		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-
+		disminuirGradoMultiprogramacion();
 		sem_post(&sem_CPU);
-
 	}
 
-	/* TODO:Liberar recursos */
-	//free(consolaAInformar); //Ojo aca, si metes este free aca nomas, vas a ver que borras la consolaAInformar antes de que la Consola reciba el mensaje. Hay que hacer algun tipo de espera aca
+}
+
+void aumentarGradoMultiprogramacion(){
+	pthread_mutex_lock(&mutexGradoMultiProgramacion);
+	gradoMultiProgramacion++;
+	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+}
+
+void disminuirGradoMultiprogramacion(){
+	pthread_mutex_lock(&mutexGradoMultiProgramacion);
+	gradoMultiProgramacion--;
+	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
 }
 
 void listaEsperaATerminados(){

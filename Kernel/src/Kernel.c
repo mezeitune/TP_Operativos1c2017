@@ -33,6 +33,7 @@
 #include "configuraciones.h"
 #include "conexionMemoria.h"
 #include "capaFS.h"
+#include "contabilidad.h"
 
 
 void recibirPidDeCpu(int socket);
@@ -49,7 +50,6 @@ void buscarProcesoYTerminarlo(int pid);
 void eliminarSocket(int socket);
 void gestionarCierreConsola(int socket);
 void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad);
-void eliminarHiloPrograma(int pid);
 //------InterruptHandler-----//
 
 
@@ -61,7 +61,7 @@ fd_set master;
 int flagFinalizarKernel=0;
 //---------Conexiones-------------//
 
-int instruccionesEjecutadasPorCpu;
+int cantidadDeRafagas;
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
@@ -99,6 +99,7 @@ void connectionHandler(int socketAceptado, char orden) {
 		return (unaCpu->socket == socketAceptado);
 	}
 
+
 	t_pcb* pcb;
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
@@ -115,9 +116,9 @@ void connectionHandler(int socketAceptado, char orden) {
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
-					recv(socketAceptado,&instruccionesEjecutadasPorCpu,sizeof(int),0);
-					printf("la cant es %d",instruccionesEjecutadasPorCpu);
+					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
 					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
+
 					terminarProceso(socketAceptado);
 					break;
 		case 'F'://Para el FS
@@ -133,12 +134,10 @@ void connectionHandler(int socketAceptado, char orden) {
 					interruptHandler(socketAceptado,orden);
 			break;
 		case 'R':
-				recv(socketAceptado,&instruccionesEjecutadasPorCpu,sizeof(int),0);
-
+				recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
 				pcb = recibirYDeserializarPcb(socketAceptado);
-
+				actualizarRafagas(pcb->pid,cantidadDeRafagas);
 				agregarAFinQuantum(pcb);
-
 					break;
 		case 'K':
 					recibirPidDeCpu(socketAceptado);
@@ -259,30 +258,26 @@ void gestionarCierreConsola(int socket){
 
 void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad){
 	log_info(loggerConPantalla,"Finalizando hilos programas de Consola");
+
+	_Bool verificaPid(t_pcb* pcb){
+		return pcb->pid==pid;
+	}
+
 	int i;
 	int pid;
-	char* mensaje = malloc(sizeof(char)*10);
-	mensaje = "Finalizar";
 
 	for(i=0;i<cantidad;i++){
 		pid = *((int*)procesosAFinalizar);
+
+		pthread_mutex_lock(&mutexColaTerminados);
 		procesosAFinalizar += sizeof(int);
 		log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
-		informarConsola(buscarSocketHiloPrograma(pid),mensaje,strlen(mensaje));
-		eliminarSocket(buscarSocketHiloPrograma(pid));
 		eliminarHiloPrograma(pid);
+		pthread_mutex_unlock(&mutexColaTerminados);
 	}
-	//free(mensaje); TODO: Ver este free
 
 }
 
-void eliminarHiloPrograma(int pid){
-	_Bool verificaPid(t_consola* consolathread){
-			return (consolathread->pid == pid);
-		}
-		t_consola* consolathread = list_remove_by_condition(listaConsolas,(void*)verificaPid);
-		free(consolathread);
-}
 
 
 void eliminarSocket(int socket){
@@ -364,6 +359,8 @@ void inicializarListas(){
 	listaTablasArchivosPorProceso=list_create();
 	listaFinQuantum = list_create();
 	listaEnEspera = list_create();
+
+	listaContable=list_create();
 }
 
 
