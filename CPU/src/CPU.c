@@ -97,11 +97,13 @@ void EjecutarProgramaMedianteAlgoritmo(){
 
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel++;
+			cantidadIntruccionesEjecutadas++;
 		}
 	} else{
 		while (cantidadInstruccionesAEjecutarPorKernel > 0){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel--;
+			cantidadIntruccionesEjecutadas++;
 		}
 		expropiar();
 	}
@@ -263,6 +265,7 @@ void inicializarLog(char *rutaDeLog){
 void expropiar(){
 	char comandoExpropiarCpu= 'R';
 	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d", pcb_actual->pid, pcb_actual->programCounter);
 	free(pcb_actual);
@@ -469,7 +472,7 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 void finalizar (){
 		char comandoFinalizacion = 'T';
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
-
+		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 		serializarPcbYEnviar(pcb_actual,socketKernel);
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 

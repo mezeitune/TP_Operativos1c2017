@@ -61,6 +61,8 @@ fd_set master;
 int flagFinalizarKernel=0;
 //---------Conexiones-------------//
 
+int instruccionesEjecutadasPorCpu;
+
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
@@ -113,6 +115,8 @@ void connectionHandler(int socketAceptado, char orden) {
 					sem_post(&sem_CPU);
 					break;
 		case 'T':
+					recv(socketAceptado,&instruccionesEjecutadasPorCpu,sizeof(int),0);
+					printf("la cant es %d",instruccionesEjecutadasPorCpu);
 					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
 					terminarProceso(socketAceptado);
 					break;
@@ -129,9 +133,11 @@ void connectionHandler(int socketAceptado, char orden) {
 					interruptHandler(socketAceptado,orden);
 			break;
 		case 'R':
-					pcb = recibirYDeserializarPcb(socketAceptado);
+				recv(socketAceptado,&instruccionesEjecutadasPorCpu,sizeof(int),0);
 
-					agregarAFinQuantum(pcb);
+				pcb = recibirYDeserializarPcb(socketAceptado);
+
+				agregarAFinQuantum(pcb);
 
 					break;
 		case 'K':
