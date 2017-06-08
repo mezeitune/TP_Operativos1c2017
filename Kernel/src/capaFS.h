@@ -2,7 +2,8 @@
 #define _CAPAFS_
 #include "conexiones.h"
 
-
+//EN GENERAL FALTAN SENDS Y RECVS AL FS PARA SABER SI EL RESULTADO DE EJECUCION ESTA BIEN
+//Y QUE EL FS HAGA LO QUE TENGA QUE HACER SIN PROBLEMAS
 
 //--------Capa FS--------//
 int contadorFilasTablaGlobal=0;
@@ -288,16 +289,69 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
 }
 
-void guardarArchivoFS(int socket_acpetado){
-	char orden = 'V';
-	char* archivoAVerificar="alumno.bin";
-	int tamano=sizeof(int)*strlen(archivoAVerificar);
-	int validado;
-	send(socketFyleSys,&orden,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
-	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion fue %d \n",validado);
+void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
+	int pid;
+	int descriptorArchivo;
+	int resultadoEjecucion;
+	int informacionPunteroARecibir;
+	int tamanioDeLaInstruccionEnBytes;//vendria a ser un offset
+	recv(socket_aceptado,&pid,sizeof(int),0);
+	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
+	recv(socket_aceptado,&informacionPunteroARecibir,sizeof(int),0);
+	recv(socket_aceptado,&tamanioDeLaInstruccionEnBytes,sizeof(int),0);
+
+
+	int k;
+	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
+	int tablaExiste=0;
+	int dondeEstaElPid;
+	//verificar que la tabla de ese pid exista
+	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
+		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
+		if(tablaAVerificar->pid==pid){
+			tablaExiste=1;
+			dondeEstaElPid=k;
+		}
+	}
+
+
+
+
+	if(tablaExiste==0){
+		resultadoEjecucion=0;
+	}else{
+		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
+		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+
+
+		int j,i,posicion;
+		int encontro=0;
+		for(i = 0; i < contadorFilasTablaGlobal; ++i)
+		{
+		   for(j = 0; j<4 ; j++)
+		   {
+			   if(tablaAVer->tablaArchivoPorProceso[i][2]==descriptorArchivo){
+				   encontro=1;
+				   posicion=i;
+			   }
+		   }
+		}
+
+		if(encontro==0){
+			resultadoEjecucion=0;
+		}else{
+
+			int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacionPunteroARecibir;
+
+			//sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
+			//si salio todo bien y mando la info leida al CPU
+
+
+			resultadoEjecucion=1;
+		}
+
+	}
+	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
 }
 
 int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
