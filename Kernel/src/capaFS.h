@@ -42,7 +42,71 @@ void crearArchivoFS(){
 	printf("La validacion fue %d \n",validado);
 }
 
-void borrarArchivoFS(int socket_aceptado){
+void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends y recv al FS
+	int pid;
+	int descriptorArchivo;
+	int posicion;
+	int resultadoEjecucion ;
+	recv(socket_aceptado,&pid,sizeof(int),0);
+	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
+	recv(socket_aceptado,&posicion,sizeof(int),0);
+
+	int k;
+	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
+	int tablaExiste=0;
+	int dondeEstaElPid;
+	//verificar que la tabla de ese pid exista
+	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
+		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
+		if(tablaAVerificar->pid==pid){
+			tablaExiste=1;
+			dondeEstaElPid=k;
+		}
+	}
+
+
+
+
+	if(tablaExiste==0){
+		resultadoEjecucion=0;
+
+	}else{
+		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
+		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+
+
+		int j,i,posicion;
+		int encontro=0;
+		for(i = 0; i < contadorFilasTablaGlobal; ++i)
+		{
+		   for(j = 0; j<4 ; j++)
+		   {
+			   if(tablaAVer->tablaArchivoPorProceso[i][2]==descriptorArchivo){
+				   encontro=1;
+				   posicion=i;
+			   }
+		   }
+		}
+
+		if(encontro==0){
+			resultadoEjecucion=0;
+		}else{
+
+			tablaAVer->tablaArchivoPorProceso[i][3]=posicion;
+
+			//hacer los sends para que el FS verifique que esa posicion existe dentro del archivo
+			//si recibo 0 siginfica que algo anda mal
+			//si recibo 1 significa que esta todo ok
+
+			resultadoEjecucion=1;
+		}
+
+	}
+
+	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
+}
+
+void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 	int pid;
 	int descriptorArchivo;
 	int resultadoEjecucion ;
@@ -101,7 +165,7 @@ void borrarArchivoFS(int socket_aceptado){
 	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
 }
 
-void cerrarArchivoFS(int socket_aceptado){
+void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 	int pid;
 	int descriptorArchivo;
 	int resultadoEjecucion ;
