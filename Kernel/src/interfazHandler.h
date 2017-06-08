@@ -174,6 +174,12 @@ void modificarGradoMultiprogramacion(){
 	int nuevoGrado;
 	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
+
+	if(nuevoGrado < gradoMultiProgramacion) {
+		log_error(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
+		return;
+	}
+
 	pthread_mutex_lock(&mutexGradoMultiProgramacion);
 	config_gradoMultiProgramacion= nuevoGrado;
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);

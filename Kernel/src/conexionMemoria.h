@@ -26,7 +26,7 @@ void handshakeMemoria(){
 
 
 int pedirMemoria(t_pcb* procesoListo){
-	log_info(loggerConPantalla, "Solicitando Memoria ---- PID: %d", procesoListo->pid);
+	log_info(loggerConPantalla, "Solicitando Memoria--->PID: %d", procesoListo->pid);
 		void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
 		int paginasTotalesRequeridas = procesoListo->cantidadPaginasCodigo + stackSize;
 		int resultadoEjecucion=1;
@@ -43,7 +43,7 @@ int pedirMemoria(t_pcb* procesoListo){
 }
 
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
-	log_info(loggerConPantalla, "Almacenando programa en memoria ---- PID: %d", procesoListoAutorizado->pid);
+	log_info(loggerConPantalla, "Almacenando programa en memoria--->PID: %d", procesoListoAutorizado->pid);
 		char* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + config_paginaSize);
 		char* particionCodigo = malloc(config_paginaSize);
 		int particionSize;

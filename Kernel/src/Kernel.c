@@ -39,6 +39,7 @@ void recibirPidDeCpu(int socket);
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
+void inicializarListas();
 //---------ConnectionHandler-------//
 
 //------InterruptHandler-----//
@@ -57,12 +58,8 @@ void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
 fd_set master;
-int flagFinalizar;
+int flagFinalizarKernel=0;
 //---------Conexiones-------------//
-
-
-
-void inicializarListas();
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
@@ -160,8 +157,6 @@ void interruptHandler(int socketAceptado,char orden){
 	int size;
 	int pid;
 	int socketHiloPrograma;
-	int i=0;
-	int resultadoEjecucion;
 	char* mensaje; /*TODO: Ver el tema de pedir memoria y liberar esta variable siempre que se pueda*/
 
 	switch(orden){
@@ -293,7 +288,7 @@ void eliminarSocket(int socket){
 }
 
 void buscarProcesoYTerminarlo(int pid){
-	t_pcb* procesoAEliminar;
+	t_pcb* procesoATerminar;
 	_Bool verificarPid(t_pcb* pcb){
 			return (pcb->pid==pid);
 		}
@@ -303,12 +298,12 @@ void buscarProcesoYTerminarlo(int pid){
 
 	pthread_mutex_lock(&mutexColaNuevos);
 	if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
-		procesoAEliminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
+		procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
 	}
 	pthread_mutex_unlock(&mutexColaNuevos);
 	pthread_mutex_lock(&mutexColaListos);
 	if(list_any_satisfy(colaListos,(void*)verificarPid)){
-			procesoAEliminar=list_remove_by_condition(colaListos,(void*)verificarPid);
+			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
 		}
 	pthread_mutex_unlock(&mutexColaListos);
 	sem_wait(&sem_colaReady);
@@ -322,7 +317,7 @@ void buscarProcesoYTerminarlo(int pid){
 	pthread_mutex_unlock(&mutexColaEjecucion);*/
 
 	pthread_mutex_lock(&mutexColaTerminados);
-	list_add(colaTerminados,procesoAEliminar);
+	list_add(colaTerminados,procesoATerminar);
 	pthread_mutex_unlock(&mutexColaTerminados);
 }
 
@@ -379,7 +374,6 @@ void selectorConexiones() {
 	int newfd; // newly accept()ed socket descriptor
 	struct sockaddr_storage remoteaddr; // client address
 	int i; // Contador para las iteracion dentro del FDSET
-	int nbytes; // El tamanio de los datos que se recibe por recv
 	char orden;
 	char remoteIP[INET6_ADDRSTRLEN];
 	socklen_t addrlen;
@@ -392,22 +386,20 @@ void selectorConexiones() {
 	FD_SET(socketServidor, &master); // add the listener to the master set
 	FD_SET(0, &master); // Agrega el fd del teclado.
 	fdMax = socketServidor; // keep track of the biggest file descriptor so far, it's this one
-	for (;;) {
+
+	while(!flagFinalizarKernel) {
 					readFds = master;
 					if (select(fdMax + 1, &readFds, NULL, NULL, NULL) == -1) {
-					perror("select");
-					log_error(loggerSinPantalla,"Error en select\n");
-					exit(2);
+						perror("select");
+						log_error(loggerSinPantalla,"Error en select\n");
+						exit(2);
 					}
 					for (i = 0; i <= fdMax; i++) {
 							if (FD_ISSET(i, &readFds)) { // we got one!!
-							/**********************************************************/
 									if(i == 0){
 										sem_post(&sem_ordenSelect);//Cuando recibe orden de STDIN desbloquea al interfazHandler
 										break;
 									}
-
-									/************************************************************/
 									if (i == socketServidor) {
 									addrlen = sizeof remoteaddr;
 									newfd = accept(socketServidor, (struct sockaddr *) &remoteaddr,&addrlen);
@@ -418,35 +410,19 @@ void selectorConexiones() {
 											if (newfd > fdMax) {
 											fdMax = newfd;
 											}
-									log_info(loggerConPantalla,"\nSelectserver: nueva conexion desde %s en " "socket %d\n\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
+									log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
 												}
 									}
 									else if(i!=0) {
-											if ((nbytes = recv(i, &orden, sizeof orden, 0) <= 0)) { // Aca se carga el buffer con el mensaje. Actualmente no lo uso
-											//if (nbytes == 0) {
-											//	log_error(loggerConPantalla,"selectserver: socket %d hung up\n", i);
-											//} else {
-											//	perror("recv");
-											//}
-											//close(i);
-											//FD_CLR(i, &master);
-												}
-											else {
-									/*
-									for(j = 0; j <= fdMax; j++) {//Rota entre las conexiones
-									if (FD_ISSET(j, &master)) {
-									if (j != socket && j != i) {*/
-													pthread_mutex_lock(&mutexConexion);
-													connectionHandler(i, orden);
-											}
+											recv(i, &orden, sizeof orden, 0);
+											pthread_mutex_lock(&mutexConexion);
+											connectionHandler(i, orden);
 									}
 							}
 					}
 		}
-} // END handle data from client
-//} // END got new incoming connection
-//} // END looping through file descriptors
-//}
+	log_info(loggerConPantalla,"Finalizando selector de conexiones");
+}
 
 void *get_in_addr(struct sockaddr *sa) {
 	if (sa->sa_family == AF_INET) {

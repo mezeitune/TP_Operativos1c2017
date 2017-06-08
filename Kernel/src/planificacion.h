@@ -113,7 +113,7 @@ void* planificarLargoPlazo(int socket){
 }
 
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
-	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP\n");
+	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP");
 	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
 	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
 	codigoPrograma->codigo = malloc(codigoPrograma->size);
@@ -133,7 +133,7 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 
 void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
-				log_error(loggerConPantalla ,"\nNo se pudo reservar recursos para ejecutar el programa");
+				log_error(loggerConPantalla ,"No se pudo reservar recursos para ejecutar el programa");
 				interruptHandler(codigoPrograma->socketHiloConsola,'A'); // Informa a consola error por no poder reservar recursos
 				eliminarHiloPrograma(proceso->pid);
 				free(proceso);
@@ -151,7 +151,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 }
 
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
-	log_info(loggerConPantalla, "Inicializando proceso en memoria ---- PID: %d \n", proceso->pid);
+	log_info(loggerConPantalla, "Inicializando proceso en memoria--->PID: %d", proceso->pid);
 	if((pedirMemoria(proceso))< 0){
 				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
 				return -1;
@@ -283,7 +283,7 @@ void agregarAFinQuantum(t_pcb* pcb){
 /*-------------------PLANIFICACION GENERAL------------------------------------*/
 
 int atenderNuevoPrograma(int socketAceptado){
-		log_info(loggerConPantalla,"Atendiendo nuevo programa\n");
+		log_info(loggerConPantalla,"Atendiendo nuevo programa");
 
 		contadorPid++; // VAR GLOBAL
 		send(socketAceptado,&contadorPid,sizeof(int),0);
