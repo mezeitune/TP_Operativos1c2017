@@ -114,6 +114,7 @@ void cerrarTodo(){
 	char* procesosATerminar = mensaje;
 	t_hiloPrograma* procesoACerrar = malloc(sizeof(t_hiloPrograma));
 
+	if(listaHilosProgramas->elements_count > 0){
 	for(i=0;i<listaHilosProgramas->elements_count;i++){
 		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
 		memcpy(procesosATerminar,&procesoACerrar->pid,sizeof(int));
@@ -126,7 +127,7 @@ void cerrarTodo(){
 	send(socketKernel,&listaHilosProgramas->elements_count,sizeof(int),0);
 	send(socketKernel,mensaje,mensajeSize,0);
 	recv(socketKernel,&ok,sizeof(int),0);
-
+	}
 
 	free(mensaje);
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
