@@ -35,7 +35,6 @@
 #include "capaFS.h"
 
 
-
 void recibirPidDeCpu(int socket);
 
 //--------ConnectionHandler--------//
