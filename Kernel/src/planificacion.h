@@ -115,8 +115,9 @@ void* planificarLargoPlazo(int socket){
 
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
 
+			pthread_mutex_lock(&mutexNuevoProceso);
 			crearProceso(proceso,codigoPrograma); /*TODO: Ver de agregar un mutex cuando creamos un proceso. Ver donde mas se deberia usar. */
-													/*Por ejemplo cuando se quiero finalizar un proceso, o cuando muere una consola*/
+			pthread_mutex_unlock(&mutexNuevoProceso);										/*Por ejemplo cuando se quiero finalizar un proceso, o cuando muere una consola*/
 			}
 	}
 	log_info(loggerConPantalla,"Planificador largo plazo finalizado");

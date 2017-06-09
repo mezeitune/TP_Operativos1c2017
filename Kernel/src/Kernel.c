@@ -195,7 +195,9 @@ void interruptHandler(int socketAceptado,char orden){
 		break;
 	case 'E':
 		log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socketAceptado);
+		pthread_mutex_lock(&mutexNuevoProceso);
 		gestionarCierreConsola(socketAceptado);
+		pthread_mutex_unlock(&mutexNuevoProceso);
 		break;
 	case 'F':
 		log_info(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);

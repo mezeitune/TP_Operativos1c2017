@@ -19,6 +19,7 @@ pthread_mutex_t mutexColaTerminados;
 pthread_mutex_t mutexColaEjecucion;
 pthread_mutex_t mutexColaBloqueados;
 
+pthread_mutex_t mutexNuevoProceso;
 pthread_mutex_t mutexListaFinQuantum;
 pthread_mutex_t mutexListaConsolas;
 pthread_mutex_t mutexListaCPU;
@@ -49,6 +50,7 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexConexion,NULL);
 		pthread_mutex_init(&mutex_FDSET,NULL);
 		pthread_mutex_init(&mutexListaContable,NULL);
+		pthread_mutex_init(&mutexNuevoProceso,NULL);
 
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_colaReady,0,0);
