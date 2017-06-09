@@ -73,6 +73,7 @@ int cpuOcupada=1;
 int cpuFinalizada=1;
 int cantidadInstruccionesAEjecutarPorKernel=0;
 int cpuExpropiada=1;
+int cpuBloqueada=1;
 int cantidadIntruccionesEjecutadas=0;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 //---------Primitivas Comunes----------//

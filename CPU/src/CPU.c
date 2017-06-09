@@ -18,16 +18,17 @@ int main(void) {
 
 	signal(SIGINT, signalHandler);
 	signal(SIGUSR1, signalHandler);
-	signal(SIGUSR2, signalHandler);
 
-	generarIdCpu();
 
 	char comandoGetNuevoProceso = 'N';
 	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
 
 	recv(socketKernel,&quantum,sizeof(int),0);
 
-	printf("\n\nQUANTUM: %d\n\n", quantum);
+	if(quantum!=0){
+		log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
+	}
+	log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
 
 	esperarPCB();
 
@@ -80,7 +81,7 @@ void establecerPCB(){
 
 	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
 
-	printf("\n\nPCB:%d\n\n", pcb_actual->pid);
+	printf("\nPCB:%d\n", pcb_actual->pid);
 	EjecutarProgramaMedianteAlgoritmo();
 
 
@@ -116,14 +117,16 @@ void ejecutarInstruccion(){
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 
 	recv(socketKernel,orden,sizeof(char),MSG_DONTWAIT);
-	printf("\n\nPID:%d", pcb_actual->pid);
-	printf("\nORDEN:%c\n\n", *orden);
+
 	if(*orden == 'F') cpuExpropiada = -1;
 
 	free(instruccion);
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
 
 	if(cpuExpropiada == -1){
+		expropiar();
+	}
+	if(cpuBloqueada == 0){
 		expropiar();
 	}
 }
@@ -283,8 +286,9 @@ void expropiar(){
 	}
 
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-
-	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
+	if(cpuBloqueada == 0)
+		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
+	else log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
 	free(pcb_actual);
 	esperarPCB();
 }
@@ -492,7 +496,7 @@ void finalizar (){
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
 		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 		serializarPcbYEnviar(pcb_actual,socketKernel);
-		log_error(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
+		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 		free(pcb_actual);
 
@@ -683,26 +687,27 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	char comandoWait = 'W';
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
+	int bloquearScriptONo;
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
 	int tamanio = sizeof(int)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
 	send(socketKernel,&comandoWait,sizeof(char),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
+	recv(socketKernel,&bloquearScriptONo,sizeof(int),0);
+	if(bloquearScriptONo<0){
+		cpuBloqueada = 0;
+		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
+	}else {
+		log_info(loggerConPantalla, "Script ANSISOP pid: %d sigue su ejecucion normal", pcb_actual->pid);
+	}
 
-	//char* mensaje = recv (socketKernel,mensaje,sizeof(),0);
-	//if(strcmp(mensaje, "dale para adelante!") != 0){
-		//pcb_bloqueado = 1;
-		//log_info(loggerConPantalla, "pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
-		//ver como hago para bloquearme y esperar para volver
-	//}
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
 		i++;
 	}
 	free(string_cortado);
-	//free(mensaje);
 
 }
 void signal_Ansisop(t_nombre_semaforo identificador_semaforo){

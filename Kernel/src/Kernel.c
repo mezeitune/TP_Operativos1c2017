@@ -549,12 +549,12 @@ void waitSemaforoAnsisop(int socketAceptado){
 	recv(socketAceptado,&tamanio,sizeof(int),0);
 	semaforoAConsultar = malloc(tamanio);
 	recv(socketAceptado,semaforoAConsultar,tamanio,0);
-
+	int bloquearScriptONo=-1;
 	log_info(loggerConPantalla, "Esperar: id: %s", semaforoAConsultar);
 	int indice = indiceEnArray(semId, semaforoAConsultar);
 	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
 	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
-
+	send (socketAceptado,&bloquearScriptONo,sizeof(int),0);
 }
 void signalSemaforoAnsisop(int socketAceptado){
 	int tamanio;
