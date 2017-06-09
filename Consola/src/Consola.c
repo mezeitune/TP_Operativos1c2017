@@ -107,30 +107,38 @@ void cerrarTodo(){
 	char comandoInterruptHandler='X';
 	char comandoCierreConsola = 'E';
 	int i;
-	int ok;
+	int desplazamiento = 0;
+	pthread_mutex_lock(&mutexListaHilos);
+	int cantidad= listaHilosProgramas->elements_count;
 
-	int mensajeSize = sizeof(int)* listaHilosProgramas->elements_count;
+	int mensajeSize = sizeof(int) + sizeof(int)* cantidad;
+
 	char* mensaje= malloc(mensajeSize);
-	char* procesosATerminar = mensaje;
+
 	t_hiloPrograma* procesoACerrar = malloc(sizeof(t_hiloPrograma));
 
-	if(listaHilosProgramas->elements_count > 0){
-	for(i=0;i<listaHilosProgramas->elements_count;i++){
+	memcpy(mensaje+desplazamiento,&cantidad,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	for(i=0;i<cantidad;i++){
 		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
-		memcpy(procesosATerminar,&procesoACerrar->pid,sizeof(int));
-		procesosATerminar += sizeof(int);
+		memcpy(mensaje+desplazamiento,&procesoACerrar->pid,sizeof(int));
+		desplazamiento += sizeof(int);
 	}
+	pthread_mutex_unlock(&mutexListaHilos);
+
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreConsola,sizeof(char),0);
-
 	send(socketKernel,&mensajeSize,sizeof(int),0);
-	send(socketKernel,&listaHilosProgramas->elements_count,sizeof(int),0);
 	send(socketKernel,mensaje,mensajeSize,0);
-	recv(socketKernel,&ok,sizeof(int),0);
-	}
+
+
+	recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
+
+
+	list_destroy_and_destroy_elements(listaHilosProgramas,free);
 
 	free(mensaje);
-	list_destroy_and_destroy_elements(listaHilosProgramas,free);
 	flagCerrarConsola = 0;
 }
 
@@ -167,5 +175,6 @@ void inicializarListas(){
 void inicializarSemaforos(){
 	pthread_mutex_init(&mutex_crearHilo,NULL);
 	pthread_mutex_init(&mutexListaHilos,NULL);
+	pthread_mutex_init(&mutexRecibirDatos,NULL);
 	sem_init(&sem_crearHilo,0,1);
 }

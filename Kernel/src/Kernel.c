@@ -248,7 +248,7 @@ void interruptHandler(int socketAceptado,char orden){
 	case 'E':
 		log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socketAceptado);
 		pthread_mutex_lock(&mutexNuevoProceso);
-		gestionarCierreConsola(socketAceptado); /*TODO: Fix cuando la consola tiene solo procesos terminados*/
+		gestionarCierreConsola(socketAceptado);
 		pthread_mutex_unlock(&mutexNuevoProceso);
 		break;
 	case 'F':
@@ -299,19 +299,21 @@ void gestionarCierreConsola(int socket){
 	char* procesosAFinalizar;
 	int desplazamiento=0;
 	int i;
+
 		recv(socket,&size,sizeof(int),0);
 		procesosAFinalizar = malloc(size);
-		recv(socket,&cantidad,sizeof(int),0);
 		recv(socket,procesosAFinalizar,size,0);
+		cantidad = *((int*)procesosAFinalizar+desplazamiento);
+		desplazamiento++;
 
-			/*TODO:Hay que buscar a todos los procesosAFinalizar en la cola de los estados, y llevarlos a la cola de terminados*/
 			for(i=0;i<cantidad;i++){
 				pid = *((int*)procesosAFinalizar+desplazamiento);
-						buscarProcesoYTerminarlo(pid); /*TODO: Finalizar proceso en ejecucion, y ver porque no finalizan los hilos programas cuando se saca de alguna cola que no es REady*/
+						buscarProcesoYTerminarlo(pid); /*TODO: Finalizar procesos en ejecucion*/
 						finalizarHiloPrograma(pid);
 						desplazamiento ++;
 			}
-			send(socket,&i,sizeof(int),0);
+
+			send(socket,&i,sizeof(int),0); /*HACE ESPERAR AL HILO PROCESO EN CONSOLA*/
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
 }
@@ -372,7 +374,7 @@ void buscarProcesoYTerminarlo(int pid){
 		}
 	pthread_mutex_unlock(&mutexColaListos);
 
-	/*pthread_mutex_lock(&mutexColaEjecucion); TODO: Hay que ver como hacer este temita
+	/*pthread_mutex_lock(&mutexColaEjecucion); TODO: Implementar una vez de implementar la funcion EXPROPIAR()
 	if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
 		procesoAEliminar=list_remove_by_condition(colaEjecucion,(void*)verificarPid);
 		t_cpu*cpu = list_remove_by_condition(listaCPU,(void*)verificarPidCPU);
@@ -380,6 +382,12 @@ void buscarProcesoYTerminarlo(int pid){
 		terminarProceso(cpu->socket);
 		}
 	pthread_mutex_unlock(&mutexColaEjecucion);*/
+
+	pthread_mutex_lock(&mutexColaBloqueados);
+	if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
+			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
+		}
+	pthread_mutex_unlock(&mutexColaBloqueados);
 
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados,procesoATerminar);
@@ -437,54 +445,63 @@ void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 }
 void selectorConexiones() {
 	log_info(loggerConPantalla,"Iniciando selector de conexiones");
-	int fdMax; // es para un contador de los sockets que hay
-	int newfd; // newly accept()ed socket descriptor
-	struct sockaddr_storage remoteaddr; // client address
-	int i; // Contador para las iteracion dentro del FDSET
+	int maximoFD;
+	int nuevoFD;
+	int socket;
 	char orden;
+
 	char remoteIP[INET6_ADDRSTRLEN];
 	socklen_t addrlen;
-	fd_set readFds; // temp file descriptor list for select()
-// listen
+	fd_set readFds;
+	struct sockaddr_storage remoteaddr;// temp file descriptor list for select()
+
+
 	if (listen(socketServidor, 15) == -1) {
 	perror("listen");
 	exit(1);
 	}
+
 	//FD_SET(0, &master); // Agrega el fd del teclado.
+
 	FD_SET(socketServidor, &master); // add the listener to the master set
-	fdMax = socketServidor; // keep track of the biggest file descriptor so far, it's this one
+	maximoFD = socketServidor; // keep track of the biggest file descriptor so far, it's this one
 
 	while(!flagFinalizarKernel) {
+					pthread_mutex_lock(&mutex_FDSET);
 					readFds = master;
+					pthread_mutex_unlock(&mutex_FDSET);
 
-					if (select(fdMax + 1, &readFds, NULL, NULL, NULL) == -1) {
+					if (select(maximoFD + 1, &readFds, NULL, NULL, NULL) == -1) {
 						perror("select");
 						log_error(loggerSinPantalla,"Error en select\n");
 						exit(2);
 					}
 
-					for (i = 0; i <= fdMax; i++) {
-							if (FD_ISSET(i, &readFds)) { // we got one!!
-									if(i == 0){
+					for (socket = 0; socket <= maximoFD; socket++) {
+							if (FD_ISSET(socket, &readFds)) { //Hubo una conexion
+									/*if(socket == 0){
 										sem_post(&sem_ordenSelect);/*TODO: Cambiar esto a un mutex*/
-										break;
-									}
-									if (i == socketServidor) {
+										//break;
+									//}
+									if (socket == socketServidor) {
 									addrlen = sizeof remoteaddr;
-									newfd = accept(socketServidor, (struct sockaddr *) &remoteaddr,&addrlen);
-											if (newfd == -1) {
+									nuevoFD = accept(socketServidor, (struct sockaddr *) &remoteaddr,&addrlen);
+											if (nuevoFD == -1) {
 											perror("accept");
-											} else {
-											FD_SET(newfd, &master);
-											if (newfd > fdMax) {
-											fdMax = newfd;
-											}
-									log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
+												}
+											else {
+											pthread_mutex_lock(&mutex_FDSET);
+											FD_SET(nuevoFD, &master);
+											pthread_mutex_unlock(&mutex_FDSET);
+												if (nuevoFD > maximoFD) {
+												maximoFD = nuevoFD;
+													}
+									log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 												}
 									}
-									else if(i!=0) {
-											recv(i, &orden, sizeof orden, 0);
-											connectionHandler(i, orden);
+									else if(socket!=0) {
+											recv(socket, &orden, sizeof orden, 0);
+											connectionHandler(socket, orden);
 									}
 							}
 					}
