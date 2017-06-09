@@ -28,6 +28,7 @@ pthread_mutex_t mutexGradoMultiProgramacion;
 pthread_mutex_t mutexListaEspera;
 pthread_mutex_t mutex_FDSET;
 pthread_mutex_t mutexListaContable;
+pthread_mutex_t mutexListaCodigo;
 
 sem_t sem_admitirNuevoProceso;
 sem_t sem_planificacion;
@@ -51,6 +52,7 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutex_FDSET,NULL);
 		pthread_mutex_init(&mutexListaContable,NULL);
 		pthread_mutex_init(&mutexNuevoProceso,NULL);
+		pthread_mutex_init(&mutexListaCodigo,NULL);
 
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_colaReady,0,0);

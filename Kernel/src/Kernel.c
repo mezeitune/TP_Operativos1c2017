@@ -412,7 +412,7 @@ void selectorConexiones() {
 					for (i = 0; i <= fdMax; i++) {
 							if (FD_ISSET(i, &readFds)) { // we got one!!
 									if(i == 0){
-										sem_post(&sem_ordenSelect);//Cuando recibe orden de STDIN desbloquea al interfazHandler
+										sem_post(&sem_ordenSelect);/*TODO: Cambiar esto a un mutex*/
 										break;
 									}
 									if (i == socketServidor) {

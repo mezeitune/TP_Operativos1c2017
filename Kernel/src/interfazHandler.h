@@ -32,8 +32,10 @@ void interfazHandler(){
 	char *mensajeRecibido;
 
 	while(1){
-		sem_wait(&sem_ordenSelect);
-		read(0,&orden,sizeof(char));
+		sem_wait(&sem_ordenSelect); /*TODO: Hacer el mutex OrdenSelect*/
+		scanf("%c",&orden);
+
+		printf("Entre en UI\n");
 
 		switch(orden){
 				case 'O':
@@ -175,8 +177,10 @@ void modificarGradoMultiprogramacion(){ /*TODO: Se queda trabado si le meto un v
 	pthread_mutex_lock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
+
 	if(nuevoGrado < gradoMultiProgramacion) {
 		log_error(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
+		pthread_mutex_unlock(&mutexNuevoProceso);
 		return;
 	}
 

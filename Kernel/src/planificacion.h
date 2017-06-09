@@ -107,8 +107,6 @@ void* planificarLargoPlazo(int socket){
 	while(flagTerminarPlanificadorLargoPlazo){
 		sem_wait(&sem_admitirNuevoProceso);
 			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0 && flagPlanificacion) {
-			log_info(loggerConPantalla,"Inicializando nuevo proceso desde cola de Nuevos");
-
 			pthread_mutex_lock(&mutexColaNuevos);
 			proceso = list_remove(colaNuevos,0);
 			pthread_mutex_unlock(&mutexColaNuevos);
@@ -143,6 +141,7 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 }
 
 void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
+	log_info(loggerConPantalla,"Cambiando nuevo proceso desde Nuevos a Listos--->PID: %d",proceso->pid);
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
 				log_error(loggerConPantalla ,"No se pudo reservar recursos para ejecutar el programa");
 				interruptHandler(codigoPrograma->socketHiloConsola,'A'); // Informa a consola error por no poder reservar recursos
@@ -341,8 +340,16 @@ int atenderNuevoPrograma(int socketAceptado){
 					interruptHandler(socketAceptado,'D'); // Informa a consola error por planificacion detenida
 					return -1;
 						}
+
+		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
+		pthread_mutex_lock(&mutexColaNuevos);
 		list_add(colaNuevos,proceso);
+		pthread_mutex_unlock(&mutexColaNuevos);
+
+		pthread_mutex_lock(&mutexListaCodigo);
 		list_add(listaCodigosProgramas,codigoPrograma);
+		pthread_mutex_unlock(&mutexListaCodigo);
+
 		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 
 		if(verificarGradoDeMultiprogramacion() < 0 ){
