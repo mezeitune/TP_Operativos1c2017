@@ -71,12 +71,7 @@ int cantidadPaginasTotales(){
 	int paginasTotales= (stackSize + pcb_actual->cantidadPaginasCodigo);
 	return paginasTotales;
 }
-void generarIdCpu(){
-	char comandoParaGenerarPid = 'K';
-	int pid= getpid();
-	send(socketKernel,&comandoParaGenerarPid,sizeof(char),0);
-	send(socketKernel,&pid,sizeof(int),0);
-}
+
 void establecerPCB(){
 
 	pcb_actual = recibirYDeserializarPcb(socketKernel);
