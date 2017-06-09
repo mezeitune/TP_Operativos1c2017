@@ -172,6 +172,7 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
 void finalizarHiloPrograma(int pid){
 	log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 	char* mensaje = malloc(sizeof(char)*10);
+	int ok;
 	mensaje = "Finalizar";
 
 	_Bool verificaPid(t_consola* consolathread){
@@ -182,6 +183,7 @@ void finalizarHiloPrograma(int pid){
 	pthread_mutex_unlock(&mutexListaConsolas);
 
 	informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
+	recv(consola->socketHiloPrograma,&ok,sizeof(int),0);
 	eliminarSocket(consola->socketHiloPrograma);
 	//free(mensaje); TODO: Ver porque rompe este free;
 	free(consola);

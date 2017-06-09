@@ -110,7 +110,7 @@ void actualizarCantidadImpresiones(int pid){
 }
 
 void gestionarCierrePrograma(int pidFinalizar){
-
+	int ok=0;
 	bool verificarPid(t_hiloPrograma* proceso){
 		return (proceso->pid == pidFinalizar);
 	}
@@ -128,6 +128,7 @@ void gestionarCierrePrograma(int pidFinalizar){
 	printf("Hora de inicializacion : %s \n Hora de finalizacion: %s\nTiempo de ejecucion: %e \nCantidad de impresiones: %d\n",asctime(programaAFinalizar->fechaInicio),asctime(fechaFinalizacion),tiempoEjecucion,programaAFinalizar->cantImpresiones);
 	printf("----------------------------------------------------------------------\n");
 
+	send(programaAFinalizar->socketHiloKernel,&ok,sizeof(int),0);
 	free(programaAFinalizar);
 }
 
