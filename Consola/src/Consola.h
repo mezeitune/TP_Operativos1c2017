@@ -32,7 +32,7 @@ void imprimirInterfaz();
 
 void inicializarListas();
 void inicializarSemaforos();
-void* connectionHandler();
+void connectionHandler();
 void finalizarPrograma();
 void cerrarTodo();
 void limpiarPantalla();

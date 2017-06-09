@@ -24,11 +24,13 @@ pthread_mutex_t mutexListaFinQuantum;
 pthread_mutex_t mutexListaConsolas;
 pthread_mutex_t mutexListaCPU;
 pthread_mutex_t mutexConexion;
-pthread_mutex_t mutexGradoMultiProgramacion;
+pthread_mutex_t mutex_config_gradoMultiProgramacion;
+pthread_mutex_t mutex_gradoMultiProgramacion;
 pthread_mutex_t mutexListaEspera;
 pthread_mutex_t mutex_FDSET;
 pthread_mutex_t mutexListaContable;
 pthread_mutex_t mutexListaCodigo;
+pthread_mutex_t mutexAux;
 
 pthread_mutex_t mutexSelect;
 
@@ -39,6 +41,7 @@ sem_t sem_colaReady;
 sem_t sem_CPU;
 sem_t sem_ordenSelect;
 sem_t sem_ordenUI;
+sem_t sem_listaFinQuantum;
 
 
 void inicializarSemaforos(){
@@ -51,7 +54,8 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaConsolas,NULL);
 		pthread_mutex_init(&mutexListaCPU,NULL);
 		pthread_mutex_init(&mutexListaEspera,NULL);
-		pthread_mutex_init(&mutexGradoMultiProgramacion,NULL);
+		pthread_mutex_init(&mutex_config_gradoMultiProgramacion,NULL);
+		pthread_mutex_init(&mutex_gradoMultiProgramacion,NULL);
 		pthread_mutex_init(&mutexConexion,NULL);
 		pthread_mutex_init(&mutex_FDSET,NULL);
 		pthread_mutex_init(&mutexListaContable,NULL);
@@ -59,12 +63,15 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaCodigo,NULL);
 		pthread_mutex_init(&mutexSelect,NULL);
 
+		pthread_mutex_init(&mutexAux,NULL);
+
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_colaReady,0,0);
 		sem_init(&sem_CPU,0,0);
-		sem_init(&sem_planificacion,0,1);
+		sem_init(&sem_planificacion,0,0);
 		sem_init(&sem_ordenSelect,0,0);
 		sem_init(&sem_ordenUI,0,1);
+		sem_init(&sem_listaFinQuantum,0,0);
 
 
 }

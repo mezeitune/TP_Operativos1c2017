@@ -15,6 +15,8 @@ void signalSigIntHandler(int signum);
 
 int main(void) {
 
+
+
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
 	inicializarLog("/home/utnso/Log/logConsola.txt");
@@ -23,7 +25,7 @@ int main(void) {
 	flagCerrarConsola = 1;
 	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 
-	int err = pthread_create(&hiloInterfazUsuario, NULL, connectionHandler,NULL);
+	int err = pthread_create(&hiloInterfazUsuario, NULL, (void*)connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
 	signal(SIGINT, signalSigIntHandler);
@@ -45,10 +47,10 @@ void signalSigIntHandler(int signum)
     }
 }
 
-void *connectionHandler() {
+void connectionHandler() {
 	char orden;
 	while (flagCerrarConsola) {
-		sem_wait(&sem_crearHilo);
+		pthread_mutex_lock(&mutex_crearHilo);
 
 		imprimirInterfaz();
 		scanf(" %c", &orden);
@@ -85,6 +87,7 @@ void finalizarPrograma(){
 	char comandoInterruptHandler = 'X';
 	char comandoFinalizarPrograma= 'F';
 	int procesoATerminar;
+	t_hiloPrograma* proceso;
 	log_info(loggerConPantalla,"Ingresar el PID del programa a finalizar\n");
 	scanf("%d", &procesoATerminar);
 
@@ -92,45 +95,59 @@ void finalizarPrograma(){
 			return (proceso->pid == procesoATerminar);
 		}
 
+		pthread_mutex_lock(&mutexListaHilos);
 		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
 
-				send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
-				send(socketKernel,&comandoFinalizarPrograma,sizeof(char),0);
-				send(socketKernel, (void*) &procesoATerminar, sizeof(int), 0);
-			}else{
-						log_error(loggerConPantalla,"\nPID incorrecto\n");
-			}
-		sem_post(&sem_crearHilo);
+			proceso = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
+				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
+				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
+				send(proceso->socketHiloKernel,&procesoATerminar, sizeof(int), 0);
+
+				printf("\n\nPROCESP; %d\n\n", proceso->pid);
+				list_add(listaHilosProgramas,proceso);
+			}else	log_error(loggerConPantalla,"\nPID incorrecto\n");
+
+		pthread_mutex_unlock(&mutexListaHilos);
+
+		pthread_mutex_unlock(&mutex_crearHilo);
 }
 
 void cerrarTodo(){
 	char comandoInterruptHandler='X';
 	char comandoCierreConsola = 'E';
 	int i;
-	int ok;
+	int desplazamiento = 0;
+	pthread_mutex_lock(&mutexListaHilos);
+	int cantidad= listaHilosProgramas->elements_count;
 
-	int mensajeSize = sizeof(int)* listaHilosProgramas->elements_count;
+	int mensajeSize = sizeof(int) + sizeof(int)* cantidad;
+
 	char* mensaje= malloc(mensajeSize);
-	char* procesosATerminar = mensaje;
+
 	t_hiloPrograma* procesoACerrar = malloc(sizeof(t_hiloPrograma));
 
-	if(listaHilosProgramas->elements_count > 0){
-	for(i=0;i<listaHilosProgramas->elements_count;i++){
+	memcpy(mensaje+desplazamiento,&cantidad,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	for(i=0;i<cantidad;i++){
 		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
-		memcpy(procesosATerminar,&procesoACerrar->pid,sizeof(int));
-		procesosATerminar += sizeof(int);
+		memcpy(mensaje+desplazamiento,&procesoACerrar->pid,sizeof(int));
+		desplazamiento += sizeof(int);
 	}
+	pthread_mutex_unlock(&mutexListaHilos);
+
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreConsola,sizeof(char),0);
-
 	send(socketKernel,&mensajeSize,sizeof(int),0);
-	send(socketKernel,&listaHilosProgramas->elements_count,sizeof(int),0);
 	send(socketKernel,mensaje,mensajeSize,0);
-	recv(socketKernel,&ok,sizeof(int),0);
-	}
+
+
+	//recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
+
+
+	list_destroy_and_destroy_elements(listaHilosProgramas,free);
 
 	free(mensaje);
-	list_destroy_and_destroy_elements(listaHilosProgramas,free);
 	flagCerrarConsola = 0;
 }
 
@@ -167,5 +184,6 @@ void inicializarListas(){
 void inicializarSemaforos(){
 	pthread_mutex_init(&mutex_crearHilo,NULL);
 	pthread_mutex_init(&mutexListaHilos,NULL);
+	pthread_mutex_init(&mutexRecibirDatos,NULL);
 	sem_init(&sem_crearHilo,0,1);
 }

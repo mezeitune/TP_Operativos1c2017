@@ -50,7 +50,7 @@ void handShakeCPU(int socketCPU);
 void interruptHandler(int socket,char orden);
 int buscarSocketHiloPrograma(int pid);
 void buscarProcesoYTerminarlo(int pid);
-void eliminarSocket(int socket);
+
 void gestionarCierreConsola(int socket);
 void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad);
 //------InterruptHandler-----//
@@ -61,29 +61,52 @@ void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
 fd_set master;
-int flagFinalizarKernel=0;
+int flagFinalizarKernel = 0;
 //---------Conexiones-------------//
 
 int cantidadDeRafagas;
+
+//----------shared vars-----------//
+void obtenerValorDeSharedVar(int socket);
+int* variablesGlobales;
+int tamanioArray(char** array);
+pthread_mutex_t mutexVariablesGlobales = PTHREAD_MUTEX_INITIALIZER;
+int indiceEnArray(char** array, char* elemento);
+void obtenerVariablesCompartidasDeLaConfig();
+void guardarValorDeSharedVar(int socket);
+//----------shared vars-----------//
+
+//-------semaforos ANSISOP-------//
+typedef struct{
+	int valor;
+	char * id;
+}t_semaforo;
+t_semaforo* semaforosGlobales;
+void obtenerSemaforosANSISOPDeLasConfigs();
+void waitSemaforoAnsisop(int socketAceptado);
+void signalSemaforoAnsisop(int socketAceptado);
+//-------semaforos ANSISOP-------//
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
 	imprimirInterfazUsuario();
 	inicializarSockets();
-	//gradoMultiProgramacion=0;
 	inicializarSemaforos();
 
 	inicializarLog("/home/utnso/Log/logKernel.txt");
 	inicializarListas();
 	handshakeMemoria();
 
+	obtenerVariablesCompartidasDeLaConfig();
+	obtenerSemaforosANSISOPDeLasConfigs();
+
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
 
-	selectorConexiones(socketServidor);
 
+	selectorConexiones(socketServidor);
 
 	return 0;
 }
@@ -102,9 +125,9 @@ void connectionHandler(int socketAceptado, char orden) {
 		return (unaCpu->socket == socketAceptado);
 	}
 
-
+	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
 	t_pcb* pcb;
-
+	t_cpu *cpu = malloc(sizeof(t_cpu));
 	char comandoDesdeCPU;
 
 	switch (orden) {
@@ -112,11 +135,18 @@ void connectionHandler(int socketAceptado, char orden) {
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
+
+					if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
+					send(socketAceptado,&quantum,sizeof(int),0);
 					gestionarNuevaCPU(socketAceptado);
+
 					break;
 		case 'T':
 					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
-					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
+					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU %d",socketAceptado);
+
+
+					printf("\n\nEL SOCKET A FINALIZAR ES:%d\n\n", socketAceptado);
 
 					terminarProceso(socketAceptado);
 					break;
@@ -132,13 +162,35 @@ void connectionHandler(int socketAceptado, char orden) {
 					interruptHandler(socketAceptado,orden);
 			break;
 		case 'R':
-				recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
-				pcb = recibirYDeserializarPcb(socketAceptado);
-				actualizarRafagas(pcb->pid,cantidadDeRafagas);
-				agregarAFinQuantum(pcb);
+					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
+
+					pthread_mutex_lock(&mutexListaCPU);
+					cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
+					cpu->enEjecucion = 0;
+					list_add(listaCPU,cpu);
+					pthread_mutex_unlock(&mutexListaCPU);
+
+
+					pcb = recibirYDeserializarPcb(socketAceptado);
+					actualizarRafagas(pcb->pid,cantidadDeRafagas);
+					agregarAFinQuantum(pcb);
+
+					sem_post(&sem_CPU);
 					break;
 		case 'K':
 					recibirPidDeCpu(socketAceptado);
+					break;
+		case 'S':
+					obtenerValorDeSharedVar(socketAceptado);
+					break;
+		case 'G':
+					guardarValorDeSharedVar(socketAceptado);
+					break;
+		case 'W':
+					waitSemaforoAnsisop(socketAceptado);
+					break;
+		case 'L':
+					signalSemaforoAnsisop(socketAceptado);
 					break;
 		default:
 					if(orden == '\0') break;
@@ -153,7 +205,6 @@ void connectionHandler(int socketAceptado, char orden) {
 
 int atenderNuevoPrograma(int socketAceptado){
 		log_info(loggerConPantalla,"Atendiendo nuevo programa");
-		sem_post(&sem_admitirNuevoProceso);
 
 		contadorPid++; // VAR GLOBAL
 		send(socketAceptado,&contadorPid,sizeof(int),0);
@@ -162,16 +213,18 @@ int atenderNuevoPrograma(int socketAceptado){
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
 		codigoPrograma->pid=proceso->pid;
 
+		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
+		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
+
 		if(!flagPlanificacion) {
 					contadorPid--;
 					free(proceso);
-					free(codigoPrograma);
 					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
-					interruptHandler(socketAceptado,'D'); // Informa a consola error por planificacion detenida
+					interruptHandler(codigoPrograma->socketHiloConsola,'D'); // Informa a consola error por planificacion detenida
+					free(codigoPrograma);
 					return -1;
 						}
 
-		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 		pthread_mutex_lock(&mutexColaNuevos);
 		list_add(colaNuevos,proceso);
 		pthread_mutex_unlock(&mutexColaNuevos);
@@ -180,16 +233,9 @@ int atenderNuevoPrograma(int socketAceptado){
 		list_add(listaCodigosProgramas,codigoPrograma);
 		pthread_mutex_unlock(&mutexListaCodigo);
 
-		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 
-		if(verificarGradoDeMultiprogramacion() < 0 ){
-					log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
-					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
-					return -2;
-				}
-		else{
-			sem_post(&sem_admitirNuevoProceso);
-		}
+				sem_post(&sem_admitirNuevoProceso);
+
 		return 0;
 }
 
@@ -201,7 +247,11 @@ void handShakeCPU(int socketCPU){
 void gestionarNuevaCPU(int socketCPU){
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
+	cpu->enEjecucion = 0;
+
+	pthread_mutex_lock(&mutexListaCPU);
 	list_add(listaCPU,cpu);
+	pthread_mutex_unlock(&mutexListaCPU);
 	sem_post(&sem_CPU);
 }
 
@@ -211,12 +261,14 @@ int pid;
 }
 void interruptHandler(int socketAceptado,char orden){
 	log_info(loggerConPantalla,"Ejecutando interrupt handler\n");
+
 	int size;
 	int pid;
 	int socketHiloPrograma;
 	char* mensaje; /*TODO: Ver el tema de pedir memoria y liberar esta variable siempre que se pueda*/
 
 	switch(orden){
+
 	case 'A':
 		log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos\n");
 		mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
@@ -224,71 +276,73 @@ void interruptHandler(int socketAceptado,char orden){
 		informarConsola(socketAceptado,mensaje,size);
 		log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socketAceptado);
 		break;
-	case 'P':
-		log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
-		recv(socketAceptado,&size,sizeof(int),0);
-		mensaje=malloc(size);
-		recv(socketAceptado,&mensaje,size,0);
-		recv(socketAceptado,&pid,sizeof(int),0);
+		case 'P':
+			log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
+			recv(socketAceptado,&size,sizeof(int),0);
+			mensaje=malloc(size);
+			recv(socketAceptado,&mensaje,size,0);
+			recv(socketAceptado,&pid,sizeof(int),0);
 
-		socketHiloPrograma = buscarSocketHiloPrograma(pid);
-		informarConsola(socketHiloPrograma,mensaje,size);
-		log_info(loggerConPantalla,"Rutina para imprimir finalizo ----- PID: %d\n", pid);
+			socketHiloPrograma = buscarSocketHiloPrograma(pid);
+			informarConsola(socketHiloPrograma,mensaje,size);
+			log_info(loggerConPantalla,"Rutina para imprimir finalizo ----- PID: %d\n", pid);
 			break;
-	case 'M':
-		log_info(loggerConPantalla,"Informando a Consola excepcion por grado de multiprogramacion\n");
-		mensaje = "El programa ANSISOP no puede iniciar actualmente debido a grado de multiprogramacion, se mantendra en espera hasta poder iniciar";
-		size=strlen(mensaje);
-		informarConsola(socketAceptado,mensaje,size);
-		break;
-	case 'C':
-		log_info(loggerConPantalla,"La CPU de socket %d se ha cerrado por  signal\n",socketAceptado);
-		/*TODO: Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
-		break;
-	case 'E':
-		log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socketAceptado);
-		pthread_mutex_lock(&mutexNuevoProceso);
-		gestionarCierreConsola(socketAceptado); /*TODO: Fix cuando la consola tiene solo procesos terminados*/
-		pthread_mutex_unlock(&mutexNuevoProceso);
-		break;
-	case 'F':
-		log_info(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
-		recv(socketAceptado,&pid,sizeof(int),0);
-		socketHiloPrograma = buscarSocketHiloPrograma(pid); /*TODO: Eliminar la Consola-PID de la lista de hilosProgramas*/
-		buscarProcesoYTerminarlo(pid);
-		mensaje = "Finalizar";
-		size=strlen(mensaje);
-		informarConsola(socketHiloPrograma,mensaje,size);
-		log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
-		break;
-	case  'R':
+		case 'M':
+			log_info(loggerConPantalla,"Informando a Consola excepcion por grado de multiprogramacion\n");
+			mensaje = "El programa ANSISOP no puede iniciar actualmente debido a grado de multiprogramacion, se mantendra en espera hasta poder iniciar";
+			size=strlen(mensaje);
+			informarConsola(socketAceptado,mensaje,size);
+			break;
+		case 'C':
+			log_info(loggerConPantalla,"La CPU de socket %d se ha cerrado por  signal\n",socketAceptado);
+			/*TODO: Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
+			break;
+		case 'E':
+			log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socketAceptado);
+			pthread_mutex_lock(&mutexNuevoProceso);
+			gestionarCierreConsola(socketAceptado);
+			pthread_mutex_unlock(&mutexNuevoProceso);
+			break;
+		case 'F':
+			log_info(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
+			recv(socketAceptado,&pid,sizeof(int),0);
+			buscarProcesoYTerminarlo(pid);
+			finalizarHiloPrograma(pid);
 
-		//recv(socketAceptado,&size,sizeof(int),0);
-		//recv(socketAceptado,&espacioAReservar,size,0);
-		//reservar heap de ese espacio
-		//devolverle a la CPU el puntero que apunta a donde esta reservado ese espacio en heap
-		//creo que se tiene que guardar ese int del espacio para cuando se pida liberar
-		break;
-	case  'L':
+			log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
+
+			break;
+		case  'R':
+
+			//recv(socketAceptado,&size,sizeof(int),0);
+			//recv(socketAceptado,&espacioAReservar,size,0);
+			//reservar heap de ese espacio
+			//devolverle a la CPU el puntero que apunta a donde esta reservado ese espacio en heap
+			//creo que se tiene que guardar ese int del espacio para cuando se pida liberar
+			break;
+		case  'L':
 
 			//recv(socketAceptado,&size,sizeof(int),0);
 			//recv(socketAceptado,&punteroQueApuntaDondeLiberar,size,0);
 			//liberar heap tomando como inicio ese puntero y el espacio dado anteriormente por "reservar"
 			//devolverle a la CPU el resultado de la ejecucion (1 piola, 0 fuck)
-		break;
-	case 'O' :
+			break;
+		case 'O' :
 
-		break;
-	case 'D':
-		log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido\n");
-				mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
-				size=strlen(mensaje);
-				informarConsola(socketAceptado,mensaje,size);
-				mensaje = "Finalizar";
-				size=strlen(mensaje);
-				informarConsola(socketAceptado,mensaje,size);
-		break;
-	default:
+			break;
+		case 'D':
+			log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido\n");
+			mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
+			/*TODO: Repito codigo. MUUUY parecido a finalizarHiloPrograma, solo que no tengo el pid pa pasarle. Ver la abstraccion*/
+			size=strlen(mensaje);
+			informarConsola(socketAceptado,mensaje,size);
+			mensaje = "Finalizar";
+			size=strlen(mensaje);
+			informarConsola(socketAceptado,mensaje,size);
+			recv(socketAceptado,&size,sizeof(int),0); // A modo de ok
+			eliminarSocket(socketAceptado);
+			break;
+		default:
 			break;
 	}
 }
@@ -299,19 +353,21 @@ void gestionarCierreConsola(int socket){
 	char* procesosAFinalizar;
 	int desplazamiento=0;
 	int i;
+
 		recv(socket,&size,sizeof(int),0);
 		procesosAFinalizar = malloc(size);
-		recv(socket,&cantidad,sizeof(int),0);
 		recv(socket,procesosAFinalizar,size,0);
+		cantidad = *((int*)procesosAFinalizar+desplazamiento);
+		desplazamiento++;
 
-			/*TODO:Hay que buscar a todos los procesosAFinalizar en la cola de los estados, y llevarlos a la cola de terminados*/
 			for(i=0;i<cantidad;i++){
 				pid = *((int*)procesosAFinalizar+desplazamiento);
-						buscarProcesoYTerminarlo(pid); /*TODO: Finalizar proceso en ejecucion, y ver porque no finalizan los hilos programas cuando se saca de alguna cola que no es REady*/
+						buscarProcesoYTerminarlo(pid); /*TODO: Finalizar procesos en ejecucion*/
 						finalizarHiloPrograma(pid);
 						desplazamiento ++;
 			}
-			send(socket,&i,sizeof(int),0);
+
+			send(socket,&i,sizeof(int),0); /*HACE ESPERAR AL HILO PROCESO EN CONSOLA*/
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
 }
@@ -329,11 +385,9 @@ void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad){
 	for(i=0;i<cantidad;i++){
 		pid = *((int*)procesosAFinalizar);
 
-		pthread_mutex_lock(&mutexColaTerminados);
 		procesosAFinalizar += sizeof(int);
 		log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 		finalizarHiloPrograma(pid);
-		pthread_mutex_unlock(&mutexColaTerminados);
 	}
 
 }
@@ -350,13 +404,30 @@ void eliminarSocket(int socket){
 
 void buscarProcesoYTerminarlo(int pid){
 	log_info(loggerConPantalla,"Finalizando proceso--->PID: %d ",pid);
-	t_pcb* procesoATerminar;
+
+	t_pcb *procesoATerminar;
+	t_cpu *cpuAFinalizar = malloc(sizeof(t_cpu));
+
+	char comandoFinalizar = 'F';
+
 	_Bool verificarPid(t_pcb* pcb){
 			return (pcb->pid==pid);
 		}
 	_Bool verificarPidCPU(t_cpu* cpu){
 				return (cpu->pid==pid);
 			}
+
+	pthread_mutex_lock(&mutexColaEjecucion);
+		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
+
+			pthread_mutex_lock(&mutexListaCPU);
+			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
+			pthread_mutex_unlock(&mutexListaCPU);
+
+			send(cpuAFinalizar->socket, &comandoFinalizar,sizeof(char),0);
+			return;
+		}
+		pthread_mutex_unlock(&mutexColaEjecucion);
 
 	pthread_mutex_lock(&mutexColaNuevos);
 	if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
@@ -366,20 +437,18 @@ void buscarProcesoYTerminarlo(int pid){
 
 
 	pthread_mutex_lock(&mutexColaListos);
+
 	if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
 			sem_wait(&sem_colaReady);
 		}
 	pthread_mutex_unlock(&mutexColaListos);
 
-	/*pthread_mutex_lock(&mutexColaEjecucion); TODO: Hay que ver como hacer este temita
-	if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
-		procesoAEliminar=list_remove_by_condition(colaEjecucion,(void*)verificarPid);
-		t_cpu*cpu = list_remove_by_condition(listaCPU,(void*)verificarPidCPU);
-		list_add(listaCPU,cpu);
-		terminarProceso(cpu->socket);
+	pthread_mutex_lock(&mutexColaBloqueados);
+	if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
+			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
 		}
-	pthread_mutex_unlock(&mutexColaEjecucion);*/
+	pthread_mutex_unlock(&mutexColaBloqueados);
 
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados,procesoATerminar);
@@ -426,9 +495,90 @@ void inicializarListas(){
 
 	listaContable=list_create();
 }
+void obtenerVariablesCompartidasDeLaConfig(){
+	int tamanio = tamanioArray(shared_vars);
+	int i;
+	variablesGlobales = malloc(sizeof(int) * tamanio);
+	for(i = 0; i < tamanio; i++) {
 
+		variablesGlobales[i] = 0;
 
+	}
+}
+void obtenerValorDeSharedVar(int socket){
+	int tamanio;
+	char* identificador;
+	recv(socket,&tamanio,sizeof(int),0);
+	identificador = malloc(tamanio);
+	recv(socket,identificador,tamanio,0);
+	log_info(loggerConPantalla, "Obteniendo el Valor de id: %s", identificador);
+	int indice = indiceEnArray(shared_vars, identificador);
+	int valor;
+	pthread_mutex_lock(&mutexVariablesGlobales);
+	valor = variablesGlobales[indice];
+	pthread_mutex_unlock(&mutexVariablesGlobales);
+	log_info(loggerConPantalla, "Valor obtenido: %d", valor);
+	send(socket,&valor,sizeof(int),0);
+}
 
+void guardarValorDeSharedVar(int socket){
+	int tamanio, valorAGuardar;
+	char* identificador;
+	recv(socket,&tamanio,sizeof(int),0);
+	identificador = malloc(tamanio);
+	recv(socket,identificador,tamanio,0);
+	recv(socket,&valorAGuardar,sizeof(int),0);
+	log_info(loggerConPantalla, "Guardar Valor de : id: %s, valor: %d", identificador, valorAGuardar);
+	int indice = indiceEnArray(shared_vars, identificador);
+	pthread_mutex_lock(&mutexVariablesGlobales);
+	variablesGlobales[indice] = valorAGuardar;
+	pthread_mutex_unlock(&mutexVariablesGlobales);
+}
+void obtenerSemaforosANSISOPDeLasConfigs(){
+	int i, tamanio = tamanioArray(semId);
+	semaforosGlobales = malloc(sizeof(t_semaforo) * tamanio);
+	for(i = 0; i < tamanio; i++){
+		char *ptr;
+		semaforosGlobales[i].valor = strtol(semInit[i], &ptr, 10);
+		semaforosGlobales[i].id = semId[i];
+		}
+}
+void waitSemaforoAnsisop(int socketAceptado){
+	int tamanio;
+	char* semaforoAConsultar;
+	recv(socketAceptado,&tamanio,sizeof(int),0);
+	semaforoAConsultar = malloc(tamanio);
+	recv(socketAceptado,semaforoAConsultar,tamanio,0);
+
+	log_info(loggerConPantalla, "Esperar: id: %s", semaforoAConsultar);
+	int indice = indiceEnArray(semId, semaforoAConsultar);
+	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
+	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
+
+}
+void signalSemaforoAnsisop(int socketAceptado){
+	int tamanio;
+	char* semaforoAConsultar;
+	recv(socketAceptado,&tamanio,sizeof(int),0);
+	semaforoAConsultar = malloc(tamanio);
+	recv(socketAceptado,semaforoAConsultar,tamanio,0);
+	log_info(loggerConPantalla, "Signal: id: %s", semaforoAConsultar);
+	int indice = indiceEnArray(semId, semaforoAConsultar);
+	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
+	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
+}
+
+int indiceEnArray(char** array, char* elemento){
+	int i = 0;
+	while(array[i] && strcmp(array[i], elemento)) i++;
+
+	return array[i] ? i:-1;
+}
+int tamanioArray(char** array){
+	int i = 0;
+	while(array[i]) i++;
+	return i;
+}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
@@ -437,54 +587,62 @@ void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 }
 void selectorConexiones() {
 	log_info(loggerConPantalla,"Iniciando selector de conexiones");
-	int fdMax; // es para un contador de los sockets que hay
-	int newfd; // newly accept()ed socket descriptor
-	struct sockaddr_storage remoteaddr; // client address
-	int i; // Contador para las iteracion dentro del FDSET
+	int maximoFD;
+	int nuevoFD;
+	int socket;
 	char orden;
+
 	char remoteIP[INET6_ADDRSTRLEN];
 	socklen_t addrlen;
-	fd_set readFds; // temp file descriptor list for select()
-// listen
+	fd_set readFds;
+	struct sockaddr_storage remoteaddr;// temp file descriptor list for select()
+
+
 	if (listen(socketServidor, 15) == -1) {
 	perror("listen");
 	exit(1);
 	}
+
 	//FD_SET(0, &master); // Agrega el fd del teclado.
+
 	FD_SET(socketServidor, &master); // add the listener to the master set
-	fdMax = socketServidor; // keep track of the biggest file descriptor so far, it's this one
+	maximoFD = socketServidor; // keep track of the biggest file descriptor so far, it's this one
 
-	while(!flagFinalizarKernel) {
+	while(1) {
+					//pthread_mutex_lock(&mutex_FDSET);
 					readFds = master;
+					//pthread_mutex_unlock(&mutex_FDSET);
 
-					if (select(fdMax + 1, &readFds, NULL, NULL, NULL) == -1) {
+					if (select(maximoFD + 1, &readFds, NULL, NULL, NULL) == -1) {
 						perror("select");
 						log_error(loggerSinPantalla,"Error en select\n");
 						exit(2);
 					}
 
-					for (i = 0; i <= fdMax; i++) {
-							if (FD_ISSET(i, &readFds)) { // we got one!!
-									if(i == 0){
+					for (socket = 0; socket <= maximoFD; socket++) {
+							if (FD_ISSET(socket, &readFds)) { //Hubo una conexion
+									/*if(socket == 0){
 										sem_post(&sem_ordenSelect);/*TODO: Cambiar esto a un mutex*/
-										break;
+										//break;
+									//}
+									if (socket == socketServidor) {
+										addrlen = sizeof remoteaddr;
+										nuevoFD = accept(socketServidor, (struct sockaddr *) &remoteaddr,&addrlen);
+
+										if (nuevoFD == -1) perror("accept");
+
+										else {
+
+											FD_SET(nuevoFD, &master);
+
+											if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
+
+											log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
+										}
 									}
-									if (i == socketServidor) {
-									addrlen = sizeof remoteaddr;
-									newfd = accept(socketServidor, (struct sockaddr *) &remoteaddr,&addrlen);
-											if (newfd == -1) {
-											perror("accept");
-											} else {
-											FD_SET(newfd, &master);
-											if (newfd > fdMax) {
-											fdMax = newfd;
-											}
-									log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), newfd);
-												}
-									}
-									else if(i!=0) {
-											recv(i, &orden, sizeof orden, 0);
-											connectionHandler(i, orden);
+									else if(socket != 0) {
+											recv(socket, &orden, sizeof(char), MSG_WAITALL);
+											connectionHandler(socket, orden);
 									}
 							}
 					}

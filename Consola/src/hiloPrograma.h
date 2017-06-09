@@ -21,6 +21,8 @@ typedef struct {
 
 pthread_mutex_t mutexListaHilos;
 pthread_mutex_t mutex_crearHilo;
+pthread_mutex_t mutexRecibirDatos;
+
 sem_t sem_crearHilo;
 t_list* listaHilosProgramas;
 
@@ -68,32 +70,38 @@ void recibirDatosDelKernel(int socketHiloKernel){
 	int pid;
 	int size;
 	int flagCerrarHilo=1;
-	char* mensaje= NULL;
+	char* mensaje;
 
 	recv(socketHiloKernel, &pid, sizeof(int), 0);
 	log_info(loggerConPantalla,"Al programa ANSISOP en socket: %d se le ha asignado el PID: %d", socketHiloKernel,pid);
 
 	cargarHiloPrograma(pid,socketHiloKernel);
-	sem_post(&sem_crearHilo);
+	pthread_mutex_unlock(&mutex_crearHilo);
 
 	while(flagCerrarHilo){
 		recv(socketHiloKernel,&size,sizeof(int),0);
+
+		pthread_mutex_lock(&mutexRecibirDatos);
+
 		log_info(loggerConPantalla,"Socket %d recibiendo mensaje para PID %d",socketHiloKernel,pid);
-		mensaje=malloc(size * sizeof(char));
-		recv(socketHiloKernel,(char*)mensaje,size,0);
+
+		mensaje = malloc(size * sizeof(char));
+		recv(socketHiloKernel,mensaje,size,0);
 		strcpy(mensaje+size,"\0");
 
 		if(strcmp(mensaje,"Finalizar")==0) {
-			flagCerrarHilo= 0;
+			flagCerrarHilo = 0;
 			free(mensaje);
+			pthread_mutex_unlock(&mutexRecibirDatos);
 			break;
 		}
 		printf("%s\n",mensaje);
 		actualizarCantidadImpresiones(pid);
 		free(mensaje);
-
+		pthread_mutex_unlock(&mutexRecibirDatos);
 		imprimirInterfaz();
 	}
+
 	gestionarCierrePrograma(pid);
 	log_info(loggerConPantalla,"Programa ANSISOP --> PID: %d ---> Socket: %d ha finalizado",pid,socketHiloKernel);
 }
@@ -114,8 +122,10 @@ void gestionarCierrePrograma(int pidFinalizar){
 	bool verificarPid(t_hiloPrograma* proceso){
 		return (proceso->pid == pidFinalizar);
 	}
-
+	pthread_mutex_lock(&mutexListaHilos);
 	t_hiloPrograma* programaAFinalizar = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
+	pthread_mutex_unlock(&mutexListaHilos);
+
 	close(programaAFinalizar->socketHiloKernel);
 
 	time_t tiempoFinalizacion;
