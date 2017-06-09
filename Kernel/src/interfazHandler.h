@@ -170,11 +170,11 @@ void imprimirListadoDeProcesos(t_list* listaPid){
 	list_destroy(listaPid);
 }
 
-void modificarGradoMultiprogramacion(){
+void modificarGradoMultiprogramacion(){ /*TODO: Se queda trabado si le meto un valor que entre al if del error*/
 	int nuevoGrado;
+	pthread_mutex_lock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
-
 	if(nuevoGrado < gradoMultiProgramacion) {
 		log_error(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
 		return;
@@ -183,6 +183,8 @@ void modificarGradoMultiprogramacion(){
 	pthread_mutex_lock(&mutexGradoMultiProgramacion);
 	config_gradoMultiProgramacion= nuevoGrado;
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+
+	pthread_mutex_unlock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Se cambio el GradoMultiProg a:%d\n",nuevoGrado);
 }
 

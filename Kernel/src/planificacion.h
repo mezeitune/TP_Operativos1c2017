@@ -84,7 +84,7 @@ void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
 void terminarProceso(int socket);
 void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
-void eliminarHiloPrograma(int pid);
+void finalizarHiloPrograma(int pid);
 
 
 int contadorPid=0;
@@ -147,7 +147,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 				log_error(loggerConPantalla ,"No se pudo reservar recursos para ejecutar el programa");
 				interruptHandler(codigoPrograma->socketHiloConsola,'A'); // Informa a consola error por no poder reservar recursos
 				cambiarEstadoATerminado(proceso,-1); /*TODO:Cambiar exitCODE*/
-				eliminarHiloPrograma(proceso->pid);
+				finalizarHiloPrograma(proceso->pid);
 			}
 	else{
 			encolarProcesoListo(proceso);
@@ -171,14 +171,18 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
 
 }
 
-void eliminarHiloPrograma(int pid){
+void finalizarHiloPrograma(int pid){
+	log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 	char* mensaje = malloc(sizeof(char)*10);
 	mensaje = "Finalizar";
 
 	_Bool verificaPid(t_consola* consolathread){
 			return (consolathread->pid == pid);
 		}
+	pthread_mutex_lock(&mutexListaConsolas);
 	t_consola* consola=list_remove_by_condition(listaConsolas,(void*)verificaPid);
+	pthread_mutex_unlock(&mutexListaConsolas);
+
 	informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
 	eliminarSocket(consola->socketHiloPrograma);
 	//free(mensaje); TODO: Ver porque rompe este free;
@@ -412,7 +416,7 @@ void terminarProceso(int socketCPU){
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
 		cambiarEstadoATerminado(pcbProcesoTerminado,0); /*TODO: Cambiar exitCode*/
-		eliminarHiloPrograma(pcbProcesoTerminado->pid);
+		finalizarHiloPrograma(pcbProcesoTerminado->pid);
 		/*TODO: Liberar recursos en memoria */
 
 		disminuirGradoMultiprogramacion();

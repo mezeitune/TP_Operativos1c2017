@@ -91,6 +91,8 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		printf("%s\n",mensaje);
 		actualizarCantidadImpresiones(pid);
 		free(mensaje);
+
+		imprimirInterfaz();
 	}
 	gestionarCierrePrograma(pid);
 	log_info(loggerConPantalla,"Programa ANSISOP --> PID: %d ---> Socket: %d ha finalizado",pid,socketHiloKernel);

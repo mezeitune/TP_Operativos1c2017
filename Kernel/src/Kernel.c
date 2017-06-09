@@ -243,8 +243,9 @@ void interruptHandler(int socketAceptado,char orden){
 
 void gestionarCierreConsola(int socket){
 	log_info(loggerConPantalla,"Gestionando cierre de consola %d",socket);
-	int size, cantidad;
+	int size, cantidad,pid;
 	char* procesosAFinalizar;
+	int desplazamiento=0;
 	int i;
 		recv(socket,&size,sizeof(int),0);
 		procesosAFinalizar = malloc(size);
@@ -252,7 +253,12 @@ void gestionarCierreConsola(int socket){
 		recv(socket,procesosAFinalizar,size,0);
 
 			/*TODO:Hay que buscar a todos los procesosAFinalizar en la cola de los estados, y llevarlos a la cola de terminados*/
-			cerrarHilosProgramas(procesosAFinalizar,cantidad);
+			for(i=0;i<cantidad;i++){
+				pid = *((int*)procesosAFinalizar+desplazamiento);
+						buscarProcesoYTerminarlo(pid); /*TODO: Finalizar proceso en ejecucion, y ver porque no finalizan los hilos programas cuando se saca de alguna cola que no es REady*/
+						finalizarHiloPrograma(pid);
+						desplazamiento ++;
+			}
 			send(socket,&i,sizeof(int),0);
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
@@ -274,7 +280,7 @@ void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad){
 		pthread_mutex_lock(&mutexColaTerminados);
 		procesosAFinalizar += sizeof(int);
 		log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
-		eliminarHiloPrograma(pid);
+		finalizarHiloPrograma(pid);
 		pthread_mutex_unlock(&mutexColaTerminados);
 	}
 
@@ -291,6 +297,7 @@ void eliminarSocket(int socket){
 }
 
 void buscarProcesoYTerminarlo(int pid){
+	log_info(loggerConPantalla,"Finalizando proceso--->PID: %d ",pid);
 	t_pcb* procesoATerminar;
 	_Bool verificarPid(t_pcb* pcb){
 			return (pcb->pid==pid);
@@ -304,12 +311,15 @@ void buscarProcesoYTerminarlo(int pid){
 		procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
 	}
 	pthread_mutex_unlock(&mutexColaNuevos);
+
+
 	pthread_mutex_lock(&mutexColaListos);
 	if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
+			sem_wait(&sem_colaReady);
 		}
 	pthread_mutex_unlock(&mutexColaListos);
-	sem_wait(&sem_colaReady);
+
 	/*pthread_mutex_lock(&mutexColaEjecucion); TODO: Hay que ver como hacer este temita
 	if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
 		procesoAEliminar=list_remove_by_condition(colaEjecucion,(void*)verificarPid);
