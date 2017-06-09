@@ -41,6 +41,9 @@ void recibirPidDeCpu(int socket);
 //--------ConnectionHandler--------//
 void connectionHandler(int socketAceptado, char orden);
 void inicializarListas();
+int atenderNuevoPrograma(int socketAceptado);
+void gestionarNuevaCPU(int socketCPU);
+void handShakeCPU(int socketCPU);
 //---------ConnectionHandler-------//
 
 //------InterruptHandler-----//
@@ -102,7 +105,6 @@ void connectionHandler(int socketAceptado, char orden) {
 
 	t_pcb* pcb;
 
-	t_cpu* cpu = malloc(sizeof(t_cpu));
 	char comandoDesdeCPU;
 
 	switch (orden) {
@@ -110,10 +112,7 @@ void connectionHandler(int socketAceptado, char orden) {
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
-
-					cpu->socket = socketAceptado;
-					list_add(listaCPU,cpu);
-					sem_post(&sem_CPU);
+					gestionarNuevaCPU(socketAceptado);
 					break;
 		case 'T':
 					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
@@ -126,8 +125,7 @@ void connectionHandler(int socketAceptado, char orden) {
 					interfazHandlerParaFileSystem(comandoDesdeCPU,socketAceptado);//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
 		case 'P':
-					send(socketAceptado,&config_paginaSize,sizeof(int),0);
-					send(socketAceptado,&stackSize,sizeof(int),0);
+					handShakeCPU(socketAceptado);
 					break;
 		case 'X':
 					recv(socketAceptado,&orden,sizeof(char),0);
@@ -148,11 +146,63 @@ void connectionHandler(int socketAceptado, char orden) {
 					break;
 		}
 
-	pthread_mutex_unlock(&mutexConexion);
 	orden = '\0';
 	return;
 
 }
+
+int atenderNuevoPrograma(int socketAceptado){
+		log_info(loggerConPantalla,"Atendiendo nuevo programa");
+
+		contadorPid++; // VAR GLOBAL
+		send(socketAceptado,&contadorPid,sizeof(int),0);
+
+		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
+		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
+		codigoPrograma->pid=proceso->pid;
+
+		if(!flagPlanificacion) {
+					contadorPid--;
+					free(proceso);
+					free(codigoPrograma);
+					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
+					interruptHandler(socketAceptado,'D'); // Informa a consola error por planificacion detenida
+					return -1;
+						}
+
+		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
+		pthread_mutex_lock(&mutexColaNuevos);
+		list_add(colaNuevos,proceso);
+		pthread_mutex_unlock(&mutexColaNuevos);
+
+		pthread_mutex_lock(&mutexListaCodigo);
+		list_add(listaCodigosProgramas,codigoPrograma);
+		pthread_mutex_unlock(&mutexListaCodigo);
+
+		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
+
+		if(verificarGradoDeMultiprogramacion() < 0 ){
+					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
+					return -2;
+				}
+		else{
+			sem_post(&sem_admitirNuevoProceso);
+		}
+		return 0;
+}
+
+void handShakeCPU(int socketCPU){
+	send(socketCPU,&config_paginaSize,sizeof(int),0);
+	send(socketCPU,&stackSize,sizeof(int),0);
+}
+
+void gestionarNuevaCPU(int socketCPU){
+	t_cpu* cpu = malloc(sizeof(t_cpu));
+	cpu->socket = socketCPU;
+	list_add(listaCPU,cpu);
+	sem_post(&sem_CPU);
+}
+
 void recibirPidDeCpu(int socket){
 int pid;
 	recv(socket,&pid,sizeof(int),0);
@@ -196,7 +246,7 @@ void interruptHandler(int socketAceptado,char orden){
 	case 'E':
 		log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socketAceptado);
 		pthread_mutex_lock(&mutexNuevoProceso);
-		gestionarCierreConsola(socketAceptado);
+		gestionarCierreConsola(socketAceptado); /*TODO: Fix cuando la consola tiene solo procesos terminados*/
 		pthread_mutex_unlock(&mutexNuevoProceso);
 		break;
 	case 'F':
@@ -398,17 +448,19 @@ void selectorConexiones() {
 	perror("listen");
 	exit(1);
 	}
-	FD_SET(socketServidor, &master); // add the listener to the master set
 	FD_SET(0, &master); // Agrega el fd del teclado.
+	FD_SET(socketServidor, &master); // add the listener to the master set
 	fdMax = socketServidor; // keep track of the biggest file descriptor so far, it's this one
 
 	while(!flagFinalizarKernel) {
 					readFds = master;
+
 					if (select(fdMax + 1, &readFds, NULL, NULL, NULL) == -1) {
 						perror("select");
 						log_error(loggerSinPantalla,"Error en select\n");
 						exit(2);
 					}
+
 					for (i = 0; i <= fdMax; i++) {
 							if (FD_ISSET(i, &readFds)) { // we got one!!
 									if(i == 0){
@@ -430,7 +482,6 @@ void selectorConexiones() {
 									}
 									else if(i!=0) {
 											recv(i, &orden, sizeof orden, 0);
-											pthread_mutex_lock(&mutexConexion);
 											connectionHandler(i, orden);
 									}
 							}

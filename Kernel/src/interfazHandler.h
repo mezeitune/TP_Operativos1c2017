@@ -177,7 +177,6 @@ void modificarGradoMultiprogramacion(){ /*TODO: Se queda trabado si le meto un v
 	pthread_mutex_lock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
-
 	if(nuevoGrado < gradoMultiProgramacion) {
 		log_error(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
 		pthread_mutex_unlock(&mutexNuevoProceso);

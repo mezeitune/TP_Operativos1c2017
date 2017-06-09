@@ -76,7 +76,6 @@ void agregarAFinQuantum(t_pcb* pcb);
 /*----CORTO PLAZO--------*/
 
 /*---PLANIFICACION GENERAL-------*/
-int atenderNuevoPrograma(int socketAceptado);
 int verificarGradoDeMultiprogramacion();
 void aumentarGradoMultiprogramacion();
 void disminuirGradoMultiprogramacion();
@@ -322,45 +321,6 @@ void agregarAFinQuantum(t_pcb* pcb){
 
 /*-------------------PLANIFICACION GENERAL------------------------------------*/
 
-int atenderNuevoPrograma(int socketAceptado){
-		log_info(loggerConPantalla,"Atendiendo nuevo programa");
-
-		contadorPid++; // VAR GLOBAL
-		send(socketAceptado,&contadorPid,sizeof(int),0);
-
-		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
-		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
-		codigoPrograma->pid=proceso->pid;
-
-		if(!flagPlanificacion) {
-					contadorPid--;
-					free(proceso);
-					free(codigoPrograma);
-					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
-					interruptHandler(socketAceptado,'D'); // Informa a consola error por planificacion detenida
-					return -1;
-						}
-
-		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
-		pthread_mutex_lock(&mutexColaNuevos);
-		list_add(colaNuevos,proceso);
-		pthread_mutex_unlock(&mutexColaNuevos);
-
-		pthread_mutex_lock(&mutexListaCodigo);
-		list_add(listaCodigosProgramas,codigoPrograma);
-		pthread_mutex_unlock(&mutexListaCodigo);
-
-		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
-
-		if(verificarGradoDeMultiprogramacion() < 0 ){
-					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
-					return -2;
-				}
-		else{
-			sem_post(&sem_admitirNuevoProceso);
-		}
-		return 0;
-}
 
 
 int verificarGradoDeMultiprogramacion(){
