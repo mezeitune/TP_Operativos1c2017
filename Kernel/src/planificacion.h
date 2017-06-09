@@ -327,7 +327,6 @@ int verificarGradoDeMultiprogramacion(){
 	pthread_mutex_lock(&mutexGradoMultiProgramacion);
 	if(gradoMultiProgramacion >= config_gradoMultiProgramacion) {
 		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
-		log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
 		return -1;
 	}
 	pthread_mutex_unlock(&mutexGradoMultiProgramacion);

@@ -153,6 +153,7 @@ void connectionHandler(int socketAceptado, char orden) {
 
 int atenderNuevoPrograma(int socketAceptado){
 		log_info(loggerConPantalla,"Atendiendo nuevo programa");
+		sem_post(&sem_admitirNuevoProceso);
 
 		contadorPid++; // VAR GLOBAL
 		send(socketAceptado,&contadorPid,sizeof(int),0);
@@ -182,6 +183,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 
 		if(verificarGradoDeMultiprogramacion() < 0 ){
+					log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
 					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
 					return -2;
 				}
@@ -448,7 +450,7 @@ void selectorConexiones() {
 	perror("listen");
 	exit(1);
 	}
-	FD_SET(0, &master); // Agrega el fd del teclado.
+	//FD_SET(0, &master); // Agrega el fd del teclado.
 	FD_SET(socketServidor, &master); // add the listener to the master set
 	fdMax = socketServidor; // keep track of the biggest file descriptor so far, it's this one
 

@@ -28,12 +28,12 @@ t_log *loggerConPantalla;
 
 
 void interfazHandler(){
-	char orden;
+	char orden='\0';
 	char *mensajeRecibido;
 
 	while(1){
-		sem_wait(&sem_ordenSelect); /*TODO: Hacer el mutex OrdenSelect*/
-		scanf("%c",&orden);
+		//sem_wait(&sem_ordenSelect); /*TODO: Hacer el mutex OrdenSelect*/
+		if(orden=='\0')scanf("%c",&orden);
 
 		printf("Entre en UI\n");
 
@@ -91,6 +91,7 @@ void interfazHandler(){
 					log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
 					break;
 		}
+		orden='\0';
 	}
 
 }
@@ -100,14 +101,14 @@ void interfazHandler(){
 
 void obtenerListadoProcesos(){
 	char orden;
-	read(0,&orden,sizeof(char));
+	scanf("%c",&orden);
 	switch(orden){
 	case 'T':
 		orden = 'T';
 		mostrarProcesos(orden);
 		break;
 	case 'C':
-		read(0,&orden,sizeof(char));
+		scanf("%c",&orden);
 		mostrarProcesos(orden);
 		break;
 	default:
