@@ -105,17 +105,20 @@ void* planificarLargoPlazo(int socket){
 	t_pcb* proceso;
 	while(flagTerminarPlanificadorLargoPlazo){
 		sem_wait(&sem_admitirNuevoProceso);
-			if(verificarGradoDeMultiprogramacion() == 0 && list_size(colaNuevos)>0 && flagPlanificacion) {
+		pthread_mutex_lock(&mutexNuevoProceso);
+			if(verificarGradoDeMultiprogramacion()==0 &&list_size(colaNuevos)>0 && flagPlanificacion) {
+
 			pthread_mutex_lock(&mutexColaNuevos);
 			proceso = list_remove(colaNuevos,0);
 			pthread_mutex_unlock(&mutexColaNuevos);
 
+			pthread_mutex_lock(&mutexListaCodigo);
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
+			pthread_mutex_unlock(&mutexListaCodigo);
 
-			pthread_mutex_lock(&mutexNuevoProceso);
 			crearProceso(proceso,codigoPrograma); /*TODO: Ver de agregar un mutex cuando creamos un proceso. Ver donde mas se deberia usar. */
-			pthread_mutex_unlock(&mutexNuevoProceso);										/*Por ejemplo cuando se quiero finalizar un proceso, o cuando muere una consola*/
 			}
+			pthread_mutex_unlock(&mutexNuevoProceso);
 	}
 	log_info(loggerConPantalla,"Planificador largo plazo finalizado");
 }
@@ -135,6 +138,7 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
 			return (codigoPrograma->pid == pid);
 		}
+
 	return list_remove_by_condition(listaCodigosProgramas, (void*)verificarPid);
 
 }
@@ -326,12 +330,15 @@ void agregarAFinQuantum(t_pcb* pcb){
 
 
 int verificarGradoDeMultiprogramacion(){
-	pthread_mutex_lock(&mutexGradoMultiProgramacion);
+	pthread_mutex_lock(&mutex_config_gradoMultiProgramacion);
+	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	if(gradoMultiProgramacion >= config_gradoMultiProgramacion) {
-		pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+		pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
+		pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 		return -1;
 	}
-	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
+	pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 	return 0;
 }
 
@@ -405,15 +412,15 @@ void terminarProceso(int socketCPU){
 }
 
 void aumentarGradoMultiprogramacion(){
-	pthread_mutex_lock(&mutexGradoMultiProgramacion);
+	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	gradoMultiProgramacion++;
-	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 }
 
 void disminuirGradoMultiprogramacion(){
-	pthread_mutex_lock(&mutexGradoMultiProgramacion);
+	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	gradoMultiProgramacion--;
-	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 }
 
 void listaEsperaATerminados(){

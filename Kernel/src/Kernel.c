@@ -153,7 +153,6 @@ void connectionHandler(int socketAceptado, char orden) {
 
 int atenderNuevoPrograma(int socketAceptado){
 		log_info(loggerConPantalla,"Atendiendo nuevo programa");
-		sem_post(&sem_admitirNuevoProceso);
 
 		contadorPid++; // VAR GLOBAL
 		send(socketAceptado,&contadorPid,sizeof(int),0);
@@ -161,6 +160,14 @@ int atenderNuevoPrograma(int socketAceptado){
 		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
 		codigoPrograma->pid=proceso->pid;
+
+		pthread_mutex_lock(&mutexNuevoProceso);
+		if(verificarGradoDeMultiprogramacion() != 0){
+			log_error(loggerConPantalla,"Grado de multiprogramacion insuficiente");
+			interruptHandler(socketAceptado,'M');
+		}
+		pthread_mutex_unlock(&mutexNuevoProceso);
+
 
 		if(!flagPlanificacion) {
 					contadorPid--;
@@ -171,7 +178,6 @@ int atenderNuevoPrograma(int socketAceptado){
 					return -1;
 						}
 
-		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 		pthread_mutex_lock(&mutexColaNuevos);
 		list_add(colaNuevos,proceso);
 		pthread_mutex_unlock(&mutexColaNuevos);
@@ -181,15 +187,12 @@ int atenderNuevoPrograma(int socketAceptado){
 		pthread_mutex_unlock(&mutexListaCodigo);
 
 		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
+		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 
-		if(verificarGradoDeMultiprogramacion() < 0 ){
-					log_error(loggerConPantalla, "Capacidad limite de procesos en sistema\n");
-					interruptHandler(socketAceptado,'M'); // Informa a consola error por grado de multiprogramacion
-					return -2;
-				}
-		else{
-			sem_post(&sem_admitirNuevoProceso);
-		}
+		sem_post(&sem_admitirNuevoProceso);
+
+
+
 		return 0;
 }
 

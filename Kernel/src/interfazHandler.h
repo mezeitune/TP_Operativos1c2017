@@ -63,7 +63,10 @@ void interfazHandler(){
 					/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
 					break;
 				case 'M':
+					pthread_mutex_lock(&mutexNuevoProceso);
 					modificarGradoMultiprogramacion();
+					pthread_mutex_unlock(&mutexNuevoProceso);
+
 					break;
 				case 'K':
 					/*finalizarProceso(int pid) TODO HAY QUE IMPLEMENTAR*/
@@ -175,21 +178,23 @@ void imprimirListadoDeProcesos(t_list* listaPid){
 
 void modificarGradoMultiprogramacion(){ /*TODO: Se queda trabado si le meto un valor que entre al if del error*/
 	int nuevoGrado;
-	pthread_mutex_lock(&mutexNuevoProceso);
+
 	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
+	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	if(nuevoGrado < gradoMultiProgramacion) {
 		log_error(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
-		pthread_mutex_unlock(&mutexNuevoProceso);
+		pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 		return;
 	}
+	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 
-	pthread_mutex_lock(&mutexGradoMultiProgramacion);
+	pthread_mutex_lock(&mutex_config_gradoMultiProgramacion);
 	config_gradoMultiProgramacion= nuevoGrado;
-	pthread_mutex_unlock(&mutexGradoMultiProgramacion);
+	pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 
-	pthread_mutex_unlock(&mutexNuevoProceso);
-	log_info(loggerConPantalla,"Se cambio el GradoMultiProg a:%d\n",nuevoGrado);
+	sem_post(&sem_admitirNuevoProceso);
+	log_info(loggerConPantalla,"Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
 }
 
 void inicializarLog(char *rutaDeLog){
