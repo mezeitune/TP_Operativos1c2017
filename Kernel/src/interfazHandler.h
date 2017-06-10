@@ -38,6 +38,7 @@ void interfazHandler(){
 		printf("Entre en UI\n");
 
 		switch(orden){
+
 				case 'O':
 					obtenerListadoProcesos();
 					break;
@@ -86,9 +87,6 @@ void interfazHandler(){
 				case 'F':
 					printf("Enviando instrucciones a File System");
 					interfazHandlerParaFileSystem('V',1);
-					break;
-				case 'Z':
-					kill(pid,SIGUSR2);
 					break;
 				default:
 					log_warning(loggerConPantalla ,"\nOrden no reconocida\n");

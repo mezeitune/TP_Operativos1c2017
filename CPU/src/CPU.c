@@ -1,7 +1,7 @@
 #include "CPU.h"
+#include <fcntl.h>
 
 
-pthread_mutex_t mutexEnvioKernel;
 
 int main(void) {
 
@@ -17,9 +17,8 @@ int main(void) {
 	signal(SIGINT, signalHandler);
 	signal(SIGUSR1, signalHandler);
 	signal(SIGUSR2, signalHandler);
-	pthread_mutex_init(&mutexEnvioKernel,NULL);
-	generarIdCpu();
 
+	generarIdCpu();
 
 	char comandoGetNuevoProceso = 'N';
 	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
@@ -30,14 +29,10 @@ int main(void) {
 }
 void esperarPCB(){
 
-
-				while(cpuOcupada==1){
-
-					log_warning(loggerConPantalla, "No se le asigno un PCB a esta CPU");
-					recibirPCB();
-					cpuOcupada--;
-
-				}
+	while(cpuOcupada==1){
+		recibirPCB();
+		cpuOcupada--;
+	}
 
 }
 void recibirPCB(){
@@ -110,12 +105,21 @@ void EjecutarProgramaMedianteAlgoritmo(){
 }
 void ejecutarInstruccion(){
 
-	char* instruccion = obtener_instruccion();
+
+	char *orden = malloc(sizeof(char));
+	*orden = '\0';
+	char *instruccion = obtener_instruccion();
+
 	log_warning(loggerConPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
+
+
+	if(!(recv(socketKernel,orden,sizeof(char),MSG_DONTWAIT) == MSG_DONTWAIT)) if(*orden == 'F')cpuExpropiada = -1;
+
 	free(instruccion);
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
-	if(cpuExpropiada==0){
+
+	if(cpuExpropiada == -1){
 		expropiar();
 	}
 }
@@ -263,10 +267,17 @@ void inicializarLog(char *rutaDeLog){
 	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
 void expropiar(){
-	char comandoExpropiarCpu= 'R';
-	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	char comandoFinalizar = 'T';
+	char comandoExpropiarCpu = 'R';
+
+	if(cpuExpropiada == -1) finalizar();//send(socketKernel,&comandoFinalizar , sizeof(char),0);
+	else {
+		send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	}
+
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d", pcb_actual->pid, pcb_actual->programCounter);
 	free(pcb_actual);
 	esperarPCB();
@@ -477,8 +488,8 @@ void finalizar (){
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 		free(pcb_actual);
-		if(cpuFinalizada==0){
-		CerrarPorSignal();
+		if(cpuFinalizada == 0){
+			CerrarPorSignal();
 		}
 		cpuOcupada=1;
 		esperarPCB();

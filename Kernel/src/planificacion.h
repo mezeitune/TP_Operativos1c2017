@@ -69,10 +69,13 @@ pthread_t planificadorLargoPlazo;
 
 void* planificarCortoPlazo();
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex);
-pthread_t planificadorCortoPlazo;
-t_list* listaFinQuantum;
 void finQuantumAReady();
 void agregarAFinQuantum(t_pcb* pcb);
+
+t_list* listaFinQuantum;
+pthread_t planificadorCortoPlazo;
+pthread_t threadQuantum;
+
 /*----CORTO PLAZO--------*/
 
 /*---PLANIFICACION GENERAL-------*/
@@ -176,17 +179,21 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
 void finalizarHiloPrograma(int pid){
 	log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 	char* mensaje = malloc(sizeof(char)*10);
-	int ok;
+	int *ok;
+	t_consola* consola = malloc(sizeof(t_consola));
 	mensaje = "Finalizar";
+
+
 
 	_Bool verificaPid(t_consola* consolathread){
 			return (consolathread->pid == pid);
 		}
 	pthread_mutex_lock(&mutexListaConsolas);
-	t_consola* consola=list_remove_by_condition(listaConsolas,(void*)verificaPid);
+	consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
 	pthread_mutex_unlock(&mutexListaConsolas);
 
 	informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
+
 	recv(consola->socketHiloPrograma,&ok,sizeof(int),0);
 	eliminarSocket(consola->socketHiloPrograma);
 	//free(mensaje); TODO: Ver porque rompe este free;
@@ -240,13 +247,18 @@ void* planificarCortoPlazo(){
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
 	char comandoEnviarPcb ='S';
-	char comandoExpropiar ='E';
+	//char comandoExpropiar ='E';
 
 	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
 
 	while(1){
 
+		if(flagPlanificacion) sem_post(&sem_planificacion);
+
 		sem_wait(&sem_CPU);
+
+		finQuantumAReady();
+
 		sem_wait(&sem_colaReady);
 		sem_wait(&sem_planificacion);
 
@@ -274,10 +286,6 @@ void* planificarCortoPlazo(){
 
 		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 
-		finQuantumAReady();
-
-		if(flagPlanificacion) sem_post(&sem_planificacion);
-
 	}
 }
 
@@ -285,24 +293,26 @@ void* planificarCortoPlazo(){
 
 void finQuantumAReady(){
 
-
 	int indice;
 	t_pcb* pcbBuffer;
 
 	if(!list_is_empty(listaFinQuantum)){
 
-		for (indice = 0; indice < list_size(listaFinQuantum)-1; indice++) {
-				pthread_mutex_lock(&mutexListaFinQuantum);
-				pcbBuffer = list_remove(listaFinQuantum,indice);
-				pthread_mutex_unlock(&mutexListaFinQuantum);
+		for (indice = 0; indice < list_size(listaFinQuantum); indice++) {
 
-				pthread_mutex_lock(&mutexColaListos);
-				list_add(colaListos, pcbBuffer);
-				pthread_mutex_unlock(&mutexColaListos);
-				sem_post(&sem_colaReady);
+			pthread_mutex_lock(&mutexListaFinQuantum);
+			pcbBuffer = list_remove(listaFinQuantum,indice);
+			pthread_mutex_unlock(&mutexListaFinQuantum);
+
+			pthread_mutex_lock(&mutexColaListos);
+			list_add(colaListos, pcbBuffer);
+			pthread_mutex_unlock(&mutexColaListos);
+
+			sem_post(&sem_colaReady);
 		}
 	}
 }
+
 
 
 void agregarAFinQuantum(t_pcb* pcb){
@@ -319,6 +329,7 @@ void agregarAFinQuantum(t_pcb* pcb){
 	list_remove_by_condition(colaEjecucion, (void*)verificarPidPcb);
 	pthread_mutex_unlock(&mutexColaEjecucion);
 
+	sem_post(&sem_listaFinQuantum);
 	sem_post(&sem_CPU);
 
 }
@@ -376,6 +387,7 @@ void terminarProceso(int socketCPU){
 	}
 
 	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
+
 	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
 
 	actualizarRafagas(pcbProcesoTerminado->pid,pcbProcesoTerminado->cantidadInstrucciones);
@@ -390,8 +402,10 @@ void terminarProceso(int socketCPU){
 		list_remove_by_condition(colaEjecucion, (void*)verificarPid);
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
+
 		cambiarEstadoATerminado(pcbProcesoTerminado,0); /*TODO: Cambiar exitCode*/
 		finalizarHiloPrograma(pcbProcesoTerminado->pid);
+
 		/*TODO: Liberar recursos en memoria */
 
 		disminuirGradoMultiprogramacion();
@@ -408,7 +422,6 @@ void terminarProceso(int socketCPU){
 		disminuirGradoMultiprogramacion();
 		sem_post(&sem_CPU);
 	}
-
 }
 
 void aumentarGradoMultiprogramacion(){
@@ -449,6 +462,7 @@ void listaEsperaATerminados(){
 
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
+	printf("\n\n\nKHE ONDA AMEWO?????\n\n\n");
 	send(socketHiloPrograma,&size,sizeof(int),0);
 	send(socketHiloPrograma,mensaje,size,0);
 }

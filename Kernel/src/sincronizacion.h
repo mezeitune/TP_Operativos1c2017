@@ -40,6 +40,7 @@ sem_t sem_colaReady;
 sem_t sem_CPU;
 sem_t sem_ordenSelect;
 sem_t sem_ordenUI;
+sem_t sem_listaFinQuantum;
 
 
 void inicializarSemaforos(){
@@ -64,9 +65,10 @@ void inicializarSemaforos(){
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_colaReady,0,0);
 		sem_init(&sem_CPU,0,0);
-		sem_init(&sem_planificacion,0,1);
+		sem_init(&sem_planificacion,0,0);
 		sem_init(&sem_ordenSelect,0,0);
 		sem_init(&sem_ordenUI,0,1);
+		sem_init(&sem_listaFinQuantum,0,0);
 
 
 }
