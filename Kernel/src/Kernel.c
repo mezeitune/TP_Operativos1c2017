@@ -75,6 +75,18 @@ int indiceEnArray(char** array, char* elemento);
 void obtenerVariablesCompartidasDeLaConfig();
 void guardarValorDeSharedVar(int socket);
 //----------shared vars-----------//
+
+//-------semaforos ANSISOP-------//
+typedef struct{
+	int valor;
+	char * id;
+}t_semaforo;
+t_semaforo* semaforosGlobales;
+void obtenerSemaforosANSISOPDeLasConfigs();
+void waitSemaforoAnsisop(int socketAceptado);
+void signalSemaforoAnsisop(int socketAceptado);
+//-------semaforos ANSISOP-------//
+
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
@@ -88,6 +100,7 @@ int main(void) {
 	handshakeMemoria();
 
 	obtenerVariablesCompartidasDeLaConfig();
+	obtenerSemaforosANSISOPDeLasConfigs();
 
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
@@ -157,6 +170,12 @@ void connectionHandler(int socketAceptado, char orden) {
 					break;
 		case 'G':
 					guardarValorDeSharedVar(socketAceptado);
+					break;
+		case 'W':
+					waitSemaforoAnsisop(socketAceptado);
+					break;
+		case 'L':
+					signalSemaforoAnsisop(socketAceptado);
 					break;
 		default:
 					if(orden == '\0') break;
@@ -249,10 +268,11 @@ void interruptHandler(int socketAceptado,char orden){
 		log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
 		recv(socketAceptado,&size,sizeof(int),0);
 		mensaje=malloc(size);
-		recv(socketAceptado,&mensaje,size,0);
+		recv(socketAceptado,mensaje,size,0);
 		recv(socketAceptado,&pid,sizeof(int),0);
 
 		socketHiloPrograma = buscarSocketHiloPrograma(pid);
+
 		informarConsola(socketHiloPrograma,mensaje,size);
 		log_info(loggerConPantalla,"Rutina para imprimir finalizo ----- PID: %d\n", pid);
 			break;
@@ -492,8 +512,40 @@ void guardarValorDeSharedVar(int socket){
 	int indice = indiceEnArray(shared_vars, identificador);
 	pthread_mutex_lock(&mutexVariablesGlobales);
 	variablesGlobales[indice] = valorAGuardar;
-	printf("Valor asignado %d",variablesGlobales[indice]);
 	pthread_mutex_unlock(&mutexVariablesGlobales);
+}
+void obtenerSemaforosANSISOPDeLasConfigs(){
+	int i, tamanio = tamanioArray(semId);
+	semaforosGlobales = malloc(sizeof(t_semaforo) * tamanio);
+	for(i = 0; i < tamanio; i++){
+		char *ptr;
+		semaforosGlobales[i].valor = strtol(semInit[i], &ptr, 10);
+		semaforosGlobales[i].id = semId[i];
+		}
+}
+void waitSemaforoAnsisop(int socketAceptado){
+	int tamanio;
+	char* semaforoAConsultar;
+	recv(socketAceptado,&tamanio,sizeof(int),0);
+	semaforoAConsultar = malloc(tamanio);
+	recv(socketAceptado,semaforoAConsultar,tamanio,0);
+
+	log_info(loggerConPantalla, "Esperar: id: %s", semaforoAConsultar);
+	int indice = indiceEnArray(semId, semaforoAConsultar);
+	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
+	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
+
+}
+void signalSemaforoAnsisop(int socketAceptado){
+	int tamanio;
+	char* semaforoAConsultar;
+	recv(socketAceptado,&tamanio,sizeof(int),0);
+	semaforoAConsultar = malloc(tamanio);
+	recv(socketAceptado,semaforoAConsultar,tamanio,0);
+	log_info(loggerConPantalla, "Signal: id: %s", semaforoAConsultar);
+	int indice = indiceEnArray(semId, semaforoAConsultar);
+	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
+	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
 }
 
 int indiceEnArray(char** array, char* elemento){

@@ -663,34 +663,41 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 
 
 void wait(t_nombre_semaforo identificador_semaforo){
-
+	char comandoWait = 'W';
 	char** string_cortado = string_split(identificador_semaforo, "\n");
+	char* identificadorSemAEnviar = string_new();
+	string_append(&identificadorSemAEnviar, string_cortado[0]);
+	int tamanio = sizeof(int)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
-	//void* wait_serializado;
-	//int tamanioMensaje = serializarWait(string_cortado[0], &wait_serializado);
-	//send(socketKernel,&wait_serializado,tamanioMensaje,0);
-	//free(wait_serializado);
-	char* mensaje = recibir_string(socketKernel);
-	if(strcmp(mensaje, "dale para adelante!") != 0){
+	send(socketKernel,&comandoWait,sizeof(char),0);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,identificadorSemAEnviar,tamanio,0);
+
+	//char* mensaje = recv (socketKernel,mensaje,sizeof(),0);
+	//if(strcmp(mensaje, "dale para adelante!") != 0){
 		//pcb_bloqueado = 1;
-		log_info(loggerConPantalla, "pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
-	}
+		//log_info(loggerConPantalla, "pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
+		//ver como hago para bloquearme y esperar para volver
+	//}
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
 		i++;
 	}
 	free(string_cortado);
-	free(mensaje);
+	//free(mensaje);
 
 }
 void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
+	char comandoSignal = 'L';
 	char** string_cortado = string_split(identificador_semaforo, "\n");
+	char* identificadorSemAEnviar = string_new();
+	string_append(&identificadorSemAEnviar, string_cortado[0]);
+	int tamanio = sizeof(int)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a subir: %s", string_cortado[0]);
-	//void* signal;
-	//int tamanio;
-	//send(socketKernel,signal,tamanio,0);
-	//free(signal);
+	send(socketKernel,&comandoSignal,sizeof(char),0);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,identificadorSemAEnviar,tamanio,0);
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
@@ -866,16 +873,16 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 }
 
 
-void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
+void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
 	if(descriptor_archivo==DESCRIPTOR_SALIDA){
 
-		char *valor_variable = string_itoa(valor);
 		char comandoImprimir = 'X';
 		char comandoImprimirPorConsola = 'P';
 		send(socketKernel,&comandoImprimir,sizeof(char),0);
 		send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
-		send(socketKernel,&tamanio,sizeof(t_valor_variable),0);
-		send(socketKernel,&valor_variable,tamanio,0);
+
+		send(socketKernel,&tamanio,sizeof(int),0);
+		send(socketKernel,informacion,tamanio,0);
 		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 	}else {
 
@@ -887,7 +894,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t
 			int pid= pcb_actual->pid;
 			send(socketKernel,&pid,sizeof(int),0);
 			send(socketKernel,&descriptor_archivo,sizeof(int),0);
-			send(socketKernel,&valor,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
+		//	send(socketKernel,&valor,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			send(socketKernel,&tamanio,sizeof(int),0);
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 			if(resultadoEjecucion==1)
