@@ -485,11 +485,11 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		}
 
 		int validado=1;
-		send(socket_aceptado,&descriptorADevolver,sizeof(int),0);
 		send(socket_aceptado,&validado,sizeof(int),0);
+		send(socket_aceptado,&descriptorADevolver,sizeof(int),0);
+
 	}else{
 		int validado=0;
-		send(socket_aceptado,&validado,sizeof(int),0);
 		send(socket_aceptado,&validado,sizeof(int),0);
 	}
 
