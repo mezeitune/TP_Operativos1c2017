@@ -249,10 +249,11 @@ void interruptHandler(int socketAceptado,char orden){
 		log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
 		recv(socketAceptado,&size,sizeof(int),0);
 		mensaje=malloc(size);
-		recv(socketAceptado,&mensaje,size,0);
+		recv(socketAceptado,mensaje,size,0);
 		recv(socketAceptado,&pid,sizeof(int),0);
 
 		socketHiloPrograma = buscarSocketHiloPrograma(pid);
+
 		informarConsola(socketHiloPrograma,mensaje,size);
 		log_info(loggerConPantalla,"Rutina para imprimir finalizo ----- PID: %d\n", pid);
 			break;
@@ -492,7 +493,6 @@ void guardarValorDeSharedVar(int socket){
 	int indice = indiceEnArray(shared_vars, identificador);
 	pthread_mutex_lock(&mutexVariablesGlobales);
 	variablesGlobales[indice] = valorAGuardar;
-	printf("Valor asignado %d",variablesGlobales[indice]);
 	pthread_mutex_unlock(&mutexVariablesGlobales);
 }
 

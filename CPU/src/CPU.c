@@ -864,16 +864,16 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 }
 
 
-void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t_valor_variable tamanio){
+void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
 	if(descriptor_archivo==DESCRIPTOR_SALIDA){
 
-		char *valor_variable = string_itoa(valor);
 		char comandoImprimir = 'X';
 		char comandoImprimirPorConsola = 'P';
 		send(socketKernel,&comandoImprimir,sizeof(char),0);
 		send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
-		send(socketKernel,&tamanio,sizeof(t_valor_variable),0);
-		send(socketKernel,&valor_variable,tamanio,0);
+
+		send(socketKernel,&tamanio,sizeof(int),0);
+		send(socketKernel,informacion,tamanio,0);
 		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 	}else {
 
@@ -885,7 +885,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, t_valor_variable valor, t
 			int pid= pcb_actual->pid;
 			send(socketKernel,&pid,sizeof(int),0);
 			send(socketKernel,&descriptor_archivo,sizeof(int),0);
-			send(socketKernel,&valor,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
+		//	send(socketKernel,&valor,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			send(socketKernel,&tamanio,sizeof(int),0);
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 			if(resultadoEjecucion==1)
