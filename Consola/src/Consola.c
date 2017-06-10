@@ -15,6 +15,8 @@ void signalSigIntHandler(int signum);
 
 int main(void) {
 
+
+
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
 	inicializarLog("/home/utnso/Log/logConsola.txt");

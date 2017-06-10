@@ -66,6 +66,27 @@ int flagFinalizarKernel = 0;
 
 int cantidadDeRafagas;
 
+//----------shared vars-----------//
+void obtenerValorDeSharedVar(int socket);
+int* variablesGlobales;
+int tamanioArray(char** array);
+pthread_mutex_t mutexVariablesGlobales = PTHREAD_MUTEX_INITIALIZER;
+int indiceEnArray(char** array, char* elemento);
+void obtenerVariablesCompartidasDeLaConfig();
+void guardarValorDeSharedVar(int socket);
+//----------shared vars-----------//
+
+//-------semaforos ANSISOP-------//
+typedef struct{
+	int valor;
+	char * id;
+}t_semaforo;
+t_semaforo* semaforosGlobales;
+void obtenerSemaforosANSISOPDeLasConfigs();
+void waitSemaforoAnsisop(int socketAceptado);
+void signalSemaforoAnsisop(int socketAceptado);
+//-------semaforos ANSISOP-------//
+
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
@@ -78,9 +99,13 @@ int main(void) {
 	inicializarListas();
 	handshakeMemoria();
 
+	obtenerVariablesCompartidasDeLaConfig();
+	obtenerSemaforosANSISOPDeLasConfigs();
+
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
+
 
 	selectorConexiones(socketServidor);
 
@@ -138,6 +163,18 @@ void connectionHandler(int socketAceptado, char orden) {
 					break;
 		case 'K':
 					recibirPidDeCpu(socketAceptado);
+					break;
+		case 'S':
+					obtenerValorDeSharedVar(socketAceptado);
+					break;
+		case 'G':
+					guardarValorDeSharedVar(socketAceptado);
+					break;
+		case 'W':
+					waitSemaforoAnsisop(socketAceptado);
+					break;
+		case 'L':
+					signalSemaforoAnsisop(socketAceptado);
 					break;
 		default:
 					if(orden == '\0') break;
@@ -223,13 +260,14 @@ void interruptHandler(int socketAceptado,char orden){
 	char* mensaje; /*TODO: Ver el tema de pedir memoria y liberar esta variable siempre que se pueda*/
 
 	switch(orden){
-		case 'A':
-			log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos\n");
-			mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
-			size=strlen(mensaje);
-			informarConsola(socketAceptado,mensaje,size);
-			log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socketAceptado);
-			break;
+
+	case 'A':
+		log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos\n");
+		mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
+		size=strlen(mensaje);
+		informarConsola(socketAceptado,mensaje,size);
+		log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socketAceptado);
+		break;
 		case 'P':
 			log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
 			recv(socketAceptado,&size,sizeof(int),0);
@@ -474,9 +512,90 @@ void inicializarListas(){
 
 	listaContable=list_create();
 }
+void obtenerVariablesCompartidasDeLaConfig(){
+	int tamanio = tamanioArray(shared_vars);
+	int i;
+	variablesGlobales = malloc(sizeof(int) * tamanio);
+	for(i = 0; i < tamanio; i++) {
 
+		variablesGlobales[i] = 0;
 
+	}
+}
+void obtenerValorDeSharedVar(int socket){
+	int tamanio;
+	char* identificador;
+	recv(socket,&tamanio,sizeof(int),0);
+	identificador = malloc(tamanio);
+	recv(socket,identificador,tamanio,0);
+	log_info(loggerConPantalla, "Obteniendo el Valor de id: %s", identificador);
+	int indice = indiceEnArray(shared_vars, identificador);
+	int valor;
+	pthread_mutex_lock(&mutexVariablesGlobales);
+	valor = variablesGlobales[indice];
+	pthread_mutex_unlock(&mutexVariablesGlobales);
+	log_info(loggerConPantalla, "Valor obtenido: %d", valor);
+	send(socket,&valor,sizeof(int),0);
+}
 
+void guardarValorDeSharedVar(int socket){
+	int tamanio, valorAGuardar;
+	char* identificador;
+	recv(socket,&tamanio,sizeof(int),0);
+	identificador = malloc(tamanio);
+	recv(socket,identificador,tamanio,0);
+	recv(socket,&valorAGuardar,sizeof(int),0);
+	log_info(loggerConPantalla, "Guardar Valor de : id: %s, valor: %d", identificador, valorAGuardar);
+	int indice = indiceEnArray(shared_vars, identificador);
+	pthread_mutex_lock(&mutexVariablesGlobales);
+	variablesGlobales[indice] = valorAGuardar;
+	pthread_mutex_unlock(&mutexVariablesGlobales);
+}
+void obtenerSemaforosANSISOPDeLasConfigs(){
+	int i, tamanio = tamanioArray(semId);
+	semaforosGlobales = malloc(sizeof(t_semaforo) * tamanio);
+	for(i = 0; i < tamanio; i++){
+		char *ptr;
+		semaforosGlobales[i].valor = strtol(semInit[i], &ptr, 10);
+		semaforosGlobales[i].id = semId[i];
+		}
+}
+void waitSemaforoAnsisop(int socketAceptado){
+	int tamanio;
+	char* semaforoAConsultar;
+	recv(socketAceptado,&tamanio,sizeof(int),0);
+	semaforoAConsultar = malloc(tamanio);
+	recv(socketAceptado,semaforoAConsultar,tamanio,0);
+
+	log_info(loggerConPantalla, "Esperar: id: %s", semaforoAConsultar);
+	int indice = indiceEnArray(semId, semaforoAConsultar);
+	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
+	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
+
+}
+void signalSemaforoAnsisop(int socketAceptado){
+	int tamanio;
+	char* semaforoAConsultar;
+	recv(socketAceptado,&tamanio,sizeof(int),0);
+	semaforoAConsultar = malloc(tamanio);
+	recv(socketAceptado,semaforoAConsultar,tamanio,0);
+	log_info(loggerConPantalla, "Signal: id: %s", semaforoAConsultar);
+	int indice = indiceEnArray(semId, semaforoAConsultar);
+	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
+	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
+}
+
+int indiceEnArray(char** array, char* elemento){
+	int i = 0;
+	while(array[i] && strcmp(array[i], elemento)) i++;
+
+	return array[i] ? i:-1;
+}
+int tamanioArray(char** array){
+	int i = 0;
+	while(array[i]) i++;
+	return i;
+}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);

@@ -16,9 +16,9 @@ t_config* configuracion_kernel;
 int config_quantum;
 char *quantumSleep;
 char *config_algoritmo;
-char *semIds;
-char *semInit;
-char *sharedVars;
+char **semId;
+char **semInit;
+char **shared_vars;
 int stackSize;
 int config_paginaSize;
 int config_gradoMultiProgramacion;
@@ -37,7 +37,7 @@ void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
 	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
 	printf("---------------------------------------------------\n");
-	printf(	"QUANTUM:%d\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	config_quantum, quantumSleep, config_algoritmo, config_gradoMultiProgramacion, semIds, semInit, sharedVars, stackSize, config_paginaSize);
+	printf(	"QUANTUM:%d\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	config_quantum, quantumSleep, config_algoritmo, config_gradoMultiProgramacion, semId, semInit, shared_vars, stackSize, config_paginaSize);
 	printf("---------------------------------------------------\n");
 
 }
@@ -57,9 +57,9 @@ void leerConfiguracion(char* ruta) {
 	quantumSleep = config_get_string_value(configuracion_kernel,"QUANTUM_SLEEP");
 	config_algoritmo = config_get_string_value(configuracion_kernel, "ALGORITMO");
 	config_gradoMultiProgramacion = atoi(config_get_string_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION"));
-	semIds = config_get_string_value(configuracion_kernel, "SEM_IDS");
-	semInit = config_get_string_value(configuracion_kernel, "SEM_INIT");
-	sharedVars = config_get_string_value(configuracion_kernel, "SHARED_VARS");
+	semId = config_get_array_value(configuracion_kernel, "SEM_IDS");
+	semInit = config_get_array_value(configuracion_kernel, "SEM_INIT");
+	shared_vars = config_get_array_value(configuracion_kernel, "SHARED_VARS");
 	stackSize = atoi(config_get_string_value(configuracion_kernel, "STACK_SIZE"));
 }
 

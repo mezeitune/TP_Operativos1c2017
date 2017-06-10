@@ -86,7 +86,7 @@ void interfazHandler(){
 						break;
 				case 'F':
 					printf("Enviando instrucciones a File System");
-					interfazHandlerParaFileSystem('V',1);
+					interfazHandlerParaFileSystem('A',1);
 					break;
 				default:
 					log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
