@@ -66,6 +66,15 @@ int flagFinalizarKernel=0;
 
 int cantidadDeRafagas;
 
+//----------shared vars-----------//
+void obtenerValorDeSharedVar(int socket);
+int* variablesGlobales;
+int tamanioArray(char** array);
+pthread_mutex_t mutexVariablesGlobales = PTHREAD_MUTEX_INITIALIZER;
+int indiceEnArray(char** array, char* elemento);
+void obtenerVariablesCompartidasDeLaConfig();
+void guardarValorDeSharedVar(char* identificador, int valorAGrabar);
+//----------shared vars-----------//
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
@@ -78,9 +87,12 @@ int main(void) {
 	inicializarListas();
 	handshakeMemoria();
 
+	obtenerVariablesCompartidasDeLaConfig();
+
 	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
+
 
 	selectorConexiones(socketServidor);
 
@@ -140,6 +152,11 @@ void connectionHandler(int socketAceptado, char orden) {
 		case 'K':
 					recibirPidDeCpu(socketAceptado);
 					break;
+		case 'S':
+					obtenerValorDeSharedVar(socketAceptado);
+					break;
+		case 'G':
+
 		default:
 					if(orden == '\0') break;
 					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
@@ -438,8 +455,53 @@ void inicializarListas(){
 	listaContable=list_create();
 }
 
+void obtenerVariablesCompartidasDeLaConfig(){
+	int tamanio = tamanioArray(shared_vars);
+	int i;
+	variablesGlobales = malloc(sizeof(int) * tamanio);
+	for(i = 0; i < tamanio; i++) {
 
+		variablesGlobales[i] = 0;
 
+	}
+}
+
+void obtenerValorDeSharedVar(int socket){
+
+	int tamanio;
+	char* identificador;
+	recv(socket,&tamanio,sizeof(int),0);
+	identificador = malloc(tamanio);
+	recv(socket,identificador,tamanio,0);
+	log_info(loggerConPantalla, "Obteniendo el Valor de id: %s", identificador);
+	int indice = indiceEnArray(shared_vars, identificador);
+	int valor;
+	pthread_mutex_lock(&mutexVariablesGlobales);
+	valor = variablesGlobales[indice];
+	pthread_mutex_unlock(&mutexVariablesGlobales);
+	log_info(loggerConPantalla, "Valor obtenido: %d", valor);
+	send(socket,&valor,sizeof(int),0);
+}
+
+void guardarValorDeSharedVar(char* identificador, int valorAGrabar){
+	log_info(loggerConPantalla, "Guardar Valor de : id: %s, valor: %d", identificador, valorAGrabar);
+	int indice = indiceEnArray(shared_vars, identificador);
+	pthread_mutex_lock(&mutexVariablesGlobales);
+	variablesGlobales[indice] = valorAGrabar;
+	pthread_mutex_unlock(&mutexVariablesGlobales);
+}
+
+int indiceEnArray(char** array, char* elemento){
+	int i = 0;
+	while(array[i] && strcmp(array[i], elemento)) i++;
+
+	return array[i] ? i:-1;
+}
+int tamanioArray(char** array){
+	int i = 0;
+	while(array[i]) i++;
+	return i;
+}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
