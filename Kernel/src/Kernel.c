@@ -73,7 +73,7 @@ int tamanioArray(char** array);
 pthread_mutex_t mutexVariablesGlobales = PTHREAD_MUTEX_INITIALIZER;
 int indiceEnArray(char** array, char* elemento);
 void obtenerVariablesCompartidasDeLaConfig();
-void guardarValorDeSharedVar(char* identificador, int valorAGrabar);
+void guardarValorDeSharedVar(int socket);
 //----------shared vars-----------//
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
@@ -156,7 +156,8 @@ void connectionHandler(int socketAceptado, char orden) {
 					obtenerValorDeSharedVar(socketAceptado);
 					break;
 		case 'G':
-
+					guardarValorDeSharedVar(socketAceptado);
+					break;
 		default:
 					if(orden == '\0') break;
 					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
@@ -467,7 +468,6 @@ void obtenerVariablesCompartidasDeLaConfig(){
 }
 
 void obtenerValorDeSharedVar(int socket){
-
 	int tamanio;
 	char* identificador;
 	recv(socket,&tamanio,sizeof(int),0);
@@ -483,11 +483,18 @@ void obtenerValorDeSharedVar(int socket){
 	send(socket,&valor,sizeof(int),0);
 }
 
-void guardarValorDeSharedVar(char* identificador, int valorAGrabar){
-	log_info(loggerConPantalla, "Guardar Valor de : id: %s, valor: %d", identificador, valorAGrabar);
+void guardarValorDeSharedVar(int socket){
+	int tamanio, valorAGuardar;
+	char* identificador;
+	recv(socket,&tamanio,sizeof(int),0);
+	identificador = malloc(tamanio);
+	recv(socket,identificador,tamanio,0);
+	recv(socket,&valorAGuardar,sizeof(int),0);
+	log_info(loggerConPantalla, "Guardar Valor de : id: %s, valor: %d", identificador, valorAGuardar);
 	int indice = indiceEnArray(shared_vars, identificador);
 	pthread_mutex_lock(&mutexVariablesGlobales);
-	variablesGlobales[indice] = valorAGrabar;
+	variablesGlobales[indice] = valorAGuardar;
+	printf("Valor asignado %d",variablesGlobales[indice]);
 	pthread_mutex_unlock(&mutexVariablesGlobales);
 }
 

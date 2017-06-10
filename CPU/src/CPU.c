@@ -639,14 +639,17 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
 	char** string_cortado = string_split(variable, "\n");
 	char* variable_string = string_new();
-	char comandoObtenerCompartida = 'S';
+	char comandoAsignarCompartida = 'G';
 	string_append(&variable_string, "!");
 	string_append(&variable_string, string_cortado[0]);
 	int tamanio = sizeof(int)*strlen(variable_string);
 
-	send(socketKernel,&comandoObtenerCompartida,sizeof(char),0);
+	log_info(loggerConPantalla, "Asignando el valor %d: de id: %s", valor,variable);
+
+	send(socketKernel,&comandoAsignarCompartida,sizeof(char),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,variable_string,tamanio,0);
+	send(socketKernel,&valor,sizeof(int),0);
 	free(variable_string);
 	//free(variable_a_enviar);
 	int i = 0;
