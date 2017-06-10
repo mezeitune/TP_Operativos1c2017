@@ -621,12 +621,10 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,variable_string,tamanio,0);
 	free(variable_string);
-	//int* valor_variable_recibida = malloc(sizeof(int));
+
 	int valor_variable_int;
 	recv(socketKernel,&valor_variable_int,sizeof(int),0);
-	//valor_variable_recibida = (int*) recv(socketKernel,&valor_variable_int,sizeof(int),0);
-	//int valor_variable = *valor_variable_recibida;
-	//free(valor_variable_recibida);
+
 	log_info(loggerConPantalla, "Valor de la variable compartida: %d", valor_variable_int);
 	int i = 0;
 	while(string_cortado[i] != NULL){
@@ -651,7 +649,7 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 	send(socketKernel,variable_string,tamanio,0);
 	send(socketKernel,&valor,sizeof(int),0);
 	free(variable_string);
-	//free(variable_a_enviar);
+
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);

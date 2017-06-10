@@ -455,7 +455,6 @@ void inicializarListas(){
 
 	listaContable=list_create();
 }
-
 void obtenerVariablesCompartidasDeLaConfig(){
 	int tamanio = tamanioArray(shared_vars);
 	int i;
@@ -466,7 +465,6 @@ void obtenerVariablesCompartidasDeLaConfig(){
 
 	}
 }
-
 void obtenerValorDeSharedVar(int socket){
 	int tamanio;
 	char* identificador;
