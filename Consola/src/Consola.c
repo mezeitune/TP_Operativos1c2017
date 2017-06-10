@@ -15,6 +15,8 @@ void signalSigIntHandler(int signum);
 
 int main(void) {
 
+
+
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
 	inicializarLog("/home/utnso/Log/logConsola.txt");
@@ -66,6 +68,8 @@ void *connectionHandler() {
 			case 'Q':
 				cerrarTodo();
 				break;
+			case '\0':
+				break;
 			default:
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 				sem_post(&sem_crearHilo);
@@ -97,9 +101,9 @@ void finalizarPrograma(){
 				send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 				send(socketKernel,&comandoFinalizarPrograma,sizeof(char),0);
 				send(socketKernel, (void*) &procesoATerminar, sizeof(int), 0);
-			}else{
-						log_error(loggerConPantalla,"\nPID incorrecto\n");
-			}
+
+			}else	log_error(loggerConPantalla,"\nPID incorrecto\n");
+
 		sem_post(&sem_crearHilo);
 }
 
@@ -133,7 +137,7 @@ void cerrarTodo(){
 	send(socketKernel,mensaje,mensajeSize,0);
 
 
-	recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
+	//recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
 
 
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
