@@ -612,36 +612,44 @@ free(string_cortado);
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	char** string_cortado = string_split(variable, "\n");
 	char* variable_string = string_new();
+	char comandoObtenerCompartida = 'S';
 	string_append(&variable_string, "!");
 	string_append(&variable_string, string_cortado[0]);
-	//void* variable_a_enviar;
-	//int tamanio;
-	//send(socketKernel,variable_a_enviar,tamanio,0);
+	int tamanio = sizeof(int)*strlen(variable_string);
 
+	send(socketKernel,&comandoObtenerCompartida,sizeof(char),0);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,variable_string,tamanio,0);
 	free(variable_string);
-	//free(variable_a_enviar);
-
-	int* valor_variable_recibida = malloc(sizeof(int));
-	//valor_variable_recibida = (int*) recv(socketKernel,,,);
-	int valor_variable = *valor_variable_recibida;
-	free(valor_variable_recibida);
-	log_info(loggerConPantalla, "Valor de la variable compartida: %d", valor_variable);
+	//int* valor_variable_recibida = malloc(sizeof(int));
+	int valor_variable_int;
+	recv(socketKernel,&valor_variable_int,sizeof(int),0);
+	//valor_variable_recibida = (int*) recv(socketKernel,&valor_variable_int,sizeof(int),0);
+	//int valor_variable = *valor_variable_recibida;
+	//free(valor_variable_recibida);
+	log_info(loggerConPantalla, "Valor de la variable compartida: %d", valor_variable_int);
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
 		i++;
 	}
 	free(string_cortado);
-	return valor_variable;
+	return valor_variable_int;
 }
 t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
 	char** string_cortado = string_split(variable, "\n");
 	char* variable_string = string_new();
+	char comandoAsignarCompartida = 'G';
 	string_append(&variable_string, "!");
 	string_append(&variable_string, string_cortado[0]);
-	//void* variable_a_enviar;
-	//int tamanio = calcularTamanio(variable_string, valor, &variable_serializada);
-	//send(socketKernel,variable,tamanio,0);
+	int tamanio = sizeof(int)*strlen(variable_string);
+
+	log_info(loggerConPantalla, "Asignando el valor %d: de id: %s", valor,variable);
+
+	send(socketKernel,&comandoAsignarCompartida,sizeof(char),0);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,variable_string,tamanio,0);
+	send(socketKernel,&valor,sizeof(int),0);
 	free(variable_string);
 	//free(variable_a_enviar);
 	int i = 0;
