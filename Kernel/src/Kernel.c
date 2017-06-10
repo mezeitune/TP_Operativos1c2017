@@ -161,13 +161,6 @@ int atenderNuevoPrograma(int socketAceptado){
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
 		codigoPrograma->pid=proceso->pid;
 
-		pthread_mutex_lock(&mutexNuevoProceso);
-		if(verificarGradoDeMultiprogramacion() != 0){
-			log_error(loggerConPantalla,"Grado de multiprogramacion insuficiente");
-			interruptHandler(socketAceptado,'M');
-		}
-		pthread_mutex_unlock(&mutexNuevoProceso);
-
 
 		if(!flagPlanificacion) {
 					contadorPid--;
@@ -189,9 +182,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 
-		sem_post(&sem_admitirNuevoProceso);
-
-
+				sem_post(&sem_admitirNuevoProceso);
 
 		return 0;
 }
