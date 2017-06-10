@@ -30,10 +30,16 @@
 #include "configuracionesLib.h"
 #include "funcionesFS.h"
 #include <commons/bitarray.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/io.h>
+#include <sys/mman.h>
 
-t_bitarray * bit;
+
 
 //----------------------------//
+
+
 
 int socket_servidor;
 
@@ -47,19 +53,37 @@ int archivoEnModoEscritura(char* archivo);
 int archivoEnModoLectura(char* archivo);
 char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size);
 
-char *bitarray;
 
 int main(void){
-
 	//TODO:
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/FS/config_FileSys");
 	leerConfiguracionMetadata("/home/utnso/workspace/tp-2017-1c-servomotor/FS/metadata/Metadata.bin");
-	//leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/File\\System/config_FileSys");
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
-	bit = bitarray_create_with_mode(bitarray, cantidadBloques, LSB_FIRST);
+    int size;
+    struct stat s;
+    const char * file_name = "../metadata/Bitmap.bin";
+    int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
+
+    /* Get the size of the file. */
+    int status = fstat (fd, & s);
+    size = s.st_size;
+	mmapDeBitmap = (char *) mmap (0, size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+
+//(tamanioBloques*cantidadBloques)/(8*tamanioBloques)
+	printf("\n\n\n%d\n\n\n\n\n",tamanioBloques);
+	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), LSB_FIRST);
+
+	printf("%d",bitarray_get_max_bit(bitarray));
+
+	if(bitarray_test_bit(bitarray, 1)==1){
+		printf("ocupado");
+	}else{
+		printf("liberado");
+	}
 
 
 	int socket_FS = crear_socket_servidor(ipFS,puertoFS);

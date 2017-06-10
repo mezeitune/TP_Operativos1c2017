@@ -1,3 +1,18 @@
+#ifndef _CAPAFS_
+#define _CAPAFS_
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/io.h>
+#include <sys/mman.h>
+
+
+#include <commons/bitarray.h>
+
+
+unsigned char *mmapDeBitmap;
+t_bitarray * bitarray;
+
 char *puertoFS;
 char *puntoMontaje;
 char *puerto_Kernel;
@@ -5,8 +20,46 @@ int tamanioBloques;
 int cantidadBloques;
 char* magicNumber;
 char *ipFS;
-
 t_config* configuracion_FS;
+
+void testeommap(){
+	unsigned char *f;
+    int size;
+    struct stat s;
+    const char * file_name = "../metadata/Bitmap.bin";
+    int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
+
+    /* Get the size of the file. */
+    int status = fstat (fd, & s);
+    size = s.st_size;
+    f = (char *) mmap (0, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    int i;
+    for (i = 0; i < size; i++) {
+        char c;
+
+        c = f[i];
+        printf("%c",c);
+    }
+
+
+    //Obtener el page size:
+   // int pagesize = getpagesize();
+    //size = s.st_size;
+    //size += pagesize-(size%pagesize);
+}
+
+void inicializarMmap(){
+	int size;
+	struct stat s;
+	const char * file_name = "../metadata/Bitmap.bin";
+	int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
+
+	/* Get the size of the file. */
+	int status = fstat (fd, & s);
+	mmapDeBitmap = (char *) mmap (0, size, PROT_READ, MAP_PRIVATE, fd, 0);
+}
+
+
 
 void leerConfiguracion(char* ruta){
 	configuracion_FS = config_create(ruta);
@@ -39,5 +92,8 @@ void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
 }
 
+
+
+#endif
 
 
