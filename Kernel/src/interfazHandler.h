@@ -85,7 +85,7 @@ void interfazHandler(){
 						break;
 				case 'F':
 					printf("Enviando instrucciones a File System");
-					interfazHandlerParaFileSystem('V',1);
+					interfazHandlerParaFileSystem('A',1);
 					break;
 				case 'Z':
 					kill(pid,SIGUSR2);
