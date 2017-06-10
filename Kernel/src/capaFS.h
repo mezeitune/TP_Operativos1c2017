@@ -275,14 +275,28 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 		if(encontro==0){
 			resultadoEjecucion=0;
 		}else{
+			int tiene_permisoLectura=0;
+			const char *permiso_lectura = "r";
+			if(string_contains(tablaAVer->tablaArchivoPorProceso[i][0], permiso_lectura)){
+				tiene_permisoLectura=1;
+			}
 
-			int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacionPunteroARecibir;
 
-			//sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
-			//si salio todo bien y mando la info leida al CPU
+			if(tiene_permisoLectura==1){
+				int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacionPunteroARecibir;
+
+				//sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
+				//si salio todo bien y mando la info leida al CPU
+
+				resultadoEjecucion=1;
+			}else{
+				resultadoEjecucion=0;//No tiene permiso de lectura para ejecutar esta instruccion
+				//Faltaria poner algun codigo de error o algo asi
+			}
 
 
-			resultadoEjecucion=1;
+
+
 		}
 
 	}
@@ -341,10 +355,24 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 			resultadoEjecucion=0;
 		}else{
 
-			int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacionPunteroARecibir;
 
-			//sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
-			//si salio todo bien y mando la info leida al CPU
+			int tiene_permisoEscritura=0;
+			const char *permiso_escritura = "w";
+			if(string_contains(tablaAVer->tablaArchivoPorProceso[i][0], permiso_escritura)){
+				tiene_permisoEscritura=1;
+			}
+
+
+			if(tiene_permisoEscritura==1){
+				int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacionPunteroARecibir;
+
+				//sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
+				//si salio todo bien y mando la info leida al CPU
+			}else{
+				resultadoEjecucion=0;
+				//retornar codigo de error o algo asi
+			}
+
 
 
 			resultadoEjecucion=1;
