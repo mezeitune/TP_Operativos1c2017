@@ -76,7 +76,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 	log_info(loggerConPantalla,"Al programa ANSISOP en socket: %d se le ha asignado el PID: %d", socketHiloKernel,pid);
 
 	cargarHiloPrograma(pid,socketHiloKernel);
-	sem_post(&sem_crearHilo);
+	pthread_mutex_unlock(&mutex_crearHilo);
 
 	while(flagCerrarHilo){
 		recv(socketHiloKernel,&size,sizeof(int),0);
@@ -90,9 +90,9 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		strcpy(mensaje+size,"\0");
 
 		if(strcmp(mensaje,"Finalizar")==0) {
-			pthread_mutex_unlock(&mutexRecibirDatos);
 			flagCerrarHilo= 0;
 			free(mensaje);
+			pthread_mutex_unlock(&mutexRecibirDatos);
 			break;
 		}
 		printf("%s\n",mensaje);

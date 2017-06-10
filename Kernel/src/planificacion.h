@@ -462,7 +462,6 @@ void listaEsperaATerminados(){
 
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
-	printf("\n\n\nKHE ONDA AMEWO?????\n\n\n");
 	send(socketHiloPrograma,&size,sizeof(int),0);
 	send(socketHiloPrograma,mensaje,size,0);
 }

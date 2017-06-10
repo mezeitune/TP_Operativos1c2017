@@ -47,10 +47,10 @@ void signalSigIntHandler(int signum)
     }
 }
 
-void *connectionHandler() {
+void connectionHandler() {
 	char orden;
 	while (flagCerrarConsola) {
-		sem_wait(&sem_crearHilo);
+		pthread_mutex_lock(&mutex_crearHilo);
 
 		imprimirInterfaz();
 		scanf(" %c", &orden);
@@ -67,8 +67,6 @@ void *connectionHandler() {
 				break;
 			case 'Q':
 				cerrarTodo();
-				break;
-			case '\0':
 				break;
 			default:
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
@@ -89,6 +87,7 @@ void finalizarPrograma(){
 	char comandoInterruptHandler = 'X';
 	char comandoFinalizarPrograma= 'F';
 	int procesoATerminar;
+	t_hiloPrograma* proceso;
 	log_info(loggerConPantalla,"Ingresar el PID del programa a finalizar\n");
 	scanf("%d", &procesoATerminar);
 
@@ -96,15 +95,18 @@ void finalizarPrograma(){
 			return (proceso->pid == procesoATerminar);
 		}
 
+		pthread_mutex_lock(&mutexListaHilos);
 		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
-
-				send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
-				send(socketKernel,&comandoFinalizarPrograma,sizeof(char),0);
-				send(socketKernel, (void*) &procesoATerminar, sizeof(int), 0);
-
+			proceso = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
+				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
+				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
+				send(proceso->socketHiloKernel,&procesoATerminar, sizeof(int), 0);
+				list_add(listaHilosProgramas,proceso);
 			}else	log_error(loggerConPantalla,"\nPID incorrecto\n");
 
-		sem_post(&sem_crearHilo);
+		pthread_mutex_unlock(&mutexListaHilos);
+
+		pthread_mutex_unlock(&mutex_crearHilo);
 }
 
 void cerrarTodo(){

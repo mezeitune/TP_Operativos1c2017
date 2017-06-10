@@ -197,13 +197,15 @@ int atenderNuevoPrograma(int socketAceptado){
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
 		codigoPrograma->pid=proceso->pid;
 
+		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
+		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 
 		if(!flagPlanificacion) {
 					contadorPid--;
 					free(proceso);
 					free(codigoPrograma);
 					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
-					interruptHandler(socketAceptado,'D'); // Informa a consola error por planificacion detenida
+					interruptHandler(codigoPrograma->socketHiloConsola,'D'); // Informa a consola error por planificacion detenida
 					return -1;
 						}
 
@@ -215,8 +217,6 @@ int atenderNuevoPrograma(int socketAceptado){
 		list_add(listaCodigosProgramas,codigoPrograma);
 		pthread_mutex_unlock(&mutexListaCodigo);
 
-		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
-		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 
 				sem_post(&sem_admitirNuevoProceso);
 
@@ -240,10 +240,7 @@ int pid;
 	recv(socket,&pid,sizeof(int),0);
 }
 void interruptHandler(int socketAceptado,char orden){
-
 	log_info(loggerConPantalla,"Ejecutando interrupt handler\n");
-
-	printf("\n\n\nROMPO ACA\n\n\nY la orden es: %c\n\n\n", orden);
 
 	int size;
 	int pid;
@@ -289,11 +286,9 @@ void interruptHandler(int socketAceptado,char orden){
 		case 'F':
 			log_info(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
 			recv(socketAceptado,&pid,sizeof(int),0);
-			socketHiloPrograma = buscarSocketHiloPrograma(pid); /*TODO: Eliminar la Consola-PID de la lista de hilosProgramas*/
 			buscarProcesoYTerminarlo(pid);
-			mensaje = "Finalizar";
-			size=strlen(mensaje);
-			informarConsola(socketHiloPrograma,mensaje,size);
+			finalizarHiloPrograma(pid);
+
 			log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
 
 			break;
@@ -318,11 +313,14 @@ void interruptHandler(int socketAceptado,char orden){
 		case 'D':
 			log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido\n");
 			mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
+			/*TODO: Repito codigo. MUUUY parecido a finalizarHiloPrograma, solo que no tengo el pid pa pasarle. Ver la abstraccion*/
 			size=strlen(mensaje);
 			informarConsola(socketAceptado,mensaje,size);
 			mensaje = "Finalizar";
 			size=strlen(mensaje);
 			informarConsola(socketAceptado,mensaje,size);
+			recv(socketAceptado,&size,sizeof(int),0); // A modo de ok
+			eliminarSocket(socketAceptado);
 			break;
 		default:
 			break;
@@ -417,46 +415,31 @@ void buscarProcesoYTerminarlo(int pid){
 	pthread_mutex_unlock(&mutexColaListos);
 
 
-	cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 
-	send(cpuAFinalizar->socket, &comandoFinalizar,sizeof(char),0);
-
-	//printf()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*pthread_mutex_lock(&mutexColaEjecucion); TODO: Implementar una vez de implementar la funcion EXPROPIAR()
+	pthread_mutex_lock(&mutexColaEjecucion); //TODO: Implementar una vez de implementar la funcion EXPROPIAR()
 	if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
+
+		pthread_mutex_lock(&mutexListaCPU);
+		cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
+		pthread_mutex_unlock(&mutexListaCPU);
+
+		send(cpuAFinalizar->socket, &comandoFinalizar,sizeof(char),0);
+/*
 		procesoAEliminar=list_remove_by_condition(colaEjecucion,(void*)verificarPid);
 		t_cpu*cpu = list_remove_by_condition(listaCPU,(void*)verificarPidCPU);
 		list_add(listaCPU,cpu);
 		terminarProceso(cpu->socket);
+		*/
 		}
-	pthread_mutex_unlock(&mutexColaEjecucion);*/
+	pthread_mutex_unlock(&mutexColaEjecucion);
 
+	/*
 	pthread_mutex_lock(&mutexColaBloqueados);
 	if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
 		}
 	pthread_mutex_unlock(&mutexColaBloqueados);
+	*/
 
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados,procesoATerminar);
