@@ -50,7 +50,7 @@ void handShakeCPU(int socketCPU);
 void interruptHandler(int socket,char orden);
 int buscarSocketHiloPrograma(int pid);
 void buscarProcesoYTerminarlo(int pid);
-void eliminarSocket(int socket);
+
 void gestionarCierreConsola(int socket);
 void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad);
 //------InterruptHandler-----//

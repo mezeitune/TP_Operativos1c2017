@@ -90,7 +90,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		strcpy(mensaje+size,"\0");
 
 		if(strcmp(mensaje,"Finalizar")==0) {
-			flagCerrarHilo= 0;
+			flagCerrarHilo = 0;
 			free(mensaje);
 			pthread_mutex_unlock(&mutexRecibirDatos);
 			break;

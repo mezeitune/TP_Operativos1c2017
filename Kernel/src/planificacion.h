@@ -87,7 +87,7 @@ void cargarConsola(int pid, int idConsola);
 void terminarProceso(int socket);
 void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
 void finalizarHiloPrograma(int pid);
-
+void eliminarSocket(int socket);
 
 int contadorPid=0;
 t_list* colaNuevos;
@@ -187,16 +187,21 @@ void finalizarHiloPrograma(int pid){
 
 	_Bool verificaPid(t_consola* consolathread){
 			return (consolathread->pid == pid);
-		}
-	pthread_mutex_lock(&mutexListaConsolas);
-	consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
-	pthread_mutex_unlock(&mutexListaConsolas);
+	}
 
-	informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
+	if(list_size(listaConsolas) != 0){
+		pthread_mutex_lock(&mutexListaConsolas);
+		consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
+		pthread_mutex_unlock(&mutexListaConsolas);
+		printf("\n\nHOLAAA\n\n");
 
-	recv(consola->socketHiloPrograma,&ok,sizeof(int),0);
-	eliminarSocket(consola->socketHiloPrograma);
-	//free(mensaje); TODO: Ver porque rompe este free;
+		informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
+
+
+		recv(consola->socketHiloPrograma,&ok,sizeof(int),0);
+		eliminarSocket(consola->socketHiloPrograma);
+		//free(mensaje); TODO: Ver porque rompe este free;
+	}
 	free(consola);
 }
 
@@ -404,6 +409,7 @@ void terminarProceso(int socketCPU){
 
 
 		cambiarEstadoATerminado(pcbProcesoTerminado,0); /*TODO: Cambiar exitCode*/
+
 		finalizarHiloPrograma(pcbProcesoTerminado->pid);
 
 		/*TODO: Liberar recursos en memoria */
