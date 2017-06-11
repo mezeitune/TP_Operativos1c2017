@@ -1,7 +1,7 @@
 #include "CPU.h"
 #include <fcntl.h>
 
-
+int quantum = 0;
 
 int main(void) {
 
@@ -10,6 +10,8 @@ int main(void) {
 	inicializarLog("/home/utnso/Log/logCPU.txt");
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
+
+
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
 	recibirTamanioPagina(socketKernel);
@@ -23,6 +25,10 @@ int main(void) {
 	char comandoGetNuevoProceso = 'N';
 	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
 
+	recv(socketKernel,&quantum,sizeof(int),0);
+
+	printf("\n\nQUANTUM: %d\n\n", quantum);
+
 	esperarPCB();
 
 	return 0;
@@ -30,6 +36,7 @@ int main(void) {
 void esperarPCB(){
 
 	while(cpuOcupada==1){
+		cantidadInstruccionesAEjecutarPorKernel = quantum;
 		recibirPCB();
 		cpuOcupada--;
 	}
@@ -51,7 +58,7 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 	switch (orden) {
 		case 'S':
 			log_info(loggerConPantalla, "Se esta por asignar un PCB");
-			recv(socketKernel,&cantidadInstruccionesAEjecutarPorKernel,sizeof(int),0);
+
 			establecerPCB(socketAceptado);
 					break;
 		default:
@@ -113,8 +120,10 @@ void ejecutarInstruccion(){
 	log_warning(loggerConPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 
-
-	if(!(recv(socketKernel,orden,sizeof(char),MSG_DONTWAIT) == MSG_DONTWAIT)) if(*orden == 'F')cpuExpropiada = -1;
+	recv(socketKernel,orden,sizeof(char),MSG_DONTWAIT);
+	printf("\n\nPID:%d", pcb_actual->pid);
+	printf("\nORDEN:%c\n\n", *orden);
+	if(*orden == 'F') cpuExpropiada = -1;
 
 	free(instruccion);
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
@@ -128,6 +137,7 @@ void ejecutarInstruccion(){
 int conseguirDatosMemoria (char** instruccion, int paginaSolicitada,int offset,int size){
 	int resultadoEjecucion;
 	char comandoSolicitar = 'S';//comando que le solicito a la memoria para que ande el main_solicitarBytesPagina
+
 	send(socketMemoria,&comandoSolicitar,sizeof(char),0);
 	send(socketMemoria,&pcb_actual->pid,sizeof(int),0);
 	send(socketMemoria,&paginaSolicitada,sizeof(int),0);
@@ -267,10 +277,11 @@ void inicializarLog(char *rutaDeLog){
 	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
 void expropiar(){
-	char comandoFinalizar = 'T';
+
 	char comandoExpropiarCpu = 'R';
 
-	if(cpuExpropiada == -1) finalizar();//send(socketKernel,&comandoFinalizar , sizeof(char),0);
+	if(cpuExpropiada == -1) finalizar();
+	if(cpuFinalizada == 0)	CerrarPorSignal();
 	else {
 		send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
 		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
@@ -278,7 +289,7 @@ void expropiar(){
 
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 
-	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d", pcb_actual->pid, pcb_actual->programCounter);
+	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
 	free(pcb_actual);
 	esperarPCB();
 }
@@ -482,15 +493,15 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 }
 void finalizar (){
 		char comandoFinalizacion = 'T';
+
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
 		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 		serializarPcbYEnviar(pcb_actual,socketKernel);
-		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
+		log_error(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 		free(pcb_actual);
-		if(cpuFinalizada == 0){
-			CerrarPorSignal();
-		}
+
+		cpuExpropiada = 1;
 		cpuOcupada=1;
 		esperarPCB();
 }

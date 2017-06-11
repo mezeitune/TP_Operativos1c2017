@@ -126,9 +126,9 @@ void connectionHandler(int socketAceptado, char orden) {
 		return (unaCpu->socket == socketAceptado);
 	}
 
-
+	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
 	t_pcb* pcb;
-
+	t_cpu *cpu = malloc(sizeof(t_cpu));
 	char comandoDesdeCPU;
 
 	switch (orden) {
@@ -136,11 +136,18 @@ void connectionHandler(int socketAceptado, char orden) {
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
+
+					if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
+					send(socketAceptado,&quantum,sizeof(int),0);
 					gestionarNuevaCPU(socketAceptado);
+
 					break;
 		case 'T':
 					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
 					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
+
+
+					printf("\n\nEL SOCKET A FINALIZAR ES:%d\n\n", socketAceptado);
 
 					terminarProceso(socketAceptado);
 					break;
@@ -157,9 +164,19 @@ void connectionHandler(int socketAceptado, char orden) {
 			break;
 		case 'R':
 					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
+
+					pthread_mutex_lock(&mutexListaCPU);
+					cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
+					cpu->enEjecucion = 0;
+					list_add(listaCPU,cpu);
+					pthread_mutex_unlock(&mutexListaCPU);
+
+
 					pcb = recibirYDeserializarPcb(socketAceptado);
 					actualizarRafagas(pcb->pid,cantidadDeRafagas);
 					agregarAFinQuantum(pcb);
+
+					sem_post(&sem_CPU);
 					break;
 		case 'K':
 					recibirPidDeCpu(socketAceptado);
@@ -231,7 +248,11 @@ void handShakeCPU(int socketCPU){
 void gestionarNuevaCPU(int socketCPU){
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
+	cpu->enEjecucion = 0;
+
+	pthread_mutex_lock(&mutexListaCPU);
 	list_add(listaCPU,cpu);
+	pthread_mutex_unlock(&mutexListaCPU);
 	sem_post(&sem_CPU);
 }
 
@@ -365,11 +386,11 @@ void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad){
 	for(i=0;i<cantidad;i++){
 		pid = *((int*)procesosAFinalizar);
 
-		pthread_mutex_lock(&mutexColaTerminados);
+		//pthread_mutex_lock(&mutexColaTerminados);
 		procesosAFinalizar += sizeof(int);
 		log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 		finalizarHiloPrograma(pid);
-		pthread_mutex_unlock(&mutexColaTerminados);
+		//pthread_mutex_unlock(&mutexColaTerminados);
 	}
 
 }
@@ -417,20 +438,18 @@ void buscarProcesoYTerminarlo(int pid){
 
 
 	pthread_mutex_lock(&mutexColaEjecucion); //TODO: Implementar una vez de implementar la funcion EXPROPIAR()
+
 	if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
 
 		pthread_mutex_lock(&mutexListaCPU);
-		cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
+		if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 		pthread_mutex_unlock(&mutexListaCPU);
 
 		send(cpuAFinalizar->socket, &comandoFinalizar,sizeof(char),0);
-/*
-		procesoAEliminar=list_remove_by_condition(colaEjecucion,(void*)verificarPid);
-		t_cpu*cpu = list_remove_by_condition(listaCPU,(void*)verificarPidCPU);
-		list_add(listaCPU,cpu);
-		terminarProceso(cpu->socket);
-		*/
-		}
+
+		printf("\n\nHOLAAA\n\n");
+
+	}
 	pthread_mutex_unlock(&mutexColaEjecucion);
 
 	/*
@@ -441,9 +460,9 @@ void buscarProcesoYTerminarlo(int pid){
 	pthread_mutex_unlock(&mutexColaBloqueados);
 	*/
 
-	pthread_mutex_lock(&mutexColaTerminados);
+/*	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados,procesoATerminar);
-	pthread_mutex_unlock(&mutexColaTerminados);
+	pthread_mutex_unlock(&mutexColaTerminados);*/
 }
 
 
@@ -600,9 +619,9 @@ void selectorConexiones() {
 	maximoFD = socketServidor; // keep track of the biggest file descriptor so far, it's this one
 
 	while(1) {
-					pthread_mutex_lock(&mutex_FDSET);
+					//pthread_mutex_lock(&mutex_FDSET);
 					readFds = master;
-					pthread_mutex_unlock(&mutex_FDSET);
+					//pthread_mutex_unlock(&mutex_FDSET);
 
 					if (select(maximoFD + 1, &readFds, NULL, NULL, NULL) == -1) {
 						perror("select");

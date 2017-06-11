@@ -26,9 +26,11 @@
 #include "contabilidad.h"
 
 typedef struct CPU {
+	int enEjecucion;
 	int pid;
 	int socket;
 }t_cpu;
+
 int pid=0;
 typedef struct CONSOLA{
 	int pid;
@@ -175,11 +177,12 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
 
 
 }
-
+int aux = -1;
 void finalizarHiloPrograma(int pid){
 	log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 	char* mensaje = malloc(sizeof(char)*10);
 	int *ok;
+
 	t_consola* consola = malloc(sizeof(t_consola));
 	mensaje = "Finalizar";
 
@@ -189,19 +192,24 @@ void finalizarHiloPrograma(int pid){
 			return (consolathread->pid == pid);
 	}
 
-	if(list_size(listaConsolas) != 0){
-		pthread_mutex_lock(&mutexListaConsolas);
-		consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
-		pthread_mutex_unlock(&mutexListaConsolas);
-		printf("\n\nHOLAAA\n\n");
+	//pthread_mutex_lock(&mutexAux);
+	if(pid != aux){
+		if(list_size(listaConsolas) != 0){
+			pthread_mutex_lock(&mutexListaConsolas);
+			consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
+			pthread_mutex_unlock(&mutexListaConsolas);
 
-		informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
+			informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
 
+			printf("\n\nLLEGUE ACA\n\n");
 
-		recv(consola->socketHiloPrograma,&ok,sizeof(int),0);
-		eliminarSocket(consola->socketHiloPrograma);
+			recv(consola->socketHiloPrograma,&ok,sizeof(int),0);
+			eliminarSocket(consola->socketHiloPrograma);
 		//free(mensaje); TODO: Ver porque rompe este free;
+		}
 	}
+	aux = pid;
+	//pthread_mutex_unlock(&mutexAux);
 	free(consola);
 }
 
@@ -250,20 +258,20 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 void* planificarCortoPlazo(){
 	t_pcb* pcbListo;
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
-	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
-	char comandoEnviarPcb ='S';
-	//char comandoExpropiar ='E';
 
-	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
+	_Bool verificarCPU(t_cpu* cpu){
+		return (cpu->enEjecucion == 0);
+	}
+
+
+	char comandoEnviarPcb = 'S';
 
 	while(1){
 
 		if(flagPlanificacion) sem_post(&sem_planificacion);
 
 		sem_wait(&sem_CPU);
-
 		finQuantumAReady();
-
 		sem_wait(&sem_colaReady);
 		sem_wait(&sem_planificacion);
 
@@ -273,23 +281,26 @@ void* planificarCortoPlazo(){
 		pthread_mutex_unlock(&mutexColaListos);
 
 
-		pthread_mutex_lock(&mutexListaCPU);
-		cpuEnEjecucion = list_remove(listaCPU,0);
-		list_add_in_index(listaCPU, list_size(listaCPU), cpuEnEjecucion);
-		pthread_mutex_unlock(&mutexListaCPU);
 
-		cpuEnEjecucion->pid = pcbListo->pid;
+		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
-		printf("\n\nPID:%d\n\n", cpuEnEjecucion->pid);
+			pthread_mutex_lock(&mutexListaCPU);
+			cpuEnEjecucion = list_remove_by_condition(listaCPU,(void*) verificarCPU);
+			cpuEnEjecucion->enEjecucion = 1;
+			list_add(listaCPU, cpuEnEjecucion);
+			pthread_mutex_unlock(&mutexListaCPU);
 
-		pthread_mutex_lock(&mutexColaEjecucion);
-		list_add(colaEjecucion, pcbListo);
-		pthread_mutex_unlock(&mutexColaEjecucion);
+			cpuEnEjecucion->pid = pcbListo->pid;
 
-		send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
-		send(cpuEnEjecucion->socket,&quantum,sizeof(int),0);
+			pthread_mutex_lock(&mutexColaEjecucion);
+			list_add(colaEjecucion, pcbListo);
+			pthread_mutex_unlock(&mutexColaEjecucion);
 
-		serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+
+			send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
+
+			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+		}
 
 	}
 }
@@ -301,20 +312,20 @@ void finQuantumAReady(){
 	int indice;
 	t_pcb* pcbBuffer;
 
-	if(!list_is_empty(listaFinQuantum)){
-
-		for (indice = 0; indice < list_size(listaFinQuantum); indice++) {
+	if(list_size(listaFinQuantum) > 0){
+		for (indice = 0; indice <= list_size(listaFinQuantum); ++indice) {
 
 			pthread_mutex_lock(&mutexListaFinQuantum);
 			pcbBuffer = list_remove(listaFinQuantum,indice);
 			pthread_mutex_unlock(&mutexListaFinQuantum);
 
 			pthread_mutex_lock(&mutexColaListos);
-			list_add(colaListos, pcbBuffer);
+			list_add_in_index(colaListos, list_size(colaListos),pcbBuffer);
 			pthread_mutex_unlock(&mutexColaListos);
 
 			sem_post(&sem_colaReady);
 		}
+
 	}
 }
 
@@ -334,8 +345,8 @@ void agregarAFinQuantum(t_pcb* pcb){
 	list_remove_by_condition(colaEjecucion, (void*)verificarPidPcb);
 	pthread_mutex_unlock(&mutexColaEjecucion);
 
-	sem_post(&sem_listaFinQuantum);
-	sem_post(&sem_CPU);
+//	sem_post(&sem_listaFinQuantum);
+
 
 }
 
@@ -346,15 +357,15 @@ void agregarAFinQuantum(t_pcb* pcb){
 
 
 int verificarGradoDeMultiprogramacion(){
-	pthread_mutex_lock(&mutex_config_gradoMultiProgramacion);
+	//pthread_mutex_lock(&mutex_config_gradoMultiProgramacion);
 	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	if(gradoMultiProgramacion >= config_gradoMultiProgramacion) {
 		pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
-		pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
+		//pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 		return -1;
 	}
 	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
-	pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
+	//pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 	return 0;
 }
 
@@ -378,6 +389,7 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 void terminarProceso(int socketCPU){
 	t_pcb* pcbProcesoTerminado;
+	t_cpu *cpu;
 
 	_Bool verificarPidConsola(t_consola* consola){
 						return (consola->pid == pcbProcesoTerminado->pid);
@@ -397,6 +409,8 @@ void terminarProceso(int socketCPU){
 
 	actualizarRafagas(pcbProcesoTerminado->pid,pcbProcesoTerminado->cantidadInstrucciones);
 
+	printf("\n\nEL PROCESO FINALIZADO ES:%d\n\n", pcbProcesoTerminado->pid);
+
 	if(flagPlanificacion){
 
 		pthread_mutex_lock(&mutexListaEspera);
@@ -415,6 +429,12 @@ void terminarProceso(int socketCPU){
 		/*TODO: Liberar recursos en memoria */
 
 		disminuirGradoMultiprogramacion();
+
+		pthread_mutex_lock(&mutexListaCPU);
+		cpu = list_remove_by_condition(listaCPU, (void*)verificarCPU);
+		cpu->enEjecucion = 0;
+		list_add(listaCPU,cpu);
+		pthread_mutex_unlock(&mutexListaCPU);
 
 		sem_post(&sem_admitirNuevoProceso);
 		sem_post(&sem_CPU);
@@ -451,7 +471,7 @@ void listaEsperaATerminados(){
 
 		list_add_all(listaEnEspera, colaTerminados);
 
-		for (indice = 0; indice < list_size(listaEnEspera)-1; indice++) {
+		for (indice = 0; indice < list_size(listaEnEspera); indice++) {
 
 			pcbBuffer = list_remove(listaEnEspera,indice);
 

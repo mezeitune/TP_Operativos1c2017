@@ -25,7 +25,7 @@ int main(void) {
 	flagCerrarConsola = 1;
 	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 
-	int err = pthread_create(&hiloInterfazUsuario, NULL, connectionHandler,NULL);
+	int err = pthread_create(&hiloInterfazUsuario, NULL, (void*)connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
 	signal(SIGINT, signalSigIntHandler);
@@ -97,10 +97,13 @@ void finalizarPrograma(){
 
 		pthread_mutex_lock(&mutexListaHilos);
 		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
+
 			proceso = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
 				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
 				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
 				send(proceso->socketHiloKernel,&procesoATerminar, sizeof(int), 0);
+
+				printf("\n\nPROCESP; %d\n\n", proceso->pid);
 				list_add(listaHilosProgramas,proceso);
 			}else	log_error(loggerConPantalla,"\nPID incorrecto\n");
 

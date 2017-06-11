@@ -70,7 +70,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 	int pid;
 	int size;
 	int flagCerrarHilo=1;
-	char* mensaje= NULL;
+	char* mensaje;
 
 	recv(socketHiloKernel, &pid, sizeof(int), 0);
 	log_info(loggerConPantalla,"Al programa ANSISOP en socket: %d se le ha asignado el PID: %d", socketHiloKernel,pid);
@@ -85,9 +85,12 @@ void recibirDatosDelKernel(int socketHiloKernel){
 
 		log_info(loggerConPantalla,"Socket %d recibiendo mensaje para PID %d",socketHiloKernel,pid);
 
-		mensaje=malloc(size * sizeof(char));
-		recv(socketHiloKernel,(char*)mensaje,size,0);
+		mensaje = malloc(size * sizeof(char));
+		recv(socketHiloKernel,mensaje,size,0);
 		strcpy(mensaje+size,"\0");
+
+		printf("\n\nMENSAJE: %s\n\n", mensaje);
+
 
 		if(strcmp(mensaje,"Finalizar")==0) {
 			flagCerrarHilo = 0;
@@ -95,12 +98,14 @@ void recibirDatosDelKernel(int socketHiloKernel){
 			pthread_mutex_unlock(&mutexRecibirDatos);
 			break;
 		}
-		printf("%s\n",mensaje);
+		printf("\n\nquedo loopeado aca\n\n");
+		printf("\n\nMENSAJE: %s\n\n",mensaje);
 		actualizarCantidadImpresiones(pid);
 		free(mensaje);
 		pthread_mutex_unlock(&mutexRecibirDatos);
 		imprimirInterfaz();
 	}
+
 	gestionarCierrePrograma(pid);
 	log_info(loggerConPantalla,"Programa ANSISOP --> PID: %d ---> Socket: %d ha finalizado",pid,socketHiloKernel);
 }
