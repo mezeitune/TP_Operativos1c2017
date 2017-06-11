@@ -92,7 +92,6 @@ int main(void) {
 	imprimirConfiguraciones();
 	imprimirInterfazUsuario();
 	inicializarSockets();
-	//gradoMultiProgramacion=0;
 	inicializarSemaforos();
 
 	inicializarLog("/home/utnso/Log/logKernel.txt");
@@ -144,7 +143,7 @@ void connectionHandler(int socketAceptado, char orden) {
 					break;
 		case 'T':
 					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
-					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU con socket : %d asignado",socketAceptado);
+					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU %d",socketAceptado);
 
 
 					printf("\n\nEL SOCKET A FINALIZAR ES:%d\n\n", socketAceptado);
@@ -220,9 +219,9 @@ int atenderNuevoPrograma(int socketAceptado){
 		if(!flagPlanificacion) {
 					contadorPid--;
 					free(proceso);
-					free(codigoPrograma);
 					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
 					interruptHandler(codigoPrograma->socketHiloConsola,'D'); // Informa a consola error por planificacion detenida
+					free(codigoPrograma);
 					return -1;
 						}
 
@@ -386,11 +385,9 @@ void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad){
 	for(i=0;i<cantidad;i++){
 		pid = *((int*)procesosAFinalizar);
 
-		//pthread_mutex_lock(&mutexColaTerminados);
 		procesosAFinalizar += sizeof(int);
 		log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 		finalizarHiloPrograma(pid);
-		//pthread_mutex_unlock(&mutexColaTerminados);
 	}
 
 }
@@ -420,6 +417,18 @@ void buscarProcesoYTerminarlo(int pid){
 				return (cpu->pid==pid);
 			}
 
+	pthread_mutex_lock(&mutexColaEjecucion);
+		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
+
+			pthread_mutex_lock(&mutexListaCPU);
+			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
+			pthread_mutex_unlock(&mutexListaCPU);
+
+			send(cpuAFinalizar->socket, &comandoFinalizar,sizeof(char),0);
+			return;
+		}
+		pthread_mutex_unlock(&mutexColaEjecucion);
+
 	pthread_mutex_lock(&mutexColaNuevos);
 	if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
 		procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
@@ -435,34 +444,15 @@ void buscarProcesoYTerminarlo(int pid){
 		}
 	pthread_mutex_unlock(&mutexColaListos);
 
-
-
-	pthread_mutex_lock(&mutexColaEjecucion); //TODO: Implementar una vez de implementar la funcion EXPROPIAR()
-
-	if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
-
-		pthread_mutex_lock(&mutexListaCPU);
-		if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
-		pthread_mutex_unlock(&mutexListaCPU);
-
-		send(cpuAFinalizar->socket, &comandoFinalizar,sizeof(char),0);
-
-		printf("\n\nHOLAAA\n\n");
-
-	}
-	pthread_mutex_unlock(&mutexColaEjecucion);
-
-	/*
 	pthread_mutex_lock(&mutexColaBloqueados);
 	if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
 		}
 	pthread_mutex_unlock(&mutexColaBloqueados);
-	*/
 
-/*	pthread_mutex_lock(&mutexColaTerminados);
+	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados,procesoATerminar);
-	pthread_mutex_unlock(&mutexColaTerminados);*/
+	pthread_mutex_unlock(&mutexColaTerminados);
 }
 
 

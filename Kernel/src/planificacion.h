@@ -177,7 +177,6 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
 
 
 }
-int aux = -1;
 void finalizarHiloPrograma(int pid){
 	log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 	char* mensaje = malloc(sizeof(char)*10);
@@ -192,24 +191,16 @@ void finalizarHiloPrograma(int pid){
 			return (consolathread->pid == pid);
 	}
 
-	//pthread_mutex_lock(&mutexAux);
-	if(pid != aux){
 		if(list_size(listaConsolas) != 0){
 			pthread_mutex_lock(&mutexListaConsolas);
 			consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
 			pthread_mutex_unlock(&mutexListaConsolas);
 
 			informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
-
-			printf("\n\nLLEGUE ACA\n\n");
-
 			recv(consola->socketHiloPrograma,&ok,sizeof(int),0);
 			eliminarSocket(consola->socketHiloPrograma);
 		//free(mensaje); TODO: Ver porque rompe este free;
 		}
-	}
-	aux = pid;
-	//pthread_mutex_unlock(&mutexAux);
 	free(consola);
 }
 
@@ -357,15 +348,15 @@ void agregarAFinQuantum(t_pcb* pcb){
 
 
 int verificarGradoDeMultiprogramacion(){
-	//pthread_mutex_lock(&mutex_config_gradoMultiProgramacion);
+	pthread_mutex_lock(&mutex_config_gradoMultiProgramacion);
 	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	if(gradoMultiProgramacion >= config_gradoMultiProgramacion) {
 		pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
-		//pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
+		pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 		return -1;
 	}
 	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
-	//pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
+	pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 	return 0;
 }
 

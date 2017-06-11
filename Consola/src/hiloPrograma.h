@@ -89,17 +89,13 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		recv(socketHiloKernel,mensaje,size,0);
 		strcpy(mensaje+size,"\0");
 
-		printf("\n\nMENSAJE: %s\n\n", mensaje);
-
-
 		if(strcmp(mensaje,"Finalizar")==0) {
 			flagCerrarHilo = 0;
 			free(mensaje);
 			pthread_mutex_unlock(&mutexRecibirDatos);
 			break;
 		}
-		printf("\n\nquedo loopeado aca\n\n");
-		printf("\n\nMENSAJE: %s\n\n",mensaje);
+		printf("%s\n",mensaje);
 		actualizarCantidadImpresiones(pid);
 		free(mensaje);
 		pthread_mutex_unlock(&mutexRecibirDatos);
