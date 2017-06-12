@@ -27,7 +27,7 @@ pthread_mutex_t mutexConexion;
 pthread_mutex_t mutex_config_gradoMultiProgramacion;
 pthread_mutex_t mutex_gradoMultiProgramacion;
 pthread_mutex_t mutexListaEspera;
-pthread_mutex_t mutex_FDSET;
+pthread_mutex_t mutex_masterSet;
 pthread_mutex_t mutexListaContable;
 pthread_mutex_t mutexListaCodigo;
 pthread_mutex_t mutexAux;
@@ -36,6 +36,7 @@ pthread_mutex_t mutexSelect;
 
 
 sem_t sem_admitirNuevoProceso;
+sem_t sem_administrarFinProceso;
 sem_t sem_planificacion;
 sem_t sem_colaReady;
 sem_t sem_CPU;
@@ -57,7 +58,7 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutex_config_gradoMultiProgramacion,NULL);
 		pthread_mutex_init(&mutex_gradoMultiProgramacion,NULL);
 		pthread_mutex_init(&mutexConexion,NULL);
-		pthread_mutex_init(&mutex_FDSET,NULL);
+		pthread_mutex_init(&mutex_masterSet,NULL);
 		pthread_mutex_init(&mutexListaContable,NULL);
 		pthread_mutex_init(&mutexNuevoProceso,NULL);
 		pthread_mutex_init(&mutexListaCodigo,NULL);
@@ -66,6 +67,7 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexAux,NULL);
 
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
+		sem_init(&sem_administrarFinProceso,0,0);
 		sem_init(&sem_colaReady,0,0);
 		sem_init(&sem_CPU,0,0);
 		sem_init(&sem_planificacion,0,0);

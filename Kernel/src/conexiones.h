@@ -6,6 +6,7 @@ char* recibir_string(int socket_aceptado);
 void enviar_string(int socket, char * mensaje);
 void* recibir(int socket);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
+void *get_in_addr(struct sockaddr *sa);
 
 
 //------------Sockets unicos globales--------------------//
@@ -155,6 +156,14 @@ void* recibir(int socket){
 	}
 
 	return !checkSocket ? NULL:recibido;
+}
+
+void *get_in_addr(struct sockaddr *sa) {
+	if (sa->sa_family == AF_INET) {
+		return &(((struct sockaddr_in*) sa)->sin_addr);
+	}
+
+	return &(((struct sockaddr_in6*) sa)->sin6_addr);
 }
 
 #endif

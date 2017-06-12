@@ -61,10 +61,12 @@ void* planificarLargoPlazo();
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 void informarConsola(int socketHiloPrograma,char* mensaje, int size);
-t_codigoPrograma* recibirCodigoPrograma(int socketConsola);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
+void administrarFinProcesos();
+void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 t_list* listaCodigosProgramas;
 pthread_t planificadorLargoPlazo;
+pthread_t administradorFinProcesos;
 /*----LARGO PLAZO--------*/
 
 /*----CORTO PLAZO--------*/
@@ -106,8 +108,11 @@ t_list* listaEnEspera;
 
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
-void* planificarLargoPlazo(int socket){
+void* planificarLargoPlazo(){
 	t_pcb* proceso;
+
+	//pthread_create(&administradorFinProcesos,NULL, (void*)administrarFinProcesos,NULL);
+
 	while(flagTerminarPlanificadorLargoPlazo){
 		sem_wait(&sem_admitirNuevoProceso);
 		pthread_mutex_lock(&mutexNuevoProceso);
@@ -121,23 +126,28 @@ void* planificarLargoPlazo(int socket){
 			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
 			pthread_mutex_unlock(&mutexListaCodigo);
 
-			crearProceso(proceso,codigoPrograma); /*TODO: Ver de agregar un mutex cuando creamos un proceso. Ver donde mas se deberia usar. */
+			crearProceso(proceso,codigoPrograma);
 			}
 			pthread_mutex_unlock(&mutexNuevoProceso);
 	}
+//	pthread_join(administradorFinProcesos,NULL);
 	log_info(loggerConPantalla,"Planificador largo plazo finalizado");
 }
 
-t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
-	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP");
-	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
-	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
-	codigoPrograma->codigo = malloc(codigoPrograma->size);
-	recv(socketHiloConsola,codigoPrograma->codigo,codigoPrograma->size,0);
-	strcpy(codigoPrograma->codigo + codigoPrograma->size , "\0");
-	codigoPrograma->socketHiloConsola=socketHiloConsola;
-	return codigoPrograma;
+void administrarFinProcesos(){
+	t_pcb* proceso;
+	while(flagTerminarPlanificadorLargoPlazo){
+		sem_wait(&sem_administrarFinProceso);
+
+		if(list_size(colaTerminados) > 0){
+			proceso = list_get(colaTerminados,colaTerminados->elements_count-1);
+
+
+		}
+
+	}
 }
+
 
 t_codigoPrograma* buscarCodigoDeProceso(int pid){
 	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
@@ -185,13 +195,10 @@ void finalizarHiloPrograma(int pid){
 	t_consola* consola = malloc(sizeof(t_consola));
 	mensaje = "Finalizar";
 
-
-
 	_Bool verificaPid(t_consola* consolathread){
 			return (consolathread->pid == pid);
 	}
 
-		if(list_size(listaConsolas) != 0){
 			pthread_mutex_lock(&mutexListaConsolas);
 			consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
 			pthread_mutex_unlock(&mutexListaConsolas);
@@ -200,7 +207,6 @@ void finalizarHiloPrograma(int pid){
 			recv(consola->socketHiloPrograma,&ok,sizeof(int),0);
 			eliminarSocket(consola->socketHiloPrograma);
 		//free(mensaje); TODO: Ver porque rompe este free;
-		}
 	free(consola);
 }
 
@@ -209,11 +215,11 @@ void finalizarHiloPrograma(int pid){
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
 	log_info(loggerConPantalla, "Inicializando proceso en memoria--->PID: %d", proceso->pid);
 	if((pedirMemoria(proceso))< 0){
-				log_error(loggerConPantalla ,"\nMemoria no autorizo la solicitud de reserva");
+				log_error(loggerConPantalla ,"Memoria no autorizo la solicitud de reserva--->PID:%d",proceso->pid);
 				return -1;
 			}
 	if((almacenarCodigoEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){
-					log_error(loggerConPantalla ,"\nMemoria no puede almacenar contenido");
+					log_error(loggerConPantalla ,"Memoria no puede almacenar contenido--->PID:%d",proceso->pid);
 					return -2;
 				}
 	return 0;
@@ -287,10 +293,10 @@ void* planificarCortoPlazo(){
 			list_add(colaEjecucion, pcbListo);
 			pthread_mutex_unlock(&mutexColaEjecucion);
 
-
 			send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
 
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+			log_info(loggerConPantalla,"Pcb encolado en Ejecucion--->PID:%d",pcbListo->pid);
 		}
 
 	}
@@ -361,6 +367,7 @@ int verificarGradoDeMultiprogramacion(){
 }
 
 void cargarConsola(int pid, int socketHiloPrograma) {
+
 	t_consola *infoConsola = malloc(sizeof(t_consola));
 	infoConsola->socketHiloPrograma=socketHiloPrograma;
 	infoConsola->pid=pid;
@@ -379,6 +386,7 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 
 void terminarProceso(int socketCPU){
+	log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU %d",socketCPU);
 	t_pcb* pcbProcesoTerminado;
 	t_cpu *cpu;
 
@@ -400,25 +408,15 @@ void terminarProceso(int socketCPU){
 
 	actualizarRafagas(pcbProcesoTerminado->pid,pcbProcesoTerminado->cantidadInstrucciones);
 
-	printf("\n\nEL PROCESO FINALIZADO ES:%d\n\n", pcbProcesoTerminado->pid);
-
 	if(flagPlanificacion){
 
-		pthread_mutex_lock(&mutexListaEspera);
 		listaEsperaATerminados();
-		pthread_mutex_unlock(&mutexListaEspera);
 
 		pthread_mutex_lock(&mutexColaEjecucion);
 		list_remove_by_condition(colaEjecucion, (void*)verificarPid);
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
-
 		cambiarEstadoATerminado(pcbProcesoTerminado,0); /*TODO: Cambiar exitCode*/
-
-		finalizarHiloPrograma(pcbProcesoTerminado->pid);
-
-		/*TODO: Liberar recursos en memoria */
-
 		disminuirGradoMultiprogramacion();
 
 		pthread_mutex_lock(&mutexListaCPU);
@@ -430,15 +428,27 @@ void terminarProceso(int socketCPU){
 		sem_post(&sem_admitirNuevoProceso);
 		sem_post(&sem_CPU);
 
+		finalizarHiloPrograma(pcbProcesoTerminado->pid);
+
+		liberarRecursosEnMemoria(pcbProcesoTerminado);
 	}else {
 
 		pthread_mutex_lock(&mutexListaEspera);
 		list_add(listaEnEspera, pcbProcesoTerminado);
 		pthread_mutex_unlock(&mutexListaEspera);
 
-		disminuirGradoMultiprogramacion();
+		disminuirGradoMultiprogramacion();/*TODO: No se si hay que dismimnuir aca*/
 		sem_post(&sem_CPU);
 	}
+}
+
+void liberarRecursosEnMemoria(t_pcb* proceso){
+	log_info(loggerConPantalla,"Liberando proceso en memoria--->PID: %d",proceso->pid);
+	char comandoFinalizarProceso= 'F';
+
+	send(socketMemoria,&comandoFinalizarProceso,sizeof(char),0);
+	send(socketMemoria,&proceso->pid,sizeof(int),0);
+
 }
 
 void aumentarGradoMultiprogramacion(){
@@ -458,10 +468,14 @@ void listaEsperaATerminados(){
 	t_pcb* pcbBuffer;
 	t_pcb* aux;
 
+	pthread_mutex_lock(&mutexListaEspera);
 	if(!list_is_empty(listaEnEspera)){
 
+		pthread_mutex_lock(&mutexColaTerminados);
 		list_add_all(listaEnEspera, colaTerminados);
+		pthread_mutex_unlock(&mutexColaTerminados);
 
+		pthread_mutex_lock(&mutexColaEjecucion);
 		for (indice = 0; indice < list_size(listaEnEspera); indice++) {
 
 			pcbBuffer = list_remove(listaEnEspera,indice);
@@ -472,7 +486,9 @@ void listaEsperaATerminados(){
 
 			}
 		}
+		pthread_mutex_unlock(&mutexColaEjecucion);
 	}
+	pthread_mutex_unlock(&mutexListaEspera);
 }
 
 

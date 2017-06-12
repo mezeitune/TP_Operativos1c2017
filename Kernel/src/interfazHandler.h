@@ -12,6 +12,7 @@
 void interfazHandler();
 void imprimirInterfazUsuario();
 void modificarGradoMultiprogramacion();
+void finalizarProcesoVoluntariamente(int pid);
 void obtenerListadoProcesos();
 void mostrarProcesos(char orden);
 void imprimirListadoDeProcesos(t_list* listaPid);
@@ -20,7 +21,7 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado);
 
 
 pthread_t interfaz;
-
+int flagTerminarUI=0;
 /*-------------LOG-----------------*/
 void inicializarLog(char *rutaDeLog);
 t_log *loggerSinPantalla;
@@ -30,9 +31,9 @@ t_log *loggerConPantalla;
 void interfazHandler(){
 	char orden='\0';
 	char *mensajeRecibido;
+	int pid;
 
-	while(1){
-		//sem_wait(&sem_ordenSelect); /*TODO: Hacer el mutex OrdenSelect*/
+	while(!flagTerminarUI){
 		if(orden=='\0')scanf("%c",&orden);
 
 		printf("Entre en UI\n");
@@ -70,7 +71,9 @@ void interfazHandler(){
 
 					break;
 				case 'K':
-					/*finalizarProceso(int pid) TODO HAY QUE IMPLEMENTAR*/
+					printf("Ingrese el pid del proceso a finalizar\n");
+					scanf("%d",&pid);
+					finalizarProcesoVoluntariamente(pid);
 					break;
 				case 'S':
 					if((solicitarContenidoAMemoria(&mensajeRecibido))<0){
@@ -174,7 +177,18 @@ void imprimirListadoDeProcesos(t_list* listaPid){
 	list_destroy(listaPid);
 }
 
-void modificarGradoMultiprogramacion(){ /*TODO: Se queda trabado si le meto un valor que entre al if del error*/
+
+
+void finalizarProcesoVoluntariamente(int pid){
+	pthread_mutex_lock(&mutexNuevoProceso);
+	buscarProcesoYTerminarlo(pid);
+	finalizarHiloPrograma(pid);
+	pthread_mutex_unlock(&mutexNuevoProceso);
+	log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
+}
+
+
+void modificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a uno menor*/
 	int nuevoGrado;
 
 	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");

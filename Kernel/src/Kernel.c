@@ -42,29 +42,29 @@ void recibirPidDeCpu(int socket);
 void connectionHandler(int socketAceptado, char orden);
 void inicializarListas();
 int atenderNuevoPrograma(int socketAceptado);
+t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola);
 void gestionarNuevaCPU(int socketCPU);
 void handShakeCPU(int socketCPU);
 //---------ConnectionHandler-------//
 
 //------InterruptHandler-----//
 void interruptHandler(int socket,char orden);
+void imprimirPorConsola(int socketAceptado);
 int buscarSocketHiloPrograma(int pid);
 void buscarProcesoYTerminarlo(int pid);
-
+void excepcionReservaRecursos(socketAceptado);
+void excepcionPlanificacionDetenida(int socket);
 void gestionarCierreConsola(int socket);
-void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad);
 //------InterruptHandler-----//
 
 
 //---------Conexiones---------------//
-void *get_in_addr(struct sockaddr *sa);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
 fd_set master;
 int flagFinalizarKernel = 0;
 //---------Conexiones-------------//
 
-int cantidadDeRafagas;
 
 //----------shared vars-----------//
 void obtenerValorDeSharedVar(int socket);
@@ -115,7 +115,7 @@ int main(void) {
 
 void connectionHandler(int socketAceptado, char orden) {
 
-
+	int cantidadDeRafagas;
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
 
 	_Bool verificarPid(t_consola* pidNuevo){
@@ -142,12 +142,6 @@ void connectionHandler(int socketAceptado, char orden) {
 
 					break;
 		case 'T':
-					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
-					log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU %d",socketAceptado);
-
-
-					printf("\n\nEL SOCKET A FINALIZAR ES:%d\n\n", socketAceptado);
-
 					terminarProceso(socketAceptado);
 					break;
 		case 'F'://Para el FS
@@ -206,7 +200,7 @@ void connectionHandler(int socketAceptado, char orden) {
 int atenderNuevoPrograma(int socketAceptado){
 		log_info(loggerConPantalla,"Atendiendo nuevo programa");
 
-		contadorPid++; // VAR GLOBAL
+		contadorPid++;
 		send(socketAceptado,&contadorPid,sizeof(int),0);
 
 		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
@@ -220,7 +214,7 @@ int atenderNuevoPrograma(int socketAceptado){
 					contadorPid--;
 					free(proceso);
 					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
-					interruptHandler(codigoPrograma->socketHiloConsola,'D'); // Informa a consola error por planificacion detenida
+					interruptHandler(codigoPrograma->socketHiloConsola,'B'); // Informa a consola error por planificacion detenida
 					free(codigoPrograma);
 					return -1;
 						}
@@ -233,10 +227,19 @@ int atenderNuevoPrograma(int socketAceptado){
 		list_add(listaCodigosProgramas,codigoPrograma);
 		pthread_mutex_unlock(&mutexListaCodigo);
 
-
-				sem_post(&sem_admitirNuevoProceso);
+		sem_post(&sem_admitirNuevoProceso);
 
 		return 0;
+}
+t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
+	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP");
+	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
+	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
+	codigoPrograma->codigo = malloc(codigoPrograma->size);
+	recv(socketHiloConsola,codigoPrograma->codigo,codigoPrograma->size,0);
+	strcpy(codigoPrograma->codigo + codigoPrograma->size , "\0");
+	codigoPrograma->socketHiloConsola=socketHiloConsola;
+	return codigoPrograma;
 }
 
 void handShakeCPU(int socketCPU){
@@ -260,57 +263,31 @@ int pid;
 	recv(socket,&pid,sizeof(int),0);
 }
 void interruptHandler(int socketAceptado,char orden){
-	log_info(loggerConPantalla,"Ejecutando interrupt handler\n");
-
-	int size;
+	log_info(loggerConPantalla,"\nEjecutando interrupt handler");
 	int pid;
-	int socketHiloPrograma;
-	char* mensaje; /*TODO: Ver el tema de pedir memoria y liberar esta variable siempre que se pueda*/
 
 	switch(orden){
 
-	case 'A':
-		log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos\n");
-		mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
-		size=strlen(mensaje);
-		informarConsola(socketAceptado,mensaje,size);
-		log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socketAceptado);
-		break;
-		case 'P':
-			log_info(loggerConPantalla,"Iniciando rutina para imprimir por consola\n");
-			recv(socketAceptado,&size,sizeof(int),0);
-			mensaje=malloc(size);
-			recv(socketAceptado,&mensaje,size,0);
-			recv(socketAceptado,&pid,sizeof(int),0);
-
-			socketHiloPrograma = buscarSocketHiloPrograma(pid);
-			informarConsola(socketHiloPrograma,mensaje,size);
-			log_info(loggerConPantalla,"Rutina para imprimir finalizo ----- PID: %d\n", pid);
+		case 'A':
+			excepcionReservaRecursos(socketAceptado);
 			break;
-		case 'M':
-			log_info(loggerConPantalla,"Informando a Consola excepcion por grado de multiprogramacion\n");
-			mensaje = "El programa ANSISOP no puede iniciar actualmente debido a grado de multiprogramacion, se mantendra en espera hasta poder iniciar";
-			size=strlen(mensaje);
-			informarConsola(socketAceptado,mensaje,size);
+		case 'B':
+			excepcionPlanificacionDetenida(socketAceptado);
+			break;
+		case 'P':
+			imprimirPorConsola(socketAceptado);
 			break;
 		case 'C':
-			log_info(loggerConPantalla,"La CPU de socket %d se ha cerrado por  signal\n",socketAceptado);
-			/*TODO: Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
+			log_warning(loggerConPantalla,"\nLa CPU  %d se ha cerrado",socketAceptado);
+			/*TODO: NACHO ---> Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
 			break;
 		case 'E':
-			log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socketAceptado);
-			pthread_mutex_lock(&mutexNuevoProceso);
 			gestionarCierreConsola(socketAceptado);
-			pthread_mutex_unlock(&mutexNuevoProceso);
 			break;
 		case 'F':
-			log_info(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
+			log_warning(loggerConPantalla,"\nLa consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
 			recv(socketAceptado,&pid,sizeof(int),0);
-			buscarProcesoYTerminarlo(pid);
-			finalizarHiloPrograma(pid);
-
-			log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
-
+			finalizarProcesoVoluntariamente(pid);
 			break;
 		case  'R':
 
@@ -327,27 +304,50 @@ void interruptHandler(int socketAceptado,char orden){
 			//liberar heap tomando como inicio ese puntero y el espacio dado anteriormente por "reservar"
 			//devolverle a la CPU el resultado de la ejecucion (1 piola, 0 fuck)
 			break;
-		case 'O' :
-
-			break;
-		case 'D':
-			log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido\n");
-			mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
-			/*TODO: Repito codigo. MUUUY parecido a finalizarHiloPrograma, solo que no tengo el pid pa pasarle. Ver la abstraccion*/
-			size=strlen(mensaje);
-			informarConsola(socketAceptado,mensaje,size);
-			mensaje = "Finalizar";
-			size=strlen(mensaje);
-			informarConsola(socketAceptado,mensaje,size);
-			recv(socketAceptado,&size,sizeof(int),0); // A modo de ok
-			eliminarSocket(socketAceptado);
-			break;
 		default:
 			break;
 	}
 }
 
+void excepcionReservaRecursos(int socket){
+	char* mensaje;
+	int size;
+	log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos\n");
+	mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
+	size=strlen(mensaje);
+	informarConsola(socket,mensaje,size);
+	log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socket);
+}
+
+void excepcionPlanificacionDetenida(int socket){
+	char* mensaje;
+	int size;
+	log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido\n");
+	mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
+	size=strlen(mensaje);
+	informarConsola(socket,mensaje,size);
+	mensaje = "Finalizar";
+	size=strlen(mensaje);
+	informarConsola(socket,mensaje,size);
+	recv(socket,&size,sizeof(int),0); // A modo de ok
+	eliminarSocket(socket);
+}
+
+void imprimirPorConsola(socketAceptado){
+	char* mensaje;
+	int size;
+	recv(socketAceptado,&size,sizeof(int),0);
+	mensaje=malloc(size);
+	recv(socketAceptado,&mensaje,size,0);
+	recv(socketAceptado,&pid,sizeof(int),0);
+	log_info(loggerConPantalla,"Imprimiendo por consola--->PID:%d",pid);
+	informarConsola(buscarSocketHiloPrograma(pid),mensaje,size);
+	free(mensaje);
+}
+
 void gestionarCierreConsola(int socket){
+	log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socket);
+	pthread_mutex_lock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Gestionando cierre de consola %d",socket);
 	int size, cantidad,pid;
 	char* procesosAFinalizar;
@@ -370,34 +370,13 @@ void gestionarCierreConsola(int socket){
 			send(socket,&i,sizeof(int),0); /*HACE ESPERAR AL HILO PROCESO EN CONSOLA*/
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
+			pthread_mutex_unlock(&mutexNuevoProceso);
 }
-
-void cerrarHilosProgramas(char* procesosAFinalizar,int cantidad){
-	log_info(loggerConPantalla,"Finalizando hilos programas de Consola");
-
-	_Bool verificaPid(t_pcb* pcb){
-		return pcb->pid==pid;
-	}
-
-	int i;
-	int pid;
-
-	for(i=0;i<cantidad;i++){
-		pid = *((int*)procesosAFinalizar);
-
-		procesosAFinalizar += sizeof(int);
-		log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
-		finalizarHiloPrograma(pid);
-	}
-
-}
-
-
 
 void eliminarSocket(int socket){
-	pthread_mutex_lock(&mutex_FDSET);
+	pthread_mutex_lock(&mutex_masterSet);
 	FD_CLR(socket,&master);
-	pthread_mutex_unlock(&mutex_FDSET);
+	pthread_mutex_unlock(&mutex_masterSet);
 	log_info(loggerConPantalla,"Socket %d cerrado",socket);
 	close(socket);
 }
@@ -440,6 +419,7 @@ void buscarProcesoYTerminarlo(int pid){
 
 	if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
+			liberarRecursosEnMemoria(procesoATerminar);
 			sem_wait(&sem_colaReady);
 		}
 	pthread_mutex_unlock(&mutexColaListos);
@@ -447,6 +427,7 @@ void buscarProcesoYTerminarlo(int pid){
 	pthread_mutex_lock(&mutexColaBloqueados);
 	if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
+			liberarRecursosEnMemoria(procesoATerminar); /*TODO: Tambien habria que limpiarlo de la cola del semaforo asociado*/
 		}
 	pthread_mutex_unlock(&mutexColaBloqueados);
 
@@ -603,15 +584,16 @@ void selectorConexiones() {
 	exit(1);
 	}
 
-	//FD_SET(0, &master); // Agrega el fd del teclado.
-
+	pthread_mutex_lock(&mutex_masterSet);
 	FD_SET(socketServidor, &master); // add the listener to the master set
+	pthread_mutex_unlock(&mutex_masterSet);
+
 	maximoFD = socketServidor; // keep track of the biggest file descriptor so far, it's this one
 
-	while(1) {
-					//pthread_mutex_lock(&mutex_FDSET);
+	while(!flagFinalizarKernel) {
+					pthread_mutex_lock(&mutex_masterSet);
 					readFds = master;
-					//pthread_mutex_unlock(&mutex_FDSET);
+					pthread_mutex_unlock(&mutex_masterSet);
 
 					if (select(maximoFD + 1, &readFds, NULL, NULL, NULL) == -1) {
 						perror("select");
@@ -621,10 +603,7 @@ void selectorConexiones() {
 
 					for (socket = 0; socket <= maximoFD; socket++) {
 							if (FD_ISSET(socket, &readFds)) { //Hubo una conexion
-									/*if(socket == 0){
-										sem_post(&sem_ordenSelect);/*TODO: Cambiar esto a un mutex*/
-										//break;
-									//}
+
 									if (socket == socketServidor) {
 										addrlen = sizeof remoteaddr;
 										nuevoFD = accept(socketServidor, (struct sockaddr *) &remoteaddr,&addrlen);
@@ -632,12 +611,13 @@ void selectorConexiones() {
 										if (nuevoFD == -1) perror("accept");
 
 										else {
-
+											pthread_mutex_lock(&mutex_masterSet);
 											FD_SET(nuevoFD, &master);
+											pthread_mutex_unlock(&mutex_masterSet);
 
 											if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
 
-											log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
+											log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 										}
 									}
 									else if(socket != 0) {
@@ -650,10 +630,3 @@ void selectorConexiones() {
 	log_info(loggerConPantalla,"Finalizando selector de conexiones");
 }
 
-void *get_in_addr(struct sockaddr *sa) {
-	if (sa->sa_family == AF_INET) {
-		return &(((struct sockaddr_in*) sa)->sin_addr);
-	}
-
-	return &(((struct sockaddr_in6*) sa)->sin6_addr);
-}

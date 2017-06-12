@@ -67,7 +67,7 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones);
 
 
 t_pcb* crearPcb (char* programa, int programSize){
-	log_info(loggerConPantalla,"Creando PCB ---> PID: %d", contadorPid);
+	log_info(loggerConPantalla,"Creando PCB--->PID: %d", contadorPid);
 	t_pcb* pcb = malloc (sizeof(t_pcb));
 	t_metadata_program* metadata = metadata_desde_literal(programa);
 	pcb->pid = contadorPid;
@@ -105,7 +105,7 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
 }
 
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
-	log_info(loggerConPantalla, "Serializando PCB ----- PID:%d",pcb->pid);
+	log_info(loggerConPantalla, "Serializando PCB--->PID:%d",pcb->pid);
 
 	int pcbSerializadoSize = calcularPcbSerializadoSize(pcb);
 	void* pcbEnviar= malloc(pcbSerializadoSize);
@@ -178,7 +178,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	send(socketCPU,pcbEnviar,pcbSerializadoSize,0);
-	log_info(loggerConPantalla, "Pcb serializado y enviado ----- PID: %d ------ socketCPU: %d-----Tamano: %d ", pcb->pid, socketCPU,pcbSerializadoSize);
+	log_info(loggerConPantalla, "Enviando PCB--->PID: %d--->socketCPU: %d--->Tamano: %d ", pcb->pid, socketCPU,pcbSerializadoSize);
 
 	//imprimirPcb(pcb);
 	free(pcbEnviar);
@@ -188,7 +188,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 t_pcb* recibirYDeserializarPcb(int socketCPU){
 	t_pcb* pcb = malloc(sizeof(t_pcb));
-	log_info(loggerConPantalla, "Recibiendo PCB serializado---- SOCKET:%d", socketCPU);
+	log_info(loggerConPantalla, "Recibiendo PCB serializado--->SOCKET:%d", socketCPU);
 	int pcbSerializadoSize;
 	recv(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	void * pcbADeserializar = malloc(pcbSerializadoSize);
@@ -198,7 +198,7 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);
 
-	log_info(loggerConPantalla, "Deserializando PCB ----- PID:%d",pcb->pid);
+	log_info(loggerConPantalla, "Deserializando PCB--->PID:%d",pcb->pid);
 
 	memcpy(&pcb->cantidadPaginasCodigo,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);
@@ -279,11 +279,11 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 			//log_info(loggerConPantalla, "Stack deserializado");
 
 			memcpy(&pcb->exitCode,pcbSerializado,sizeof(int));
-			log_info(loggerConPantalla,"Pcb deserializado------PID: %d -----SocketCPU: %d -----Tamanio: %d",pcb->pid,socketCPU,pcbSerializadoSize);
+			log_info(loggerConPantalla,"Pcb deserializado--->PID: %d--->SocketCPU: %d--->Tamanio: %d",pcb->pid,socketCPU,pcbSerializadoSize);
 
 			//imprimirPcb(pcb);
 
-		free(pcbADeserializar); //TODO: Sacar este buffer afuera para poder liberarlo despues.
+		free(pcbADeserializar);
 	return pcb;
 }
 
