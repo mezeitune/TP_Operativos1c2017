@@ -161,7 +161,7 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	void *mensaje;
 	char *bufferArchivo;
 	int tamanioArchivo;
-	char comandoIniciarPrograma='I';
+	char comandoIniciarPrograma='A';
 
 	/* TODO Validar el nombre del archivo */
 

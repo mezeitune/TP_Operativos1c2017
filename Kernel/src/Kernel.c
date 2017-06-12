@@ -55,6 +55,7 @@ void buscarProcesoYTerminarlo(int pid);
 void excepcionReservaRecursos(socketAceptado);
 void excepcionPlanificacionDetenida(int socket);
 void gestionarCierreConsola(int socket);
+void gestionarCierreCpu(int socket);
 //------InterruptHandler-----//
 
 
@@ -81,10 +82,16 @@ typedef struct{
 	int valor;
 	char * id;
 }t_semaforo;
+typedef struct{
+	t_semaforo* semaforo;
+	int pid;
+}t_semaforoAsociado;
+
 t_semaforo* semaforosGlobales;
 void obtenerSemaforosANSISOPDeLasConfigs();
 void waitSemaforoAnsisop(int socketAceptado);
 void signalSemaforoAnsisop(int socketAceptado);
+t_list* listaSemaforosAsociados;
 //-------semaforos ANSISOP-------//
 
 int main(void) {
@@ -131,11 +138,10 @@ void connectionHandler(int socketAceptado, char orden) {
 	char comandoDesdeCPU;
 
 	switch (orden) {
-		case 'I':
+		case 'A':
 					atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
-
 					if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
 					send(socketAceptado,&quantum,sizeof(int),0);
 					gestionarNuevaCPU(socketAceptado);
@@ -274,12 +280,8 @@ void interruptHandler(int socketAceptado,char orden){
 		case 'B':
 			excepcionPlanificacionDetenida(socketAceptado);
 			break;
-		case 'P':
-			imprimirPorConsola(socketAceptado);
-			break;
 		case 'C':
-			log_warning(loggerConPantalla,"\nLa CPU  %d se ha cerrado",socketAceptado);
-			/*TODO: NACHO ---> Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
+			gestionarCierreCpu(socketAceptado); /*TODO:NACHO ---> Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
 			break;
 		case 'E':
 			gestionarCierreConsola(socketAceptado);
@@ -288,6 +290,9 @@ void interruptHandler(int socketAceptado,char orden){
 			log_warning(loggerConPantalla,"\nLa consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
 			recv(socketAceptado,&pid,sizeof(int),0);
 			finalizarProcesoVoluntariamente(pid);
+			break;
+		case 'P':
+			imprimirPorConsola(socketAceptado);
 			break;
 		case  'R':
 
@@ -331,6 +336,10 @@ void excepcionPlanificacionDetenida(int socket){
 	informarConsola(socket,mensaje,size);
 	recv(socket,&size,sizeof(int),0); // A modo de ok
 	eliminarSocket(socket);
+}
+
+void gestionarCierreCpu(int socket){
+	log_warning(loggerConPantalla,"\nLa CPU  %d se ha cerrado",socket);
 }
 
 void imprimirPorConsola(socketAceptado){
@@ -474,6 +483,7 @@ void inicializarListas(){
 	listaTablasArchivosPorProceso=list_create();
 	listaFinQuantum = list_create();
 	listaEnEspera = list_create();
+	listaSemaforosAsociados=list_create();
 
 	listaContable=list_create();
 }
