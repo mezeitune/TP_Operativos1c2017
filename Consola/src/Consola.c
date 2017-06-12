@@ -70,7 +70,7 @@ void connectionHandler() {
 				break;
 			default:
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
-				sem_post(&sem_crearHilo);
+				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			}
 		orden = '\0';
@@ -80,7 +80,7 @@ void connectionHandler() {
 
 void limpiarPantalla(){
 	system("clear");
-	sem_post(&sem_crearHilo);
+	pthread_mutex_unlock(&mutex_crearHilo);
 }
 
 void finalizarPrograma(){
@@ -142,7 +142,7 @@ void cerrarTodo(){
 	send(socketKernel,mensaje,mensajeSize,0);
 
 
-	//recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
+	recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
 
 
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);

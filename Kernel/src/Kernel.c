@@ -367,7 +367,8 @@ void gestionarCierreConsola(int socket){
 						desplazamiento ++;
 			}
 
-			send(socket,&i,sizeof(int),0); /*HACE ESPERAR AL HILO PROCESO EN CONSOLA*/
+			send(socket,&i,sizeof(int),0); // a modo de ok
+			log_warning(loggerConPantalla,"Consola %d cerrada",socket);
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
 			pthread_mutex_unlock(&mutexNuevoProceso);

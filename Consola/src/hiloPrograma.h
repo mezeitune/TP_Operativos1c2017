@@ -42,6 +42,7 @@ void crearHiloPrograma(){
 
     time_t tiempoInicio ;
     time(&tiempoInicio);
+	nuevoPrograma->fechaInicio=malloc(sizeof(struct tm));
 	nuevoPrograma->fechaInicio=localtime(&tiempoInicio);
 	nuevoPrograma->cantImpresiones = 0;
 
@@ -57,7 +58,8 @@ void* iniciarPrograma(int* socketHiloKernel){
 	scanf("%s", ruta);
 
 	if ((enviarLecturaArchivo(ruta,*socketHiloKernel)) < 0) {
-		log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente\n");
+		log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente");
+		pthread_mutex_unlock(&mutex_crearHilo);
 		return -1;
 	}
 	free(ruta);
@@ -73,7 +75,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 	char* mensaje;
 
 	recv(socketHiloKernel, &pid, sizeof(int), 0);
-	log_info(loggerConPantalla,"Al programa ANSISOP en socket: %d se le ha asignado el PID: %d", socketHiloKernel,pid);
+	log_info(loggerConPantalla,"Al Programa ANSISOP en socket: %d se le ha asignado el PID: %d", socketHiloKernel,pid);
 
 	cargarHiloPrograma(pid,socketHiloKernel);
 	pthread_mutex_unlock(&mutex_crearHilo);
@@ -103,7 +105,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 	}
 
 	gestionarCierrePrograma(pid);
-	log_info(loggerConPantalla,"Programa ANSISOP --> PID: %d ---> Socket: %d ha finalizado",pid,socketHiloKernel);
+	log_warning(loggerConPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado",pid,socketHiloKernel);
 }
 
 void actualizarCantidadImpresiones(int pid){
@@ -132,11 +134,10 @@ void gestionarCierrePrograma(int pidFinalizar){
 	time(&tiempoFinalizacion);
 	struct tm* fechaFinalizacion = malloc(sizeof(struct tm));
 	fechaFinalizacion=localtime(&tiempoFinalizacion);
-	double tiempoEjecucion= difftime(tiempoFinalizacion,mktime(programaAFinalizar->fechaInicio));
+	double tiempoEjecucion= difftime(mktime(programaAFinalizar->fechaInicio),tiempoFinalizacion);
 
-	printf("----------------------------------------------------------------------\n");
-	printf("Hora de inicializacion : %s \n Hora de finalizacion: %s\nTiempo de ejecucion: %e \nCantidad de impresiones: %d\n",asctime(programaAFinalizar->fechaInicio),asctime(fechaFinalizacion),tiempoEjecucion,programaAFinalizar->cantImpresiones);
-	printf("----------------------------------------------------------------------\n");
+	printf("Datos de proceso finalizado\n");
+	printf("\tHora de inicializacion : %s \n\tHora de finalizacion: %s\n\tTiempo de ejecucion: %e \n\tCantidad de impresiones: %d\n",asctime(programaAFinalizar->fechaInicio),asctime(fechaFinalizacion),tiempoEjecucion,programaAFinalizar->cantImpresiones);
 
 	send(programaAFinalizar->socketHiloKernel,&ok,sizeof(int),0);
 	free(programaAFinalizar);
