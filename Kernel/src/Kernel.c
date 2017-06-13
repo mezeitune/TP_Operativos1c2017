@@ -34,6 +34,7 @@
 #include "conexionMemoria.h"
 #include "capaFS.h"
 #include "contabilidad.h"
+#include "semaforosAnsisop.h"
 
 
 void recibirPidDeCpu(int socket);
@@ -70,29 +71,12 @@ int flagFinalizarKernel = 0;
 //----------shared vars-----------//
 void obtenerValorDeSharedVar(int socket);
 int* variablesGlobales;
-int tamanioArray(char** array);
 pthread_mutex_t mutexVariablesGlobales = PTHREAD_MUTEX_INITIALIZER;
 int indiceEnArray(char** array, char* elemento);
 void obtenerVariablesCompartidasDeLaConfig();
 void guardarValorDeSharedVar(int socket);
 //----------shared vars-----------//
 
-//-------semaforos ANSISOP-------//
-typedef struct{
-	int valor;
-	char * id;
-}t_semaforo;
-typedef struct{
-	t_semaforo* semaforo;
-	int pid;
-}t_semaforoAsociado;
-
-t_semaforo* semaforosGlobales;
-void obtenerSemaforosANSISOPDeLasConfigs();
-void waitSemaforoAnsisop(int socketAceptado);
-void signalSemaforoAnsisop(int socketAceptado);
-t_list* listaSemaforosAsociados;
-//-------semaforos ANSISOP-------//
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
@@ -117,8 +101,6 @@ int main(void) {
 
 	return 0;
 }
-
-
 
 void connectionHandler(int socketAceptado, char orden) {
 
@@ -468,8 +450,6 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 }
 
 
-
-
 void inicializarListas(){
 	colaNuevos= list_create();
 	colaListos= list_create();
@@ -525,50 +505,12 @@ void guardarValorDeSharedVar(int socket){
 	variablesGlobales[indice] = valorAGuardar;
 	pthread_mutex_unlock(&mutexVariablesGlobales);
 }
-void obtenerSemaforosANSISOPDeLasConfigs(){
-	int i, tamanio = tamanioArray(semId);
-	semaforosGlobales = malloc(sizeof(t_semaforo) * tamanio);
-	for(i = 0; i < tamanio; i++){
-		char *ptr;
-		semaforosGlobales[i].valor = strtol(semInit[i], &ptr, 10);
-		semaforosGlobales[i].id = semId[i];
-		}
-}
-void waitSemaforoAnsisop(int socketAceptado){
-	int tamanio;
-	char* semaforoAConsultar;
-	recv(socketAceptado,&tamanio,sizeof(int),0);
-	semaforoAConsultar = malloc(tamanio);
-	recv(socketAceptado,semaforoAConsultar,tamanio,0);
-	int bloquearScriptONo=-1;
-	log_info(loggerConPantalla, "Esperar: id: %s", semaforoAConsultar);
-	int indice = indiceEnArray(semId, semaforoAConsultar);
-	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
-	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
-	send (socketAceptado,&bloquearScriptONo,sizeof(int),0);
-}
-void signalSemaforoAnsisop(int socketAceptado){
-	int tamanio;
-	char* semaforoAConsultar;
-	recv(socketAceptado,&tamanio,sizeof(int),0);
-	semaforoAConsultar = malloc(tamanio);
-	recv(socketAceptado,semaforoAConsultar,tamanio,0);
-	log_info(loggerConPantalla, "Signal: id: %s", semaforoAConsultar);
-	int indice = indiceEnArray(semId, semaforoAConsultar);
-	log_info(loggerConPantalla, "Indice encontrado: %d", indice);
-	log_info(loggerConPantalla, "Valor en el indice: %d", semaforosGlobales[indice]);
-}
 
 int indiceEnArray(char** array, char* elemento){
 	int i = 0;
 	while(array[i] && strcmp(array[i], elemento)) i++;
 
 	return array[i] ? i:-1;
-}
-int tamanioArray(char** array){
-	int i = 0;
-	while(array[i]) i++;
-	return i;
 }
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
@@ -638,71 +580,4 @@ void selectorConexiones() {
 					}
 		}
 	log_info(loggerConPantalla,"Finalizando selector de conexiones");
-}
-
-void terminarProceso(int socketCPU) {
-
-	_Bool verificaCpu(t_cpu* cpu) {
-		return (cpu->socket == socketCPU);
-	}
-	pthread_mutex_lock(&mutexListaCPU);
-	t_cpu* cpu = list_remove_by_condition(listaCPU, (void*) verificaCpu);
-	cpu->enEjecucion = 0;
-	list_add(listaCPU, cpu);
-	pthread_mutex_unlock(&mutexListaCPU);
-	sem_post(&sem_administrarFinProceso);
-	/*log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU %d",socketCPU);
-	 t_pcb* pcbProcesoTerminado;
-	 t_cpu *cpu;
-
-	 _Bool verificarPidConsola(t_consola* consola){
-	 return (consola->pid == pcbProcesoTerminado->pid);
-	 }
-
-	 _Bool verificarPid(t_pcb* pcb){
-	 return (pcb->pid == pcbProcesoTerminado->pid);
-	 }
-
-	 _Bool verificarCPU(t_cpu* cpu){
-	 return (cpu->socket == socketCPU);
-	 }
-
-	 pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
-
-	 log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
-
-	 actualizarRafagas(pcbProcesoTerminado->pid,pcbProcesoTerminado->cantidadInstrucciones);
-
-	 if(flagPlanificacion){
-
-	 listaEsperaATerminados();
-
-	 pthread_mutex_lock(&mutexColaEjecucion);
-	 list_remove_by_condition(colaEjecucion, (void*)verificarPid);
-	 pthread_mutex_unlock(&mutexColaEjecucion);
-
-	 cambiarEstadoATerminado(pcbProcesoTerminado,0); /*TODO: Cambiar exitCode*/
-	/*disminuirGradoMultiprogramacion();
-
-	 pthread_mutex_lock(&mutexListaCPU);
-	 cpu = list_remove_by_condition(listaCPU, (void*)verificarCPU);
-	 cpu->enEjecucion = 0;
-	 list_add(listaCPU,cpu);
-	 pthread_mutex_unlock(&mutexListaCPU);
-
-	 sem_post(&sem_admitirNuevoProceso);
-	 sem_post(&sem_CPU);
-
-	 finalizarHiloPrograma(pcbProcesoTerminado->pid);
-
-	 liberarRecursosEnMemoria(pcbProcesoTerminado);
-	 }else {
-
-	 pthread_mutex_lock(&mutexListaEspera);
-	 list_add(listaEnEspera, pcbProcesoTerminado);
-	 pthread_mutex_unlock(&mutexListaEspera);
-
-	 disminuirGradoMultiprogramacion();/*TODO: No se si hay que dismimnuir aca*/
-	//sem_post(&sem_CPU);
-	//}
 }
