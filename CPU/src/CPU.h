@@ -29,31 +29,38 @@
 #include <parser/metadata_program.h>
 #include "PCB.h"
 //-----------------------------------------------------------------------------------------------------------------
-char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
-char* obtener_instruccion();
-int almacenarDatosEnMemoria(char* buffer, int size,int paginaAGuardar,int offset);
-int conseguirDatosMemoria (char** instruccion, int paginaSolicitada,int offset,int size);
 
 //-----------------------------------------------------------------------------------------------------------------
+int almacenarDatosEnMemoria(char* buffer, int size,int paginaAGuardar,int offset);
+int conseguirDatosMemoria (char** instruccion, int paginaSolicitada,int offset,int size);
+//-----------------------------------------------------------------------------------------------------------------
+void enviarAlKernelPedidoDeNuevoProceso(int socketKernel);
+void recibirYMostrarAlgortimoDePlanificacion(int socketKernel);
+//-----------------------------------------------------------------------------------------------------------------
+void esperarPCB();
 void establecerPCB();
+void recibirPCB();
+void imprimirPCB();
+//-----------------------------------------------------------------------------------------------------------------
+void ejecutarInstruccion();
+void EjecutarProgramaMedianteAlgoritmo();
+char* obtener_instruccion();
+//-----------------------------------------------------------------------------------------------------------------
+void signalHandler(int signum);
+int cantidadPaginasTotales();
+//-----------------------------------------------------------------------------------------------------------------
+void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
+void connectionHandlerKernel(int socketAceptado, char orden);
+//-----------------------------------------------------------------------------------------------------------------
+void expropiar();
+void CerrarPorSignal();
+void stackOverflow();
+char* devolverStringFlags(t_banderas flags);
+//-----------------------------------------------------------------------------------------------------------------
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
 void connectionHandler();
 void recibirTamanioPagina();
-void recibirPCB();
-void signalHandler(int signum);
-void imprimirPCB();
-int cantidadPaginasTotales();
-void esperarPCB();
-void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
-void connectionHandlerKernel(int socketAceptado, char orden);
-void ejecutarInstruccion();
-void EjecutarProgramaMedianteAlgoritmo();
-void expropiar();
-void CerrarPorSignal();
-void stackOverflow();
-void generarIdCpu();
-char* devolverStringFlags(t_banderas flags);
 //-----------------------------------------------------------------------------------------------------------------
 
 t_config* configuracion_memoria;
@@ -75,6 +82,7 @@ int cantidadInstruccionesAEjecutarPorKernel=0;
 int cpuExpropiada=1;
 int cpuBloqueada=1;
 int cantidadIntruccionesEjecutadas=0;
+int quantum = 0;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 //---------Primitivas Comunes----------//
 t_puntero definirVariable(t_nombre_variable variable);
