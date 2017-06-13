@@ -62,6 +62,16 @@ int main(void){
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
+
+	FILE *f;
+	    f = fopen("../metadata/Bitmap.bin", "wr+");
+	    int i;
+	    for ( i=0;i<5192; i++) {
+	       fputc(1, f);
+	    }
+	    fclose(f);
+
+
     int size;
     struct stat s;
     const char * file_name = "../metadata/Bitmap.bin";
@@ -73,16 +83,21 @@ int main(void){
 	mmapDeBitmap = (char *) mmap (0, size, PROT_READ, MAP_PRIVATE, fd, 0);
 
 
-//(tamanioBloques*cantidadBloques)/(8*tamanioBloques)
-	printf("\n\n\n%d\n\n\n\n\n",tamanioBloques);
-	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), LSB_FIRST);
+//(tamanioBloquess*cantidadBloquess)/(8*tamanioBloquess)
+	printf("\n\n\n %s \n\n\n\n\n",tamanioBloques);
+	int tamanioBloquess=atoi(tamanioBloques);
+	int cantidadBloquess=atoi(cantidadBloques);
+	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloquess*cantidadBloquess)/(8*tamanioBloquess), LSB_FIRST);
 
-	printf("%d",bitarray_get_max_bit(bitarray));
+	printf("%d\n\n\n",bitarray_get_max_bit(bitarray));
 
-	if(bitarray_test_bit(bitarray, 1)==1){
-		printf("ocupado");
-	}else{
-		printf("liberado");
+	int j;
+	for(j=0;j<10;j++){
+		if(bitarray_test_bit(bitarray, j)==1){
+			printf("ocupado");
+		}else{
+			printf("liberado");
+		}
 	}
 
 
