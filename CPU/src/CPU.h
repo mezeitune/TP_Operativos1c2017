@@ -29,12 +29,14 @@
 #include <parser/metadata_program.h>
 #include "PCB.h"
 //-----------------------------------------------------------------------------------------------------------------
-char *const conseguirDatosDeLaMemoria(char *start, t_puntero_instruccion offset, t_size i);
+
 char* obtener_instruccion();
 int almacenarDatosEnMemoria(char* buffer, int size,int paginaAGuardar,int offset);
 int conseguirDatosMemoria (char** instruccion, int paginaSolicitada,int offset,int size);
 
 //-----------------------------------------------------------------------------------------------------------------
+void enviarAlKernelPedidoDeNuevoProceso(int socketKernel);
+void recibirYMostrarAlgortimoDePlanificacion(int socketKernel);
 void establecerPCB();
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();
@@ -75,6 +77,7 @@ int cantidadInstruccionesAEjecutarPorKernel=0;
 int cpuExpropiada=1;
 int cpuBloqueada=1;
 int cantidadIntruccionesEjecutadas=0;
+int quantum = 0;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 //---------Primitivas Comunes----------//
 t_puntero definirVariable(t_nombre_variable variable);

@@ -1,38 +1,40 @@
 #include "CPU.h"
 #include <fcntl.h>
 
-int quantum = 0;
-
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
 	imprimirConfiguraciones();
 	inicializarLog("/home/utnso/Log/logCPU.txt");
+
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
-
-
 	log_info(loggerConPantalla, "Inicia proceso CPU");
-	recibirTamanioPagina(socketKernel);
 
 	signal(SIGINT, signalHandler);
 	signal(SIGUSR1, signalHandler);
 
-
-	char comandoGetNuevoProceso = 'N';
-	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
-
-	recv(socketKernel,&quantum,sizeof(int),0);
-
-	if(quantum!=0){
-		log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
-	}
-	log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
+	recibirTamanioPagina(socketKernel);
+	enviarAlKernelPedidoDeNuevoProceso(socketKernel);
+	recibirYMostrarAlgortimoDePlanificacion(socketKernel);
 
 	esperarPCB();
 
 	return 0;
+}
+void enviarAlKernelPedidoDeNuevoProceso(int socketKernel){
+	char comandoGetNuevoProceso = 'N';
+	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
+	log_info(loggerConPantalla,"Se hizo el pedido a Kernel para comenzar a ejecutar Script ANSISOP\n");
+}
+void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
+	recv(socketKernel,&quantum,sizeof(int),0);
+
+		if(quantum!=0){
+			log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
+		}
+		log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
 }
 void esperarPCB(){
 
@@ -44,11 +46,11 @@ void esperarPCB(){
 
 }
 void recibirPCB(){
+
 		char comandoRecibirPCB;
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
 		log_info(loggerConPantalla, "Se ha avisado que se quiere enviar un PCB...\n");
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
-
 
 }
 
@@ -298,6 +300,20 @@ void stackOverflow(){
 
 }
 
+char* devolverStringFlags(t_banderas flags){
+	char *flagsAConcatenar = string_new();
+	if(flags.creacion==true){
+		string_append(&flagsAConcatenar, "c");
+	}
+	if(flags.lectura==true){
+		string_append(&flagsAConcatenar, "r");
+	}
+	if(flags.escritura==true){
+		string_append(&flagsAConcatenar, "w");
+	}
+
+	return flagsAConcatenar;
+}
 
 //--------------------------------------------PRIMITIVAS-------------------------------------------------
 
@@ -315,60 +331,57 @@ t_puntero definirVariable(t_nombre_variable variable) {
 	t_variable *var;
 	t_posMemoria* nueva_posicion_memoria;
 	t_variable *nueva_variable;
-	//if(pcb_finalizar == 1){
-		//return 0;
-	//}
-	if(nodos_stack == 0){ //si el stack esta vacio
-		t_nodoStack *nodo = malloc(sizeof(t_nodoStack));//creo un nodo con todos los campos
-		nodo->args = list_create();//creo la lista de argumentos y las variables para ese nodo vacio
+
+
+	if(nodos_stack == 0){
+		t_nodoStack *nodo = malloc(sizeof(t_nodoStack));
+		nodo->args = list_create();
 		nodo->vars = list_create();
-		nodo->retPos = 0;//cuando arranca el programa el retorno es 0
+		nodo->retPos = 0;
 		t_posMemoria *retorno = malloc(sizeof(t_posMemoria));
-		retorno->pagina = 0;//en memoria escribe en la pagina 0 del stack
+		retorno->pagina = 0;
 		retorno->offset = 0;
 		retorno->size = 0;
-		nodo->retVar = retorno;//asigno a la estructura retVar la posicion en memoria del retorno
-		list_add(pcb_actual->indiceStack, nodo);//agrego un nodo al stack
+		nodo->retVar = retorno;
+		list_add(pcb_actual->indiceStack, nodo);
 	}
-	//ya habiendo agregado el nodo o si tengo un stack con nodos anteriores
+
 	nodos_stack = list_size(pcb_actual->indiceStack);
-	//hago un for recorriendo los nodos que esten en el stack
+
 	for(posicion_stack = (nodos_stack - 1); posicion_stack >= 0; posicion_stack--){
-			nodo = list_get(pcb_actual->indiceStack, posicion_stack); //agarro un nodo de mi stack
-			cantidad_variables = list_size(nodo->vars);//agarro su lista de variables y arg
+			nodo = list_get(pcb_actual->indiceStack, posicion_stack);
+			cantidad_variables = list_size(nodo->vars);
 			cantidad_argumentos = list_size(nodo->args);
-			if(cantidad_variables != 0){//si este nodo tiene variables...
-				var = list_get(nodo->vars, (cantidad_variables - 1));//agarro una variable del nodo
-				posicion_memoria = var->dirVar; //agarro la posicion en memoria de esa variable (pag,off,size), aca no esta el id de la variable
+			if(cantidad_variables != 0){
+				var = list_get(nodo->vars, (cantidad_variables - 1));
+				posicion_memoria = var->dirVar;
 				posicion_stack = -1;
-				encontre_valor = 0;//encontre una variablee!!!
-			} else if(cantidad_argumentos != 0){//si este nodo tiene argumentos
-				posicion_memoria = list_get(nodo->args, (cantidad_argumentos - 1));//agarro la pos memoria de ese argumento (pag,off,size)
+				encontre_valor = 0;
+			} else if(cantidad_argumentos != 0){
+				posicion_memoria = list_get(nodo->args, (cantidad_argumentos - 1));
 				posicion_stack = -1;
-				encontre_valor = 0;//encontre un argumentoooooooooo!!
+				encontre_valor = 0;
 			}
 		}
-		//reconozco un argumento ANSISOP
+
 		if((variable >= '0') && (variable <= '9')){
-				nueva_posicion_memoria = malloc(sizeof(t_posMemoria));//creo una nueva posicion en memoria para la variable ANSISOP
-				nodo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));//agarro un nodo de mi stack (el indice es la cantidad-1)
+				nueva_posicion_memoria = malloc(sizeof(t_posMemoria));
+				nodo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));
 
-				if(encontre_valor == 0){//si encontre una variable en el nodo
+				if(encontre_valor == 0){
 
-					//si me excedi del tamaño de la pagina
 					if(((posicion_memoria->offset + posicion_memoria->size) + 4) > config_paginaSize){
-						nueva_posicion_memoria->pagina = (posicion_memoria->pagina + 1);//le digo de escribir en la pagina sig
+						nueva_posicion_memoria->pagina = (posicion_memoria->pagina + 1);
 						nueva_posicion_memoria->offset = 0;
 						nueva_posicion_memoria->size = 4;
-							if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){//si la pagina excede la cantidad de paginas totales
+							if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 								stackOverflow(pcb_actual);
 							} else {
-							list_add(nodo->args, nueva_posicion_memoria);//sino agrego en la lista de argumentos la posicion en memoria de ese argumento
+							list_add(nodo->args, nueva_posicion_memoria);
 							}
 					}
-					//si me excedi del tamaño de la pagina
 
-					else {//sino me excedi del tamaño de la pagina
+					else {
 									nueva_posicion_memoria->pagina = posicion_memoria->pagina;
 									nueva_posicion_memoria->offset = (posicion_memoria->offset + posicion_memoria->size);
 									nueva_posicion_memoria->size = 4;
@@ -377,13 +390,13 @@ t_puntero definirVariable(t_nombre_variable variable) {
 									} else {
 										list_add(nodo->args, nueva_posicion_memoria);
 									}
-					}//sino me excedi del tamaño de la pagina
-					//sino encontre una variable, creo una nueva :)
+					}
+
 				}else {
 							if(config_paginaSize < 4){
 								printf("Tamaño de pagina menor a 4 bytes\n");
 							} else {
-								//le asigno la pagina donde empieza el stack (ver)
+
 								nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - stackSize);
 								nueva_posicion_memoria->offset = 0;
 								nueva_posicion_memoria->size = 4;
@@ -394,13 +407,13 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								}
 							}
 						}
-		}//si es una variable propiamente dicha
+		}
 				else {
 						nueva_posicion_memoria = malloc(sizeof(t_posMemoria));
 						nueva_variable = malloc(sizeof(t_variable));
 						nodo = list_get(pcb_actual->indiceStack, (nodos_stack - 1));
 						if(encontre_valor == 0){
-							if(((posicion_memoria->offset + posicion_memoria->size) + 4) > config_paginaSize){//si me paso de pagina
+							if(((posicion_memoria->offset + posicion_memoria->size) + 4) > config_paginaSize){
 								nueva_posicion_memoria->pagina = (posicion_memoria->pagina + 1);
 								nueva_posicion_memoria->offset = 0;
 								nueva_posicion_memoria->size = 4;
@@ -412,7 +425,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 									list_add(nodo->vars, nueva_variable);
 								}
 							}else {
-								//sino me paso de pagina
+
 								nueva_posicion_memoria->pagina = posicion_memoria->pagina;
 								nueva_posicion_memoria->offset = (posicion_memoria->offset + posicion_memoria->size);
 								nueva_posicion_memoria->size = 4;
@@ -424,7 +437,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 									list_add(nodo->vars, nueva_variable);
 								}
 							}
-						//sino encontre valor en la memoria
+
 				}	else {
 								if(config_paginaSize < 4){
 									printf("Tamaño de pagina menor a 4 bytes\n");
@@ -800,22 +813,6 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 		log_info(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s");
 		return 0;
 	}
-}
-
-char* devolverStringFlags(t_banderas flags){
-	char *flagss = string_new();
-	if(flags.creacion==true){
-		string_append(&flagss, "c");
-	}
-	if(flags.lectura==true){
-		string_append(&flagss, "r");
-	}
-	if(flags.escritura==true){
-		string_append(&flagss, "w");
-	}
-
-
-	return flagss;
 }
 
 void borrar_archivo (t_descriptor_archivo descriptor_archivo){
