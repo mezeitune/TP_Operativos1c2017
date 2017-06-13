@@ -148,7 +148,7 @@ void connectionHandler(int socketAceptado, char orden) {
 
 					break;
 		case 'T':
-					terminarProceso(socketAceptado);
+					gestionarFinalizacionProgramaEnCpu(socketAceptado);
 					break;
 		case 'F'://Para el FS
 					recv(socketAceptado,&comandoDesdeCPU,sizeof(char),0);
@@ -269,7 +269,7 @@ int pid;
 	recv(socket,&pid,sizeof(int),0);
 }
 void interruptHandler(int socketAceptado,char orden){
-	log_info(loggerConPantalla,"\nEjecutando interrupt handler");
+	log_warning(loggerConPantalla,"Ejecutando interrupt handler");
 	int pid;
 
 	switch(orden){
@@ -287,7 +287,7 @@ void interruptHandler(int socketAceptado,char orden){
 			gestionarCierreConsola(socketAceptado);
 			break;
 		case 'F':
-			log_warning(loggerConPantalla,"\nLa consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
+			log_warning(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
 			recv(socketAceptado,&pid,sizeof(int),0);
 			finalizarProcesoVoluntariamente(pid);
 			break;
@@ -347,7 +347,7 @@ void imprimirPorConsola(socketAceptado){
 	int size;
 	recv(socketAceptado,&size,sizeof(int),0);
 	mensaje=malloc(size);
-	recv(socketAceptado,&mensaje,size,0);
+	recv(socketAceptado,mensaje,size,0);
 	recv(socketAceptado,&pid,sizeof(int),0);
 	log_info(loggerConPantalla,"Imprimiendo por consola--->PID:%d",pid);
 	informarConsola(buscarSocketHiloPrograma(pid),mensaje,size);
@@ -355,7 +355,7 @@ void imprimirPorConsola(socketAceptado){
 }
 
 void gestionarCierreConsola(int socket){
-	log_warning(loggerConPantalla,"\nLa Consola %d se ha cerrado",socket);
+	log_warning(loggerConPantalla,"La Consola %d se ha cerrado",socket);
 	pthread_mutex_lock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Gestionando cierre de consola %d",socket);
 	int size, cantidad,pid;
@@ -484,7 +484,6 @@ void inicializarListas(){
 	listaFinQuantum = list_create();
 	listaEnEspera = list_create();
 	listaSemaforosAsociados=list_create();
-
 	listaContable=list_create();
 }
 void obtenerVariablesCompartidasDeLaConfig(){
@@ -641,3 +640,69 @@ void selectorConexiones() {
 	log_info(loggerConPantalla,"Finalizando selector de conexiones");
 }
 
+void terminarProceso(int socketCPU) {
+
+	_Bool verificaCpu(t_cpu* cpu) {
+		return (cpu->socket == socketCPU);
+	}
+	pthread_mutex_lock(&mutexListaCPU);
+	t_cpu* cpu = list_remove_by_condition(listaCPU, (void*) verificaCpu);
+	cpu->enEjecucion = 0;
+	list_add(listaCPU, cpu);
+	pthread_mutex_unlock(&mutexListaCPU);
+	sem_post(&sem_administrarFinProceso);
+	/*log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU %d",socketCPU);
+	 t_pcb* pcbProcesoTerminado;
+	 t_cpu *cpu;
+
+	 _Bool verificarPidConsola(t_consola* consola){
+	 return (consola->pid == pcbProcesoTerminado->pid);
+	 }
+
+	 _Bool verificarPid(t_pcb* pcb){
+	 return (pcb->pid == pcbProcesoTerminado->pid);
+	 }
+
+	 _Bool verificarCPU(t_cpu* cpu){
+	 return (cpu->socket == socketCPU);
+	 }
+
+	 pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
+
+	 log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
+
+	 actualizarRafagas(pcbProcesoTerminado->pid,pcbProcesoTerminado->cantidadInstrucciones);
+
+	 if(flagPlanificacion){
+
+	 listaEsperaATerminados();
+
+	 pthread_mutex_lock(&mutexColaEjecucion);
+	 list_remove_by_condition(colaEjecucion, (void*)verificarPid);
+	 pthread_mutex_unlock(&mutexColaEjecucion);
+
+	 cambiarEstadoATerminado(pcbProcesoTerminado,0); /*TODO: Cambiar exitCode*/
+	/*disminuirGradoMultiprogramacion();
+
+	 pthread_mutex_lock(&mutexListaCPU);
+	 cpu = list_remove_by_condition(listaCPU, (void*)verificarCPU);
+	 cpu->enEjecucion = 0;
+	 list_add(listaCPU,cpu);
+	 pthread_mutex_unlock(&mutexListaCPU);
+
+	 sem_post(&sem_admitirNuevoProceso);
+	 sem_post(&sem_CPU);
+
+	 finalizarHiloPrograma(pcbProcesoTerminado->pid);
+
+	 liberarRecursosEnMemoria(pcbProcesoTerminado);
+	 }else {
+
+	 pthread_mutex_lock(&mutexListaEspera);
+	 list_add(listaEnEspera, pcbProcesoTerminado);
+	 pthread_mutex_unlock(&mutexListaEspera);
+
+	 disminuirGradoMultiprogramacion();/*TODO: No se si hay que dismimnuir aca*/
+	//sem_post(&sem_CPU);
+	//}
+}

@@ -85,7 +85,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 
 		pthread_mutex_lock(&mutexRecibirDatos);
 
-		log_info(loggerConPantalla,"Socket %d recibiendo mensaje para PID %d",socketHiloKernel,pid);
+		log_warning(loggerConPantalla,"Socket %d recibiendo mensaje para PID %d",socketHiloKernel,pid);
 
 		mensaje = malloc(size * sizeof(char));
 		recv(socketHiloKernel,mensaje,size,0);
@@ -97,11 +97,10 @@ void recibirDatosDelKernel(int socketHiloKernel){
 			pthread_mutex_unlock(&mutexRecibirDatos);
 			break;
 		}
-		printf("%s\n",mensaje);
+		printf("\n%s\n",mensaje);
 		actualizarCantidadImpresiones(pid);
 		free(mensaje);
 		pthread_mutex_unlock(&mutexRecibirDatos);
-		imprimirInterfaz();
 	}
 
 	gestionarCierrePrograma(pid);
@@ -120,7 +119,6 @@ void actualizarCantidadImpresiones(int pid){
 }
 
 void gestionarCierrePrograma(int pidFinalizar){
-	int ok=0;
 	bool verificarPid(t_hiloPrograma* proceso){
 		return (proceso->pid == pidFinalizar);
 	}
@@ -137,9 +135,8 @@ void gestionarCierrePrograma(int pidFinalizar){
 	double tiempoEjecucion= difftime(mktime(programaAFinalizar->fechaInicio),tiempoFinalizacion);
 
 	printf("Datos de proceso finalizado\n");
-	printf("\tHora de inicializacion : %s \n\tHora de finalizacion: %s\n\tTiempo de ejecucion: %e \n\tCantidad de impresiones: %d\n",asctime(programaAFinalizar->fechaInicio),asctime(fechaFinalizacion),tiempoEjecucion,programaAFinalizar->cantImpresiones);
+	printf("\tHora de inicializacion:%s \n\tHora de finalizacion:%s\n\tTiempo de ejecucion:%e \n\tCantidad de impresiones:%d\n",asctime(programaAFinalizar->fechaInicio),asctime(fechaFinalizacion),tiempoEjecucion,programaAFinalizar->cantImpresiones);
 
-	send(programaAFinalizar->socketHiloKernel,&ok,sizeof(int),0);
 	free(programaAFinalizar);
 }
 

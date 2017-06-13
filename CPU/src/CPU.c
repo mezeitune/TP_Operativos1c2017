@@ -492,9 +492,11 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 }
 void finalizar (){
 		char comandoFinalizacion = 'T';
+		char permiso;
 
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
-		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+		recv(socketKernel,&permiso,sizeof(char),0);
+		//send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 		serializarPcbYEnviar(pcb_actual,socketKernel);
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
@@ -904,7 +906,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 		send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
 
 		send(socketKernel,&tamanio,sizeof(int),0);
-		send(socketKernel,informacion,tamanio,0);
+		send(socketKernel,(char*)informacion,tamanio,0);
 		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 	}else {
 
