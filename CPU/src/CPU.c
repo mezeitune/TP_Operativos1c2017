@@ -12,7 +12,6 @@ int main(void) {
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
 
-	signal(SIGINT, signalHandler);
 	signal(SIGUSR1, signalHandler);
 
 	recibirTamanioPagina(socketKernel);
@@ -29,6 +28,7 @@ int main(void) {
 void esperarPCB(){
 
 	while(cpuOcupada==1){
+		log_info(loggerConPantalla," CPU Esperando un script");
 		cantidadInstruccionesAEjecutarPorKernel = quantum;
 		recibirPCB();
 		cpuOcupada--;
@@ -39,7 +39,7 @@ void recibirPCB(){
 
 		char comandoRecibirPCB;
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
-		log_info(loggerConPantalla, "Se ha avisado que se quiere enviar un PCB...\n");
+		log_info(loggerConPantalla, "Recibiendo PCB...\n");
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
 
 }
@@ -524,7 +524,7 @@ void finalizar (){
 
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
 		recv(socketKernel,&permiso,sizeof(char),0);
-		//send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+
 		serializarPcbYEnviar(pcb_actual,socketKernel);
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
