@@ -277,20 +277,21 @@ void interruptHandler(int socketAceptado,char orden){
 			imprimirPorConsola(socketAceptado);
 			break;
 		case  'R':
+					//recv(pid)
+					//recv(socketAceptado,&size,sizeof(int),0);
 
-			//recv(socketAceptado,&size,sizeof(int),0);
-			//recv(socketAceptado,&espacioAReservar,size,0);
-			//reservar heap de ese espacio
-			//devolverle a la CPU el puntero que apunta a donde esta reservado ese espacio en heap
-			//creo que se tiene que guardar ese int del espacio para cuando se pida liberar
-			break;
+					//reservar heap de ese espacio
+					//devolverle a la CPU pagina y offset
+					break;
 		case  'L':
 
-			//recv(socketAceptado,&size,sizeof(int),0);
-			//recv(socketAceptado,&punteroQueApuntaDondeLiberar,size,0);
-			//liberar heap tomando como inicio ese puntero y el espacio dado anteriormente por "reservar"
-			//devolverle a la CPU el resultado de la ejecucion (1 piola, 0 fuck)
-			break;
+					//recv(socketAceptado,&pid,sizeof(int),0);
+					//recv(socketAceptado,&pagina,int,0);
+					//recv(offset)
+					//
+					//liberar heap tomando como inicio ese puntero y el espacio dado anteriormente por "reservar"
+					//devolverle a la CPU el resultado de la ejecucion (1 piola, 0 fuck)
+					break;
 		default:
 			break;
 	}

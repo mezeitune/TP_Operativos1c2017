@@ -759,37 +759,39 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 }
 
 t_puntero reservar (t_valor_variable espacio){
+	int pagina,offset;
 	char comandoInterruptHandler = 'X';
 	char comandoReservarMemoria = 'R';
+	int pid = pcb_actual->pid;
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoReservarMemoria,sizeof(char),0);
-	int tamanio = sizeof(t_valor_variable);
-	send(socketKernel,&tamanio,sizeof(int),0);
-	send(socketKernel,&espacio,tamanio,0);
-	int* puntero;
-	//recibir el puntero del kernel donde almaceno ese espacio en memoria
-	//guardar ese puntero en una lista o estructura para hacer la comprobacion en liberar
+	send(socketKernel,&pid,sizeof(int),0);
+	send(socketKernel,&espacio,sizeof(int),0);
+	recv(socketKernel,&pagina,sizeof(int),0);
+	recv(socketKernel,&offset,sizeof(int),0);
+	t_puntero puntero = pagina * config_paginaSize + offset;
 	return puntero;
 }
 void liberar (t_puntero puntero){
-	//list_find(listaPunterosHeap,puntero);
-	//if(list_size(listaPunterosHeap)){
+	int num_pagina = puntero / config_paginaSize;
+	int offset = puntero - (num_pagina * config_paginaSize);
+	int pid = pcb_actual->pid;
 	char comandoInterruptHandler = 'X';
 	char comandoLiberarMemoria = 'L';
 	int resultadoEjecucion;
 	int tamanio = sizeof(t_puntero);
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
-	send(socketKernel,&tamanio,sizeof(int),0);
-	send(socketKernel,&puntero,tamanio,0);
+
+	send(socketKernel,&pid,sizeof(int),0);
+	send(socketKernel,&num_pagina,sizeof(int),0);
+	send(socketKernel,&offset,tamanio,0);
+
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
 		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
 	else
 		log_info(loggerConPantalla,"No se ha podido liberar el heap apuntada por",puntero);
-	//}
-	//else
-	log_info(loggerConPantalla,"Primero se debe reservar para liberar el heap");
 }
 
 
