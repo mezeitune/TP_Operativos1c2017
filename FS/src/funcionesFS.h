@@ -79,7 +79,9 @@ void crearArchivoFunction(int socket_cliente){
 
 	if(encontroUnBloque==0){
 		fp = fopen(nombreArchivoRecibido, "ab+");
-		//asignar bloque en el metadata del archivo
+		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
+		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
+		bitarray_set_bit(bitarray,bloqueEncontrado);
 
 		validado=1;
 		//send avisando al kernel que salio todo ok
@@ -98,26 +100,43 @@ void crearArchivoFunction(int socket_cliente){
 void borrarArchivoFunction(int socket_cliente){
 	FILE *fp;
 
-	if( access( "../Archivos/nuevo.bin", F_OK ) != -1 ) {
+	int tamanoArchivo;
+	int validado;
+
+	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
+	void* nombreArchivo = malloc(tamanoArchivo);
+	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+
+	char *nombreArchivoRecibido = string_new();
+	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, nombreArchivo);
+
+	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
-	   fp = fopen("../Archivos/nuevo.bin", "w");
+	   fp = fopen(nombreArchivoRecibido, "w");
+	   //poner en un array los bloques de ese archivo para luego liberarlos
 
 
-	   if(remove("../Archivos/nuevo.bin") == 0)
+	   if(remove(nombreArchivoRecibido) == 0)
 	   {
-	      printf("File deleted successfully");
+
+
+		   validado=1;
+		   //send diciendo que se elimino correctamente el archivo
+		   //falta marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
 	   }
 	   else
 	   {
-	      printf("Error: unable to delete the file");
+		   validado=0;
+	      //send que no se pudo eliminar el archivo
 	   }
 	} else {
-	    // file doesn't exist
-		printf("Archivo inexistente");
+		validado=0;
+		//send diciendo que hubo un error y no se pudo eliminar el archivo
 	}
 
-	   //falta marcar los bloques como libres dentro del bitmap
+
 
 
 }
