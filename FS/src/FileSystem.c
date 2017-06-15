@@ -68,26 +68,15 @@ int main(void){
 	//inicializarBitMap();//Solo para testeo
 	inicializarMmap();
 
-	int tamanioBloques=atoi(tamanioBloquesEnChar);
-	int cantidadBloques=atoi(cantidadBloquesEnChar);
+	tamanioBloques=atoi(tamanioBloquesEnChar);
+	cantidadBloques=atoi(cantidadBloquesEnChar);
 
 	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), MSB_FIRST);
 
 	printf("El tamano del bitarray es de : %d\n\n\n",bitarray_get_max_bit(bitarray));
 
 
-	int j;
-	for(j=0;j<32;j++){
-		/*if(bitarray_test_bit(bitarray, j)==1){
-			printf("ocupado-");
-		}else{
-			printf("liberado-");
-		}*/
-        bool a = bitarray_test_bit(bitarray,j);
-        printf("%i", a);
-	}
-	bitarray_clean_bit(bitarray,1);
-	printf("\n");
+	printBitmap();
 	//*********************************************************************
 
 

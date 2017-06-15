@@ -1,3 +1,19 @@
+void printBitmap(){
+
+	int j;
+	for(j=0;j<32;j++){
+		/*if(bitarray_test_bit(bitarray, j)==1){
+			printf("ocupado-");
+		}else{
+			printf("liberado-");
+		}*/
+        bool a = bitarray_test_bit(bitarray,j);
+        printf("%i", a);
+	}
+	//bitarray_clean_bit(bitarray,3);
+	printf("\n");
+}
+
 void validarArchivoFunction(int socket_cliente){
 	int tamanoArchivo;
 	int validado;
@@ -12,7 +28,7 @@ void validarArchivoFunction(int socket_cliente){
 
 
 	char *nombreArchivoRecibido = string_new();
-	string_append(&nombreArchivoRecibido, "../metadata/");
+	string_append(&nombreArchivoRecibido, "../Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
     printf("%s", nombreArchivoRecibido);
 	if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
@@ -35,24 +51,60 @@ void validarArchivoFunction(int socket_cliente){
 
 void crearArchivoFunction(int socket_cliente){
 	FILE *fp;
-	if( access( "../metadata/nuevo.bin", F_OK ) != -1 ) {
-		//falta ver en este if de arriba tambien si el archivo existe y si esta en modo "c"
-	}else{
-		fp = fopen("../metadata/nuevo.bin", "ab+");//creo el archivo
-		//falta que por default se le asigne un bloque a ese archivo
+
+	int tamanoArchivo;
+	int validado;
+
+	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
+	void* nombreArchivo = malloc(tamanoArchivo);
+	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+
+	char *nombreArchivoRecibido = string_new();
+	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, nombreArchivo);
+
+	//Recorro bitmap y veo si hay algun bloque para asignarle
+	//por default se le asigna un bloque al archivo recien creado
+	int j;
+	int encontroUnBloque=0;
+	int bloqueEncontrado=0;
+	for(j=0;j<cantidadBloques;j++){
+
+        bool bit = bitarray_test_bit(bitarray,j);
+        if(bit==0){
+        	encontroUnBloque=1;
+        	bloqueEncontrado=j;
+        }
 	}
+
+	if(encontroUnBloque==0){
+		fp = fopen(nombreArchivoRecibido, "ab+");
+		//asignar bloque en el metadata del archivo
+
+		validado=1;
+		//send avisando al kernel que salio todo ok
+	}else{
+		validado=0;
+		//send diciendo que hubo error
+	}
+
+
+
+
+
 }
+
 
 void borrarArchivoFunction(int socket_cliente){
 	FILE *fp;
 
-	if( access( "../metadata/nuevo.bin", F_OK ) != -1 ) {
+	if( access( "../Archivos/nuevo.bin", F_OK ) != -1 ) {
 
 
-	   fp = fopen("../metadata/nuevo.bin", "w");
+	   fp = fopen("../Archivos/nuevo.bin", "w");
 
 
-	   if(remove("../metadata/nuevo.bin") == 0)
+	   if(remove("../Archivos/nuevo.bin") == 0)
 	   {
 	      printf("File deleted successfully");
 	   }
@@ -74,13 +126,13 @@ void borrarArchivoFunction(int socket_cliente){
 void obtenerDatosArchivoFunction(int socket_cliente){
 	FILE *fp;
 
-	if( access( "../metadata/alumno.bin", F_OK ) != -1 ) {
+	if( access( "../Archivos/alumno.bin", F_OK ) != -1 ) {
 
 
-		printFilePermissions("../metadata/alumno.bin");
-		if((archivoEnModoLectura("../metadata/alumno.bin"))==1){
+		printFilePermissions("../Archivos/alumno.bin");
+		if((archivoEnModoLectura("../Archivos/alumno.bin"))==1){
 			//printf("\n dale sigamo");
-			fp = fopen("../metadata/alumno.bin", "r");
+			fp = fopen("../Archivos/alumno.bin", "r");
 			printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
 
 
@@ -101,10 +153,10 @@ void obtenerDatosArchivoFunction(int socket_cliente){
 void guardarDatosArchivoFunction(int socket_cliente){
 	FILE *fp;
 
-	if( access( "../metadata/alumno.bin", F_OK ) != -1 ) {
+	if( access( "../Archivos/alumno.bin", F_OK ) != -1 ) {
 
-					printFilePermissions("../metadata/alumno.bin");
-					if(archivoEnModoEscritura("../metadata/alumno.bin")==1){
+					printFilePermissions("../Archivos/alumno.bin");
+					if(archivoEnModoEscritura("../Archivos/alumno.bin")==1){
 						printf("\n dale sigamo");
 					}else{
 						printf("\n El archivo no esta en modo escritura");
