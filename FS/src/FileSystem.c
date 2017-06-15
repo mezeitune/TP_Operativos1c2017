@@ -62,28 +62,23 @@ int main(void){
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
-    int size;
-    struct stat s;
-    const char * file_name = "../metadata/Bitmap.bin";
-    int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
+	//*********************************************************************
+		//Bitmap
 
-    /* Get the size of the file. */
-    int status = fstat (fd, & s);
-    size = s.st_size;
-	mmapDeBitmap = (char *) mmap (0, size, PROT_READ, MAP_PRIVATE, fd, 0);
+	//inicializarBitMap();//Solo para testeo
+	inicializarMmap();
+
+	tamanioBloques=atoi(tamanioBloquesEnChar);
+	cantidadBloques=atoi(cantidadBloquesEnChar);
+
+	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), MSB_FIRST);
+
+	printf("El tamano del bitarray es de : %d\n\n\n",bitarray_get_max_bit(bitarray));
 
 
-//(tamanioBloques*cantidadBloques)/(8*tamanioBloques)
-	printf("\n\n\n%d\n\n\n\n\n",tamanioBloques);
-	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), LSB_FIRST);
+	printBitmap();
+	//*********************************************************************
 
-	printf("%d",bitarray_get_max_bit(bitarray));
-
-	if(bitarray_test_bit(bitarray, 1)==1){
-		printf("ocupado");
-	}else{
-		printf("liberado");
-	}
 
 
 	int socket_FS = crear_socket_servidor(ipFS,puertoFS);
@@ -135,6 +130,8 @@ void connection_handlerR(int socket_cliente)
 		}
 	}
 }
+
+
 
 
 
