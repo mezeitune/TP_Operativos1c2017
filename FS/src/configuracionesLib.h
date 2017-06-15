@@ -8,6 +8,7 @@
 
 
 #include <commons/bitarray.h>
+#include <commons/string.h>
 
 
 unsigned char *mmapDeBitmap;
@@ -16,8 +17,10 @@ t_bitarray * bitarray;
 char *puertoFS;
 char *puntoMontaje;
 char *puerto_Kernel;
-char *tamanioBloques;
-char *cantidadBloques;
+char *tamanioBloquesEnChar;
+char *cantidadBloquesEnChar;
+int tamanioBloques;
+int cantidadBloques;
 char* magicNumber;
 char *ipFS;
 t_config* configuracion_FS;
@@ -48,16 +51,6 @@ void testeommap(){
     //size += pagesize-(size%pagesize);
 }
 
-void inicializarMmap(){
-	int size;
-	struct stat s;
-	const char * file_name = "../metadata/Bitmap.bin";
-	int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
-
-	/* Get the size of the file. */
-	int status = fstat (fd, & s);
-	mmapDeBitmap = (char *) mmap (0, size, PROT_READ, MAP_PRIVATE, fd, 0);
-}
 
 
 
@@ -77,9 +70,10 @@ void leerConfiguracion(char* ruta){
 void leerConfiguracionMetadata(char* ruta){
 	configuracion_FS = config_create(ruta);
 
-	tamanioBloques= config_get_string_value(configuracion_FS,"TAMANIO_BLOQUES");
-	cantidadBloques= config_get_string_value(configuracion_FS, "CANTIDAD_BLOQUES");
+	tamanioBloquesEnChar= config_get_string_value(configuracion_FS,"TAMANIO_BLOQUES");
+	cantidadBloquesEnChar= config_get_string_value(configuracion_FS, "CANTIDAD_BLOQUES");
 	magicNumber = config_get_string_value(configuracion_FS,"MAGIC_NUMBER");
+
 
 
 }
@@ -88,10 +82,35 @@ void leerConfiguracionMetadata(char* ruta){
 void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
 		printf("CONFIGURACIONES\nIP FS:%s\nPUERTO FS:%s\nPUNTO MONTAJE:%s\n",ipFS,puertoFS,puntoMontaje);
-		printf("\n \nTAMANIO BLOQUS:%s\nCANTIDAD BLQOUES:%s\nMAGIC NUMBER:%s\n",tamanioBloques,cantidadBloques,magicNumber);
+		printf("\n \nTAMANIO BLOQUS:%s\nCANTIDAD BLQOUES:%s\nMAGIC NUMBER:%s\n",tamanioBloquesEnChar,cantidadBloquesEnChar,magicNumber);
 		printf("---------------------------------------------------\n");
 }
 
+
+void inicializarBitMap(){
+	FILE *f;
+	f = fopen("../metadata/Bitmap.bin", "wr+");
+	int i;
+	for ( i=0;i<5192; i++) {
+	    fputc(1, f);
+	}
+	fclose(f);
+}
+
+void inicializarMmap(){
+
+
+
+    int size;
+    struct stat s;
+    int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
+
+    /* Get the size of the file. */
+    int status = fstat (fd, & s);
+    size = s.st_size;
+	mmapDeBitmap = mmap (0, size, PROT_READ, MAP_SHARED, fd, 0);
+
+}
 
 
 #endif

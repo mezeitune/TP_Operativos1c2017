@@ -62,34 +62,18 @@ int main(void){
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
+	//*********************************************************************
+		//Bitmap
 
-	FILE *f;
-	    f = fopen("../metadata/Bitmap.bin", "wr+");
-	    int i;
-	    for ( i=0;i<5192; i++) {
-	       fputc(1, f);
-	    }
-	    fclose(f);
+	//inicializarBitMap();//Solo para testeo
+	inicializarMmap();
 
+	int tamanioBloques=atoi(tamanioBloquesEnChar);
+	int cantidadBloques=atoi(cantidadBloquesEnChar);
 
-    int size;
-    struct stat s;
-    const char * file_name = "../metadata/Bitmap.bin";
-    int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
+	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), LSB_FIRST);
 
-    /* Get the size of the file. */
-    int status = fstat (fd, & s);
-    size = s.st_size;
-	mmapDeBitmap = mmap (0, size, PROT_READ, MAP_SHARED, fd, 0);
-
-
-//(tamanioBloquess*cantidadBloquess)/(8*tamanioBloquess)
-	printf("\n\n\n %s \n\n\n\n\n",tamanioBloques);
-	int tamanioBloquess=atoi(tamanioBloques);
-	int cantidadBloquess=atoi(cantidadBloques);
-	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloquess*cantidadBloquess)/(8*tamanioBloquess), LSB_FIRST);
-
-	printf("%d\n\n\n",bitarray_get_max_bit(bitarray));
+	printf("El tamano del bitarray es de : %d\n\n\n",bitarray_get_max_bit(bitarray));
 
 	int j;
 	for(j=0;j<10;j++){
@@ -99,6 +83,8 @@ int main(void){
 			printf("liberado");
 		}
 	}
+	//*********************************************************************
+
 
 
 	int socket_FS = crear_socket_servidor(ipFS,puertoFS);
@@ -150,6 +136,8 @@ void connection_handlerR(int socket_cliente)
 		}
 	}
 }
+
+
 
 
 
