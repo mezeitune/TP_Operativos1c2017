@@ -103,12 +103,12 @@ void inicializarMmap(){
 
     int size;
     struct stat s;
-    int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
+    int fd = open ("../metadata/Bitmap.bin", O_RDWR);
 
     /* Get the size of the file. */
     int status = fstat (fd, & s);
     size = s.st_size;
-	mmapDeBitmap = mmap (0, size, PROT_READ, MAP_SHARED, fd, 0);
+	mmapDeBitmap = mmap (0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
 }
 

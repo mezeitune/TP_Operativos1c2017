@@ -86,6 +86,7 @@ int main(void){
         bool a = bitarray_test_bit(bitarray,j);
         printf("%i", a);
 	}
+	bitarray_clean_bit(bitarray,1);
 	printf("\n");
 	//*********************************************************************
 
