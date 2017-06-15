@@ -57,7 +57,7 @@ char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size);
 int main(void){
 	//TODO:
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/FS/config_FileSys");
-	leerConfiguracionMetadata("/home/utnso/workspace/tp-2017-1c-servomotor/FS/metadata/Metadata.bin");
+	leerConfiguracionMetadata("/home/utnso/workspace/tp-2017-1c-servomotor/FS/Metadata/Metadata.bin");
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
@@ -77,7 +77,32 @@ int main(void){
 
 
 	printBitmap();
+
+
 	//*********************************************************************
+	FILE* f = fopen("../Archivos/test.bin", "r");
+    int     someArr[32];
+    int     i, ctr = 0;
+
+
+
+    while((!feof(f)) && (ctr < 32))
+    {
+        fscanf(f, "%d,", &someArr[ctr++]);
+    }
+
+    for(i = 0; i < (ctr -1); i++)
+    {
+        printf("%d==>", someArr[i]);
+    }
+    printf("%d\n", someArr[i]);
+
+    fclose(f); //Close the file pointer
+
+
+   	printf("\\\\\\\\\\\\\\\\\\\\\\\\ \n\n\n\n\n");
+
+
 
 
 

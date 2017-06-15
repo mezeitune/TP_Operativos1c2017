@@ -142,25 +142,37 @@ void borrarArchivoFunction(int socket_cliente){
 }
 
 
-void obtenerDatosArchivoFunction(int socket_cliente){
+void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo tenog que recibir o que onda
 	FILE *fp;
 
-	if( access( "../Archivos/alumno.bin", F_OK ) != -1 ) {
+	int tamanoArchivo;
+	int validado;
+	int offset;
+	int size;
+
+	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
+	void* nombreArchivo = malloc(tamanoArchivo);
+	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+	recv(socket_cliente,&offset,sizeof(int),0);
+	recv(socket_cliente,&size,sizeof(int),0);
+
+	char *nombreArchivoRecibido = string_new();
+	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, nombreArchivo);
+
+	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
-		printFilePermissions("../Archivos/alumno.bin");
-		if((archivoEnModoLectura("../Archivos/alumno.bin"))==1){
-			//printf("\n dale sigamo");
-			fp = fopen("../Archivos/alumno.bin", "r");
-			printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
+		fp = fopen("../Archivos/alumno.bin", "r");
+		printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
 
 
-		}else{
-			printf("\n El archivo no esta en modo lectura");
-		}
+		//si todod ok
+		validado=1;
+		//send diciendo que todo esta ok
 	} else {
-	    // file doesn't exist
-		printf("Archivo inexistente");
+		validado=0;
+		//send diciendo que el archivo no existe
 	}
 
 
@@ -169,22 +181,42 @@ void obtenerDatosArchivoFunction(int socket_cliente){
 
 
 
-void guardarDatosArchivoFunction(int socket_cliente){
+void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo tengo que recibir o que onda
 	FILE *fp;
 
-	if( access( "../Archivos/alumno.bin", F_OK ) != -1 ) {
+	int tamanoArchivo;
+	int validado;
+	int offset;
+	int size;
+	int tamanoBuffer;
 
-					printFilePermissions("../Archivos/alumno.bin");
-					if(archivoEnModoEscritura("../Archivos/alumno.bin")==1){
-						printf("\n dale sigamo");
-					}else{
-						printf("\n El archivo no esta en modo escritura");
-					}
 
-				} else {
-				    // file doesn't exist
-					printf("Archivo inexistente");
-				}
+	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
+	void* nombreArchivo = malloc(tamanoArchivo);
+	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+	recv(socket_cliente,&offset,sizeof(int),0);
+	recv(socket_cliente,&size,sizeof(int),0);
+	recv(socket_cliente,&tamanoBuffer,sizeof(int),0);
+	void* buffer = malloc(tamanoBuffer);
+	recv(socket_cliente,buffer,tamanoBuffer,0);
+
+	char *nombreArchivoRecibido = string_new();
+	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, nombreArchivo);
+
+	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
+
+		//ver de asignar mas bloques en caso de ser necesario
+		//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
+		//sino guardamos en los bloques deseados
+		//actualizamos el bitmap
+		//actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
+		//y enviamos un buen send
+
+	} else {
+		validado=0;
+		//send diciendo que el archivo no existe
+	}
 
 
 }

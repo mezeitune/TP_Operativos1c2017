@@ -80,3 +80,15 @@ char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
 	   return aDevolver;
 }
 
+char *readFile(char *fileName)
+{
+    FILE *file;
+    char *code = malloc(1000 * sizeof(char));
+    file = fopen(fileName, "r");
+    do
+    {
+      *code++ = (char)fgetc(file);
+
+    } while(*code != EOF);
+    return code;
+}
