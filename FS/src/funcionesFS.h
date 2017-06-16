@@ -180,13 +180,68 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
-		fp = fopen("../Archivos/alumno.bin", "r");
-		printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
+		fp = fopen(nombreArchivoRecibido, "r");
+		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+		   int d=0;
+		   int u=1;
+		   int offYSize=offset+size;
+		   int cantidadBloquesQueNecesito=size/tamanioBloques;
+		   if((size%tamanioBloques)!=0){
+				cantidadBloquesQueNecesito++;
+			}
+
+		   char *infoTraidaDeLosArchivos = string_new();
+		   int hizoLoQueNecesita=0;
+		   while(!(arrayBloques[d] == NULL)){
+
+			   if(offset<=(tamanioBloques*u)){
+				   int t;
+				   int inicial=d;
+				   for(t=inicial;t<((inicial+cantidadBloquesQueNecesito)+1);t++){
+					   hizoLoQueNecesita=1;
+					   int indice=atoi(arrayBloques[t]);
+						char *nombreBloque = string_new();
+						string_append(&nombreBloque, "../Bloque/");
+						string_append(&nombreBloque, arrayBloques[t]);
+						string_append(&nombreBloque, ".bin");
+
+						FILE *bloque=fopen(nombreBloque, "r");
+						if(t==(d+cantidadBloquesQueNecesito)){
+							int sizeQuePido=size-offset;
+							int offsetQuePido=0;
+							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+						}else if(t==inicial){
+
+							int offsetQuePido=offset-(tamanioBloques*u);
+							int sizeQuePido=tamanioBloques-offsetQuePido;
+							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+
+						}else{
+							int sizeQuePido=tamanioBloques;
+							int offsetQuePido=0;
+							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+
+						}
+
+
+				   }
+
+			   }
+			   if(hizoLoQueNecesita==1){
+				   break;
+			   }
+		      d++;
+		      u++;
+		   }
+		//printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
 
 
 		//si todod ok
 		validado=1;
 		//send diciendo que todo esta ok
+		//y mandando la info obtenida
+		int tamanoAMandar=sizeof(int)*strlen(infoTraidaDeLosArchivos);
+
 	} else {
 		validado=0;
 		//send diciendo que el archivo no existe
