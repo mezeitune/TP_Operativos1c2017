@@ -92,3 +92,14 @@ char *readFile(char *fileName)
     } while(*code != EOF);
     return code;
 }
+
+
+void adx_store_data(const char *filepath, const char *data)
+{
+    FILE *fp = fopen(filepath, "ab");
+    if (fp != NULL)
+    {
+        fputs(data, fp);
+        fclose(fp);
+    }
+}

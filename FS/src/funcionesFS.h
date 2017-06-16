@@ -77,11 +77,20 @@ void crearArchivoFunction(int socket_cliente){
         }
 	}
 
-	if(encontroUnBloque==0){
+	if(encontroUnBloque==1){
 		fp = fopen(nombreArchivoRecibido, "ab+");
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
 		bitarray_set_bit(bitarray,bloqueEncontrado);
+		char *dataAPonerEnFile = string_new();
+		string_append(&dataAPonerEnFile, "TAMANIO=");
+		string_append(&dataAPonerEnFile, tamanioBloquesEnChar);
+		string_append(&dataAPonerEnFile,"\n");
+		string_append(&dataAPonerEnFile, "BLOQUES=");
+		char* numerito=string_itoa(bloqueEncontrado);
+		string_append(&dataAPonerEnFile,numerito);
+
+		adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
 
 		validado=1;
 		//send avisando al kernel que salio todo ok
@@ -116,15 +125,23 @@ void borrarArchivoFunction(int socket_cliente){
 
 	   fp = fopen(nombreArchivoRecibido, "w");
 	   //poner en un array los bloques de ese archivo para luego liberarlos
-
+	   char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
 	   if(remove(nombreArchivoRecibido) == 0)
 	   {
 
 
 		   validado=1;
+
+		   //marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
+		   int d=0;
+		   while(!(arrayBloques[d] == NULL)){
+			   int indice=atoi(arrayBloques[d]);
+			   bitarray_clean_bit(bitarray,indice);
+		      d++;
+		   }
+
 		   //send diciendo que se elimino correctamente el archivo
-		   //falta marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
 	   }
 	   else
 	   {

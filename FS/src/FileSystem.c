@@ -80,24 +80,7 @@ int main(void){
 
 
 	//*********************************************************************
-	FILE* f = fopen("../Archivos/test.bin", "r");
-    int     someArr[32];
-    int     i, ctr = 0;
 
-
-
-    while((!feof(f)) && (ctr < 32))
-    {
-        fscanf(f, "%d,", &someArr[ctr++]);
-    }
-
-    for(i = 0; i < (ctr -1); i++)
-    {
-        printf("%d==>", someArr[i]);
-    }
-    printf("%d\n", someArr[i]);
-
-    fclose(f); //Close the file pointer
 
 
    	printf("\\\\\\\\\\\\\\\\\\\\\\\\ \n\n\n\n\n");
