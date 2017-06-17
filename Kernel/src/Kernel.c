@@ -36,6 +36,27 @@
 #include "contabilidad.h"
 #include "semaforosAnsisop.h"
 
+typedef struct
+{
+	int pagina;
+	int pid;
+	int sizeDisponible;
+}structAdmBloqueHeap;
+
+typedef struct
+{
+	int bitUso;
+	int size;
+}__attribute__((packed)) bloqueMetadata;
+
+typedef struct{
+	int pagina;
+	int offset;
+} structPuntero;
+
+t_list* listaAdmHeap;
+
+
 
 void recibirPidDeCpu(int socket);
 
@@ -458,6 +479,8 @@ void inicializarListas(){
 	colaEjecucion = list_create();
 	colaBloqueados=list_create();
 
+	listaAdmHeap = list_create();
+
 	listaConsolas = list_create();
 	listaCPU = list_create();
 	listaCodigosProgramas=list_create();
@@ -582,3 +605,153 @@ void selectorConexiones() {
 		}
 	log_info(loggerConPantalla,"Finalizando selector de conexiones");
 }
+
+
+//-------------------------Funciones Heap-------------------------------//
+/*
+void reservarEspacioHeap(int pid, int size)
+{
+	int offset;
+	structPuntero aux;
+	aux.pagina = verificarEspacioLibreHeap(size, pid);
+	if(aux.pagina  == -1){
+		aux = reservarPaginaHeap(pid);
+		if(aux.pagina  == -1){
+			//No se puede reservar la página y no hay espacio suficiente en la memoria para reservar una página nueva, aviso y salgo de la función
+			return;
+		}
+	}
+	aux.offset = reservarBloqueHeap(pid, size, aux.pagina);
+	//Envio a la CPU la página y offset del structPuntero y salgo.
+	//send(......)
+	//send(......)
+
+}
+
+int verificarEspacioLibreHeap(int size, int pidProc){
+	int i = 0;
+	structAdmBloqueHeap aux;
+	while(i < list_Size(listaAdmHeap))
+	{
+		aux = list_get(listaAdmHeap,i);
+		if(aux.sizeDisponible >= size && aux.pid == pidProc)
+		{
+			compactarPaginaHeap(aux.pagina,aux.pid);
+			return aux.pagina;
+		}
+	}
+	return -1;
+}
+
+void reservarPaginaHeap(int pid){ //Reservo una página de heap nueva para el proceso
+	bloqueMetadata aux;
+	aux.size = pageSize - sizeof(bloqueMetadata);
+	aux.bitUso = -1;
+	int paginaReservada = reservarPaginaEnMemoria(pid); //Esta función debería pedir una página extra a la memoria para el pid, si la memoria no puede, retornar -1.
+	escribirEnMemoria(paginaReservada,pid,0,aux,sizeof(bloqueMetadata)); //Escribir en la memoria, en la página páginaReservada, del pid, con offset 0, mi struct aux de tamaño bloqueMetadata
+	                                                                     //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
+	structAdmBloqueHeap auxBloque;
+	auxBloque.pagina = paginaReservada;
+	auxBloque.pid = pid;
+	auxBloque.sizeDisponible = aux.size;
+	list_add(listaAdmHeap, &auxBloque);
+}
+
+void compactarPaginaHeap(int pagina, int pid){
+	int i = 0;
+	bloqueMetadata actual;
+	bloqueMetadata siguiente;
+	while(i < pageSize){ //La i es el offset dentro de la pagina - Me falta la variable del tamaño de la página
+		actual = leerDeMemoria(pid,pagina,i,sizeof(bloqueMetadata)); //Esta función debería leer la página pagina del pid pid, con un offset i, un size.
+		siguiente = leerDeMemoria(pid,pagina,i+sizeof(bloqueMetadata)+ actual.size ,sizeof(bloqueMetadata)); //Esta función debería leer la página pagina del pid pid, con un offset i, un size.
+		if(actual.bitUso == -1 && siguiente.bitUso == -1){
+			actual.size = actual.size + sizeof(bloqueMetadata) + siguiente.size;
+		}
+		else{
+			i += sizeof(bloqueMetadata) + actual.size;
+		}
+
+
+	}
+}
+
+void escribirContenidoPaginaHeap(int pagina, int pid, int offset, int size, void *contenido){
+	escribirEnMemoria(pagina,pid,offset+sizeof(bloqueMetadata),size,contenido);
+}
+
+void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, *contenido){
+	contenido = leerMemoria(pagina,pid,offset+sizeof(bloqueMetadata),size);
+}
+
+int reservarBloqueHeap(int pidProc,int size,int pagina){
+	bloqueMetadata auxBloque;
+	structAdmBloqueHeap aux;
+	int offset;
+	int i = 0;
+	int sizeReal = size;
+	while(i < list_Size(listaAdmHeap))
+	{
+		aux = list_get(listaAdmHeap,i);
+		if(aux.pagina == pagina && aux.pid == pidProc)
+		{
+			if(aux.sizeDisponible <= size + sizeof(bloqueMetadata)){
+				sizeReal = aux.sizeDisponible;
+				aux.sizeDisponible = 0;
+			}
+			else{
+				aux.sizeDisponible = aux.sizeDisponible - size;
+			}
+			list_replace(listaAdmHeap,i,aux);
+			break;
+		}
+	}
+
+	while(i < pageSize){
+
+		auxBloque = leerDeMemoria(pid,pagina,i,sizeof(bloqueMetadata));
+		if(auxBloque.size >= size){
+			auxBloque.bitUso = 1;
+			auxBloque.size = sizeReal;
+			escribirEnMemoria(pagina,pid,i,auxBloque,sizeof(bloqueMetadata)); //Escribo y reservo el metadata que se quiere reservar
+			offset = i;
+			if(aux.sizeDisponible > 0){
+				auxBloque.bitUso = -1;
+				auxBloque.size = aux.sizeDisponible;
+				escribirEnMemoria(pagina,pid,i+sizeof(bloqueMetadata)+sizeReal,auxBloque,sizeof(bloqueMetadata)); //ANuncio cuanto espacio libre queda en el heap en el siguiente metadata
+			}
+		break;
+		}
+
+	}
+	return offset;
+}
+
+void destruirPaginaHeap(int pidProc, int pagina){ //Si quiero destruir una página específica de la lista
+	structAdmBloqueHeap aux;
+	int i = 0;
+
+	while(i < list_Size(listaAdmHeap))
+	{
+		aux = list_get(listaAdmHeap,i);
+		if(aux.pagina == pagina && aux.pid == pidProc)
+		{
+			list_remove(listaAdmHeap,i);
+			break;
+		}
+	}
+}
+
+void destruirTodasLasPaginasHeapDeProceso(int pidProc){ //Elimino todas las estructuras administrativas de heap asociadas a un PID
+	structAdmBloqueHeap aux;
+	int i = 0;
+
+	while(i < list_Size(listaAdmHeap))
+	{
+		aux = list_get(listaAdmHeap,i);
+		if(aux.pid == pidProc)
+		{
+			list_remove(listaAdmHeap,i);
+		}
+	}
+}
+*/ //ACÁ TERMINAN LAS FUNCIONES DE HEAP, DEJO TODO COMENTADO PARA QUE NO LES EXPLOTE
