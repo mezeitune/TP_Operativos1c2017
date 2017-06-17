@@ -92,3 +92,35 @@ char *readFile(char *fileName)
     } while(*code != EOF);
     return code;
 }
+
+
+void adx_store_data(const char *filepath, const char *data)
+{
+    FILE *fp = fopen(filepath, "ab");
+    if (fp != NULL)
+    {
+        fputs(data, fp);
+        fclose(fp);
+    }
+}
+
+
+int cantBytesFile(const char *filepath){
+	FILE *fp = fopen(filepath, "r");
+	int count=0;
+	/* a holder for each character (stored as int) */
+	int c;
+
+	/* for as long as we can get characters... */
+	while((c=fgetc(fp))) {
+
+	  /* break if end of file */
+	  if(c == EOF) break;
+
+	  /* otherwise add one to the count of that particular character */
+	  count++;
+	}
+
+	return count;
+}
+

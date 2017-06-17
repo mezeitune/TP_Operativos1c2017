@@ -77,11 +77,20 @@ void crearArchivoFunction(int socket_cliente){
         }
 	}
 
-	if(encontroUnBloque==0){
+	if(encontroUnBloque==1){
 		fp = fopen(nombreArchivoRecibido, "ab+");
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
 		bitarray_set_bit(bitarray,bloqueEncontrado);
+		char *dataAPonerEnFile = string_new();
+		string_append(&dataAPonerEnFile, "TAMANIO=");
+		string_append(&dataAPonerEnFile, tamanioBloquesEnChar);
+		string_append(&dataAPonerEnFile,"\n");
+		string_append(&dataAPonerEnFile, "BLOQUES=");
+		char* numerito=string_itoa(bloqueEncontrado);
+		string_append(&dataAPonerEnFile,numerito);
+
+		adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
 
 		validado=1;
 		//send avisando al kernel que salio todo ok
@@ -116,15 +125,23 @@ void borrarArchivoFunction(int socket_cliente){
 
 	   fp = fopen(nombreArchivoRecibido, "w");
 	   //poner en un array los bloques de ese archivo para luego liberarlos
-
+	   char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
 	   if(remove(nombreArchivoRecibido) == 0)
 	   {
 
 
 		   validado=1;
+
+		   //marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
+		   int d=0;
+		   while(!(arrayBloques[d] == NULL)){
+			   int indice=atoi(arrayBloques[d]);
+			   bitarray_clean_bit(bitarray,indice);
+		      d++;
+		   }
+
 		   //send diciendo que se elimino correctamente el archivo
-		   //falta marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
 	   }
 	   else
 	   {
@@ -163,13 +180,68 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
-		fp = fopen("../Archivos/alumno.bin", "r");
-		printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
+		fp = fopen(nombreArchivoRecibido, "r");
+		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+		   int d=0;
+		   int u=1;
+		   int offYSize=offset+size;
+		   int cantidadBloquesQueNecesito=size/tamanioBloques;
+		   if((size%tamanioBloques)!=0){
+				cantidadBloquesQueNecesito++;
+			}
+
+		   char *infoTraidaDeLosArchivos = string_new();
+		   int hizoLoQueNecesita=0;
+		   while(!(arrayBloques[d] == NULL)){
+
+			   if(offset<=(tamanioBloques*u)){
+				   int t;
+				   int inicial=d;
+				   for(t=inicial;t<((inicial+cantidadBloquesQueNecesito)+1);t++){
+					   hizoLoQueNecesita=1;
+					   int indice=atoi(arrayBloques[t]);
+						char *nombreBloque = string_new();
+						string_append(&nombreBloque, "../Bloque/");
+						string_append(&nombreBloque, arrayBloques[t]);
+						string_append(&nombreBloque, ".bin");
+
+						FILE *bloque=fopen(nombreBloque, "r");
+						if(t==(d+cantidadBloquesQueNecesito)){
+							int sizeQuePido=size-offset;
+							int offsetQuePido=0;
+							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+						}else if(t==inicial){
+
+							int offsetQuePido=offset-(tamanioBloques*u);
+							int sizeQuePido=tamanioBloques-offsetQuePido;
+							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+
+						}else{
+							int sizeQuePido=tamanioBloques;
+							int offsetQuePido=0;
+							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+
+						}
+
+
+				   }
+
+			   }
+			   if(hizoLoQueNecesita==1){
+				   break;
+			   }
+		      d++;
+		      u++;
+		   }
+		//printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
 
 
 		//si todod ok
 		validado=1;
 		//send diciendo que todo esta ok
+		//y mandando la info obtenida
+		int tamanoAMandar=sizeof(int)*strlen(infoTraidaDeLosArchivos);
+
 	} else {
 		validado=0;
 		//send diciendo que el archivo no existe
@@ -206,12 +278,63 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
 
+
+		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+		int d=0;
+		while(!(arrayBloques[d] == NULL)){
+			d++;
+		}
+		char *nombreBloque = string_new();
+		string_append(&nombreBloque, "../Bloque/");
+		string_append(&nombreBloque, arrayBloques[d]);
+		string_append(&nombreBloque, ".bin");
 		//ver de asignar mas bloques en caso de ser necesario
-		//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
-		//sino guardamos en los bloques deseados
-		//actualizamos el bitmap
-		//actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
-		//y enviamos un buen send
+		int cantRestante=tamanioBloques-cantBytesFile(nombreBloque);
+		if(tamanoBuffer<cantRestante){
+			adx_store_data(nombreBloque,buffer);
+
+			//send diciendo que todo esta bien
+		}else{
+			int cuantosBloquesMasNecesito=tamanoBuffer/tamanioBloques;
+			if((tamanoBuffer%tamanioBloques)>0){
+				cuantosBloquesMasNecesito++;
+			}
+			//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
+			int j;
+			int bloquesEncontrados=0;
+			int bloqs[cuantosBloquesMasNecesito];
+			for(j=0;j<cantidadBloques;j++){
+
+		        bool bit = bitarray_test_bit(bitarray,j);
+		        if(bit==0){
+		        	//guardar en array bloqs los bloques que voy encontrando
+		        	bloquesEncontrados++;
+		        }
+			}
+
+			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
+				//guardamos en los bloques deseados
+					//va a haber que recortar el string para que los bytes entren en el bloque
+				//actualizamos el bitmap
+				//actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
+
+
+
+				validado=1;
+				//y enviamos un buen send
+
+			}else{
+				validado=0;
+				//send con error
+			}
+
+
+
+		}
+
+
+
+
 
 	} else {
 		validado=0;

@@ -80,26 +80,35 @@ int main(void){
 
 
 	//*********************************************************************
-	FILE* f = fopen("../Archivos/test.bin", "r");
-    int     someArr[32];
-    int     i, ctr = 0;
+	/*int cuantosBloquesMasNecesito=9;
+	int j;
+	int r=0;
+	int bloqs[cuantosBloquesMasNecesito];
 
+	for(j=0;j<cuantosBloquesMasNecesito;j++){
+		bloqs[j]=0;
+	}
 
+	int g;
+	for(g=0;g<cantidadBloques;g++){
 
-    while((!feof(f)) && (ctr < 32))
-    {
-        fscanf(f, "%d,", &someArr[ctr++]);
-    }
+        bool bit = bitarray_test_bit(bitarray,g);
+        if(bit==0){
+        	if(sizeof(bloqs)==cuantosBloquesMasNecesito){
+        		break;
+        	}else{
+            	bloqs[r]=g;
+            	r++;
+        	}
 
-    for(i = 0; i < (ctr -1); i++)
-    {
-        printf("%d==>", someArr[i]);
-    }
-    printf("%d\n", someArr[i]);
+        }
+	}
 
-    fclose(f); //Close the file pointer
+	int s;
+	for(s=0;s<sizeof(bloqs);s++){
 
-
+       printf("%d",bloqs[s]);
+	}*/
    	printf("\\\\\\\\\\\\\\\\\\\\\\\\ \n\n\n\n\n");
 
 

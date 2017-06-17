@@ -78,6 +78,17 @@ void leerConfiguracionMetadata(char* ruta){
 
 }
 
+char** obtArrayDeBloquesDeArchivo(char* ruta){
+	configuracion_FS = config_create(ruta);
+
+	return config_get_array_value(configuracion_FS, "BLOQUES");
+
+
+
+}
+
+
+
 
 void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
