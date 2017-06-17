@@ -44,6 +44,7 @@ sem_t sem_ordenSelect;
 sem_t sem_ordenUI;
 sem_t sem_listaFinQuantum;
 sem_t sem_ListaProcesosBloqueados;
+sem_t sem_listaSemAumentados;
 
 void inicializarSemaforos(){
 		pthread_mutex_init(&mutexColaNuevos,NULL);
@@ -75,7 +76,7 @@ void inicializarSemaforos(){
 		sem_init(&sem_ordenUI,0,1);
 		sem_init(&sem_listaFinQuantum,0,0);
 		sem_init(&sem_ListaProcesosBloqueados,0,0);
-
+		sem_init(&sem_listaSemAumentados,0,0);
 }
 
 #endif /* SINCRONIZACION_H_ */

@@ -403,29 +403,17 @@ void agregarAFinQuantum(t_pcb* pcb){
 
 /*------------------------MEDIANO PLAZO-----------------------------------------*/
 
+pthread_t threadId;
+
  void planificarMedianoPlazo(){
 
+	 pthread_create(&threadId,NULL, (void*)pcbBloqueadoAReady, NULL);
+
 	 while(1){
-
-
-		int i;
-		t_pcb *pcb = malloc(sizeof(t_pcb));
-
-		sem_wait(&sem_ListaProcesosBloqueados);
-
 		pcbEjecucionABloqueado();
 
-		for (i = 0; i < list_size(colaBloqueados); ++i) {
-			pcb = list_get(colaBloqueados, i);
-			printf("\n\nproceso Bloqueado: %d\n\n",pcb->pid);
-		}
 
-
-		pcbBloqueadoAReady();
-
-		free(pcb);
-
-	 }
+	}
  }
 
 void pcbBloqueadoAReady(){
@@ -444,44 +432,53 @@ void pcbBloqueadoAReady(){
 	 }
 
 
-	 pthread_mutex_lock(&mutexListaSemAumentados);
-	 if(!list_is_empty(listaSemAumentados)){
 
-		for(indice = 0; indice < list_size(listaSemAumentados); ++indice) {
+	 while(1){
 
-			semIdBuffer = list_get(listaSemAumentados, indice);
+		 sem_wait(&sem_listaSemAumentados);
+		 pthread_mutex_lock(&mutexListaSemAumentados);
+		 if(!list_is_empty(listaSemAumentados)){
 
-			pthread_mutex_lock(&mutexListaProcesosBloqueados);
-
-			if(list_any_satisfy(listaProcesosBloqueados, (void*)verificaSemId)){
+			 for(indice = 0; indice < list_size(listaSemAumentados); ++indice) {
 
 
-				semYPCB = list_remove_by_condition(listaProcesosBloqueados,(void*)verificaSemId);
+				 semIdBuffer = list_get(listaSemAumentados, indice);
 
-				list_remove(listaSemAumentados, indice);
+				 pthread_mutex_lock(&mutexListaProcesosBloqueados);
 
-				pthread_mutex_lock(&mutexColaBloqueados);
-				pcbADesbloquear = list_remove_by_condition(colaBloqueados, (void*)verificaIdPCB);
-				pthread_mutex_unlock(&mutexColaBloqueados);
+				 if(list_any_satisfy(listaProcesosBloqueados, (void*)verificaSemId)){
 
-				pthread_mutex_lock(&mutexColaListos);
-				list_add(colaListos, pcbADesbloquear);
-				pthread_mutex_unlock(&mutexColaListos);
-			}
-			pthread_mutex_unlock(&mutexListaProcesosBloqueados);
-		}
-	 }
-	 pthread_mutex_unlock(&mutexListaSemAumentados);
+					 semYPCB = list_remove_by_condition(listaProcesosBloqueados,(void*)verificaSemId);
 
+					 list_remove(listaSemAumentados, indice);
+
+					 pthread_mutex_lock(&mutexColaBloqueados);
+					 pcbADesbloquear = list_remove_by_condition(colaBloqueados, (void*)verificaIdPCB);
+					 pthread_mutex_unlock(&mutexColaBloqueados);
+
+					 pthread_mutex_lock(&mutexColaListos);
+					 list_add(colaListos, pcbADesbloquear);
+					 printf("\n\nReady Size: %d\n\n", list_size(colaListos));
+					 sem_post(&sem_colaReady);
+					 pthread_mutex_unlock(&mutexColaListos);
+				 }
+				 pthread_mutex_unlock(&mutexListaProcesosBloqueados);
+			 }
+		 }
+		 pthread_mutex_unlock(&mutexListaSemAumentados);
+	}
 	 /*free(semIdBuffer);
 	 free(semYPCB);
 	 free(pcbADesbloquear);*/
- }
+}
 
 void pcbEjecucionABloqueado(){
 
 	int indice;
 	t_semYPCB *semYPCB = malloc(sizeof(t_semYPCB));
+
+
+	sem_wait(&sem_ListaProcesosBloqueados);
 
 	printf("\n\nBloqueando Proceso\n\n");
 

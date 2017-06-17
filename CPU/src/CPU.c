@@ -728,11 +728,11 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 	send(socketKernel,&comandoWait,sizeof(char),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
-	send(socketKernel,(void*)identificadorSemAEnviar,tamanio,0);
-	printf("\n\nSEMAFORO: %s\n\n", identificadorSemAEnviar);
-	printf("\n\ntamanio: %d\n\n", tamanio);
+	send(socketKernel,identificadorSemAEnviar,tamanio,0);
 
 	recv(socketKernel,&bloquearScriptONo,sizeof(int),0);
+
+	printf("\n\nEXPROPIAR %d\n\n", bloquearScriptONo);
 
 	if(bloquearScriptONo < 0){
 		cpuBloqueada = 0;
