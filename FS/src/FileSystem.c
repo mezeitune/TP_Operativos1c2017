@@ -80,9 +80,35 @@ int main(void){
 
 
 	//*********************************************************************
+	/*int cuantosBloquesMasNecesito=9;
+	int j;
+	int r=0;
+	int bloqs[cuantosBloquesMasNecesito];
 
+	for(j=0;j<cuantosBloquesMasNecesito;j++){
+		bloqs[j]=0;
+	}
 
+	int g;
+	for(g=0;g<cantidadBloques;g++){
 
+        bool bit = bitarray_test_bit(bitarray,g);
+        if(bit==0){
+        	if(sizeof(bloqs)==cuantosBloquesMasNecesito){
+        		break;
+        	}else{
+            	bloqs[r]=g;
+            	r++;
+        	}
+
+        }
+	}
+
+	int s;
+	for(s=0;s<sizeof(bloqs);s++){
+
+       printf("%d",bloqs[s]);
+	}*/
    	printf("\\\\\\\\\\\\\\\\\\\\\\\\ \n\n\n\n\n");
 
 

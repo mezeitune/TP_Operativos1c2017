@@ -278,12 +278,63 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
 
+
+		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+		int d=0;
+		while(!(arrayBloques[d] == NULL)){
+			d++;
+		}
+		char *nombreBloque = string_new();
+		string_append(&nombreBloque, "../Bloque/");
+		string_append(&nombreBloque, arrayBloques[d]);
+		string_append(&nombreBloque, ".bin");
 		//ver de asignar mas bloques en caso de ser necesario
-		//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
-		//sino guardamos en los bloques deseados
-		//actualizamos el bitmap
-		//actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
-		//y enviamos un buen send
+		int cantRestante=tamanioBloques-cantBytesFile(nombreBloque);
+		if(tamanoBuffer<cantRestante){
+			adx_store_data(nombreBloque,buffer);
+
+			//send diciendo que todo esta bien
+		}else{
+			int cuantosBloquesMasNecesito=tamanoBuffer/tamanioBloques;
+			if((tamanoBuffer%tamanioBloques)>0){
+				cuantosBloquesMasNecesito++;
+			}
+			//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
+			int j;
+			int bloquesEncontrados=0;
+			int bloqs[cuantosBloquesMasNecesito];
+			for(j=0;j<cantidadBloques;j++){
+
+		        bool bit = bitarray_test_bit(bitarray,j);
+		        if(bit==0){
+		        	//guardar en array bloqs los bloques que voy encontrando
+		        	bloquesEncontrados++;
+		        }
+			}
+
+			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
+				//guardamos en los bloques deseados
+					//va a haber que recortar el string para que los bytes entren en el bloque
+				//actualizamos el bitmap
+				//actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
+
+
+
+				validado=1;
+				//y enviamos un buen send
+
+			}else{
+				validado=0;
+				//send con error
+			}
+
+
+
+		}
+
+
+
+
 
 	} else {
 		validado=0;
