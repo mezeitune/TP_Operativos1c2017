@@ -86,9 +86,10 @@ void crearArchivoFunction(int socket_cliente){
 		string_append(&dataAPonerEnFile, "TAMANIO=");
 		string_append(&dataAPonerEnFile, tamanioBloquesEnChar);
 		string_append(&dataAPonerEnFile,"\n");
-		string_append(&dataAPonerEnFile, "BLOQUES=");
+		string_append(&dataAPonerEnFile, "BLOQUES=[");
 		char* numerito=string_itoa(bloqueEncontrado);
 		string_append(&dataAPonerEnFile,numerito);
+		string_append(&dataAPonerEnFile,"]");
 
 		adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
 
@@ -209,7 +210,8 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 						if(t==(d+cantidadBloquesQueNecesito)){
 							int sizeQuePido=size-offset;
 							int offsetQuePido=0;
-							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+							char* data=obtenerBytesDeUnArchivo(fp,offsetQuePido,sizeQuePido);
+							string_append(infoTraidaDeLosArchivos,data);
 						}else if(t==inicial){
 
 							int offsetQuePido=offset-(tamanioBloques*u);
@@ -301,6 +303,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 			}
 			//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
 			int j;
+			int r=0;
 			int bloquesEncontrados=0;
 			int bloqs[cuantosBloquesMasNecesito];
 			for(j=0;j<cantidadBloques;j++){
@@ -308,17 +311,82 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		        bool bit = bitarray_test_bit(bitarray,j);
 		        if(bit==0){
 		        	//guardar en array bloqs los bloques que voy encontrando
+		        	if(r==cuantosBloquesMasNecesito){
+		        		break;
+		        	}else{
+		            	bloqs[r]=j;
+		            	r++;
+		        	}
 		        	bloquesEncontrados++;
 		        }
 			}
 
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
 				//guardamos en los bloques deseados
-					//va a haber que recortar el string para que los bytes entren en el bloque
-				//actualizamos el bitmap
+
+				int s;
+				char* loQueVaQuedandoDeBuffer=(char*)buffer;
+				for(s=0;s<cuantosBloquesMasNecesito;s++){
+
+					char *nombreBloque = string_new();
+					string_append(&nombreBloque, "../Bloque/");
+					char* numerito=string_itoa(bloqs[s]);
+					string_append(&nombreBloque, numerito);
+					string_append(&nombreBloque, ".bin");
+
+
+					if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques){
+						//cortar el string
+						char* recortado=string_substring_until(loQueVaQuedandoDeBuffer, tamanioBloques);
+						adx_store_data(nombreBloque,recortado);
+						loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
+
+					}else{
+						//mandarlo todo de una
+						adx_store_data(nombreBloque,loQueVaQuedandoDeBuffer);
+					}
+
+
+
+					//actualizamos el bitmap
+					bitarray_set_bit(bitarray,bloqs[s]);
+
+				}
+
+
+
+
 				//actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
+				FILE *fp = fopen(nombreArchivoRecibido, "w");//Para que borre todo lo que tenia antes
+				char *dataAPonerEnFile = string_new();
+				string_append(&dataAPonerEnFile, "TAMANIO=");
+				char* tamanioArchivoViejo=obtTamanioArchivo(nombreArchivoRecibido);
+				int tamanioArchivoViejoInt=atoi(tamanioArchivoViejo);
+				int tamanioNuevo=tamanioArchivoViejoInt+(cuantosBloquesMasNecesito*tamanioBloques);
+				char* tamanioNuevoChar=string_itoa(tamanioNuevo);
+				string_append(&dataAPonerEnFile, tamanioNuevoChar);
+				string_append(&dataAPonerEnFile,"\n");
+				string_append(&dataAPonerEnFile, "BLOQUES=[");
+				int z;
 
+				   char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+				   int d=0;
+					   while(!(arrayBloques[d] == NULL)){
+						   string_append(&dataAPonerEnFile,arrayBloques[d]);
+						   string_append(&dataAPonerEnFile,",");
+					      d++;
+					   }
+				for(z=0;z<cuantosBloquesMasNecesito;z++){
+					char* bloqueString=string_itoa(bloqs[z]);
+					string_append(&dataAPonerEnFile,bloqueString);
+					if(!(z==(cuantosBloquesMasNecesito-1))){
+						string_append(&dataAPonerEnFile,",");
+					}
+				}
 
+				string_append(&dataAPonerEnFile,"]");
+
+				adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
 
 				validado=1;
 				//y enviamos un buen send

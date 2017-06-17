@@ -88,6 +88,15 @@ char** obtArrayDeBloquesDeArchivo(char* ruta){
 }
 
 
+char* obtTamanioArchivo(char* ruta){
+	configuracion_FS = config_create(ruta);
+
+	return config_get_string_value(configuracion_FS,"TAMANIO");
+
+
+
+}
+
 
 
 void imprimirConfiguraciones(){
