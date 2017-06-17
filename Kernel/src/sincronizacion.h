@@ -30,7 +30,8 @@ pthread_mutex_t mutex_masterSet;
 pthread_mutex_t mutexListaContable;
 pthread_mutex_t mutexListaCodigo;
 pthread_mutex_t mutexListaSemaforos;
-
+pthread_mutex_t mutexListaProcesosBloqueados;
+pthread_mutex_t mutexListaSemAumentados;
 
 
 
@@ -42,7 +43,7 @@ sem_t sem_CPU;
 sem_t sem_ordenSelect;
 sem_t sem_ordenUI;
 sem_t sem_listaFinQuantum;
-
+sem_t sem_ListaProcesosBloqueados;
 
 void inicializarSemaforos(){
 		pthread_mutex_init(&mutexColaNuevos,NULL);
@@ -61,6 +62,8 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexNuevoProceso,NULL);
 		pthread_mutex_init(&mutexListaCodigo,NULL);
 		pthread_mutex_init(&mutexListaSemaforos,NULL);
+		pthread_mutex_init(&mutexListaProcesosBloqueados,NULL);
+		pthread_mutex_init(&mutexListaSemAumentados,NULL);
 
 
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
@@ -71,7 +74,7 @@ void inicializarSemaforos(){
 		sem_init(&sem_ordenSelect,0,0);
 		sem_init(&sem_ordenUI,0,1);
 		sem_init(&sem_listaFinQuantum,0,0);
-
+		sem_init(&sem_ListaProcesosBloqueados,0,0);
 
 }
 

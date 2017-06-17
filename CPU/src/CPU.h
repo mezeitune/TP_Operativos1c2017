@@ -53,6 +53,7 @@ void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 void connectionHandlerKernel(int socketAceptado, char orden);
 //-----------------------------------------------------------------------------------------------------------------
 void expropiar();
+void expropiarPorRR();
 void CerrarPorSignal();
 void stackOverflow();
 char* devolverStringFlags(t_banderas flags);

@@ -190,10 +190,7 @@ void ejecutarInstruccion(){
 	free(instruccion);
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
 
-	if(cpuExpropiada == -1){
-		expropiar();
-	}
-	if(cpuBloqueada == 0){
+	if(cpuExpropiada == -1 || cpuBloqueada == 0 || cpuFinalizada == 0){
 		expropiar();
 	}
 }
@@ -241,26 +238,33 @@ void CerrarPorSignal(){
 	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
 	 //hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
 	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
+	free(pcb_actual);
 	exit(1);
 }
 void expropiar(){
 
+	if(cpuExpropiada == -1) finalizar();
+	if(cpuFinalizada == 0) CerrarPorSignal();
+	if(cpuBloqueada == 0)log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
+	else expropiarPorRR();
+
+
+}
+
+void expropiarPorRR(){
+
 	char comandoExpropiarCpu = 'R';
 
-	if(cpuExpropiada == -1) finalizar();
-	if(cpuFinalizada == 0)	CerrarPorSignal();
-	else {
-		send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
-	}
-
+	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	if(cpuBloqueada == 0)
-		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
-	else log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
-	free(pcb_actual);
+	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
+
 	esperarPCB();
 }
+
+
+
 //------------------------------MANEJO DE ESTADOS DE CPU--------------------------------------
 
 //-----------------------------PEDIDOS AL KERNEL-----------------------------------------
@@ -721,13 +725,20 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
 	int tamanio = sizeof(int)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
+
 	send(socketKernel,&comandoWait,sizeof(char),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
-	send(socketKernel,identificadorSemAEnviar,tamanio,0);
+	send(socketKernel,(void*)identificadorSemAEnviar,tamanio,0);
+	printf("\n\nSEMAFORO: %s\n\n", identificadorSemAEnviar);
+	printf("\n\ntamanio: %d\n\n", tamanio);
+
 	recv(socketKernel,&bloquearScriptONo,sizeof(int),0);
-	if(bloquearScriptONo<0){
+
+	if(bloquearScriptONo < 0){
 		cpuBloqueada = 0;
+		serializarPcbYEnviar(pcb_actual, socketKernel);
 		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
+		esperarPCB();
 	}else {
 		log_info(loggerConPantalla, "Script ANSISOP pid: %d sigue su ejecucion normal", pcb_actual->pid);
 	}

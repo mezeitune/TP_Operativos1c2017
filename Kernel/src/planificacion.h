@@ -24,12 +24,9 @@
 #include "pcb.h"
 #include "conexionMemoria.h"
 #include "contabilidad.h"
+#include "semaforosAnsisop.h"
+#include "comandosCPU.h"
 
-typedef struct CPU {
-	int enEjecucion;
-	int pid;
-	int socket;
-}t_cpu;
 
 int pid=0;
 typedef struct CONSOLA{
@@ -69,9 +66,18 @@ t_list* listaCodigosProgramas;
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
 
+/*----MEDIANO PLAZO--------*/
+
+void planificarMedianoPlazo();
+void pcbBloqueadoAReady();
+void pcbEjecucionABloqueado();
+pthread_t planificadorMedianoPlazo;
+
+/*----MEDIANO PLAZO--------*/
+
 /*----CORTO PLAZO--------*/
 
-void* planificarCortoPlazo();
+void planificarCortoPlazo();
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex);
 void finQuantumAReady();
 void agregarAFinQuantum(t_pcb* pcb);
@@ -101,7 +107,7 @@ t_list* colaEjecucion;
 t_list* colaBloqueados;
 
 t_list* listaConsolas;
-t_list* listaCPU;
+
 t_list* listaEnEspera;
 
 /*---PLANIFICACION GENERAL-------*/
@@ -192,7 +198,7 @@ void administrarFinProcesos(){
 					pthread_mutex_lock(&mutexListaEspera);
 					list_add(listaEnEspera, proceso);
 					pthread_mutex_unlock(&mutexListaEspera);
-					disminuirGradoMultiprogramacion();/*TODO: No se si hay que dismimnuir aca*/
+					/*No hay que disminuir aca lo diminuyo cuando lo saco de ejecucion*/
 				}
 	}
 }
@@ -256,8 +262,6 @@ void finalizarHiloPrograma(int pid){
 	free(consola);
 }
 
-
-
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
 	log_info(loggerConPantalla, "Inicializando proceso en memoria--->PID: %d", proceso->pid);
 	if((pedirMemoria(proceso))< 0){
@@ -298,7 +302,7 @@ void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex){
 	pthread_mutex_unlock(&mutex);
 }
 
-void* planificarCortoPlazo(){
+void planificarCortoPlazo(){
 	t_pcb* pcbListo;
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
@@ -347,8 +351,6 @@ void* planificarCortoPlazo(){
 	}
 }
 
-
-
 void finQuantumAReady(){
 
 	int indice;
@@ -371,8 +373,6 @@ void finQuantumAReady(){
 	pthread_mutex_unlock(&mutexListaFinQuantum);
 }
 
-
-
 void agregarAFinQuantum(t_pcb* pcb){
 
 	_Bool verificarPidPcb(t_pcb* unPcb){
@@ -393,6 +393,118 @@ void agregarAFinQuantum(t_pcb* pcb){
 }
 
 /*------------------------CORTO PLAZO-----------------------------------------*/
+
+
+
+
+
+
+
+
+/*------------------------MEDIANO PLAZO-----------------------------------------*/
+
+ void planificarMedianoPlazo(){
+
+	 while(1){
+
+
+		int i;
+		t_pcb *pcb = malloc(sizeof(t_pcb));
+
+		sem_wait(&sem_ListaProcesosBloqueados);
+
+		pcbEjecucionABloqueado();
+
+		for (i = 0; i < list_size(colaBloqueados); ++i) {
+			pcb = list_get(colaBloqueados, i);
+			printf("\n\nproceso Bloqueado: %d\n\n",pcb->pid);
+		}
+
+
+		pcbBloqueadoAReady();
+
+		free(pcb);
+
+	 }
+ }
+
+void pcbBloqueadoAReady(){
+
+	 int indice;
+	 char *semIdBuffer = malloc(sizeof(char));
+	 t_semYPCB *semYPCB = malloc(sizeof(t_semYPCB));
+	 t_pcb *pcbADesbloquear = malloc(sizeof(t_pcb));
+
+	 _Bool verificaSemId(t_semYPCB *semYPCBBuffer){
+		 return (semYPCBBuffer->idSemaforo == semIdBuffer);
+	 }
+
+	 _Bool verificaIdPCB(t_pcb *pcbBuffer){
+	 		 return (pcbBuffer->pid == semYPCB->pcb->pid);
+	 }
+
+
+	 pthread_mutex_lock(&mutexListaSemAumentados);
+	 if(!list_is_empty(listaSemAumentados)){
+
+		for(indice = 0; indice < list_size(listaSemAumentados); ++indice) {
+
+			semIdBuffer = list_get(listaSemAumentados, indice);
+
+			pthread_mutex_lock(&mutexListaProcesosBloqueados);
+
+			if(list_any_satisfy(listaProcesosBloqueados, (void*)verificaSemId)){
+
+
+				semYPCB = list_remove_by_condition(listaProcesosBloqueados,(void*)verificaSemId);
+
+				list_remove(listaSemAumentados, indice);
+
+				pthread_mutex_lock(&mutexColaBloqueados);
+				pcbADesbloquear = list_remove_by_condition(colaBloqueados, (void*)verificaIdPCB);
+				pthread_mutex_unlock(&mutexColaBloqueados);
+
+				pthread_mutex_lock(&mutexColaListos);
+				list_add(colaListos, pcbADesbloquear);
+				pthread_mutex_unlock(&mutexColaListos);
+			}
+			pthread_mutex_unlock(&mutexListaProcesosBloqueados);
+		}
+	 }
+	 pthread_mutex_unlock(&mutexListaSemAumentados);
+
+	 /*free(semIdBuffer);
+	 free(semYPCB);
+	 free(pcbADesbloquear);*/
+ }
+
+void pcbEjecucionABloqueado(){
+
+	int indice;
+	t_semYPCB *semYPCB = malloc(sizeof(t_semYPCB));
+
+	printf("\n\nBloqueando Proceso\n\n");
+
+	pthread_mutex_lock(&mutexListaProcesosBloqueados);
+	for (indice = 0; indice < list_size(listaProcesosBloqueados); ++indice) {
+
+
+		semYPCB = list_get(listaProcesosBloqueados, indice);
+
+		pthread_mutex_unlock(&mutexListaProcesosBloqueados);
+
+		pthread_mutex_lock(&mutexColaBloqueados);
+		list_add(colaBloqueados, semYPCB->pcb);
+		pthread_mutex_unlock(&mutexColaBloqueados);
+
+	}
+	pthread_mutex_unlock(&mutexListaProcesosBloqueados);
+	//free(semYPCB);
+}
+
+
+/*------------------------MEDIANO PLAZO-----------------------------------------*/
+
 
 /*-------------------PLANIFICACION GENERAL------------------------------------*/
 
@@ -525,7 +637,6 @@ void listaEsperaATerminados(){
 	t_pcb* pcbBuffer;
 	t_pcb* aux;
 
-	/*TODO: Nacho ---> Hay que disminuir el grado de multiprogramacion para cada proceso que lleves a Terminados*/
 	pthread_mutex_lock(&mutexListaEspera);
 	if(!list_is_empty(listaEnEspera)){
 
@@ -537,6 +648,7 @@ void listaEsperaATerminados(){
 		for (indice = 0; indice < list_size(listaEnEspera); indice++) {
 
 			pcbBuffer = list_remove(listaEnEspera,indice);
+			disminuirGradoMultiprogramacion(); // ACA TA
 
 			for (indice = 0; indice < list_size(colaEjecucion)-1; ++indice) {
 				aux = list_get(colaEjecucion,indice);

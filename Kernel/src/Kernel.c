@@ -35,6 +35,7 @@
 #include "capaFS.h"
 #include "contabilidad.h"
 #include "semaforosAnsisop.h"
+#include "comandosCPU.h"
 
 typedef struct
 {
@@ -99,6 +100,7 @@ void guardarValorDeSharedVar(int socket);
 //----------shared vars-----------//
 
 
+
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
@@ -113,7 +115,8 @@ int main(void) {
 	obtenerVariablesCompartidasDeLaConfig();
 	obtenerSemaforosANSISOPDeLasConfigs();
 
-	pthread_create(&planificadorCortoPlazo, NULL,planificarCortoPlazo,NULL);
+	pthread_create(&planificadorCortoPlazo, NULL,(void*)planificarCortoPlazo,NULL);
+	pthread_create(&planificadorMedianoPlazo, NULL,(void*)planificarMedianoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
 
@@ -131,13 +134,11 @@ void connectionHandler(int socketAceptado, char orden) {
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
-	_Bool verificaSocket(t_cpu* unaCpu){
-		return (unaCpu->socket == socketAceptado);
-	}
+
 
 	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
 	t_pcb* pcb;
-	t_cpu *cpu = malloc(sizeof(t_cpu));
+
 	char comandoDesdeCPU;
 
 	switch (orden) {
@@ -167,18 +168,13 @@ void connectionHandler(int socketAceptado, char orden) {
 		case 'R':
 					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
 
-					pthread_mutex_lock(&mutexListaCPU);
-					cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
-					cpu->enEjecucion = 0;
-					list_add(listaCPU,cpu);
-					pthread_mutex_unlock(&mutexListaCPU);
 
+					cpuEjecucionAOciosa(socketAceptado);
 
 					pcb = recibirYDeserializarPcb(socketAceptado);
 					actualizarRafagas(pcb->pid,cantidadDeRafagas);
 					agregarAFinQuantum(pcb);
 
-					sem_post(&sem_CPU);
 					break;
 		case 'K':
 					recibirPidDeCpu(socketAceptado);
@@ -205,6 +201,10 @@ void connectionHandler(int socketAceptado, char orden) {
 	return;
 
 }
+
+
+
+
 
 int atenderNuevoPrograma(int socketAceptado){
 		log_info(loggerConPantalla,"Atendiendo nuevo programa");
@@ -473,22 +473,27 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 
 
 void inicializarListas(){
-	colaNuevos= list_create();
-	colaListos= list_create();
-	colaTerminados= list_create();
+	colaNuevos = list_create();
+	colaListos = list_create();
+	colaTerminados = list_create();
 	colaEjecucion = list_create();
-	colaBloqueados=list_create();
+	colaBloqueados = list_create();
 
 	listaAdmHeap = list_create();
 
 	listaConsolas = list_create();
 	listaCPU = list_create();
-	listaCodigosProgramas=list_create();
-	listaTablasArchivosPorProceso=list_create();
+
+	listaCodigosProgramas = list_create();
+	listaTablasArchivosPorProceso = list_create();
+
 	listaFinQuantum = list_create();
 	listaEnEspera = list_create();
-	listaSemaforosAsociados=list_create();
-	listaContable=list_create();
+	listaContable = list_create();
+
+	listaSemaforosAsociados = list_create();
+	listaProcesosBloqueados = list_create();
+	listaSemAumentados = list_create();
 }
 void obtenerVariablesCompartidasDeLaConfig(){
 	int tamanio = tamanioArray(shared_vars);
