@@ -56,6 +56,10 @@ void obtenerSemaforosANSISOPDeLasConfigs(){
 		semaforo->id=semId[i];
 		semaforo->valor = strtol(semInit[i], NULL, 10);
 
+
+		printf("\n\nSemaforo: %s\n", semaforo->id);
+		printf("Valor inicial: %d\n\n", semaforo->valor);
+
 		t_semaforoAsociado* semaforoAsociado = malloc(sizeof(t_semaforoAsociado));
 		semaforoAsociado->pids=list_create();
 		semaforoAsociado->semaforo = semaforo;
@@ -72,27 +76,21 @@ void waitSemaforoAnsisop(int socketCPU){
 
 	recv(socketCPU,&tamanio,sizeof(int),0);
 
-	printf("\n\ntamanio: %d\n\n", tamanio);
-
 	//semaforo = malloc(tamanio);
 
 	recv(socketCPU,&semaforo,tamanio,0);
 
 	log_info(loggerConPantalla, "Procesando instruccion atomica Wait--->Semaforo: %c", semaforo);
+
+	if((expropiar = consultarSemaforo(&semaforo)) > 0) disminuirSemaforo(&semaforo);//ESTO ESTA BIEN ASI
+
 	printf("\n\nSEMAFORO: %c\n\n", semaforo);
-
-
-	expropiar = consultarSemaforo(&semaforo);
-	disminuirSemaforo(&semaforo);
-
 	send(socketCPU,&expropiar,sizeof(int),0);
 
 
 	if(expropiar == -1) {
 
 		semYPCB->pcb = recibirYDeserializarPcb(socketCPU);
-
-		printf("\n\nPCB:%d\n\n", semYPCB->pcb->pid);
 
 		cpuEjecucionAOciosa(socketCPU);
 
@@ -109,27 +107,27 @@ void waitSemaforoAnsisop(int socketCPU){
 }
 void signalSemaforoAnsisop(int socketAceptado){
 	int tamanio;
-	char* semaforo;
+	char semaforo;
 
 	t_semaforoAsociado *semAumentado;
 
 	recv(socketAceptado,&tamanio,sizeof(int),0);
-	semaforo = malloc(tamanio);
-	recv(socketAceptado,semaforo,tamanio,0);
+	//semaforo = malloc(tamanio);
+	recv(socketAceptado,&semaforo,tamanio,0);
 
-	semAumentado = aumentarSemaforo(semaforo);
+	semAumentado = aumentarSemaforo(&semaforo);
 
-	log_info(loggerConPantalla, "Procesando instruccion atomica Signal--->Semaforo: %s", semaforo);
-	printf("\n\nSemaforo Aumentado: %s\n\n", semAumentado->semaforo->id);
+	log_info(loggerConPantalla, "Procesando instruccion atomica Signal--->Semaforo: %c", semaforo);
 
+	printf("\n\nSEMAFORO AUMENTADO %s\n\n:",semAumentado->semaforo->id);
 
 	pthread_mutex_lock(&mutexListaSemAumentados);
-	if(semAumentado->semaforo->valor > 0) list_add(listaSemAumentados, semAumentado->semaforo->id);
+	if(semAumentado->semaforo->valor > 0) list_add(listaSemAumentados, (void*)semAumentado->semaforo->id);
 	pthread_mutex_unlock(&mutexListaSemAumentados);
 
 	sem_post(&sem_listaSemAumentados);
 	//free(semAumentado);
-	//chequearColaDeSemaforo(semaforo);
+	//chequearColaDeSemaforo(semaforo); NO LO USO
 }
 
 /*void chequearColaDeSemaforo(char* semaforoId){
@@ -148,7 +146,7 @@ void signalSemaforoAnsisop(int socketAceptado){
 }*/
 
 int consultarSemaforo(char* semaforoId){
-	int expropiar;
+	int expropiar = 1;
 	t_semaforoAsociado* semaforoAsociado = malloc(sizeof(t_semaforo));
 
 	_Bool verificaId(t_semaforoAsociado* semaforo){
@@ -158,8 +156,7 @@ int consultarSemaforo(char* semaforoId){
 	pthread_mutex_lock(&mutexListaSemaforos);
 	semaforoAsociado = list_remove_by_condition(listaSemaforosAsociados,(void*)verificaId);
 
-	if(semaforoAsociado->semaforo->valor <= 0) expropiar = -1;
-	else expropiar = 1;
+	if(semaforoAsociado->semaforo->valor < 1) expropiar = -1;
 
 	list_add(listaSemaforosAsociados,semaforoAsociado);
 	pthread_mutex_unlock(&mutexListaSemaforos);
@@ -185,12 +182,12 @@ void disminuirSemaforo(char* semaforoId){
 	pthread_mutex_lock(&mutexListaSemaforos);
 
 	semaforoAsociado = list_remove_by_condition(listaSemaforosAsociados,(void*)verificaId);
+	printf("\n\nSemaforo a Disminuir: %s\n\n", semaforoAsociado->semaforo->id);
+	printf("\n\nValor Semaforo a disminuir: %d\n\n", semaforoAsociado->semaforo->valor);
 	semaforoAsociado->semaforo->valor -= 1;
-
+	printf("\n\nValor Semaforo a disminuido: %d\n\n", semaforoAsociado->semaforo->valor);
 
 	list_add(listaSemaforosAsociados,semaforoAsociado);
-	printf("\n\nSemaforo a Disminuir: %s\n\n", semaforoAsociado->semaforo->id);
-	printf("\n\nValor Semaforo a Disminuir: %d\n\n", semaforoAsociado->semaforo->valor);
 
 	pthread_mutex_unlock(&mutexListaSemaforos);
 
@@ -209,11 +206,11 @@ t_semaforoAsociado *aumentarSemaforo(char* semaforoId){
 
 	pthread_mutex_lock(&mutexListaSemaforos);
 	semaforoAsociado = list_remove_by_condition(listaSemaforosAsociados,(void*)verificaId);
-	semaforoAsociado->semaforo->valor += 1;
-
 	printf("\n\nSemaforo a Aumentar: %s\n\n", semaforoAsociado->semaforo->id);
-	printf("\n\nValor Semaforo a Aumentar: %d\n\n", semaforoAsociado->semaforo->valor);
 
+	printf("\n\nValor Semaforo a Aumentar: %d\n\n", semaforoAsociado->semaforo->valor);
+	semaforoAsociado->semaforo->valor += 1;
+	printf("\n\nValor Semaforo a Aumentado: %d\n\n", semaforoAsociado->semaforo->valor);
 	list_add(listaSemaforosAsociados,semaforoAsociado);
 
 	pthread_mutex_unlock(&mutexListaSemaforos);

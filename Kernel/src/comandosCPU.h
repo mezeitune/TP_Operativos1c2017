@@ -42,7 +42,7 @@ void cpuEjecucionAOciosa(int socketCPU){
 	pthread_mutex_unlock(&mutexListaCPU);
 
 
-	printf("\n\nENTRE\n\n");
+
 	sem_post(&sem_CPU);
 }
 
