@@ -53,6 +53,7 @@ int retardo_memoria;
 int contadorConexiones=0;
 pthread_t thread_id, thread_id2;
 t_config* configuracion_memoria;
+int sizeStructsAdmMemoria;
 
 typedef struct
 {
@@ -130,6 +131,7 @@ void leerContenidoEnCache(int entrada,char** buffer, int size, int offset);
 void iniciarEntradaEnCache(int pid, int pagina);
 void borrarEntradasDeProcesoEnCache(int pid);
 
+int funcionHash(int pid, int pagina);
 
 int main(void)
 {
@@ -176,7 +178,7 @@ void leerConfiguracion(char* ruta)
 
 void inicializarMemoriaAdm()
 {
-	int sizeStructsAdmMemoria = ((sizeof(struct_adm_memoria)*marcos)+marco_size-1)/marco_size;
+	sizeStructsAdmMemoria = ((sizeof(struct_adm_memoria)*marcos)+marco_size-1)/marco_size;
 
 	log_info(loggerConPantalla,"Las estructuras administrativas de la memoria ocupan %i frames\n",sizeStructsAdmMemoria);
 
@@ -612,7 +614,7 @@ void borrarProgramDeStructAdms(int pid)
 
 int buscarFrameDePaginaDeProceso(int pid, int pagina)
 {
-	int i = 0;
+	int i = funcionHash(pid,pagina);
 	int desplazamiento = sizeof(struct_adm_memoria);
 	struct_adm_memoria aux;
 	while(i<marcos)
@@ -624,6 +626,18 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 		}
 		i++;
 	}
+	i = 0;
+	while(i<funcionHash(pid,pagina))
+	{
+		memcpy(&aux, bloque_Memoria + i*desplazamiento,sizeof(struct_adm_memoria));
+		if(aux.pid == pid && aux.num_pag == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
+		{
+			return aux.frame;
+		}
+		i++;
+	}
+
+
 	return -1;
 }
 
@@ -1104,7 +1118,9 @@ void borrarEntradasDeProcesoEnCache(int pid)
 	}
 }
 
-
+int funcionHash(int pid, int pagina){
+	int valorHash = (sizeStructsAdmMemoria + (pid-1) + pagina)%marcos;
+}
 
 
 
