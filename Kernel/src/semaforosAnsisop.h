@@ -67,7 +67,7 @@ void waitSemaforoAnsisop(int socketCPU){
 	int expropiar;
 	char semaforo;
 
-	t_semYPCB *semYPCB;
+	t_semYPCB *semYPCB = malloc(sizeof(t_semYPCB));
 
 
 	recv(socketCPU,&tamanio,sizeof(int),0);
