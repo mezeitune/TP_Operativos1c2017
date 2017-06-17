@@ -191,7 +191,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 				cantidadBloquesQueNecesito++;
 			}
 
-		   char *infoTraidaDeLosArchivos = string_new();
+		   char* infoTraidaDeLosArchivos = string_new();
 		   int hizoLoQueNecesita=0;
 		   while(!(arrayBloques[d] == NULL)){
 
@@ -211,17 +211,17 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 							int sizeQuePido=size-offset;
 							int offsetQuePido=0;
 							char* data=obtenerBytesDeUnArchivo(fp,offsetQuePido,sizeQuePido);
-							string_append(infoTraidaDeLosArchivos,data);
+							string_append(&infoTraidaDeLosArchivos,data);
 						}else if(t==inicial){
 
 							int offsetQuePido=offset-(tamanioBloques*u);
 							int sizeQuePido=tamanioBloques-offsetQuePido;
-							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
 
 						}else{
 							int sizeQuePido=tamanioBloques;
 							int offsetQuePido=0;
-							string_append(infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
 
 						}
 
