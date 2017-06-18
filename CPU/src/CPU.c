@@ -723,7 +723,7 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	char* identificadorSemAEnviar = string_new();
 	int bloquearScriptONo;
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
-	int tamanio = sizeof(int)*strlen(identificadorSemAEnviar);
+	int tamanio = sizeof(char)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
 
 	send(socketKernel,&comandoWait,sizeof(char),0);
@@ -756,7 +756,7 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
-	int tamanio = sizeof(int)*strlen(identificadorSemAEnviar);
+	int tamanio = sizeof(char)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a subir: %s", string_cortado[0]);
 	send(socketKernel,&comandoSignal,sizeof(char),0);
 	send(socketKernel,&tamanio,sizeof(int),0);

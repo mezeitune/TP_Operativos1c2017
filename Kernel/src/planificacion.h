@@ -432,36 +432,20 @@ void pcbBloqueadoAReady(){
 	 		 return (pcbBuffer->pid == semYPCB->pcb->pid);
 	 }
 
-
-
 	 while(1){
-
-		 int var;
-
 		 sem_wait(&sem_listaSemAumentados);
+
 		 pthread_mutex_lock(&mutexListaSemAumentados);
 		 if(!list_is_empty(listaSemAumentados)){
-
 			 for(indice = 0; indice < list_size(listaSemAumentados); indice++) {
-					 printf("\n\nHOLAAAA\n\n");
 
 				 semIdBuffer = list_get(listaSemAumentados, indice);
 				 printf("\n\nSEMIDBUFFER: %s\n\n", semIdBuffer);
 
 				 pthread_mutex_lock(&mutexListaProcesosBloqueados);
-
-
-				 for (var = 0; var < list_size(listaProcesosBloqueados); ++var) {
-					 printf("\n\nADASDADADSASD :%s\n\n", (char*)list_get(listaProcesosBloqueados, var));
-
-				}
-
-
 				 if(list_any_satisfy(listaProcesosBloqueados, (void*)verificaSemId)){
 
 					 semYPCB = list_remove_by_condition(listaProcesosBloqueados,(void*)verificaSemId);
-
-
 
 					 list_remove(listaSemAumentados, indice);
 
@@ -469,8 +453,7 @@ void pcbBloqueadoAReady(){
 					 pcbADesbloquear = list_remove_by_condition(colaBloqueados, (void*)verificaIdPCB);
 					 pthread_mutex_unlock(&mutexColaBloqueados);
 
-					 printf("\n\nBloq Size Despues: %d\n\n", list_size(colaBloqueados));
-
+					 log_info(loggerConPantalla,"Cambiando proceso desde Bloqueados a Listos--->PID:%d",pcbADesbloquear->pid);
 					 pthread_mutex_lock(&mutexColaListos);
 					 list_add(colaListos, pcbADesbloquear);
 					 sem_post(&sem_colaReady);
@@ -479,6 +462,7 @@ void pcbBloqueadoAReady(){
 				 pthread_mutex_unlock(&mutexListaProcesosBloqueados);
 			 }
 		 }
+
 		 pthread_mutex_unlock(&mutexListaSemAumentados);
 	}
 	 /*free(semIdBuffer);

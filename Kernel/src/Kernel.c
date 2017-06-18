@@ -353,7 +353,7 @@ void imprimirPorConsola(socketAceptado){
 	mensaje=malloc(size);
 	recv(socketAceptado,mensaje,size,0);
 	recv(socketAceptado,&pid,sizeof(int),0);
-	log_info(loggerConPantalla,"Imprimiendo por consola--->PID:%d",pid);
+	log_info(loggerConPantalla,"Imprimiendo por consola--->PID:%d---Mensaje: %s",pid,mensaje);
 	informarConsola(buscarSocketHiloPrograma(pid),mensaje,size);
 	free(mensaje);
 }
