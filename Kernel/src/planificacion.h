@@ -412,8 +412,6 @@ pthread_t threadId;
 
 	 while(1){
 		pcbEjecucionABloqueado();
-
-
 	}
  }
 
@@ -478,16 +476,15 @@ void pcbEjecucionABloqueado(){
 
 	sem_wait(&sem_ListaProcesosBloqueados);
 
-	printf("\n\nBloqueando Proceso\n\n");
+	printf("\nBloqueando Proceso\n");
 
 	pthread_mutex_lock(&mutexListaProcesosBloqueados);
 	for (indice = 0; indice < list_size(listaProcesosBloqueados); ++indice) {
 
-
 		semYPCB = list_get(listaProcesosBloqueados, indice);
-
 		pthread_mutex_unlock(&mutexListaProcesosBloqueados);
 
+		log_info(loggerConPantalla,"Cambiando proceso desde Ejecutados a Bloqueados--->PID:%d",semYPCB->pcb->pid);
 		pthread_mutex_lock(&mutexColaBloqueados);
 		list_add(colaBloqueados, semYPCB->pcb);
 		pthread_mutex_unlock(&mutexColaBloqueados);
