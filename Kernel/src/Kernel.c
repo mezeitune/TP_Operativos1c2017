@@ -74,7 +74,7 @@ void handShakeCPU(int socketCPU);
 void interruptHandler(int socket,char orden);
 void imprimirPorConsola(int socketAceptado);
 int buscarSocketHiloPrograma(int pid);
-void buscarProcesoYTerminarlo(int pid);
+int buscarProcesoYTerminarlo(int pid);
 void excepcionReservaRecursos(int socketAceptado);
 void excepcionPlanificacionDetenida(int socket);
 void gestionarCierreConsola(int socket);
@@ -395,7 +395,7 @@ void eliminarSocket(int socket){
 	close(socket);
 }
 
-void buscarProcesoYTerminarlo(int pid){
+int buscarProcesoYTerminarlo(int pid){
 	log_info(loggerConPantalla,"Finalizando proceso--->PID: %d ",pid);
 
 	t_pcb *procesoATerminar;
@@ -419,9 +419,10 @@ void buscarProcesoYTerminarlo(int pid){
 			pthread_mutex_unlock(&mutexListaCPU);
 
 			if(cpuAFinalizar->enEjecucion != 2) send(cpuAFinalizar->socket, &comandoFinalizar,sizeof(char),0);
-			return;
+			return -1;
 		}
 		pthread_mutex_unlock(&mutexColaEjecucion);
+
 
 	pthread_mutex_lock(&mutexColaNuevos);
 	if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
@@ -449,6 +450,7 @@ void buscarProcesoYTerminarlo(int pid){
 	pthread_mutex_lock(&mutexColaTerminados); /*TODO: Agregar EXIT CODE*/
 	list_add(colaTerminados,procesoATerminar);
 	pthread_mutex_unlock(&mutexColaTerminados);
+	return 0;
 }
 
 
