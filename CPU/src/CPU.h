@@ -25,7 +25,6 @@
 #include <parser/parser.h>
 #include <commons/collections/list.h>
 #include "conexiones.h"
-#include "dummy_ansisop.h"
 #include <parser/metadata_program.h>
 #include "PCB.h"
 //-----------------------------------------------------------------------------------------------------------------

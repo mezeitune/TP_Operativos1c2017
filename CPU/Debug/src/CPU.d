@@ -1,10 +1,12 @@
-src/CPU.d: ../src/CPU.c ../src/CPU.h ../src/conexiones.h \
- ../src/dummy_ansisop.h ../src/PCB.h
+src/CPU.d: ../src/CPU.c ../src/PrimitivasDeInstrucciones.h ../src/CPU.h \
+ ../src/conexiones.h ../src/PCB.h ../src/PrimitivasKernel.h
+
+../src/PrimitivasDeInstrucciones.h:
 
 ../src/CPU.h:
 
 ../src/conexiones.h:
 
-../src/dummy_ansisop.h:
-
 ../src/PCB.h:
+
+../src/PrimitivasKernel.h:
