@@ -243,7 +243,6 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
 
 }
 void finalizarHiloPrograma(int pid){
-	log_info(loggerConPantalla,"Finalizando hilo programa %d",pid);
 	char* mensaje = malloc(sizeof(char)*10);
 
 	t_consola* consola = malloc(sizeof(t_consola));

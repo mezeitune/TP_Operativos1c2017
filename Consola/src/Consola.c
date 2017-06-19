@@ -53,7 +53,7 @@ void connectionHandler() {
 		pthread_mutex_lock(&mutex_crearHilo);
 
 		imprimirInterfaz();
-		scanf(" %c", &orden);
+		scanf("%c", &orden);
 
 		switch (orden) {
 			case 'I':
@@ -102,8 +102,6 @@ void finalizarPrograma(){
 				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
 				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
 				send(proceso->socketHiloKernel,&procesoATerminar, sizeof(int), 0);
-
-				printf("\n\nPROCESP; %d\n\n", proceso->pid);
 				list_add(listaHilosProgramas,proceso);
 			}else	log_error(loggerConPantalla,"\nPID incorrecto\n");
 

@@ -292,6 +292,7 @@ void interruptHandler(int socketAceptado,char orden){
 		case 'F':
 			log_warning(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
 			recv(socketAceptado,&pid,sizeof(int),0);
+			printf("Recibi pid\n");
 			finalizarProcesoVoluntariamente(pid);
 			break;
 		case 'P':
@@ -391,7 +392,6 @@ void eliminarSocket(int socket){
 	pthread_mutex_lock(&mutex_masterSet);
 	FD_CLR(socket,&master);
 	pthread_mutex_unlock(&mutex_masterSet);
-	log_info(loggerConPantalla,"Socket %d cerrado",socket);
 	close(socket);
 }
 

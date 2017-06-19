@@ -181,7 +181,10 @@ void imprimirListadoDeProcesos(t_list* listaPid){
 
 void finalizarProcesoVoluntariamente(int pid){
 	pthread_mutex_lock(&mutexNuevoProceso);
-	if(buscarProcesoYTerminarlo(pid)<0) return;
+	if(buscarProcesoYTerminarlo(pid)<0){
+		pthread_mutex_unlock(&mutexNuevoProceso);
+		return;
+	}
 	finalizarHiloPrograma(pid);
 	pthread_mutex_unlock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
