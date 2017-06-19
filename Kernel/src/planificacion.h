@@ -168,7 +168,6 @@ void administrarFinProcesos(){
 			pthread_mutex_lock(&mutexListaCPU);
 			cpu=list_remove_by_condition(listaCPU,(void*)verificaCpu);
 			send(cpu->socket,&ok,sizeof(char),0);
-			log_warning(loggerConPantalla,"Proceso finalizado exitosamente desde CPU %d",cpu->socket);
 			proceso= recibirYDeserializarPcb(cpu->socket);
 			cpu->enEjecucion=0;
 			list_add(listaCPU,cpu);
@@ -176,7 +175,7 @@ void administrarFinProcesos(){
 
 			sem_post(&sem_CPU);
 
-			log_info(loggerConPantalla, "Terminando proceso--->PID:%d", proceso->pid);
+			log_warning(loggerConPantalla, "Terminando proceso exitos desde CPU:%d--->PID:%d", cpu->socket,proceso->pid);
 			actualizarRafagas(proceso->pid,proceso->cantidadInstrucciones);
 
 				if(flagPlanificacion){
@@ -193,6 +192,7 @@ void administrarFinProcesos(){
 
 					finalizarHiloPrograma(proceso->pid);
 					liberarRecursosEnMemoria(proceso);
+					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
 				}else {
 
 					pthread_mutex_lock(&mutexListaEspera);
@@ -200,6 +200,7 @@ void administrarFinProcesos(){
 					pthread_mutex_unlock(&mutexListaEspera);
 					/*No hay que disminuir aca lo diminuyo cuando lo saco de ejecucion*/
 				}
+
 	}
 }
 
@@ -547,60 +548,6 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 			sem_post(&sem_administrarFinProceso);
 
 }
-	/*log_info(loggerConPantalla,"\nProceso finalizado exitosamente desde CPU %d",socketCPU);
-	t_pcb* pcbProcesoTerminado;
-	t_cpu *cpu;
-
-	_Bool verificarPidConsola(t_consola* consola){
-						return (consola->pid == pcbProcesoTerminado->pid);
-	}
-
-	_Bool verificarPid(t_pcb* pcb){
-		return (pcb->pid == pcbProcesoTerminado->pid);
-	}
-
-	_Bool verificarCPU(t_cpu* cpu){
-			return (cpu->socket == socketCPU);
-	}
-
-	pcbProcesoTerminado = recibirYDeserializarPcb(socketCPU);
-
-	log_info(loggerConPantalla, "Terminando proceso---- PID: %d ", pcbProcesoTerminado->pid);
-
-	actualizarRafagas(pcbProcesoTerminado->pid,pcbProcesoTerminado->cantidadInstrucciones);
-
-	if(flagPlanificacion){
-
-		listaEsperaATerminados();
-
-		pthread_mutex_lock(&mutexColaEjecucion);
-		list_remove_by_condition(colaEjecucion, (void*)verificarPid);
-		pthread_mutex_unlock(&mutexColaEjecucion);
-
-		cambiarEstadoATerminado(pcbProcesoTerminado,0); /*TODO: Cambiar exitCode*/
-		/*disminuirGradoMultiprogramacion();
-
-		pthread_mutex_lock(&mutexListaCPU);
-		cpu = list_remove_by_condition(listaCPU, (void*)verificarCPU);
-		cpu->enEjecucion = 0;
-		list_add(listaCPU,cpu);
-		pthread_mutex_unlock(&mutexListaCPU);
-
-		sem_post(&sem_admitirNuevoProceso);
-		sem_post(&sem_CPU);
-
-		finalizarHiloPrograma(pcbProcesoTerminado->pid);
-
-		liberarRecursosEnMemoria(pcbProcesoTerminado);
-	}else {
-
-		pthread_mutex_lock(&mutexListaEspera);
-		list_add(listaEnEspera, pcbProcesoTerminado);
-		pthread_mutex_unlock(&mutexListaEspera);
-
-		disminuirGradoMultiprogramacion();/*TODO: No se si hay que dismimnuir aca*/
-		//sem_post(&sem_CPU);
-	//}
 
 void liberarRecursosEnMemoria(t_pcb* proceso){
 	log_info(loggerConPantalla,"Liberando proceso en memoria--->PID: %d",proceso->pid);

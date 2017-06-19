@@ -292,7 +292,6 @@ void interruptHandler(int socketAceptado,char orden){
 		case 'F':
 			log_warning(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
 			recv(socketAceptado,&pid,sizeof(int),0);
-			printf("Recibi pid\n");
 			finalizarProcesoVoluntariamente(pid);
 			break;
 		case 'P':
@@ -332,7 +331,7 @@ void excepcionReservaRecursos(int socket){
 void excepcionPlanificacionDetenida(int socket){
 	char* mensaje;
 	int size;
-	log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido\n");
+	log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido");
 	mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
 	size=strlen(mensaje);
 	informarConsola(socket,mensaje,size);
@@ -354,15 +353,14 @@ void imprimirPorConsola(socketAceptado){
 	mensaje=malloc(size);
 	recv(socketAceptado,mensaje,size,0);
 	recv(socketAceptado,&pid,sizeof(int),0);
-	log_info(loggerConPantalla,"Imprimiendo por consola--->PID:%d---Mensaje: %s",pid,mensaje);
+	log_info(loggerConPantalla,"Imprimiendo por consola--->PID:%d--->Mensaje: %s",pid,mensaje);
 	informarConsola(buscarSocketHiloPrograma(pid),mensaje,size);
 	free(mensaje);
 }
 
 void gestionarCierreConsola(int socket){
-	log_warning(loggerConPantalla,"La Consola %d se ha cerrado",socket);
+	log_warning(loggerConPantalla,"Gestionando cierre de consola %d",socket);
 	pthread_mutex_lock(&mutexNuevoProceso);
-	log_info(loggerConPantalla,"Gestionando cierre de consola %d",socket);
 	int size, cantidad,pid;
 	char* procesosAFinalizar;
 	int desplazamiento=0;
