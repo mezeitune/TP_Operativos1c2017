@@ -529,6 +529,7 @@ void *connection_handler(void *socket_desc)
 			break;
 		case 'G':
 			resultadoDeEjecucion = main_asignarPaginasAProceso(sock);
+			send(sock,&resultadoDeEjecucion,sizeof(int),0);
 			break;
 		case 'Q':
 			return 0;

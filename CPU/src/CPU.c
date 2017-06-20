@@ -609,7 +609,7 @@ void retornar(t_valor_variable retorno){
 }
 
 
-void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
+void llamarConRetorno(t_nombre_etiqueta etiqueta,t_puntero donde_retornar){
 
 t_nodoStack *nodo = malloc(sizeof(t_nodoStack));
 nodo->args = list_create();

@@ -13,7 +13,63 @@ int solicitarContenidoAMemoria(char** mensajeRecibido);
 int pedirMemoria(t_pcb* procesoListo);
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
 int calcularTamanioParticion(int *programSizeRestante);
+int reservarPaginaEnMemoria(int pid);
+int escribirEnMemoria(int pid,int pagina,int offset,int size,void* contenido);
+void* leerDeMemoria(int pid,int pagina,int offset,int size);
 void handshakeMemoria();
+
+
+
+int escribirEnMemoria(int pid,int pagina,int offset, int size,void*contenido){
+	log_info(loggerConPantalla,"Escribiendo en memoria--->PID:%d",pid);
+	char comandoEscribir= 'C';
+	int resultadoEjecucion = 0;
+
+	send(socketMemoria,&comandoEscribir,sizeof(char),0);
+	send(socketMemoria,&pid,sizeof(int),0);
+	send(socketMemoria,&pagina,sizeof(int),0);
+	send(socketMemoria,&offset,sizeof(int),0);
+	send(socketMemoria,&size,sizeof(int),0);
+	send(socketMemoria,contenido,sizeof(int),0);
+	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+
+	return resultadoEjecucion;
+}
+
+void* leerDeMemoria(int pid,int pagina,int offset,int size){
+	log_info(loggerConPantalla,"Leyendo de memoria--->PID:%d",pid);
+	void* buffer = malloc(size);
+	int resultadoEjecucion=0;
+
+		send(socketMemoria,&pid,sizeof(int),0);
+		send(socketMemoria,&pagina,sizeof(int),0);
+		send(socketMemoria,&offset,sizeof(int),0);
+		send(socketMemoria,&size,sizeof(int),0);
+
+
+		recv(socketMemoria,buffer,size,0);
+		strcpy(buffer+size,"\0");
+		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+
+		/*TODO: Checkear resultado ejecucion*/
+		return buffer;
+
+}
+
+int reservarPaginaEnMemoria(int pid){
+	log_info(loggerConPantalla,"Reservando nueva pagina--->PID:%d",pid);
+	char comandoReservarPagina = 'G';
+	int cantidadPaginas = 1;
+	int resultadoEjecucion=0;
+
+	send(socketMemoria,&comandoReservarPagina,sizeof(char),0);
+	send(socketMemoria,&cantidadPaginas,sizeof(int),0);
+	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+	return resultadoEjecucion;
+}
+
+
+
 
 
 

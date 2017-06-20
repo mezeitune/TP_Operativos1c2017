@@ -107,7 +107,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 void borrar_archivo (t_descriptor_archivo descriptor_archivo);
 void cerrar_archivo(t_descriptor_archivo descriptor_archivo);
 void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_variable posicion);
-void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio);
+void leer_archivo(t_descriptor_archivo descriptor_archivo,t_puntero informacion, t_valor_variable tamanio);
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio);
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 

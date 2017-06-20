@@ -103,7 +103,7 @@ void finalizarPrograma(){
 				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
 				send(proceso->socketHiloKernel,&procesoATerminar, sizeof(int), 0);
 				list_add(listaHilosProgramas,proceso);
-			}else	log_error(loggerConPantalla,"\nPID incorrecto\n");
+			}else	log_error(loggerConPantalla,"PID incorrecto\n");
 
 		pthread_mutex_unlock(&mutexListaHilos);
 
