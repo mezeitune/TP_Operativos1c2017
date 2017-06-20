@@ -47,11 +47,13 @@ void reservarEspacioHeap(int pid, int size, int socket){
 	t_punteroCpu* puntero = malloc(sizeof(t_punteroCpu));
 
 	puntero->pagina = verificarEspacioLibreHeap(size, pid);
+
 	if(puntero->pagina  == -1){
 		log_error(loggerConPantalla,"No hay espacio suficiente en memoria para reservar una nueva pagina");
 		/*TODO: Avisar a Consola, expropiar proceso y terminarlo, liberando recursos*/
 			return;
 		}
+
 	reservarPaginaHeap(pid);
 	puntero->offset = reservarBloqueHeap(pid, size, puntero->pagina);
 

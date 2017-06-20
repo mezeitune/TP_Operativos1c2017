@@ -67,56 +67,33 @@ void* iniciarPrograma(int* socketHiloKernel){
 	recibirDatosDelKernel(*socketHiloKernel);
 	return 0;
 }
+void finalizarPrograma(){
+	char comandoInterruptHandler = 'X';
+	char comandoFinalizarPrograma= 'F';
+	int procesoATerminar;
+	t_hiloPrograma* proceso;
+	log_info(loggerConPantalla,"Ingresar el PID del programa a finalizar\n");
+	scanf("%d", &procesoATerminar);
 
-void recibirDatosDelKernel(int socketHiloKernel){
-	int pid;
-	int size;
-	int flagCerrarHilo=1;
-	char* mensaje;
-
-	recv(socketHiloKernel, &pid, sizeof(int), 0);
-	log_info(loggerConPantalla,"Al Programa ANSISOP en socket: %d se le ha asignado el PID: %d", socketHiloKernel,pid);
-
-	cargarHiloPrograma(pid,socketHiloKernel);
-	pthread_mutex_unlock(&mutex_crearHilo);
-
-	while(flagCerrarHilo){
-		recv(socketHiloKernel,&size,sizeof(int),0);
-
-		pthread_mutex_lock(&mutexRecibirDatos);
-
-		log_warning(loggerConPantalla,"Socket %d recibiendo mensaje para PID %d",socketHiloKernel,pid);
-
-		mensaje = malloc(size * sizeof(char));
-		recv(socketHiloKernel,mensaje,size,0);
-		strcpy(mensaje+size,"\0");
-
-		if(strcmp(mensaje,"Finalizar")==0) {
-			flagCerrarHilo = 0;
-			free(mensaje);
-			pthread_mutex_unlock(&mutexRecibirDatos);
-			break;
+		bool verificarPid(t_hiloPrograma* proceso){
+			return (proceso->pid == procesoATerminar);
 		}
-		printf("\n%s\n",mensaje);
-		actualizarCantidadImpresiones(pid);
-		free(mensaje);
-		pthread_mutex_unlock(&mutexRecibirDatos);
-	}
 
-	gestionarCierrePrograma(pid);
-	log_warning(loggerConPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado",pid,socketHiloKernel);
+		pthread_mutex_lock(&mutexListaHilos);
+		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
+
+			proceso = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
+				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
+				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
+				send(proceso->socketHiloKernel,&procesoATerminar, sizeof(int), 0);
+				list_add(listaHilosProgramas,proceso);
+			}else	log_error(loggerConPantalla,"\nPID incorrecto\n");
+
+		pthread_mutex_unlock(&mutexListaHilos);
+
+		pthread_mutex_unlock(&mutex_crearHilo);
 }
 
-void actualizarCantidadImpresiones(int pid){
-	bool verificaPid(t_hiloPrograma* proceso){
-			return (proceso->pid == pid);
-		}
-	pthread_mutex_lock(&mutexListaHilos);
-	t_hiloPrograma* programa = list_remove_by_condition(listaHilosProgramas,(void*) verificaPid);
-	programa->cantImpresiones += 1;
-	list_add(listaHilosProgramas,programa);
-	pthread_mutex_unlock(&mutexListaHilos);
-}
 
 void gestionarCierrePrograma(int pidFinalizar){
 	bool verificarPid(t_hiloPrograma* proceso){
