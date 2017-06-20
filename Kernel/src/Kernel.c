@@ -284,7 +284,6 @@ void interruptHandler(int socketAceptado,char orden){
 			log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
 			recv(socketAceptado,&size,sizeof(int),0);
 			reservarEspacioHeap(pid,size,socketAceptado);
-
 					break;
 		case  'L':
 

@@ -42,8 +42,8 @@ int reservarBloqueHeap(int pid,int size,int pagina);
 void destruirPaginaHeap(int pidProc, int pagina);
 void destruirTodasLasPaginasHeapDeProceso(int pidProc);
 
-void reservarEspacioHeap(int pid, int size, int socket)
-{
+void reservarEspacioHeap(int pid, int size, int socket){
+	log_info(loggerConPantalla,"Reservando espacio de memoria dinamica");
 	t_punteroCpu* puntero = malloc(sizeof(t_punteroCpu));
 
 	puntero->pagina = verificarEspacioLibreHeap(size, pid);
@@ -61,6 +61,7 @@ void reservarEspacioHeap(int pid, int size, int socket)
 
 
 int verificarEspacioLibreHeap(int size, int pid){
+	log_info(loggerConPantalla,"Verificando espacio libre para memoria dinamica");
 	int i = 0;
 	t_adminBloqueMetadata* aux;
 	while(i < list_size(listaAdmHeap))
@@ -77,6 +78,7 @@ int verificarEspacioLibreHeap(int size, int pid){
 
 
 void reservarPaginaHeap(int pid){ //Reservo una página de heap nueva para el proceso
+	log_info(loggerConPantalla,"Reservando pagina de heap");
 	t_bloqueMetadata* aux = malloc(sizeof(t_bloqueMetadata));
 	void* buffer=malloc(sizeof(t_bloqueMetadata));
 	aux->size = config_paginaSize - sizeof(t_bloqueMetadata);
@@ -100,6 +102,7 @@ void reservarPaginaHeap(int pid){ //Reservo una página de heap nueva para el pr
 
 
 void compactarPaginaHeap(int pagina, int pid){
+	log_info(loggerConPantalla,"Compactando pagina de heap");
 	int offset = 0;
 	int desplazamiento=0;
 	t_bloqueMetadata* actual = malloc(sizeof(t_bloqueMetadata));
@@ -138,6 +141,7 @@ void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **c
 }
 
 int reservarBloqueHeap(int pid,int size,int pagina){
+	log_info(loggerConPantalla,"Reservando bloque de memoria dinamica en heap");
 	t_bloqueMetadata* auxBloque = malloc(sizeof(t_bloqueMetadata));
 	t_adminBloqueMetadata* aux = malloc(sizeof(t_adminBloqueMetadata));
 	int offset;
