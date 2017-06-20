@@ -151,7 +151,7 @@ int main(void)
 	inicializarCache();
 
 	//imprimirBitMap();
-	imprimirEstructurasAdministrativas();
+	//imprimirEstructurasAdministrativas();
 
 	socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
 
@@ -238,6 +238,7 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 {
 	printf("Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
+	printf("\nESTOY GUARDANDO :   %s\n",buffer);
 	printf("Frame:%d\n",frame);
 	if(frame >= 0)
 	{
@@ -548,7 +549,7 @@ void *connection_handler(void *socket_desc)
 		}
 		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
 		//imprimirBitMap();
-		imprimirEstructurasAdministrativas();
+		//imprimirEstructurasAdministrativas();
 		orden = nuevaOrdenDeAccion(sock);
 	}
 
@@ -790,7 +791,7 @@ void dumpDeMemoria()
 		}
 		case 'E':
 		{
-			imprimirEstructurasAdministrativas();
+			//imprimirEstructurasAdministrativas();
 			break;
 		}
 		case 'M':
