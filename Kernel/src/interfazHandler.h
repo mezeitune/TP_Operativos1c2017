@@ -29,37 +29,28 @@ t_log *loggerConPantalla;
 
 
 void interfazHandler(){
-	char orden='\0';
+	char orden/*='\0'*/;
 	char *mensajeRecibido;
 	int pid;
 
-	while(!flagTerminarUI){
-		if(orden=='\0')scanf("%c",&orden);
-
-		printf("Entre en UI\n");
+	while(1){
+		/*if(orden=='\0')*/scanf("%c",&orden);
+		printf("ORDEN: %c\n", orden);
+		//read(stdin,(void*) orden,sizeof(char));
+//		printf("Entre en UI\n");
 
 		switch(orden){
 
 				case 'O':
 					obtenerListadoProcesos();
 					break;
-				case 'P':
-					if(orden == 'P' && flagPlanificacion == 0){
-						log_warning(loggerConPantalla, "Planificacion ya pausada");
-						break;
-					}
-					log_info(loggerConPantalla, "Se pauso la planificacion");
-					pausarPlanificacion();
-					orden = '\0';
-					break;
 				case 'R':
-					if(orden == 'R' && flagPlanificacion == 1){
-						log_warning(loggerConPantalla, "Planificacion no se encuentra pausada");
-						break;
-					}
-					log_info(loggerConPantalla, "Se reanudo la planificacion");
 					reanudarPLanificacion();
-					orden = '\0';
+					printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
+					break;
+				case 'P':
+					pausarPlanificacion();
+					printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
 					break;
 				case 'G':
 					/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/

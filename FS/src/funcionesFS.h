@@ -28,7 +28,8 @@ void validarArchivoFunction(int socket_cliente){
 
 
 	char *nombreArchivoRecibido = string_new();
-	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, puntoMontaje);
+	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
     printf("%s", nombreArchivoRecibido);
 	if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
@@ -60,7 +61,8 @@ void crearArchivoFunction(int socket_cliente){
 	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
 
 	char *nombreArchivoRecibido = string_new();
-	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, puntoMontaje);
+	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
 
 	//Recorro bitmap y veo si hay algun bloque para asignarle
@@ -118,7 +120,8 @@ void borrarArchivoFunction(int socket_cliente){
 	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
 
 	char *nombreArchivoRecibido = string_new();
-	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, puntoMontaje);
+	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
@@ -175,7 +178,8 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 	recv(socket_cliente,&size,sizeof(int),0);
 
 	char *nombreArchivoRecibido = string_new();
-	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, puntoMontaje);
+	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
@@ -202,7 +206,8 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 					   hizoLoQueNecesita=1;
 					   int indice=atoi(arrayBloques[t]);
 						char *nombreBloque = string_new();
-						string_append(&nombreBloque, "../Bloque/");
+						string_append(&nombreBloque, puntoMontaje);
+						string_append(&nombreBloque, "Bloque/");
 						string_append(&nombreBloque, arrayBloques[t]);
 						string_append(&nombreBloque, ".bin");
 
@@ -275,7 +280,8 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 	recv(socket_cliente,buffer,tamanoBuffer,0);
 
 	char *nombreArchivoRecibido = string_new();
-	string_append(&nombreArchivoRecibido, "../Archivos/");
+	string_append(&nombreArchivoRecibido, puntoMontaje);
+	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
 
 	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
@@ -287,7 +293,8 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 			d++;
 		}
 		char *nombreBloque = string_new();
-		string_append(&nombreBloque, "../Bloque/");
+		string_append(&nombreBloque, puntoMontaje);
+		string_append(&nombreBloque, "Bloque/");
 		string_append(&nombreBloque, arrayBloques[d]);
 		string_append(&nombreBloque, ".bin");
 		//ver de asignar mas bloques en caso de ser necesario
@@ -329,7 +336,8 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 				for(s=0;s<cuantosBloquesMasNecesito;s++){
 
 					char *nombreBloque = string_new();
-					string_append(&nombreBloque, "../Bloque/");
+					string_append(&nombreBloque, puntoMontaje);
+					string_append(&nombreBloque, "Bloque/");
 					char* numerito=string_itoa(bloqs[s]);
 					string_append(&nombreBloque, numerito);
 					string_append(&nombreBloque, ".bin");

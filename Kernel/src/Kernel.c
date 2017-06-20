@@ -80,7 +80,11 @@ void guardarValorDeSharedVar(int socket);
 
 
 
-int main(void) {
+int main() {
+
+	flagPlanificacion = 1;
+
+
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
 	imprimirInterfazUsuario();
@@ -415,7 +419,7 @@ int buscarProcesoYTerminarlo(int pid){
 	if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
 			liberarRecursosEnMemoria(procesoATerminar);
-			sem_wait(&sem_colaReady);
+			sem_wait(&sem_colaListos);
 		}
 	pthread_mutex_unlock(&mutexColaListos);
 
@@ -473,9 +477,8 @@ void inicializarListas(){
 	listaEnEspera = list_create();
 	listaContable = list_create();
 
-	listaSemaforosAsociados = list_create();
-	listaProcesosBloqueados = list_create();
-	listaSemAumentados = list_create();
+	listaSemaforosGlobales = list_create();
+	listaSemYPCB = list_create();
 }
 void obtenerVariablesCompartidasDeLaConfig(){
 	int tamanio = tamanioArray(shared_vars);

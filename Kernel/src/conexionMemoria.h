@@ -7,6 +7,8 @@
 
 #ifndef CONEXIONMEMORIA_H_
 #define CONEXIONMEMORIA_H_
+#include "sincronizacion.h"
+#include "planificacion.h"
 
 int socketMemoria;
 int solicitarContenidoAMemoria(char** mensajeRecibido);
@@ -38,9 +40,11 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,void*contenido){
 
 void* leerDeMemoria(int pid,int pagina,int offset,int size){
 	log_info(loggerConPantalla,"Leyendo de memoria--->PID:%d",pid);
+	char comandoSolicitud= 'S';
 	void* buffer = malloc(size);
 	int resultadoEjecucion=0;
 
+		send(socketMemoria,&comandoSolicitud,sizeof(char),0);
 		send(socketMemoria,&pid,sizeof(int),0);
 		send(socketMemoria,&pagina,sizeof(int),0);
 		send(socketMemoria,&offset,sizeof(int),0);
@@ -57,14 +61,17 @@ void* leerDeMemoria(int pid,int pagina,int offset,int size){
 }
 
 int reservarPaginaEnMemoria(int pid){
-	log_info(loggerConPantalla,"Reservando nueva pagina--->PID:%d",pid);
+	log_info(loggerConPantalla,"Solicitando nueva pagina a memoria--->PID:%d",pid);
 	char comandoReservarPagina = 'G';
 	int cantidadPaginas = 1;
 	int resultadoEjecucion=0;
 
+
 	send(socketMemoria,&comandoReservarPagina,sizeof(char),0);
+	send(socketMemoria,&pid,sizeof(int),0);
 	send(socketMemoria,&cantidadPaginas,sizeof(int),0);
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+
 	return resultadoEjecucion;
 }
 
