@@ -47,6 +47,9 @@ typedef struct {
 int flagTerminarPlanificadorLargoPlazo = 0;
 int flagPlanificacion = 1;
 
+void verificarPausaPlanificacion();
+
+
 void reanudarPLanificacion();
 void pausarPlanificacion();
 
@@ -84,7 +87,7 @@ void agregarAFinQuantum(t_pcb* pcb);
 
 t_list* listaFinQuantum;
 pthread_t planificadorCortoPlazo;
-pthread_t threadQuantum;
+pthread_t threadFinQuantumAReady;
 
 /*----CORTO PLAZO--------*/
 
@@ -291,7 +294,10 @@ void reanudarPLanificacion(){
 	sem_post(&sem_planificacion);
 }
 
-
+void verificarPausaPlanificacion(){
+	if(flagPlanificacion) sem_post(&sem_planificacion);
+	sem_wait(&sem_planificacion);
+}
 
 /*------------------------CORTO PLAZO-----------------------------------------*/
 
@@ -309,19 +315,18 @@ void planificarCortoPlazo(){
 	_Bool verificarCPU(t_cpu* cpu){
 		return (cpu->enEjecucion == 0);
 	}
-
-
 	char comandoEnviarPcb = 'S';
+
+
+	pthread_create(&threadFinQuantumAReady, NULL, (void*)finQuantumAReady, NULL);
+
 
 	while(1){
 
-		if(flagPlanificacion) sem_post(&sem_planificacion);
+		verificarPausaPlanificacion();
 
 		sem_wait(&sem_CPU);
-		finQuantumAReady();
 		sem_wait(&sem_colaReady);
-
-		sem_wait(&sem_planificacion);
 
 
 		pthread_mutex_lock(&mutexColaListos);
@@ -357,21 +362,28 @@ void finQuantumAReady(){
 	int indice;
 	t_pcb* pcbBuffer;
 
-	pthread_mutex_lock(&mutexListaFinQuantum);
-	if(list_size(listaFinQuantum) > 0){
-		for (indice = 0; indice <= list_size(listaFinQuantum); ++indice) {
 
-			pcbBuffer = list_remove(listaFinQuantum,indice);
+	while(1){
 
-			pthread_mutex_lock(&mutexColaListos);
-			list_add_in_index(colaListos, list_size(colaListos),pcbBuffer);
-			pthread_mutex_unlock(&mutexColaListos);
+		verificarPausaPlanificacion();
 
-			sem_post(&sem_colaReady);
-		}
+		sem_wait(&sem_listaFinQuantum);
 
+		pthread_mutex_lock(&mutexListaFinQuantum);
+			for (indice = 0; indice <= list_size(listaFinQuantum); ++indice) {
+
+				pthread_mutex_unlock(&mutexListaFinQuantum);
+
+				pcbBuffer = list_remove(listaFinQuantum,indice);
+
+				pthread_mutex_lock(&mutexColaListos);
+				list_add_in_index(colaListos, list_size(colaListos),pcbBuffer);
+				pthread_mutex_unlock(&mutexColaListos);
+
+				sem_post(&sem_colaReady);
+			}
+		pthread_mutex_unlock(&mutexListaFinQuantum);
 	}
-	pthread_mutex_unlock(&mutexListaFinQuantum);
 }
 
 void agregarAFinQuantum(t_pcb* pcb){
@@ -388,7 +400,7 @@ void agregarAFinQuantum(t_pcb* pcb){
 	list_remove_by_condition(colaEjecucion, (void*)verificarPidPcb);
 	pthread_mutex_unlock(&mutexColaEjecucion);
 
-//	sem_post(&sem_listaFinQuantum);
+	sem_post(&sem_listaFinQuantum);
 
 
 }
