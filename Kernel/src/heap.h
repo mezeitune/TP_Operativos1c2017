@@ -163,16 +163,16 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 	log_info(loggerConPantalla,"Reservando bloque de memoria dinamica en heap");
 	t_bloqueMetadata* auxBloque = malloc(sizeof(t_bloqueMetadata));
 	t_adminBloqueMetadata* aux = malloc(sizeof(t_adminBloqueMetadata));
-	int offset;
+	int offset=0;
 	int i = 0;
 	int sizeReal = size;
 	void* buffer;
 	int desplazamiento=0;
+
 	while(i < list_size(listaAdmHeap))
 	{
 		aux = list_get(listaAdmHeap,i);
-		if(aux->pagina == pagina && aux->pid == pid)
-		{
+		if(aux->pagina == pagina && aux->pid == pid){
 			if(aux->sizeDisponible <= size + sizeof(t_bloqueMetadata)){
 				sizeReal = aux->sizeDisponible;
 				aux->sizeDisponible = 0;
@@ -183,15 +183,20 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 			list_replace(listaAdmHeap,i,aux);
 			break;
 		}
+		i++;
 	}
 
 	while(i < config_paginaSize){
 
 		buffer=malloc(sizeof(t_bloqueMetadata));
 		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
-		auxBloque->bitUso = *(int*)buffer;
+		auxBloque->bitUso = *((int*)buffer);
 		desplazamiento += sizeof(int);
-		auxBloque->size = *(int*) buffer;
+		auxBloque->size = *((int*) buffer);
+
+		printf("%d\n\n",auxBloque->bitUso);
+		printf("%d\n\n",auxBloque->size);
+
 		desplazamiento = 0;
 		free(buffer);
 
