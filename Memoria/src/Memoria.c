@@ -228,8 +228,9 @@ void solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffe
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 	printf("El frame es : %d\n",frame);
 
-	memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size*sizeof(char));
+	memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size);
 
+	strcpy(*buffer + size , "\0");
 	printf("%s\n",*buffer);
 
 }
@@ -238,6 +239,7 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
 {
 	printf("Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
+
 	printf("\nESTOY GUARDANDO :   %s\n",buffer);
 	printf("Frame:%d\n",frame);
 	if(frame >= 0)
@@ -365,14 +367,13 @@ int main_solicitarBytesPagina(int sock)
 	read(sock,&offset,sizeof(int));
 	read(sock,&size,sizeof(int));
 
-	printf("PID:%d\n",pid);
-	printf("Pagina:%d\n",pagina);
-	printf("Offset:%d\n",offset);
-	printf("Size:%d\n",size);
+	printf("PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
-	bufferAEnviar=malloc((size+1)*sizeof(char));
+
+	bufferAEnviar=malloc(size+sizeof(char));
 
 	int posicionEnCache = buscarEntradaDeProcesoEnCache(pid,pagina);
+
 	if(posicionEnCache != -1)
 	{
 		printf("Se encontró la pagina %d del proceso %d en la entrada %d de la cache\n",pagina,pid,posicionEnCache);
@@ -406,10 +407,7 @@ int main_almacenarBytesPagina(int sock)
 	bytes=malloc(size);
 	read(sock,bytes,size);
 
-	printf("PID:%d\n",pid);
-	printf("Pagina:%d\n",pagina);
-	printf("Offset:%d\n",offset);
-	printf("Size:%d\n",size);
+	printf("PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
 	free(bytes);
@@ -424,8 +422,7 @@ int main_asignarPaginasAProceso(int sock)
 	read(sock,&pid,sizeof(int));
 	read(sock,&cantPaginas,sizeof(int));
 
-	printf("PID:%d\n",pid);
-	printf("CantPaginas:%d\n",cantPaginas);
+	printf("PID:%d\tCantidad de Paginas:%d\n",pid,cantPaginas);
 	//printf("Bitmap:%s\n",bitMap);
 
 	int espacioLibre = verificarEspacioLibre();
@@ -1041,12 +1038,18 @@ int buscarEntradaDeProcesoEnCache(int pid, int pagina)
 void iniciarEntradaEnCache(int pid, int pagina)
 {
 	int entrada = buscarUnaEntradaParaProcesoEnCache();
+
 	printf("Iniciar Entrada en cache\nEntrada:%d\n",entrada);
 	int desplazamiento = sizeof(int)*2+marco_size;
 
 	char *contenidoReal = malloc(marco_size);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
-	memcpy(contenidoReal,bloque_Memoria + frame*marco_size,marco_size*sizeof(char));
+
+	printf("Frame a meter en la cache:%d\n",frame);
+
+	memcpy(contenidoReal,bloque_Memoria + frame*marco_size,marco_size);
+
+	printf("Contenido a meter en la cache:%s\n",contenidoReal);
 
 	memcpy(bloque_Cache + entrada*desplazamiento,&pid ,sizeof(int));
 	memcpy(bloque_Cache + entrada*desplazamiento+sizeof(int),&pagina ,sizeof(int));
@@ -1058,10 +1061,10 @@ void iniciarEntradaEnCache(int pid, int pagina)
 
 void leerContenidoEnCache(int entrada,char** buffer,int size,int offset)
 {
-
 	int desplazamiento = marco_size + sizeof(int)*2;
-	memcpy(*buffer, bloque_Cache + entrada*desplazamiento+sizeof(int)*2 + offset,size*sizeof(char));
+	memcpy(*buffer, bloque_Cache + entrada*desplazamiento+sizeof(int)*2 + offset,size);
 
+	strcpy(*buffer + size , "\0");
 	printf("%s\n",*buffer);
 	memcpy(bloqueBitUsoCache + entrada*sizeof(int),&contadorBitDeUso , sizeof(int));
 	contadorBitDeUso++;
@@ -1121,7 +1124,7 @@ void borrarEntradasDeProcesoEnCache(int pid)
 }
 
 int funcionHash(int pid, int pagina){
-	int valorHash = (sizeStructsAdmMemoria + (pid-1) + pagina)%marcos;
+	return (sizeStructsAdmMemoria + (pid-1) + pagina)%marcos;
 }
 
 
