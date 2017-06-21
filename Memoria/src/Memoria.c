@@ -410,6 +410,9 @@ int main_almacenarBytesPagina(int sock)
 	printf("PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
+	if(buscarEntradaDeProcesoEnCache(pid,pagina) >= 0){
+		actualizarEntradaEnCache(pid,pagina);
+	}
 	free(bytes);
 	sleep(retardo_memoria);
 	return 0;
@@ -1050,6 +1053,26 @@ void iniciarEntradaEnCache(int pid, int pagina)
 	memcpy(contenidoReal,bloque_Memoria + frame*marco_size,marco_size);
 
 	printf("Contenido a meter en la cache:%s\n",contenidoReal);
+
+	memcpy(bloque_Cache + entrada*desplazamiento,&pid ,sizeof(int));
+	memcpy(bloque_Cache + entrada*desplazamiento+sizeof(int),&pagina ,sizeof(int));
+	memcpy(bloque_Cache+entrada*desplazamiento+2*sizeof(int),contenidoReal,marco_size);
+	memcpy(bloqueBitUsoCache + entrada*sizeof(int),&contadorBitDeUso , sizeof(int));
+	free(contenidoReal);
+	contadorBitDeUso++;
+}
+
+void actualizarEntradaEnCache(int pid, int pagina)
+{
+
+	int desplazamiento = sizeof(int)*2+marco_size;
+
+	char *contenidoReal = malloc(marco_size);
+	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
+	int entrada = buscarEntradaDeProcesoEnCache(pid,pagina);
+
+	memcpy(contenidoReal,bloque_Memoria + frame*marco_size,marco_size);
+
 
 	memcpy(bloque_Cache + entrada*desplazamiento,&pid ,sizeof(int));
 	memcpy(bloque_Cache + entrada*desplazamiento+sizeof(int),&pagina ,sizeof(int));
