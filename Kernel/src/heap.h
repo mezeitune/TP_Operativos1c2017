@@ -97,25 +97,24 @@ int verificarEspacioLibreHeap(int size, int pid){
 
 int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva para el proceso
 	log_info(loggerConPantalla,"Reservando pagina de heap");
-	t_bloqueMetadata* aux = malloc(sizeof(t_bloqueMetadata));
+	t_bloqueMetadata aux ;
 
 	void* buffer=malloc(sizeof(t_bloqueMetadata));
-	aux->bitUso = -1;
-	aux->size = config_paginaSize - sizeof(t_bloqueMetadata);
-	memcpy(buffer,aux,sizeof(t_bloqueMetadata));
+	aux.bitUso = -1;
+	aux.size = config_paginaSize - sizeof(t_bloqueMetadata);
+	memcpy(buffer,&aux,sizeof(t_bloqueMetadata));
 
 	reservarPaginaEnMemoria(pid);
 
 	int resultadoEjecucion=escribirEnMemoria(pid,pagina,0,sizeof(t_bloqueMetadata),buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
 
 
-	t_adminBloqueMetadata* bloqueAdmin= malloc(sizeof(t_adminBloqueMetadata));
-	bloqueAdmin->pagina = pagina;
-	bloqueAdmin->pid = pid;
-	bloqueAdmin->sizeDisponible = aux->size;
-	list_add(listaAdmHeap, bloqueAdmin);
+	t_adminBloqueMetadata bloqueAdmin;
+	bloqueAdmin.pagina = pagina;
+	bloqueAdmin.pid = pid;
+	bloqueAdmin.sizeDisponible = aux.size;
+	list_add(listaAdmHeap, &bloqueAdmin);
 
-	free(aux);
 	free(buffer);
 	return resultadoEjecucion;
 }
