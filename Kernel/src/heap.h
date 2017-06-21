@@ -185,7 +185,7 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 		}
 		i++;
 	}
-
+	i = 0;
 	while(i < config_paginaSize){
 
 		buffer=malloc(sizeof(t_bloqueMetadata));
@@ -200,7 +200,7 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 		desplazamiento = 0;
 		free(buffer);
 
-		if(auxBloque->size >= size){
+		if(auxBloque->size >= size && auxBloque->bitUso == -1){
 			buffer=malloc(sizeof(t_bloqueMetadata));
 			auxBloque->bitUso = 1;
 			auxBloque->size = sizeReal;
@@ -227,6 +227,9 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 				free(buffer);
 			}
 		break;
+		}
+		else{
+			i = i + sizeof(t_bloqueMetadata) + auxBloque->size;
 		}
 
 	}
