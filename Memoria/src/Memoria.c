@@ -791,7 +791,7 @@ void dumpDeMemoria()
 		}
 		case 'E':
 		{
-			//imprimirEstructurasAdministrativas();
+			imprimirEstructurasAdministrativas();
 			break;
 		}
 		case 'M':
@@ -842,19 +842,22 @@ void dumpCache()
 
 	int i = 0;
 	int desplazamiento = sizeof(int)*2+marco_size;
-	char*contenido = malloc(marco_size);
+	void*contenido = malloc(marco_size);
 	int pid;
 	int pagina;
 
 
 	while(i < entradas_cache)
 	{
-		memcpy(&pid,bloque_Cache + i*desplazamiento,marco_size);
-		memcpy(&pagina,bloque_Cache + i*desplazamiento + sizeof(int),marco_size);
+		memcpy(&pid,bloque_Cache + i*desplazamiento,sizeof(int));
+		memcpy(&pagina,bloque_Cache + i*desplazamiento + sizeof(int),sizeof(int));
 		memcpy(contenido,bloque_Cache + i*desplazamiento + sizeof(int)*2,marco_size);
-		printf("PID:%d\n",pid);
-		printf("Pagina:%d\n",pagina);
-		printf("Contenido:%s\n",contenido);
+		if(pid != -1){
+			printf("PID:%d\n",pid);
+			printf("Pagina:%d\n",pagina);
+			printf("Contenido:%s\n",(char*) contenido);
+		}
+
 		i++;
 	}
 	free(contenido);
