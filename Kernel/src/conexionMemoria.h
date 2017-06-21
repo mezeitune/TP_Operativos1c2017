@@ -16,32 +16,39 @@ int pedirMemoria(t_pcb* procesoListo);
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int programSize);
 int calcularTamanioParticion(int *programSizeRestante);
 int reservarPaginaEnMemoria(int pid);
-int escribirEnMemoria(int pid,int pagina,int offset,int size,void* contenido);
-void* leerDeMemoria(int pid,int pagina,int offset,int size);
+int escribirEnMemoria(int pid,int pagina,int offset,int size,char* contenido);
+char* leerDeMemoria(int pid,int pagina,int offset,int size);
 void handshakeMemoria();
 
 
 
-int escribirEnMemoria(int pid,int pagina,int offset, int size,void*contenido){
+int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 	log_info(loggerConPantalla,"Escribiendo en memoria--->PID:%d",pid);
 	char comandoEscribir= 'C';
 	int resultadoEjecucion = 0;
+	void* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + size);
 
-	send(socketMemoria,&comandoEscribir,sizeof(char),0);
-	send(socketMemoria,&pid,sizeof(int),0);
-	send(socketMemoria,&pagina,sizeof(int),0);
-	send(socketMemoria,&offset,sizeof(int),0);
-	send(socketMemoria,&size,sizeof(int),0);
-	send(socketMemoria,contenido,sizeof(int),0);
+	strcpy(contenido + size , "\0");
+
+
+	memcpy(mensajeAMemoria,&comandoEscribir,sizeof(char));
+	memcpy(mensajeAMemoria + sizeof(char),&pid,sizeof(int));
+	memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&pagina,sizeof(int));
+	memcpy(mensajeAMemoria + sizeof(int)*2 + sizeof(char),&offset,sizeof(int));
+	memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&size,sizeof(int));
+
+	memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),contenido,size);
+	send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + size,0);
+
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 
 	return resultadoEjecucion;
 }
 
-void* leerDeMemoria(int pid,int pagina,int offset,int size){
+char* leerDeMemoria(int pid,int pagina,int offset,int size){
 	log_info(loggerConPantalla,"Leyendo de memoria--->PID:%d",pid);
 	char comandoSolicitud= 'S';
-	void* buffer = malloc(size);
+	char* buffer = malloc(size);
 	int resultadoEjecucion=0;
 
 		send(socketMemoria,&comandoSolicitud,sizeof(char),0);
@@ -49,8 +56,6 @@ void* leerDeMemoria(int pid,int pagina,int offset,int size){
 		send(socketMemoria,&pagina,sizeof(int),0);
 		send(socketMemoria,&offset,sizeof(int),0);
 		send(socketMemoria,&size,sizeof(int),0);
-
-
 		recv(socketMemoria,buffer,size,0);
 		strcpy(buffer+size,"\0");
 		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
@@ -107,12 +112,10 @@ int pedirMemoria(t_pcb* procesoListo){
 
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
 	log_info(loggerConPantalla, "Almacenando programa en memoria--->PID: %d", procesoListoAutorizado->pid);
-		char* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + config_paginaSize);
 		char* particionCodigo = malloc(config_paginaSize);
 		int particionSize;
 		int programSizeRestante = programSize;
 		int resultadoEjecucion=0;
-		int comandoAlmacenar = 'C';
 		int offset=0;
 		int nroPagina;
 
@@ -120,24 +123,10 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int p
 				particionSize=calcularTamanioParticion(&programSizeRestante);
 			//	log_info(loggerConPantalla, "Tamano de la particion de codigo a almacenar:\n %d\n", particionSize);
 				strncpy(particionCodigo,programa,particionSize);
-				strcpy(particionCodigo + particionSize,"\0");
 				programa += particionSize;
-
-				//log_info(loggerConPantalla, "Particion de codigo a almacenar: \n%s", particionCodigo);
-
-				memcpy(mensajeAMemoria,&comandoAlmacenar,sizeof(char));
-				memcpy(mensajeAMemoria + sizeof(char),&procesoListoAutorizado->pid,sizeof(int));
-				memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&nroPagina,sizeof(int));
-				memcpy(mensajeAMemoria + sizeof(int)*2 + sizeof(char),&offset,sizeof(int));
-
-				memcpy(mensajeAMemoria + sizeof(int)*3 + sizeof(char),&particionSize,sizeof(int));
-				memcpy(mensajeAMemoria + sizeof(int)*4 + sizeof(char),particionCodigo,particionSize);
-				send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + particionSize,0);
-
-				recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
+				resultadoEjecucion = escribirEnMemoria(procesoListoAutorizado->pid,nroPagina,offset,particionSize,(void*)particionCodigo);
 		}
 		//log_info(loggerConPantalla, "Programa almacenado en Memoria---- PID: %d", procesoListoAutorizado->pid);
-		free(mensajeAMemoria);
 		free(particionCodigo);
 
 		return resultadoEjecucion;

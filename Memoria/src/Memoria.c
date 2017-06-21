@@ -93,7 +93,7 @@ int main_finalizarPrograma();
 //-----------------------FUNCIONES MEMORIA--------------------------//
 int inicializarPrograma(int pid, int cantPaginas);
 void solicitarBytesPagina(int pid,int pagina, int offset, int size,char** buffer);
-int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer);
+int almacenarBytesPagina(int pid,int pagina, int offset,int size, void* buffer);
 int asignarPaginasAProceso(int pid, int cantPaginas, int frame);
 int finalizarPrograma(int pid);
 //------------------------------------------------------------------//
@@ -235,12 +235,12 @@ void solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffe
 
 }
 
-int almacenarBytesPagina(int pid,int pagina, int offset,int size, char* buffer)
+int almacenarBytesPagina(int pid,int pagina, int offset,int size, void* buffer)
 {
 	printf("Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 
-	printf("\nESTOY GUARDANDO :   %s\n",buffer);
+	//printf("\nESTOY GUARDANDO :   %s\n",buffer);
 	printf("Frame:%d\n",frame);
 	if(frame >= 0)
 	{
@@ -398,7 +398,7 @@ int main_almacenarBytesPagina(int sock)
 	int pagina;
 	int offset;
 	int size;
-	char *bytes;
+	void *bytes;
 
 	read(sock,&pid,sizeof(int));
 	read(sock,&pagina,sizeof(int));

@@ -20,10 +20,11 @@ typedef struct
 	int sizeDisponible;
 }t_adminBloqueMetadata;
 
+
 typedef struct
 {
 	int bitUso;
-	int size;
+    int size;
 }__attribute__((packed)) t_bloqueMetadata;
 
 typedef struct{
@@ -57,7 +58,7 @@ void reservarEspacioHeap(int pid, int size, int socket){
 
 		pthread_mutex_lock(&mutexColaEjecucion);
 		t_pcb* pcb = list_remove_by_condition(colaEjecucion,(void*)verificaPid);
-		puntero->pagina = pcb->cantidadPaginasCodigo + stackSize;
+		puntero->pagina = pcb->cantidadPaginasCodigo + stackSize ; /*TODO: Sumar los heaps ya pedidos*/
 		list_add(colaEjecucion,pcb);
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
@@ -96,19 +97,16 @@ int verificarEspacioLibreHeap(int size, int pid){
 int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva para el proceso
 	log_info(loggerConPantalla,"Reservando pagina de heap");
 	t_bloqueMetadata* aux = malloc(sizeof(t_bloqueMetadata));
-	void* buffer=malloc(sizeof(t_bloqueMetadata));
-	aux->size = config_paginaSize - sizeof(t_bloqueMetadata);
-	aux->bitUso = -1;
 
-	memcpy(buffer,&aux->bitUso,sizeof(int));
-	memcpy(buffer + sizeof(int),&aux->size,sizeof(int));
+	void* buffer=malloc(sizeof(t_bloqueMetadata));
+	aux->bitUso = -1;
+	aux->size = config_paginaSize - sizeof(t_bloqueMetadata);
+	memcpy(buffer,aux,sizeof(t_bloqueMetadata));
 
 	reservarPaginaEnMemoria(pid);
 
-	int resultadoEjecucion=escribirEnMemoria(pagina,pid,0,aux->size,buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
+	int resultadoEjecucion=escribirEnMemoria(pid,pagina,0,sizeof(t_bloqueMetadata),buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
 
-	free(aux);
-	free(buffer);
 
 	t_adminBloqueMetadata* bloqueAdmin= malloc(sizeof(t_adminBloqueMetadata));
 	bloqueAdmin->pagina = pagina;
@@ -116,6 +114,8 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	bloqueAdmin->sizeDisponible = aux->size;
 	list_add(listaAdmHeap, bloqueAdmin);
 
+	free(aux);
+	free(buffer);
 	return resultadoEjecucion;
 }
 
@@ -130,19 +130,21 @@ void compactarPaginaHeap(int pagina, int pid){
 
 	while(offset < config_paginaSize){
 		buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
-		actual->bitUso = *(int*)(buffer+desplazamiento);
+		memcpy(&actual->bitUso,buffer + desplazamiento , sizeof(int));
 		desplazamiento += sizeof(int);
-		actual->size= *(int*)(buffer+desplazamiento);
+		memcpy(&actual->size,buffer + desplazamiento , sizeof(int));
 		desplazamiento = 0;
 
 
-		buffer = leerDeMemoria(pid,pagina,offset+sizeof(t_bloqueMetadata)+ actual->size ,sizeof(t_bloqueMetadata));
-		siguiente->bitUso = *(int*)(buffer+desplazamiento);
+		buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
+		memcpy(&siguiente->bitUso,buffer + desplazamiento , sizeof(int));
 		desplazamiento += sizeof(int);
-		siguiente->size= *(int*)(buffer+desplazamiento);
+		memcpy(&siguiente->size,buffer + desplazamiento , sizeof(int));
+		desplazamiento = 0;
 
 		if(actual->bitUso == -1 && siguiente->bitUso == -1){
 			actual->size = actual->size + sizeof(t_bloqueMetadata) + siguiente->size;
+
 		}
 		else{
 			offset += sizeof(t_bloqueMetadata) + actual->size;
@@ -152,7 +154,7 @@ void compactarPaginaHeap(int pagina, int pid){
 }
 
 void escribirContenidoPaginaHeap(int pagina, int pid, int offset, int size, void *contenido){
-	escribirEnMemoria(pagina,pid,offset+sizeof(t_bloqueMetadata),size,contenido);
+	escribirEnMemoria(pid,pagina,offset+sizeof(t_bloqueMetadata),size,contenido);
 }
 
 void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **contenido){
@@ -190,25 +192,22 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 
 		buffer=malloc(sizeof(t_bloqueMetadata));
 		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
-		auxBloque->bitUso = *((int*)buffer);
+
+		memcpy(&auxBloque->bitUso,buffer + desplazamiento , sizeof(int));
 		desplazamiento += sizeof(int);
-		auxBloque->size = *((int*) buffer);
+		memcpy(&auxBloque->size,buffer + desplazamiento , sizeof(int));
+		desplazamiento = 0;
 
 		printf("%d\n\n",auxBloque->bitUso);
 		printf("%d\n\n",auxBloque->size);
 
-		desplazamiento = 0;
 		free(buffer);
 
 		if(auxBloque->size >= size && auxBloque->bitUso == -1){
 			buffer=malloc(sizeof(t_bloqueMetadata));
-			auxBloque->bitUso = 1;
-			auxBloque->size = sizeReal;
-
-			memcpy(buffer,&auxBloque->bitUso,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(buffer + desplazamiento, &auxBloque->size,sizeof(int));
-			desplazamiento = 0;
+			auxBloque->bitUso = -1;
+			auxBloque->size = config_paginaSize - sizeof(t_bloqueMetadata);
+			memcpy(buffer,aux,sizeof(t_bloqueMetadata));
 
 			escribirEnMemoria(pid,pagina,i,sizeof(t_bloqueMetadata),buffer); //Escribo y reservo el metadata que se quiere reservar
 			free(buffer);
@@ -216,12 +215,8 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 			if(aux->sizeDisponible > 0){
 				buffer=malloc(sizeof(t_bloqueMetadata));
 				auxBloque->bitUso = -1;
-				auxBloque->size = aux->sizeDisponible;
-
-				memcpy(buffer,&auxBloque->bitUso,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(buffer + desplazamiento, &auxBloque->size,sizeof(int));
-				desplazamiento = 0;
+				auxBloque->size = config_paginaSize - sizeof(t_bloqueMetadata);
+				memcpy(buffer,aux,sizeof(t_bloqueMetadata));
 
 				escribirEnMemoria(pid,pagina,i+sizeof(t_bloqueMetadata)+sizeReal,sizeof(t_bloqueMetadata),buffer); //ANuncio cuanto espacio libre queda en el heap en el siguiente metadata
 				free(buffer);
