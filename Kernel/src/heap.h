@@ -141,6 +141,10 @@ void compactarPaginaHeap(int pagina, int pid){
 		memcpy(&siguiente->size,buffer + sizeof(int) , sizeof(int));
 
 		free(buffer);
+		printf("Actual bitUso=%d\n",actual->bitUso);
+		printf("Actual size=%d\n",actual->size);
+		printf("Siguiente bitUso=%d\n",siguiente->bitUso);
+		printf("Siguiente size=%d\n",siguiente->size);
 
 		if(actual->bitUso == -1 && siguiente->bitUso == -1){
 
@@ -157,6 +161,7 @@ void compactarPaginaHeap(int pagina, int pid){
 		}
 	}
 	free(buffer);
+	printf("Saliendo de compactar pagina heap\n");
 }
 
 void escribirContenidoPaginaHeap(int pagina, int pid, int offset, int size, void *contenido){
