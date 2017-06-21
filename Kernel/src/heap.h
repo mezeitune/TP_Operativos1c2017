@@ -123,27 +123,26 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 void compactarPaginaHeap(int pagina, int pid){
 	log_info(loggerConPantalla,"Compactando pagina de heap");
 	int offset = 0;
-	int desplazamiento=0;
 	t_bloqueMetadata* actual = malloc(sizeof(t_bloqueMetadata));
 	t_bloqueMetadata* siguiente = malloc(sizeof(t_bloqueMetadata));
 	void* buffer= malloc(sizeof(t_bloqueMetadata));
 
 	while(offset < config_paginaSize){
-		buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
-		memcpy(&actual->bitUso,buffer + desplazamiento , sizeof(int));
-		desplazamiento += sizeof(int);
-		memcpy(&actual->size,buffer + desplazamiento , sizeof(int));
-		desplazamiento = 0;
+		buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata)); //Leo el metadata Actual
+		memcpy(&actual->bitUso,buffer, sizeof(int));
+		memcpy(&actual->size,buffer + sizeof(int) , sizeof(int));
 
+		if(offset + sizeof(t_bloqueMetadata) + actual->size > config_paginaSize - sizeof(t_bloqueMetadata)){ //Me fijo que el metadata siguiente esté dentro de esta página
+			break;
+		}
 
-		buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
-		memcpy(&siguiente->bitUso,buffer + desplazamiento , sizeof(int));
-		desplazamiento += sizeof(int);
-		memcpy(&siguiente->size,buffer + desplazamiento , sizeof(int));
-		desplazamiento = 0;
+		buffer = leerDeMemoria(pid,pagina,offset + sizeof(t_bloqueMetadata) + actual->size,sizeof(t_bloqueMetadata)); //Leo la posición del metadata que le sigue al actual
+		memcpy(&siguiente->bitUso,buffer , sizeof(int));
+		memcpy(&siguiente->size,buffer + sizeof(int) , sizeof(int));
 
 		if(actual->bitUso == -1 && siguiente->bitUso == -1){
 			actual->size = actual->size + sizeof(t_bloqueMetadata) + siguiente->size;
+			//escribirEnMemoria(pid,pagina,offset,actual,sizeof(t_bloqueMetadata)); //Actualizo el metadata en el que me encuentro parado en la memoria
 
 		}
 		else{
