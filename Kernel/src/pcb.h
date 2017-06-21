@@ -10,6 +10,8 @@
 
 #include <commons/log.h>
 #include "configuraciones.h"
+#include <parser/metadata_program.h>
+#include <parser/parser.h>
 
 typedef struct{
 	int pagina;

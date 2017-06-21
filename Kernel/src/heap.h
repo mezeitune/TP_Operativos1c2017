@@ -89,6 +89,7 @@ int verificarEspacioLibreHeap(int size, int pid){
 			compactarPaginaHeap(aux->pagina,aux->pid);
 			return aux->pagina;
 		}
+		i++;
 	}
 	return -1;
 }
@@ -123,41 +124,45 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 void compactarPaginaHeap(int pagina, int pid){
 	log_info(loggerConPantalla,"Compactando pagina de heap");
 	int offset = 0;
-	t_bloqueMetadata* actual = malloc(sizeof(t_bloqueMetadata));
-	t_bloqueMetadata* siguiente = malloc(sizeof(t_bloqueMetadata));
-	void* buffer= malloc(sizeof(t_bloqueMetadata));
+	t_bloqueMetadata actual;
+	t_bloqueMetadata siguiente;
+	t_bloqueMetadata* buffer= malloc(sizeof(t_bloqueMetadata));
 
-	while(offset < config_paginaSize && offset + sizeof(t_bloqueMetadata) + actual->size > config_paginaSize - sizeof(t_bloqueMetadata)){
-		buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata)); //Leo el metadata Actual
-		memcpy(&actual->bitUso,buffer, sizeof(int));
-		memcpy(&actual->size,buffer + sizeof(int) , sizeof(int));
+	actual.size = 0;
 
-		if(offset + sizeof(t_bloqueMetadata) + actual->size > config_paginaSize - sizeof(t_bloqueMetadata)){ //Me fijo que el metadata siguiente esté dentro de esta página
+	while(offset < config_paginaSize && offset + sizeof(t_bloqueMetadata) + actual.size > config_paginaSize - sizeof(t_bloqueMetadata)){
+		buffer = (t_bloqueMetadata*) leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata)); //Leo el metadata Actual
+		//memcpy(&actual->bitUso,buffer, sizeof(int));
+		//memcpy(&actual->size,buffer + sizeof(int) , sizeof(int));
+		actual.bitUso = buffer->bitUso;
+		actual.size = buffer ->size;
+
+		/*if(offset + sizeof(t_bloqueMetadata) + actual.size > config_paginaSize - sizeof(t_bloqueMetadata)){ //Me fijo que el metadata siguiente esté dentro de esta página
 			break;
-		}
+		}*/
 
-		buffer = leerDeMemoria(pid,pagina,offset + sizeof(t_bloqueMetadata) + actual->size,sizeof(t_bloqueMetadata)); //Leo la posición del metadata que le sigue al actual
-		memcpy(&siguiente->bitUso,buffer , sizeof(int));
-		memcpy(&siguiente->size,buffer + sizeof(int) , sizeof(int));
+		buffer = (t_bloqueMetadata*) leerDeMemoria(pid,pagina,offset + sizeof(t_bloqueMetadata) + actual.size,sizeof(t_bloqueMetadata)); //Leo la posición del metadata que le sigue al actual
+		//memcpy(&siguiente->bitUso,buffer , sizeof(int));
+		//memcpy(&siguiente->size,buffer + sizeof(int) , sizeof(int));
 
-		free(buffer);
-		printf("Actual bitUso=%d\n",actual->bitUso);
-		printf("Actual size=%d\n",actual->size);
-		printf("Siguiente bitUso=%d\n",siguiente->bitUso);
-		printf("Siguiente size=%d\n",siguiente->size);
+		siguiente.bitUso = buffer->bitUso;
+		siguiente.size = buffer ->size;
 
-		if(actual->bitUso == -1 && siguiente->bitUso == -1){
+		printf("Actual bitUso=%d\n",actual.bitUso);
+		printf("Actual size=%d\n",actual.size);
+		printf("Siguiente bitUso=%d\n",siguiente.bitUso);
+		printf("Siguiente size=%d\n",siguiente.size);
 
-			actual->size = actual->size + sizeof(t_bloqueMetadata) + siguiente->size;
-			buffer= malloc(sizeof(t_bloqueMetadata));
-			memcpy(buffer,actual,sizeof(t_bloqueMetadata));
+		if(actual.bitUso == -1 && siguiente.bitUso == -1){
 
-			escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),buffer); //Actualizo el metadata en el que me encuentro parado en la memoria
+			actual.size = actual.size + sizeof(t_bloqueMetadata) + siguiente.size;
+			memcpy(buffer,&actual,sizeof(t_bloqueMetadata));
 
-			free(buffer);
+			escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),(void *) buffer); //Actualizo el metadata en el que me encuentro parado en la memoria
+
 		}
 		else{
-			offset += sizeof(t_bloqueMetadata) + actual->size;
+			offset += sizeof(t_bloqueMetadata) + actual.size;
 		}
 	}
 	free(buffer);

@@ -17,7 +17,7 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado, char* programa, int 
 int calcularTamanioParticion(int *programSizeRestante);
 int reservarPaginaEnMemoria(int pid);
 int escribirEnMemoria(int pid,int pagina,int offset,int size,char* contenido);
-char* leerDeMemoria(int pid,int pagina,int offset,int size);
+void* leerDeMemoria(int pid,int pagina,int offset,int size);
 void handshakeMemoria();
 
 
@@ -45,10 +45,10 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 	return resultadoEjecucion;
 }
 
-char* leerDeMemoria(int pid,int pagina,int offset,int size){
+void* leerDeMemoria(int pid,int pagina,int offset,int size){
 	log_info(loggerConPantalla,"Leyendo de memoria--->PID:%d",pid);
 	char comandoSolicitud= 'S';
-	char* buffer = malloc(size);
+	void* buffer = malloc(size);
 	int resultadoEjecucion=0;
 
 		send(socketMemoria,&comandoSolicitud,sizeof(char),0);
