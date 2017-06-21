@@ -140,10 +140,17 @@ void compactarPaginaHeap(int pagina, int pid){
 		memcpy(&siguiente->bitUso,buffer , sizeof(int));
 		memcpy(&siguiente->size,buffer + sizeof(int) , sizeof(int));
 
-		if(actual->bitUso == -1 && siguiente->bitUso == -1){
-			actual->size = actual->size + sizeof(t_bloqueMetadata) + siguiente->size;
-			//escribirEnMemoria(pid,pagina,offset,actual,sizeof(t_bloqueMetadata)); //Actualizo el metadata en el que me encuentro parado en la memoria
+		free(buffer);
 
+		if(actual->bitUso == -1 && siguiente->bitUso == -1){
+
+			actual->size = actual->size + sizeof(t_bloqueMetadata) + siguiente->size;
+			buffer= malloc(sizeof(t_bloqueMetadata));
+			memcpy(buffer,actual,sizeof(t_bloqueMetadata));
+
+			escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),buffer); //Actualizo el metadata en el que me encuentro parado en la memoria
+
+			free(buffer);
 		}
 		else{
 			offset += sizeof(t_bloqueMetadata) + actual->size;
