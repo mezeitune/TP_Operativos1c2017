@@ -314,8 +314,9 @@ int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->in
 	if(program_counter == -1){
 		log_info(loggerConPantalla, "No se encontro la etiqueta: %s en el indice de etiquetas", string_cortado[0]);
 	} else {
-		pcb_actual->programCounter = (program_counter - 1);
-		log_info(loggerConPantalla, "Program Counter, despues de etiqueta: %d", pcb_actual->programCounter);
+		pcb_actual->programCounter = (program_counter-1);
+		log_info(loggerConPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter,etiqueta);
+		cantidadInstruccionesAEjecutarPcb_Actual = cantidadInstruccionesAEjecutarPcb_Actual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
 	}
 int i = 0;
 	while(string_cortado[i] != NULL){

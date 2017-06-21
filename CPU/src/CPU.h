@@ -83,6 +83,7 @@ int cpuExpropiada=1;
 int cpuBloqueada=1;
 int cantidadIntruccionesEjecutadas=0;
 int quantum = 0;
+int cantidadInstruccionesAEjecutarPcb_Actual;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 //---------Primitivas Comunes----------//
 t_puntero definirVariable(t_nombre_variable variable);

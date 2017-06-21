@@ -155,7 +155,7 @@ char* obtener_instruccion(){
 }
 void EjecutarProgramaMedianteAlgoritmo(){
 
-	int cantidadInstruccionesAEjecutarPcb_Actual=pcb_actual->cantidadInstrucciones;
+	cantidadInstruccionesAEjecutarPcb_Actual=pcb_actual->cantidadInstrucciones;
 
 	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
 		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarPcb_Actual){
