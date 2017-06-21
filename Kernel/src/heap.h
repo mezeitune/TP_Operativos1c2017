@@ -127,7 +127,7 @@ void compactarPaginaHeap(int pagina, int pid){
 	t_bloqueMetadata* siguiente = malloc(sizeof(t_bloqueMetadata));
 	void* buffer= malloc(sizeof(t_bloqueMetadata));
 
-	while(offset < config_paginaSize){
+	while(offset < config_paginaSize && offset + sizeof(t_bloqueMetadata) + actual->size > config_paginaSize - sizeof(t_bloqueMetadata)){
 		buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata)); //Leo el metadata Actual
 		memcpy(&actual->bitUso,buffer, sizeof(int));
 		memcpy(&actual->size,buffer + sizeof(int) , sizeof(int));
