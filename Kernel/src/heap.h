@@ -99,12 +99,18 @@ int obtenerPaginaSiguiente(int pid){
 
 
 int verificarEspacioLibreHeap(int size, int pid){
-	log_info(loggerConPantalla,"Verificando espacio libre para memoria dinamica");
+	log_info(loggerConPantalla,"----Verificando espacio libre para memoria dinamica-----\n");
 	int i = 0;
+	printf("PID Del Proceso:%d\n",pid);
+	printf("Size A Reservar:%d\n",size);
 	t_adminBloqueMetadata* aux;
+	printf("Lecturas:\n");
 	while(i < list_size(listaAdmHeap))
 	{
 		aux = list_get(listaAdmHeap,i);
+		printf("i=%d\n",i);
+		printf("sizeDisponible=%d\n",aux->sizeDisponible);
+		printf("pid=%d\n",aux->pid);
 		if(aux->sizeDisponible >= size && aux->pid == pid)
 		{
 			compactarPaginaHeap(aux->pagina,aux->pid);
@@ -117,7 +123,7 @@ int verificarEspacioLibreHeap(int size, int pid){
 
 
 int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva para el proceso
-	log_info(loggerConPantalla,"Reservando pagina de heap");
+	log_info(loggerConPantalla,"------Reservando pagina de heap-----\n");
 	t_bloqueMetadata aux ;
 
 	void* buffer=malloc(sizeof(t_bloqueMetadata));
@@ -131,13 +137,17 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	int resultadoEjecucion=escribirEnMemoria(pid,pagina,0,sizeof(t_bloqueMetadata),buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
 
 
-	t_adminBloqueMetadata bloqueAdmin;
-	bloqueAdmin.pagina = pagina;
-	bloqueAdmin.pid = pid;
-	bloqueAdmin.sizeDisponible = aux.size;
+	t_adminBloqueMetadata* bloqueAdmin=malloc(sizeof(t_adminBloqueMetadata));
+	bloqueAdmin->pagina = pagina;
+	bloqueAdmin->pid = pid;
+	bloqueAdmin->sizeDisponible = aux.size;
+	printf("Pagina Reservada:%d\n",bloqueAdmin->pagina);
+	printf("PID Proceso Reservado:%d\n",bloqueAdmin->pid);
+	printf("Size Disponible Pagina Reservada:%d\n",bloqueAdmin->sizeDisponible);
 	list_add(listaAdmHeap, &bloqueAdmin);
 
 	free(buffer);
+	free(bloqueAdmin);
 	return resultadoEjecucion;
 }
 
