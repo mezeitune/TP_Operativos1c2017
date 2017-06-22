@@ -34,6 +34,9 @@ typedef struct{
 
 t_list* listaAdmHeap;
 
+int obtenerPaginaSiguiente(int pid);
+
+
 void reservarEspacioHeap(int pid, int size,int socket);
 int verificarEspacioLibreHeap(int size, int pid);
 int reservarPaginaHeap(int pid,int pagina);
@@ -48,20 +51,12 @@ void reservarEspacioHeap(int pid, int size, int socket){
 	log_info(loggerConPantalla,"---Reservando espacio de memoria dinamica---\n");
 	t_punteroCpu* puntero = malloc(sizeof(t_punteroCpu));
 
-	_Bool verificaPid(t_pcb* pcb){
-		return pcb->pid == pid;
-	}
 
 	puntero->pagina = verificarEspacioLibreHeap(size, pid);
 
 	if(puntero->pagina  == -1){
 
-		pthread_mutex_lock(&mutexColaEjecucion);
-		t_pcb* pcb = list_remove_by_condition(colaEjecucion,(void*)verificaPid);
-		puntero->pagina = pcb->cantidadPaginasCodigo + stackSize ; /*TODO: Sumar los heaps ya pedidos*/
-		list_add(colaEjecucion,pcb);
-		pthread_mutex_unlock(&mutexColaEjecucion);
-
+		puntero->pagina = obtenerPaginaSiguiente(pid);
 		if(reservarPaginaHeap(pid,puntero->pagina)<0){
 			log_error(loggerConPantalla,"No hay espacio suficiente en memoria para reservar una nueva pagina\n");
 			/*TODO: Avisar a Consola, expropiar proceso y terminarlo, liberando recursos*/
@@ -74,6 +69,32 @@ void reservarEspacioHeap(int pid, int size, int socket){
 
 	send(socket,&puntero->pagina,sizeof(int),0);
 	send(socket,&puntero->offset,sizeof(int),0);
+}
+
+int obtenerPaginaSiguiente(int pid){
+	int pagina;
+	_Bool verificaPid(t_pcb* pcb){
+			return pcb->pid == pid;
+		}
+
+		_Bool verificaPidContable(t_contable* proceso){
+				return proceso->pid == pid;
+			}
+
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPidContable);
+
+	pthread_mutex_lock(&mutexColaEjecucion);
+	t_pcb* pcb = list_remove_by_condition(colaEjecucion,(void*)verificaPid);
+	pagina = pcb->cantidadPaginasCodigo + stackSize + proceso->cantPaginasHeap ;
+	list_add(colaEjecucion,pcb);
+	pthread_mutex_unlock(&mutexColaEjecucion);
+
+	list_add(listaContable,proceso);
+	pthread_mutex_unlock(&mutexListaContable);
+
+
+	return pagina;
 }
 
 
@@ -105,6 +126,7 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	memcpy(buffer,&aux,sizeof(t_bloqueMetadata));
 
 	reservarPaginaEnMemoria(pid);
+	actualizarPaginasHeap(pid);
 
 	int resultadoEjecucion=escribirEnMemoria(pid,pagina,0,sizeof(t_bloqueMetadata),buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
 

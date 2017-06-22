@@ -15,6 +15,7 @@ typedef struct{
 	int pid;
 	int cantRafagas;
 	//int cantOpPrivilegiadas;
+	int cantPaginasHeap;
 	//lo del heap
 	int cantSysCalls;
 }t_contable;
@@ -30,11 +31,23 @@ void crearInformacionContable(int pid){
 	contabilidadProceso->pid=pid;
 	contabilidadProceso->cantRafagas=0;
 	contabilidadProceso->cantSysCalls=0;
+	contabilidadProceso->cantPaginasHeap=0;
 
 	pthread_mutex_lock(&mutexListaContable);
 	list_add(listaContable,contabilidadProceso);
 	pthread_mutex_unlock(&mutexListaContable);
 
+}
+
+void actualizarPaginasHeap(int pid){
+	_Bool verificaPid(t_contable* contabilidad){
+		return contabilidad->pid == pid;
+	}
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* contabilidad = list_remove_by_condition(listaContable,(void*)verificaPid);
+	contabilidad->cantPaginasHeap+=1;
+	list_add(listaContable,contabilidad);
+	pthread_mutex_unlock(&mutexListaContable);
 }
 
 void actualizarRafagas(int pid, int rafagas){
