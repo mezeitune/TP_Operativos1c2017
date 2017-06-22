@@ -200,7 +200,7 @@ void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **c
 
 int reservarBloqueHeap(int pid,int size,int pagina){
 	log_info(loggerConPantalla,"--Reservando bloque de memoria dinamica en heap de pagina:%d--\n",pagina);
-	t_bloqueMetadata* auxBloque = malloc(sizeof(t_bloqueMetadata));
+	t_bloqueMetadata auxBloque;
 	t_adminBloqueMetadata* aux = malloc(sizeof(t_adminBloqueMetadata));
 	int offset=0;
 	int i = 0;
@@ -227,30 +227,31 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 	while(i < config_paginaSize){
 
 
-		auxBloque = (t_bloqueMetadata*) leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
+		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
+		memcpy(&auxBloque,buffer,sizeof(t_bloqueMetadata));
 
 		//memcpy(&auxBloque->bitUso,buffer , sizeof(int));
 		//memcpy(&auxBloque->size,buffer + sizeof(int), sizeof(int));
 
 		printf("Leo:\n");
-		printf("BitUso:%d\n",auxBloque->bitUso);
-		printf("Size:%d\n",auxBloque->size);
+		printf("BitUso:%d\n",auxBloque.bitUso);
+		printf("Size:%d\n",auxBloque.size);
 
-		if(auxBloque->size >= size && auxBloque->bitUso == -1){
+		if(auxBloque.size >= size && auxBloque.bitUso == -1){
 
-			auxBloque->bitUso = 1;
-			auxBloque->size = sizeReal;
+			auxBloque.bitUso = 1;
+			auxBloque.size = sizeReal;
 			memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
 			printf("Escribo:\n");
-			printf("BitUso:%d\n",auxBloque->bitUso);
-			printf("Size:%d\n",auxBloque->size);
+			printf("BitUso:%d\n",auxBloque.bitUso);
+			printf("Size:%d\n",auxBloque.size);
 
 			escribirEnMemoria(pid,pagina,i,sizeof(t_bloqueMetadata),buffer); //Escribo y reservo el metadata que se quiere reservar
 
 			offset = i;
 			if(aux->sizeDisponible > 0){
-				auxBloque->bitUso = -1;
-				auxBloque->size = aux->sizeDisponible;
+				auxBloque.bitUso = -1;
+				auxBloque.size = aux->sizeDisponible;
 				memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
 
 				escribirEnMemoria(pid,pagina,i+sizeof(t_bloqueMetadata)+sizeReal,sizeof(t_bloqueMetadata),buffer); //Anuncio cuanto espacio libre queda en el heap en el siguiente metadata
@@ -259,7 +260,7 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 			break;
 		}
 		else{
-			i = i + sizeof(t_bloqueMetadata) + auxBloque->size;
+			i = i + sizeof(t_bloqueMetadata) + auxBloque.size;
 		}
 
 	}
