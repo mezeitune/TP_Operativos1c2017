@@ -45,7 +45,7 @@ void destruirPaginaHeap(int pidProc, int pagina);
 void destruirTodasLasPaginasHeapDeProceso(int pidProc);
 
 void reservarEspacioHeap(int pid, int size, int socket){
-	log_info(loggerConPantalla,"Reservando espacio de memoria dinamica");
+	log_info(loggerConPantalla,"---Reservando espacio de memoria dinamica---\n");
 	t_punteroCpu* puntero = malloc(sizeof(t_punteroCpu));
 
 	_Bool verificaPid(t_pcb* pcb){
@@ -63,10 +63,10 @@ void reservarEspacioHeap(int pid, int size, int socket){
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
 		if(reservarPaginaHeap(pid,puntero->pagina)<0){
-		log_error(loggerConPantalla,"No hay espacio suficiente en memoria para reservar una nueva pagina");
-		/*TODO: Avisar a Consola, expropiar proceso y terminarlo, liberando recursos*/
-			return;
-		}
+			log_error(loggerConPantalla,"No hay espacio suficiente en memoria para reservar una nueva pagina\n");
+			/*TODO: Avisar a Consola, expropiar proceso y terminarlo, liberando recursos*/
+				return;
+			}
 		}
 
 
@@ -177,14 +177,13 @@ void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **c
 }
 
 int reservarBloqueHeap(int pid,int size,int pagina){
-	log_info(loggerConPantalla,"Reservando bloque de memoria dinamica en heap");
+	log_info(loggerConPantalla,"--Reservando bloque de memoria dinamica en heap de pagina:%d--\n",pagina);
 	t_bloqueMetadata* auxBloque = malloc(sizeof(t_bloqueMetadata));
 	t_adminBloqueMetadata* aux = malloc(sizeof(t_adminBloqueMetadata));
 	int offset=0;
 	int i = 0;
 	int sizeReal = size;
-	void* buffer;
-	int desplazamiento=0;
+	void *buffer=malloc(sizeof(t_bloqueMetadata));
 
 	while(i < list_size(listaAdmHeap))
 	{
@@ -195,7 +194,7 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 				aux->sizeDisponible = 0;
 			}
 			else{
-				aux->sizeDisponible = aux->sizeDisponible - size;
+				aux->sizeDisponible = aux->sizeDisponible - size - sizeof(t_bloqueMetadata);
 			}
 			list_replace(listaAdmHeap,i,aux);
 			break;
@@ -205,44 +204,47 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 	i = 0;
 	while(i < config_paginaSize){
 
-		buffer=malloc(sizeof(t_bloqueMetadata));
-		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
 
-		memcpy(&auxBloque->bitUso,buffer + desplazamiento , sizeof(int));
-		desplazamiento += sizeof(int);
-		memcpy(&auxBloque->size,buffer + desplazamiento , sizeof(int));
-		desplazamiento = 0;
+		auxBloque = (t_bloqueMetadata*) leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
 
-		printf("%d\n\n",auxBloque->bitUso);
-		printf("%d\n\n",auxBloque->size);
+		//memcpy(&auxBloque->bitUso,buffer , sizeof(int));
+		//memcpy(&auxBloque->size,buffer + sizeof(int), sizeof(int));
 
-		free(buffer);
+		printf("Leo:\n");
+		printf("BitUso:%d\n",auxBloque->bitUso);
+		printf("Size:%d\n",auxBloque->size);
 
 		if(auxBloque->size >= size && auxBloque->bitUso == -1){
-			buffer=malloc(sizeof(t_bloqueMetadata));
-			auxBloque->bitUso = -1;
-			auxBloque->size = config_paginaSize - sizeof(t_bloqueMetadata);
-			memcpy(buffer,aux,sizeof(t_bloqueMetadata));
+
+			auxBloque->bitUso = 1;
+			auxBloque->size = sizeReal;
+			memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
+			printf("Escribo:\n");
+			printf("BitUso:%d\n",auxBloque->bitUso);
+			printf("Size:%d\n",auxBloque->size);
 
 			escribirEnMemoria(pid,pagina,i,sizeof(t_bloqueMetadata),buffer); //Escribo y reservo el metadata que se quiere reservar
-			free(buffer);
+
 			offset = i;
 			if(aux->sizeDisponible > 0){
-				buffer=malloc(sizeof(t_bloqueMetadata));
 				auxBloque->bitUso = -1;
-				auxBloque->size = config_paginaSize - sizeof(t_bloqueMetadata);
-				memcpy(buffer,aux,sizeof(t_bloqueMetadata));
+				auxBloque->size = aux->sizeDisponible;
+				memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
 
-				escribirEnMemoria(pid,pagina,i+sizeof(t_bloqueMetadata)+sizeReal,sizeof(t_bloqueMetadata),buffer); //ANuncio cuanto espacio libre queda en el heap en el siguiente metadata
-				free(buffer);
+				escribirEnMemoria(pid,pagina,i+sizeof(t_bloqueMetadata)+sizeReal,sizeof(t_bloqueMetadata),buffer); //Anuncio cuanto espacio libre queda en el heap en el siguiente metadata
+
 			}
-		break;
+			break;
 		}
 		else{
 			i = i + sizeof(t_bloqueMetadata) + auxBloque->size;
 		}
 
 	}
+	printf("Terminada reserva bloque heap\n");
+	free(buffer);
+	//free(auxBloque);
+	//free(aux);
 	return offset;
 }
 
