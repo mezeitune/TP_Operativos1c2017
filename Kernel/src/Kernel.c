@@ -26,7 +26,6 @@
 #include <parser/parser.h>
 #include <signal.h>
 #include "pcb.h"
-#include "conexiones.h"
 #include "interfazHandler.h"
 #include "sincronizacion.h"
 #include "planificacion.h"
@@ -38,6 +37,7 @@
 #include "comandosCPU.h"
 #include "heap.h"
 #include "Excepciones.h"
+#include "sockets.h"
 
 void recibirPidDeCpu(int socket);
 
@@ -54,7 +54,6 @@ void inicializarExitCodeArray();
 //------InterruptHandler-----//
 void interruptHandler(int socket,char orden);
 void imprimirPorConsola(int socketAceptado);
-int buscarSocketHiloPrograma(int pid);
 int buscarProcesoYTerminarlo(int pid);
 void gestionarCierreConsola(int socket);
 void gestionarCierreCpu(int socket);
@@ -64,7 +63,6 @@ void gestionarCierreCpu(int socket);
 //---------Conexiones---------------//
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
-fd_set master;
 int flagFinalizarKernel = 0;
 //---------Conexiones-------------//
 
@@ -352,12 +350,6 @@ void gestionarCierreConsola(int socket){
 			pthread_mutex_unlock(&mutexNuevoProceso);
 }
 
-void eliminarSocket(int socket){
-	pthread_mutex_lock(&mutex_masterSet);
-	FD_CLR(socket,&master);
-	pthread_mutex_unlock(&mutex_masterSet);
-	close(socket);
-}
 
 int buscarProcesoYTerminarlo(int pid){
 	log_info(loggerConPantalla,"Finalizando proceso--->PID: %d ",pid);
@@ -418,18 +410,6 @@ int buscarProcesoYTerminarlo(int pid){
 	return 0;
 }
 
-
-int buscarSocketHiloPrograma(int pid){
-
-	_Bool verificarPid(t_consola* consolathread){
-		return (consolathread->pid == pid);
-	}
-	int socketHiloConsola;
-	t_consola* consolathread = list_find(listaConsolas,(void*)verificarPid);
-	socketHiloConsola =consolathread->socketHiloPrograma;
-	/*free(consolathread);*/ //TODO: Ver si aca hay que liberar o no
-	return socketHiloConsola;
-}
 
 void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));

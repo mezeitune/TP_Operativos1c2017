@@ -28,37 +28,20 @@
 #include "comandosCPU.h"
 #include "heap.h"
 #include "Excepciones.h"
-
-
-int pid=0;
-typedef struct CONSOLA{
-	int pid;
-	int socketHiloPrograma;
-}t_consola;
-
-typedef struct {
-	char* codigo;
-	int size;
-	int pid;
-	int socketHiloConsola;
-}t_codigoPrograma;
-
+#include "conexionConsola.h"
 
 
 /*---PAUSA PLANIFICACION---*/
 int flagTerminarPlanificadorLargoPlazo = 0;
 int flagPlanificacion;
-
 void verificarPausaPlanificacion();
-
-
 void reanudarPLanificacion();
 void pausarPlanificacion();
-
 void listaEsperaATerminados();
 /*-------------------------*/
 
 /*----LARGO PLAZO--------*/
+int pid=0;
 void planificarLargoPlazo();
 void administrarNuevosProcesos();
 void administrarFinProcesos();
@@ -67,7 +50,6 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 void liberarMemoriaDinamica(int pid,int cantiPaginasCodigo);
-t_list* listaCodigosProgramas;
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
 
@@ -103,7 +85,6 @@ void cargarConsola(int pid, int idConsola);
 void gestionarFinalizacionProgramaEnCpu(int socket);
 void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
 void finalizarHiloPrograma(int pid);
-void eliminarSocket(int socket);
 
 int contadorPid=0;
 t_list* colaNuevos;
@@ -112,7 +93,6 @@ t_list* colaTerminados;
 t_list* colaEjecucion;
 t_list* colaBloqueados;
 
-t_list* listaConsolas;
 
 t_list* listaEnEspera;
 

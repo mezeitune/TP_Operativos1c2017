@@ -1,5 +1,7 @@
 #ifndef _CONEXIONES_
 #define _CONEXIONES_
+#include "sincronizacion.h"
+
 int crear_socket_servidor(char *ip, char *puerto);
 int crear_socket_cliente(char * ip, char * puerto);
 char* recibir_string(int socket_aceptado);
@@ -7,9 +9,10 @@ void enviar_string(int socket, char * mensaje);
 void* recibir(int socket);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
 void *get_in_addr(struct sockaddr *sa);
-
+void eliminarSocket(int socket);
 
 //------------Sockets unicos globales--------------------//
+fd_set master;
 void inicializarSockets();
 int socketFyleSys;
 int socketMemoria;
@@ -21,6 +24,14 @@ void inicializarSockets(){
 		socketMemoria = crear_socket_cliente(ipMemoria, puertoMemoria);
 		socketFyleSys = crear_socket_cliente(ipFileSys, puertoFileSys);
 }
+
+void eliminarSocket(int socket){
+	pthread_mutex_lock(&mutex_masterSet);
+	FD_CLR(socket,&master);
+	pthread_mutex_unlock(&mutex_masterSet);
+	close(socket);
+}
+
 
 int crear_socket_cliente(char * ip, char * puerto){
 
