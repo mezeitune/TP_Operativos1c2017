@@ -47,13 +47,15 @@ void actualizarSysCalls(int pid){
 	pthread_mutex_unlock(&mutexListaContable);
 }
 
-void actualizarPaginasHeap(int pid){
+
+void aumentarPaginasHeap(int pid){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* contabilidad = buscarInformacionContable(pid);
 	contabilidad->cantPaginasHeap++;
 	list_add(listaContable,contabilidad);
 	pthread_mutex_unlock(&mutexListaContable);
 }
+
 
 void actualizarRafagas(int pid, int rafagas){
 	pthread_mutex_lock(&mutexListaContable);

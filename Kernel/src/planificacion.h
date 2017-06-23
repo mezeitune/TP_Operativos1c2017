@@ -26,6 +26,7 @@
 #include "contabilidad.h"
 #include "semaforosAnsisop.h"
 #include "comandosCPU.h"
+#include "heap.h"
 
 
 int pid=0;
@@ -65,6 +66,7 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 void informarConsola(int socketHiloPrograma,char* mensaje, int size);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
+void liberarMemoriaDinamica(int pid,int cantiPaginasCodigo);
 t_list* listaCodigosProgramas;
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
@@ -196,6 +198,7 @@ void administrarFinProcesos(){
 
 					finalizarHiloPrograma(proceso->pid);
 					liberarRecursosEnMemoria(proceso);
+					//liberarMemoriaDinamica(proceso->pid,proceso->cantidadPaginasCodigo);
 					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
 				}else {
 
@@ -207,6 +210,27 @@ void administrarFinProcesos(){
 
 	}
 }
+
+void liberarMemoriaDinamica(int pid,int cantPaginasCodigo){
+	int cantPaginasHeap;
+	int numeroPagina;
+	_Bool verificaPid(t_contable* proceso){
+		return proceso->pid == pid;
+	}
+
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
+	cantPaginasHeap = proceso->cantPaginasHeap;
+	list_add(listaContable,proceso);
+	pthread_mutex_unlock(&mutexListaContable);
+
+	while (cantPaginasHeap > 0){
+		numeroPagina = stackSize + cantPaginasCodigo + cantPaginasHeap;
+		destruirPaginaHeap(pid,numeroPagina);
+		cantPaginasHeap --;
+	}
+}
+
 
 
 t_codigoPrograma* buscarCodigoDeProceso(int pid){

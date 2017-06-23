@@ -11,7 +11,7 @@
 #include "configuraciones.h"
 #include <commons/collections/list.h>
 #include "conexionMemoria.h"
-#include "planificacion.h"
+#include "contabilidad.h"
 
 typedef struct
 {
@@ -45,6 +45,7 @@ int reservarBloqueHeap(int pid,int size,int pagina);
 void destruirPaginaHeap(int pidProc, int pagina);
 void destruirTodasLasPaginasHeapDeProceso(int pidProc);
 int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid,int size);
+void liberarBloqueHeap(int pid, int pagina, int offset);
 
 void reservarEspacioHeap(int pid, int size, int socket){
 	log_info(loggerConPantalla,"---Reservando espacio de memoria dinamica---\n");
@@ -61,6 +62,7 @@ void reservarEspacioHeap(int pid, int size, int socket){
 			/*TODO: Avisar a Consola, expropiar proceso y terminarlo, liberando recursos*/
 				return;
 			}
+		aumentarPaginasHeap(pid);
 		}
 
 
@@ -99,7 +101,8 @@ int verificarEspacioLibreHeap(int size, int pid){
 
 
 int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva para el proceso
-	log_info(loggerConPantalla,"------Reservando pagina de heap-----\n");
+	log_info(loggerConPantalla,"Reservando pagina de heap--->PID:%d",pid);
+
 	t_bloqueMetadata aux ;
 
 	void* buffer=malloc(sizeof(t_bloqueMetadata));
@@ -108,7 +111,6 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	memcpy(buffer,&aux,sizeof(t_bloqueMetadata));
 
 	reservarPaginaEnMemoria(pid);
-	actualizarPaginasHeap(pid);
 
 	int resultadoEjecucion=escribirEnMemoria(pid,pagina,0,sizeof(t_bloqueMetadata),buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
 
@@ -316,7 +318,7 @@ int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int si
 }
 
 void liberarBloqueHeap(int pid, int pagina, int offset){
-
+	log_info(loggerConPantalla,"Liberando bloque de memoria dinamica--->PID:%d",pid);
 	int i = 0;
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 	t_bloqueMetadata* buffer= malloc(sizeof(t_bloqueMetadata));

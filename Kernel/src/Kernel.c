@@ -252,6 +252,7 @@ void interruptHandler(int socketAceptado,char orden){
 	int size;
 	int pagina;
 	int offset;
+	int resultadoEjecucion;
 
 	switch(orden){
 
@@ -280,15 +281,17 @@ void interruptHandler(int socketAceptado,char orden){
 			log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
 			recv(socketAceptado,&size,sizeof(int),0);
 			reservarEspacioHeap(pid,size,socketAceptado);
+			actualizarSysCalls(pid);
 					break;
 		case  'L':
 			recv(socketAceptado,&pid,sizeof(int),0);
 			log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d",pid);
 			recv(socketAceptado,&pagina,sizeof(int),0);
 			recv(socketAceptado,&offset,sizeof(int),0);
-			destruirPaginaHeap(pid,pagina);
-					//liberar heap tomando como inicio ese puntero y el espacio dado anteriormente por "reservar"
-					//devolverle a la CPU el resultado de la ejecucion (1 piola, 0 fuck)
+			liberarBloqueHeap(pid,pagina,offset);
+			actualizarSysCalls(pid);
+			resultadoEjecucion = 1;
+			send(socketAceptado,&resultadoEjecucion,sizeof(int),0);
 					break;
 		default:
 			break;
