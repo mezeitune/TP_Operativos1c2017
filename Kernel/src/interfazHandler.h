@@ -14,11 +14,12 @@ void imprimirInterfazUsuario();
 void modificarGradoMultiprogramacion();
 void finalizarProcesoVoluntariamente(int pid);
 void obtenerListadoProcesos();
+void obtenerDatosProceso(int pid);
 void mostrarProcesos(char orden);
 void imprimirListadoDeProcesos(t_list* listaPid);
 void filtrarPorPidYMostrar(t_list* cola);
 void interfazHandlerParaFileSystem(char orden,int socket_aceptado);
-
+int verificarProcesoExistente(int pid);
 
 pthread_t interfaz;
 int flagTerminarUI=0;
@@ -34,15 +35,23 @@ void interfazHandler(){
 	int pid;
 
 	while(1){
-		/*if(orden=='\0')*/scanf("%c",&orden);
-		printf("ORDEN: %c\n", orden);
-		//read(stdin,(void*) orden,sizeof(char));
-//		printf("Entre en UI\n");
+		scanf("%c",&orden);
 
 		switch(orden){
 
-				case 'O':
+				case 'L':
 					obtenerListadoProcesos();
+					break;
+				case 'O':
+					printf("Ingrese el pid del proceso\n");
+					scanf("%d",&pid);
+					if(verificarProcesoExistente(pid)<0){
+						log_error(loggerConPantalla,"Proceso no existente");
+						break;
+					}
+					printf("\t\tDatos del proceso:%d\t\t\n",pid);
+					printf("\tPID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\n");
+					obtenerDatosProceso(pid);
 					break;
 				case 'R':
 					reanudarPLanificacion();
@@ -91,7 +100,32 @@ void interfazHandler(){
 
 }
 
+int verificarProcesoExistente(int pid){
+	int resultado;
+	_Bool verificaPid(t_contable* proceso){
+			return proceso->pid == pid;
+		}
+	pthread_mutex_lock(&mutexListaContable);
+	if(list_any_satisfy(listaContable,(void*)verificaPid)) resultado=0;
+	else resultado=-1;
+	pthread_mutex_unlock(&mutexListaContable);
+	return resultado;
+}
 
+void obtenerDatosProceso(int pid){
+
+	_Bool verificaPid(t_contable* proceso){
+		return proceso->pid == pid;
+	}
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
+
+
+	printf("\t%d\t\t%d\t\t\t\%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap);
+
+	list_add(listaContable,proceso);
+	pthread_mutex_unlock(&mutexListaContable);
+}
 
 
 void obtenerListadoProcesos(){
@@ -158,12 +192,12 @@ void mostrarProcesos(char orden){
 
 void imprimirListadoDeProcesos(t_list* listaPid){
 	printf("Cantidad de procesos: %d\n", listaPid->elements_count);
-	printf("\tPID\n");
+	printf("\tPID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\n");
 	int pid;
 	int i;
 	for(i=0 ; i<listaPid->elements_count ; i++){
 		pid = list_get(listaPid,i);
-		printf("\t%d\n",pid);
+		obtenerDatosProceso(pid);
 	}
 	list_destroy(listaPid);
 }
@@ -216,7 +250,7 @@ void imprimirInterfazUsuario(){
 	/**************************************Printea interfaz Usuario Kernel*******************************************************/
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener listado programas\n\tT - Obtener todos los procesos\n\tC - Obtener procesos de un estado\n\t\tN - New\n\t\tR - Ready\n\t\tE - Exec\n\t\tB - Blocked\n\t\tF - Finished\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\n");
+	printf("\nIngresar orden de accion:\nO - Obtener datos de proceso\n\tL - Obtener listado programas\n\tT - Obtener todos los procesos\n\tC - Obtener procesos de un estado\n\t\tN - New\n\t\tR - Ready\n\t\tE - Exec\n\t\tB - Blocked\n\t\tF - Finished\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\n");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
 }

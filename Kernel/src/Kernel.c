@@ -125,39 +125,31 @@ void connectionHandler(int socketAceptado, char orden) {
 	char comandoDesdeCPU;
 
 	switch (orden) {
-		case 'A':
-					atenderNuevoPrograma(socketAceptado);
+		case 'A':	atenderNuevoPrograma(socketAceptado);
 					break;
 		case 'N':
 					if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
 					send(socketAceptado,&quantum,sizeof(int),0);
 					gestionarNuevaCPU(socketAceptado);
-
 					break;
-		case 'T':
-					gestionarFinalizacionProgramaEnCpu(socketAceptado);
+		case 'T':	gestionarFinalizacionProgramaEnCpu(socketAceptado);
 					break;
 		case 'F'://Para el FS
 					recv(socketAceptado,&comandoDesdeCPU,sizeof(char),0);
 					interfazHandlerParaFileSystem(comandoDesdeCPU,socketAceptado);//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
-		case 'P':
-					handShakeCPU(socketAceptado);
+		case 'P':	handShakeCPU(socketAceptado);
 					break;
 		case 'X':
 					recv(socketAceptado,&orden,sizeof(char),0);
 					interruptHandler(socketAceptado,orden);
-			break;
+					break;
 		case 'R':
 					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
-
-
 					cpuEjecucionAOciosa(socketAceptado);
-
 					pcb = recibirYDeserializarPcb(socketAceptado);
 					actualizarRafagas(pcb->pid,cantidadDeRafagas);
 					agregarAFinQuantum(pcb);
-
 					break;
 		case 'K':
 					recibirPidDeCpu(socketAceptado);
@@ -270,7 +262,7 @@ void interruptHandler(int socketAceptado,char orden){
 			excepcionPlanificacionDetenida(socketAceptado);
 			break;
 		case 'C':
-			gestionarCierreCpu(socketAceptado); /*TODO:NACHO ---> Eliminar la CPU que se desconecto. De la lista de CPUS y de la lista de SOCKETS*/
+			gestionarCierreCpu(socketAceptado); /*TODO: Rompe porque la CPU esta esperando un PCB*/
 			break;
 		case 'E':
 			gestionarCierreConsola(socketAceptado);
@@ -328,7 +320,15 @@ void excepcionPlanificacionDetenida(int socket){
 }
 
 void gestionarCierreCpu(int socket){
-	log_warning(loggerConPantalla,"\nLa CPU  %d se ha cerrado",socket);
+	log_warning(loggerConPantalla,"La CPU  %d se ha cerrado",socket);
+
+	_Bool verificaSocket(t_cpu* cpu){
+		return cpu->socket == socket;
+	}
+	pthread_mutex_lock(&mutexListaCPU);
+	list_remove_and_destroy_by_condition(listaCPU,(void*)verificaSocket,free);
+	pthread_mutex_unlock(&mutexListaCPU);
+	eliminarSocket(socket);
 }
 
 void imprimirPorConsola(socketAceptado){
@@ -583,7 +583,7 @@ void selectorConexiones() {
 
 											if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
 
-											log_info(loggerConPantalla,"\nSelectserver: nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
+											log_info(loggerConPantalla,"Selectserver: nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 										}
 									}
 									else if(socket != 0) {
