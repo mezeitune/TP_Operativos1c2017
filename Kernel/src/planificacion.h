@@ -64,7 +64,6 @@ void administrarNuevosProcesos();
 void administrarFinProcesos();
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
-void informarConsola(int socketHiloPrograma,char* mensaje, int size);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 void liberarMemoriaDinamica(int pid,int cantiPaginasCodigo);
@@ -740,9 +739,4 @@ int obtenerPaginaSiguiente(int pid){
 	return pagina;
 }
 
-
-void informarConsola(int socketHiloPrograma,char* mensaje, int size){
-	send(socketHiloPrograma,&size,sizeof(int),0);
-	send(socketHiloPrograma,mensaje,size,0);
-}
 #endif /* PLANIFICACION_H_ */

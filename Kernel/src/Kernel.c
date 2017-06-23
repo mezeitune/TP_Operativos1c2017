@@ -56,8 +56,6 @@ void interruptHandler(int socket,char orden);
 void imprimirPorConsola(int socketAceptado);
 int buscarSocketHiloPrograma(int pid);
 int buscarProcesoYTerminarlo(int pid);
-void excepcionReservaRecursos(int socketAceptado);
-void excepcionPlanificacionDetenida(int socket);
 void gestionarCierreConsola(int socket);
 void gestionarCierreCpu(int socket);
 //------InterruptHandler-----//
@@ -301,29 +299,6 @@ void interruptHandler(int socketAceptado,char orden){
 	}
 }
 
-void excepcionReservaRecursos(int socket){
-	char* mensaje;
-	int size;
-	log_info(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos\n");
-	mensaje="El programa ANSISOP no puede iniciar actualmente debido a que no se pudo reservar recursos para ejecutar el programa, intente mas tarde";
-	size=strlen(mensaje);
-	informarConsola(socket,mensaje,size);
-	log_info(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socket);
-}
-
-void excepcionPlanificacionDetenida(int socket){
-	char* mensaje;
-	int size;
-	log_info(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido");
-	mensaje = "El programa ANSISOP no puede iniciar actualmente debido a que la planificacion del sistema se encuentra detenido";
-	size=strlen(mensaje);
-	informarConsola(socket,mensaje,size);
-	mensaje = "Finalizar";
-	size=strlen(mensaje);
-	informarConsola(socket,mensaje,size);
-	recv(socket,&size,sizeof(int),0); // A modo de ok
-	eliminarSocket(socket);
-}
 
 void gestionarCierreCpu(int socket){
 	log_warning(loggerConPantalla,"La CPU  %d se ha cerrado",socket);
