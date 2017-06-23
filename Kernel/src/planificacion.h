@@ -27,6 +27,7 @@
 #include "semaforosAnsisop.h"
 #include "comandosCPU.h"
 #include "heap.h"
+#include "Excepciones.h"
 
 
 int pid=0;
@@ -192,13 +193,14 @@ void administrarFinProcesos(){
 					list_remove_by_condition(colaEjecucion, (void*)verificaPid);
 					pthread_mutex_unlock(&mutexColaEjecucion);
 
-					cambiarEstadoATerminado(proceso,0); /*TODO: Cambiar exitCode*/
+					cambiarEstadoATerminado(proceso,EXIT_OK); /*TODO: Cambiar exitCode*/
 					disminuirGradoMultiprogramacion();
 					sem_post(&sem_admitirNuevoProceso);
 
 					finalizarHiloPrograma(proceso->pid);
 					liberarRecursosEnMemoria(proceso);
 					//liberarMemoriaDinamica(proceso->pid,proceso->cantidadPaginasCodigo);
+					/*TODO: Ver que terminar de FS*/
 					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
 				}else {
 

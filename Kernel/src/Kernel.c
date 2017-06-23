@@ -434,6 +434,7 @@ int buscarProcesoYTerminarlo(int pid){
 	pthread_mutex_unlock(&mutexColaBloqueados);
 
 	pthread_mutex_lock(&mutexColaTerminados); /*TODO: Agregar EXIT CODE*/
+	//procesoATerminar->exitCode = -EXIT_END_OF_PROCESS;
 	list_add(colaTerminados,procesoATerminar);
 	pthread_mutex_unlock(&mutexColaTerminados);
 	return 0;
