@@ -46,7 +46,8 @@ void connectionHandler(int socketAceptado, char orden);
 void inicializarListas();
 int atenderNuevoPrograma(int socketAceptado);
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola);
-void gestionarNuevaCPU(int socketCPU);
+void gestionarNuevaCPU(int socketCPU,int quantum);
+void gestionarRRFinQuantum(int socket);
 void handShakeCPU(int socketCPU);
 void inicializarExitCodeArray();
 //---------ConnectionHandler-------//
@@ -54,9 +55,12 @@ void inicializarExitCodeArray();
 //------InterruptHandler-----//
 void interruptHandler(int socket,char orden);
 void imprimirPorConsola(int socketAceptado);
+void gestionarFinalizarProgramaConsola(int socket);
 int buscarProcesoYTerminarlo(int pid);
 void gestionarCierreConsola(int socket);
 void gestionarCierreCpu(int socket);
+void gestionarAlocar(int socket);
+void gestionarLiberar(int socket);
 //------InterruptHandler-----//
 
 
@@ -110,26 +114,16 @@ int main() {
 
 void connectionHandler(int socketAceptado, char orden) {
 
-	int cantidadDeRafagas;
 	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
-
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
-
-
 	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
-	t_pcb* pcb;
-
 	char comandoDesdeCPU;
-
 	switch (orden) {
 		case 'A':	atenderNuevoPrograma(socketAceptado);
 					break;
-		case 'N':
-					if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
-					send(socketAceptado,&quantum,sizeof(int),0);
-					gestionarNuevaCPU(socketAceptado);
+		case 'N':	gestionarNuevaCPU(socketAceptado,quantum);
 					break;
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socketAceptado);
 					break;
@@ -143,12 +137,9 @@ void connectionHandler(int socketAceptado, char orden) {
 					recv(socketAceptado,&orden,sizeof(char),0);
 					interruptHandler(socketAceptado,orden);
 					break;
-		case 'R':
-					recv(socketAceptado,&cantidadDeRafagas,sizeof(int),0);
-					cpuEjecucionAOciosa(socketAceptado);
-					pcb = recibirYDeserializarPcb(socketAceptado);
-					actualizarRafagas(pcb->pid,cantidadDeRafagas);
-					agregarAFinQuantum(pcb);
+
+					/*TODO:Llevar al Interrupt handler*/
+		case 'R':	gestionarRRFinQuantum(socketAceptado);
 					break;
 		case 'K':
 					recibirPidDeCpu(socketAceptado);
@@ -170,15 +161,9 @@ void connectionHandler(int socketAceptado, char orden) {
 					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 					break;
 		}
-
 	orden = '\0';
 	return;
-
 }
-
-
-
-
 
 int atenderNuevoPrograma(int socketAceptado){
 		log_info(loggerConPantalla,"Atendiendo nuevo programa");
@@ -230,7 +215,10 @@ void handShakeCPU(int socketCPU){
 	send(socketCPU,&stackSize,sizeof(int),0);
 }
 
-void gestionarNuevaCPU(int socketCPU){
+void gestionarNuevaCPU(int socketCPU,int quantum){
+	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
+	send(socketCPU,&quantum,sizeof(int),0);
+
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
 	cpu->enEjecucion = 0;
@@ -241,56 +229,39 @@ void gestionarNuevaCPU(int socketCPU){
 	sem_post(&sem_CPU);
 }
 
+void gestionarRRFinQuantum(int socket){
+	int cantidadDeRafagas;
+	recv(socket,&cantidadDeRafagas,sizeof(int),0);
+	cpuEjecucionAOciosa(socket);
+	t_pcb* pcb = recibirYDeserializarPcb(socket);
+	actualizarRafagas(pcb->pid,cantidadDeRafagas);
+	agregarAFinQuantum(pcb);
+}
+
 void recibirPidDeCpu(int socket){
 int pid;
 	recv(socket,&pid,sizeof(int),0);
 }
 void interruptHandler(int socketAceptado,char orden){
 	log_warning(loggerConPantalla,"Ejecutando interrupt handler");
-	int pid;
-	int size;
-	int pagina;
-	int offset;
-	int resultadoEjecucion;
 
 	switch(orden){
 
-		case 'A':
-			excepcionReservaRecursos(socketAceptado);
-			break;
-		case 'B':
-			excepcionPlanificacionDetenida(socketAceptado);
-			break;
-		case 'C':
-			gestionarCierreCpu(socketAceptado); /*TODO: Rompe porque la CPU esta esperando un PCB*/
-			break;
-		case 'E':
-			gestionarCierreConsola(socketAceptado);
-			break;
-		case 'F':
-			log_warning(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socketAceptado);
-			recv(socketAceptado,&pid,sizeof(int),0);
-			finalizarProcesoVoluntariamente(pid);
-			break;
-		case 'P':
-			imprimirPorConsola(socketAceptado);
-			break;
-		case  'R':
-			recv(socketAceptado,&pid,sizeof(int),0);
-			log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
-			recv(socketAceptado,&size,sizeof(int),0);
-			reservarEspacioHeap(pid,size,socketAceptado);
-			actualizarSysCalls(pid);
+		case 'A':	excepcionReservaRecursos(socketAceptado);
 					break;
-		case  'L':
-			recv(socketAceptado,&pid,sizeof(int),0);
-			log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d",pid);
-			recv(socketAceptado,&pagina,sizeof(int),0);
-			recv(socketAceptado,&offset,sizeof(int),0);
-			liberarBloqueHeap(pid,pagina,offset);
-			actualizarSysCalls(pid);
-			resultadoEjecucion = 1;
-			send(socketAceptado,&resultadoEjecucion,sizeof(int),0);
+		case 'B':	excepcionPlanificacionDetenida(socketAceptado);
+					break;
+		case 'C':	gestionarCierreCpu(socketAceptado); /*TODO: Rompe porque la CPU esta esperando un PCB*/
+					break;
+		case 'E':	gestionarCierreConsola(socketAceptado);
+					break;
+		case 'F':	gestionarFinalizarProgramaConsola(socketAceptado);
+					break;
+		case 'P':	imprimirPorConsola(socketAceptado);
+					break;
+		case  'R':	gestionarAlocar(socketAceptado);
+					break;
+		case  'L':	gestionarLiberar(socketAceptado);
 					break;
 		default:
 			break;
@@ -338,7 +309,7 @@ void gestionarCierreConsola(int socket){
 
 			for(i=0;i<cantidad;i++){
 				pid = *((int*)procesosAFinalizar+desplazamiento);
-						buscarProcesoYTerminarlo(pid); /*TODO: Finalizar procesos en ejecucion*/
+						buscarProcesoYTerminarlo(pid);
 						finalizarHiloPrograma(pid);
 						desplazamiento ++;
 			}
@@ -350,6 +321,11 @@ void gestionarCierreConsola(int socket){
 			pthread_mutex_unlock(&mutexNuevoProceso);
 }
 
+void gestionarFinalizarProgramaConsola(int socket){
+	log_warning(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socket);
+	recv(socket,&pid,sizeof(int),0);
+	finalizarProcesoVoluntariamente(pid);
+}
 
 int buscarProcesoYTerminarlo(int pid){
 	log_info(loggerConPantalla,"Finalizando proceso--->PID: %d ",pid);
@@ -410,6 +386,26 @@ int buscarProcesoYTerminarlo(int pid){
 	return 0;
 }
 
+void gestionarAlocar(int socket){
+	int size,pid;
+	recv(socket,&pid,sizeof(int),0);
+	log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
+	recv(socket,&size,sizeof(int),0);
+	reservarEspacioHeap(pid,size,socket);
+	actualizarSysCalls(pid);
+}
+
+void gestionarLiberar(int socket){
+	int pid,pagina,offset;
+	recv(socket,&pid,sizeof(int),0);
+	log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d",pid);
+	recv(socket,&pagina,sizeof(int),0);
+	recv(socket,&offset,sizeof(int),0);
+	liberarBloqueHeap(pid,pagina,offset);
+	actualizarSysCalls(pid);
+	int resultadoEjecucion = 1;
+	send(socket,&resultadoEjecucion,sizeof(int),0);
+}
 
 void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	void* mensajeAConsola = malloc(sizeof(int)*2 + sizeof(char));
@@ -418,6 +414,7 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 	memcpy(mensajeAConsola + sizeof(int)+ sizeof(char), buffer,size);
 	send(socketConsola,mensajeAConsola,sizeof(char)+ sizeof(int),0);
 }
+
 
 
 void inicializarListas(){

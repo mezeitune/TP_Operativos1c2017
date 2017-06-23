@@ -30,13 +30,13 @@ t_log *loggerConPantalla;
 
 
 void interfazHandler(){
-	char orden/*='\0'*/;
+	char orden;
 	char *mensajeRecibido;
 	int pid;
 
+
 	while(1){
 		scanf("%c",&orden);
-
 		switch(orden){
 
 				case 'L':
@@ -73,6 +73,8 @@ void interfazHandler(){
 				case 'K':
 					printf("Ingrese el pid del proceso a finalizar\n");
 					scanf("%d",&pid);
+					/*TODO: Corroborar que no haya sido eliminado antes*/
+
 					finalizarProcesoVoluntariamente(pid);
 					break;
 				case 'S':
@@ -92,10 +94,9 @@ void interfazHandler(){
 					interfazHandlerParaFileSystem('A',1);
 					break;
 				default:
-					log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
+					log_error(loggerConPantalla ,"Orden no reconocida");
 					break;
 		}
-		orden='\0';
 	}
 
 }
@@ -250,7 +251,7 @@ void imprimirInterfazUsuario(){
 	/**************************************Printea interfaz Usuario Kernel*******************************************************/
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener datos de proceso\n\tL - Obtener listado programas\n\tT - Obtener todos los procesos\n\tC - Obtener procesos de un estado\n\t\tN - New\n\t\tR - Ready\n\t\tE - Exec\n\t\tB - Blocked\n\t\tF - Finished\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\n");
+	printf("\nIngresar orden de accion:\nO - Obtener datos de proceso\nL - Obtener listado programas\n\tT - Obtener todos los procesos\n\tC - Obtener procesos de un estado\n\t\tN - New\n\t\tR - Ready\n\t\tE - Exec\n\t\tB - Blocked\n\t\tF - Finished\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\n");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
 }
