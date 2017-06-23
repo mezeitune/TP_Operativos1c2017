@@ -29,8 +29,6 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 	void* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + size);
 
 	strcpy(contenido + size , "\0");
-
-
 	memcpy(mensajeAMemoria,&comandoEscribir,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char),&pid,sizeof(int));
 	memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&pagina,sizeof(int));
@@ -94,7 +92,7 @@ void handshakeMemoria(){
 
 
 int pedirMemoria(t_pcb* procesoListo){
-	log_info(loggerConPantalla, "Solicitando Memoria--->PID: %d", procesoListo->pid);
+		log_info(loggerConPantalla, "Solicitando Memoria--->PID: %d", procesoListo->pid);
 		void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
 		int paginasTotalesRequeridas = procesoListo->cantidadPaginasCodigo + stackSize;
 		int resultadoEjecucion=1;

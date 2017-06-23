@@ -74,9 +74,9 @@ void liberar (t_puntero puntero){
 	char comandoLiberarMemoria = 'L';
 	int resultadoEjecucion;
 	int tamanio = sizeof(t_puntero);
+
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
-
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&num_pagina,sizeof(int),0);
 	send(socketKernel,&offset,tamanio,0);

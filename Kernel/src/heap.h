@@ -34,8 +34,6 @@ typedef struct{
 
 t_list* listaAdmHeap;
 
-int obtenerPaginaSiguiente(int pid);
-
 
 void reservarEspacioHeap(int pid, int size,int socket);
 int verificarEspacioLibreHeap(int size, int pid);
@@ -72,31 +70,6 @@ void reservarEspacioHeap(int pid, int size, int socket){
 	send(socket,&puntero->offset,sizeof(int),0);
 }
 
-int obtenerPaginaSiguiente(int pid){
-	int pagina;
-	_Bool verificaPid(t_pcb* pcb){
-			return pcb->pid == pid;
-		}
-
-		_Bool verificaPidContable(t_contable* proceso){
-				return proceso->pid == pid;
-			}
-
-	pthread_mutex_lock(&mutexListaContable);
-	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPidContable);
-
-	pthread_mutex_lock(&mutexColaEjecucion);
-	t_pcb* pcb = list_remove_by_condition(colaEjecucion,(void*)verificaPid);
-	pagina = pcb->cantidadPaginasCodigo + stackSize + proceso->cantPaginasHeap ;
-	list_add(colaEjecucion,pcb);
-	pthread_mutex_unlock(&mutexColaEjecucion);
-
-	list_add(listaContable,proceso);
-	pthread_mutex_unlock(&mutexListaContable);
-
-
-	return pagina;
-}
 
 
 int verificarEspacioLibreHeap(int size, int pid){

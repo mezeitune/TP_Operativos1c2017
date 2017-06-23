@@ -92,6 +92,7 @@ pthread_t threadFinQuantumAReady;
 /*----CORTO PLAZO--------*/
 
 /*---PLANIFICACION GENERAL-------*/
+int obtenerPaginaSiguiente(int pid);
 int verificarGradoDeMultiprogramacion();
 void aumentarGradoMultiprogramacion();
 void disminuirGradoMultiprogramacion();
@@ -687,7 +688,31 @@ void listaEsperaATerminados(){
 	pthread_mutex_unlock(&mutexListaEspera);
 }
 
+int obtenerPaginaSiguiente(int pid){
+	int pagina;
+	_Bool verificaPid(t_pcb* pcb){
+			return pcb->pid == pid;
+		}
 
+		_Bool verificaPidContable(t_contable* proceso){
+				return proceso->pid == pid;
+			}
+
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPidContable);
+
+	pthread_mutex_lock(&mutexColaEjecucion);
+	t_pcb* pcb = list_remove_by_condition(colaEjecucion,(void*)verificaPid);
+	pagina = pcb->cantidadPaginasCodigo + stackSize + proceso->cantPaginasHeap ;
+	list_add(colaEjecucion,pcb);
+	pthread_mutex_unlock(&mutexColaEjecucion);
+
+	list_add(listaContable,proceso);
+	pthread_mutex_unlock(&mutexListaContable);
+
+
+	return pagina;
+}
 
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
