@@ -58,7 +58,7 @@ void* leerDeMemoria(int pid,int pagina,int offset,int size){
 		strcpy(buffer+size,"\0");
 		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 
-		/*TODO: Checkear resultado ejecucion*/
+		/*TODO: Deberia devolver el resultado de ejecucion. Que el buffer lo cambie por referencia*/
 		return buffer;
 
 }
