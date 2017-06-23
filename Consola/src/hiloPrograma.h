@@ -59,6 +59,7 @@ void* iniciarPrograma(int* socketHiloKernel){
 
 	if ((enviarLecturaArchivo(ruta,*socketHiloKernel)) < 0) {
 		log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente");
+		/*TODO: Que el socket cierre el hilo*/
 		pthread_mutex_unlock(&mutex_crearHilo);
 		return -1;
 	}

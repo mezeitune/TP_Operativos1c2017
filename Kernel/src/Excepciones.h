@@ -7,6 +7,11 @@
 
 #ifndef EXCEPCIONES_H_
 #define EXCEPCIONES_H_
+#define CANTIDADEXCEPCIONES 10
+typedef struct{
+	int value;
+	char* mensaje;
+}t_exitCode;
 
 enum {
 	EXIT_OK,
@@ -20,6 +25,10 @@ enum {
 	EXIT_PAGE_OVERSIZE,
 	EXIT_PAGE_LIMIT
 };
+
+
+t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
+
 
 
 #endif /* EXCEPCIONES_H_ */

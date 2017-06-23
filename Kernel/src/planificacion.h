@@ -193,7 +193,7 @@ void administrarFinProcesos(){
 					list_remove_by_condition(colaEjecucion, (void*)verificaPid);
 					pthread_mutex_unlock(&mutexColaEjecucion);
 
-					cambiarEstadoATerminado(proceso,EXIT_OK); /*TODO: Cambiar exitCode*/
+					cambiarEstadoATerminado(proceso,EXIT_OK);
 					disminuirGradoMultiprogramacion();
 					sem_post(&sem_admitirNuevoProceso);
 
