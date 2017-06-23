@@ -18,7 +18,7 @@ typedef struct
 	int pagina;
 	int pid;
 	int sizeDisponible;
-}t_adminBloqueMetadata;
+}t_adminBloqueHeap;
 
 
 typedef struct
@@ -46,6 +46,7 @@ void escribirContenidoPaginaHeap(int pagina, int pid, int offset, int size, void
 int reservarBloqueHeap(int pid,int size,int pagina);
 void destruirPaginaHeap(int pidProc, int pagina);
 void destruirTodasLasPaginasHeapDeProceso(int pidProc);
+int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid,int size);
 
 void reservarEspacioHeap(int pid, int size, int socket){
 	log_info(loggerConPantalla,"---Reservando espacio de memoria dinamica---\n");
@@ -103,18 +104,20 @@ int verificarEspacioLibreHeap(int size, int pid){
 	int i = 0;
 	printf("PID Del Proceso:%d\n",pid);
 	printf("Size A Reservar:%d\n",size);
-	t_adminBloqueMetadata* aux;
+	t_adminBloqueHeap* aux;
 	printf("Lecturas:\n");
 	while(i < list_size(listaAdmHeap))
 	{
-		aux = list_get(listaAdmHeap,i);
+		aux = (t_adminBloqueHeap*) list_get(listaAdmHeap,i);
 		printf("i=%d\n",i);
 		printf("sizeDisponible=%d\n",aux->sizeDisponible);
 		printf("pid=%d\n",aux->pid);
 		if(aux->sizeDisponible >= size && aux->pid == pid)
 		{
 			compactarPaginaHeap(aux->pagina,aux->pid);
-			return aux->pagina;
+			if(paginaHeapBloqueSuficiente(i,aux->pagina,aux->pid,size) > 0){
+				return aux->pagina;
+			}
 		}
 		i++;
 	}
@@ -137,17 +140,16 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	int resultadoEjecucion=escribirEnMemoria(pid,pagina,0,sizeof(t_bloqueMetadata),buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
 
 
-	t_adminBloqueMetadata* bloqueAdmin=malloc(sizeof(t_adminBloqueMetadata));
+	t_adminBloqueHeap* bloqueAdmin=malloc(sizeof(t_adminBloqueHeap));
 	bloqueAdmin->pagina = pagina;
 	bloqueAdmin->pid = pid;
 	bloqueAdmin->sizeDisponible = aux.size;
 	printf("Pagina Reservada:%d\n",bloqueAdmin->pagina);
 	printf("PID Proceso Reservado:%d\n",bloqueAdmin->pid);
 	printf("Size Disponible Pagina Reservada:%d\n",bloqueAdmin->sizeDisponible);
-	list_add(listaAdmHeap, &bloqueAdmin);
+	list_add(listaAdmHeap, bloqueAdmin);
 
 	free(buffer);
-	free(bloqueAdmin);
 	return resultadoEjecucion;
 }
 
@@ -211,7 +213,7 @@ void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **c
 int reservarBloqueHeap(int pid,int size,int pagina){
 	log_info(loggerConPantalla,"--Reservando bloque de memoria dinamica en heap de pagina:%d--\n",pagina);
 	t_bloqueMetadata auxBloque;
-	t_adminBloqueMetadata* aux = malloc(sizeof(t_adminBloqueMetadata));
+	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 	int offset=0;
 	int i = 0;
 	int sizeReal = size;
@@ -282,7 +284,7 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 }
 
 void destruirPaginaHeap(int pidProc, int pagina){ //Si quiero destruir una página específica de la lista
-	t_adminBloqueMetadata* aux;
+	t_adminBloqueHeap* aux;
 	int i = 0;
 
 	while(i < list_size(listaAdmHeap))
@@ -297,7 +299,7 @@ void destruirPaginaHeap(int pidProc, int pagina){ //Si quiero destruir una pági
 }
 
 void destruirTodasLasPaginasHeapDeProceso(int pidProc){ //Elimino todas las estructuras administrativas de heap asociadas a un PID
-	t_adminBloqueMetadata* aux;
+	t_adminBloqueHeap* aux;
 	int i = 0;
 
 	while(i < list_size(listaAdmHeap))
@@ -308,6 +310,36 @@ void destruirTodasLasPaginasHeapDeProceso(int pidProc){ //Elimino todas las estr
 			list_remove(listaAdmHeap,i);
 		}
 	}
+}
+
+int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int size){
+	printf("Pagina Heap Bloque Suficiente\n");
+	int i = 0;
+
+	t_adminBloqueHeap* aux;
+	aux = (t_adminBloqueHeap*) list_get(listaAdmHeap,posicionPaginaHeap);
+
+	t_bloqueMetadata auxBloque;
+	void *buffer= malloc(sizeof(t_bloqueMetadata));
+
+	while(i < config_paginaSize){
+
+		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
+		memcpy(&auxBloque,buffer,sizeof(t_bloqueMetadata));
+
+		if(auxBloque.size >= size && auxBloque.bitUso == -1){
+			printf("Saliendo Pagina Heap Bloque Suficiente\n");
+			free(buffer);
+			return 1;
+		}
+
+		else{
+			i = i + sizeof(t_bloqueMetadata) + auxBloque.size;
+		}
+	}
+	printf("Saliendo Pagina Heap Bloque Suficiente\n");
+	free(buffer);
+	return -1;
 }
 
 #endif /* HEAP_H_ */
