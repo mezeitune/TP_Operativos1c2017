@@ -315,4 +315,28 @@ int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int si
 	return -1;
 }
 
+void liberarBloqueHeap(int pid, int pagina, int offset){
+
+	int i = 0;
+	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
+	t_bloqueMetadata* buffer= malloc(sizeof(t_bloqueMetadata));
+
+	buffer = (t_bloqueMetadata*) leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
+	buffer->bitUso = -1;
+	escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),(void *) buffer);
+
+
+	while(i < list_size(listaAdmHeap))
+		{
+			aux = list_get(listaAdmHeap,i);
+			if(aux->pagina == pagina && aux->pid == pid){
+				aux->sizeDisponible = aux->sizeDisponible + buffer ->size;
+				list_replace(listaAdmHeap,i,aux);
+				break;
+			}
+			i++;
+		}
+	free(buffer);
+}
+
 #endif /* HEAP_H_ */
