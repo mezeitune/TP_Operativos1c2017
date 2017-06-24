@@ -68,6 +68,8 @@ void gestionarLiberar(int socket);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
 int flagFinalizarKernel = 0;
+
+t_pcb* expropiar(int socket);
 //---------Conexiones-------------//
 
 
@@ -344,14 +346,13 @@ int buscarProcesoYTerminarlo(int pid){
 
 	pthread_mutex_lock(&mutexColaEjecucion);
 		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
-			pthread_mutex_unlock(&mutexColaEjecucion);
 
 			pthread_mutex_lock(&mutexListaCPU);
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 			pthread_mutex_unlock(&mutexListaCPU);
 
-			if(cpuAFinalizar->enEjecucion != 2) send(cpuAFinalizar->socket, &comandoFinalizar,sizeof(char),0);
-			return -1;
+			procesoATerminar=expropiar(cpuAFinalizar->socket);
+			liberarRecursosEnMemoria(procesoATerminar);
 		}
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
@@ -379,10 +380,9 @@ int buscarProcesoYTerminarlo(int pid){
 		}
 	pthread_mutex_unlock(&mutexColaBloqueados);
 
-	pthread_mutex_lock(&mutexColaTerminados); /*TODO: Agregar EXIT CODE*/
-	//procesoATerminar->exitCode = -EXIT_END_OF_PROCESS;
-	list_add(colaTerminados,procesoATerminar);
-	pthread_mutex_unlock(&mutexColaTerminados);
+	cambiarEstadoATerminado(procesoATerminar,exitCodeArray[EXIT_END_OF_PROCESS]->value);
+
+	/*TODO: Liberar heap*/
 	return 0;
 }
 
@@ -523,13 +523,12 @@ void inicializarExitCodeArray(){
 	exitCodeArray[EXIT_PAGE_LIMIT]->mensaje= "No se pueden asignar mas paginas al proceso";
 }
 
+t_pcb* expropiar(int socket){
+	char comandoExpropiar='F';
 
-
-
-
-
-
-
+	send(socket,&comandoExpropiar,sizeof(char),0);
+	return recibirYDeserializarPcb(socket);
+}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
