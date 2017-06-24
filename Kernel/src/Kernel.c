@@ -487,6 +487,7 @@ int indiceEnArray(char** array, char* elemento){
 
 
 t_pcb* expropiar(int socket){
+	log_info(loggerConPantalla,"Expropiando pcb---CPU:%d",socket);
 	char comandoExpropiar='F';
 
 	send(socket,&comandoExpropiar,sizeof(char),0);

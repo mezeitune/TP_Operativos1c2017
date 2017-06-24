@@ -15,7 +15,7 @@ typedef struct FS{//Para poder guardar en la lista
 }t_tablaArchivoPorProceso;
 t_list* listaTablasArchivosPorProceso;
 
-
+/*
 void excepcion(int codigoError){
 
 	switch(codigoError){
@@ -34,7 +34,7 @@ void excepcion(int codigoError){
 
 	}
 }
-
+*/
 int validarArchivoFS(char* ruta){
 	char orden = 'V';
 	int tamano=sizeof(int)*strlen(ruta);

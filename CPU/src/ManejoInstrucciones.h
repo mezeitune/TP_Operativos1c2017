@@ -82,16 +82,18 @@ void EjecutarProgramaMedianteAlgoritmo(){
 void ejecutarInstruccion(){
 
 
-	char *orden = malloc(sizeof(char));
-	*orden = '\0';
+	char orden;
+	orden = '\0';
 	char *instruccion = obtener_instruccion();
 
 	log_warning(loggerConPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 
-	recv(socketKernel,orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
+	recv(socketKernel,&orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
 
-	if(*orden == 'F') cpuExpropiada = -1;
+	printf("Orden %c \n",orden);
+
+	if(orden == 'F') cpuExpropiada = -1;
 
 	free(instruccion);
 
