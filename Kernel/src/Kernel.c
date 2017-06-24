@@ -67,8 +67,6 @@ void gestionarLiberar(int socket);
 void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
 int flagFinalizarKernel = 0;
-
-t_pcb* expropiar(int socket);
 //---------Conexiones-------------//
 
 
@@ -260,9 +258,9 @@ void interruptHandler(int socketAceptado,char orden){
 					break;
 		case 'P':	imprimirPorConsola(socketAceptado);
 					break;
-		case  'R':	gestionarAlocar(socketAceptado);
+		case 'R':	gestionarAlocar(socketAceptado);
 					break;
-		case  'L':	gestionarLiberar(socketAceptado);
+		case 'L':	gestionarLiberar(socketAceptado);
 					break;
 		case 'S':	excepcionStackOverflow(socketAceptado);
 			break;
@@ -486,13 +484,6 @@ int indiceEnArray(char** array, char* elemento){
 }
 
 
-t_pcb* expropiar(int socket){
-	log_info(loggerConPantalla,"Expropiando pcb---CPU:%d",socket);
-	char comandoExpropiar='F';
-
-	send(socket,&comandoExpropiar,sizeof(char),0);
-	return recibirYDeserializarPcb(socket);
-}
 
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
