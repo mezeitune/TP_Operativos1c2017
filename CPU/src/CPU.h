@@ -53,6 +53,7 @@ void connectionHandlerKernel(int socketAceptado, char orden);
 //-----------------------------------------------------------------------------------------------------------------
 void expropiar();
 void expropiarPorRR();
+void expropiarPorKernel();
 void CerrarPorSignal();
 void stackOverflow();
 char* devolverStringFlags(t_banderas flags);

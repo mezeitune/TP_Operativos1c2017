@@ -52,12 +52,37 @@ void CerrarPorSignal(){
 }
 void expropiar(){
 
-	if(cpuExpropiada == -1) finalizar();
+	if(cpuExpropiada == -1) expropiarPorKernel();
 	if(cpuFinalizada == 0) CerrarPorSignal();
 	if(cpuBloqueada == 0)log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
 	else expropiarPorRR();
 
 
+}
+void expropiarPorKernel(){
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel\n", pcb_actual->pid);
+
+	free(pcb_actual);
+
+	cpuExpropiada = 1;
+	cpuOcupada=1;
+	esperarPCB();
+}
+
+void expropiarPorStackOverflow(){
+	char interruptHandler= 'X';
+	char caseStackOverflow = 'S';
+	send(socketKernel,&interruptHandler,sizeof(char),0);
+	send(socketKernel,&caseStackOverflow,sizeof(char),0);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
+
+	free(pcb_actual);
+
+	cpuExpropiada = 1;
+	cpuOcupada=1;
+	esperarPCB();
 }
 
 void expropiarPorRR(){
@@ -124,7 +149,7 @@ int cantidadPaginasTotales(){
 
 void stackOverflow(){
 		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
-		finalizar();
+		expropiarPorStackOverflow();
 
 }
 
