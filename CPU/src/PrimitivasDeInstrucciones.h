@@ -197,9 +197,15 @@ void finalizar (){
 
 		free(pcb_actual);
 
+		if(cpuFinalizada == 0){
+			CerrarPorSignal();
+		}
+		else{
 		cpuExpropiada = 1;
 		cpuOcupada=1;
+		recibiPcb=1;
 		esperarPCB();
+		}
 }
 
 t_valor_variable dereferenciar(t_puntero puntero) {

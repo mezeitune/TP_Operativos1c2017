@@ -46,6 +46,7 @@ void EjecutarProgramaMedianteAlgoritmo();
 char* obtener_instruccion();
 //-----------------------------------------------------------------------------------------------------------------
 void signalHandler(int signum);
+void cerrarTodo ();
 int cantidadPaginasTotales();
 //-----------------------------------------------------------------------------------------------------------------
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
@@ -85,6 +86,7 @@ int cpuBloqueada=1;
 int cantidadIntruccionesEjecutadas=0;
 int quantum = 0;
 int cantidadInstruccionesAEjecutarPcb_Actual;
+int recibiPcb=1;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 //---------Primitivas Comunes----------//
 t_puntero definirVariable(t_nombre_variable variable);

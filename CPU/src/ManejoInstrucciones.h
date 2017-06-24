@@ -97,7 +97,7 @@ void ejecutarInstruccion(){
 
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
 
-	if(cpuExpropiada == -1 || cpuBloqueada == 0 || cpuFinalizada == 0){
+	if(cpuExpropiada == -1 || cpuBloqueada == 0 ){
 		expropiar();
 	}
 }

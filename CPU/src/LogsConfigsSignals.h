@@ -21,10 +21,21 @@ void inicializarLog(char *rutaDeLog){
 }
 void signalHandler(int signum)
 {
-    if (signum == SIGUSR1)
+    if (signum == SIGUSR1 || signum == SIGINT)
     {
-    	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso y cerrando CPU ...",pcb_actual->pid);
-    	cpuFinalizada=0;
+
+    	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso y cerrando CPU ...");
+
+    	cerrarTodo();
+
     }
 
 }
+void cerrarTodo(){
+	if(recibiPcb==0){
+		cpuFinalizada=0;
+	} else{
+		CerrarPorSignal();
+	}
+}
+

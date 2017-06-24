@@ -18,8 +18,8 @@ int main(void) {
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
 
-	signal(SIGUSR1, signalHandler);
-
+	signal(SIGUSR2, signalHandler);
+	signal(SIGINT, signalHandler);
 	recibirTamanioPagina(socketKernel);
 	enviarAlKernelPedidoDeNuevoProceso(socketKernel);
 	recibirYMostrarAlgortimoDePlanificacion(socketKernel);
@@ -64,7 +64,7 @@ void expropiarPorKernel(){
 	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel\n", pcb_actual->pid);
 
 	free(pcb_actual);
-
+	recibiPcb=1;
 	cpuExpropiada = 1;
 	cpuOcupada=1;
 	esperarPCB();
@@ -79,7 +79,7 @@ void expropiarPorStackOverflow(){
 	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
 
 	free(pcb_actual);
-
+	recibiPcb=1;
 	cpuExpropiada = 1;
 	cpuOcupada=1;
 	esperarPCB();
@@ -117,29 +117,7 @@ void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 }
 //-----------------------------PEDIDOS AL KERNEL-----------------------------------------
 
-void connectionHandlerKernel(int socketAceptado, char orden) {
 
-	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
-
-	switch (orden) {
-		case 'S':
-			log_info(loggerConPantalla, "Se esta por asignar un PCB");
-
-			establecerPCB(socketAceptado);
-					break;
-		default:
-				if(orden == '\0') break;
-				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
-				break;
-	}
-orden = '\0';
-return;
-}
-void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
-		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
-		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
-		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, nuevaOrden);
-}
 int cantidadPaginasTotales(){
 	int paginasTotales= (stackSize + pcb_actual->cantidadPaginasCodigo);
 	return paginasTotales;
