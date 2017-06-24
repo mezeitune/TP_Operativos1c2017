@@ -1,6 +1,8 @@
 //SEMAFOROS ANSISOP
 void wait(t_nombre_semaforo identificador_semaforo){
+	char interruptHandler = 'X';
 	char comandoWait = 'W';
+	int pid = pcb_actual->pid;
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
 	int bloquearScriptONo;
@@ -8,7 +10,9 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	int tamanio = sizeof(char)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
 
+	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoWait,sizeof(char),0);
+	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
 
@@ -33,13 +37,19 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 }
 void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
+	char interruptHandler = 'X';
 	char comandoSignal = 'L';
+	int pid = pcb_actual->pid;
+
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
 	int tamanio = sizeof(char)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a subir: %s", string_cortado[0]);
+
+	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoSignal,sizeof(char),0);
+	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
 	int i = 0;
@@ -89,4 +99,71 @@ void liberar (t_puntero puntero){
 }
 //HEAP
 
+
+
+
+
+
+t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
+	char** string_cortado = string_split(variable, "\n");
+	char* variable_string = string_new();
+	char interruptHandler = 'X';
+	char comandoObtenerCompartida = '0';
+	int pid = pcb_actual->pid;
+	string_append(&variable_string, "!");
+	string_append(&variable_string, string_cortado[0]);
+	int tamanio = sizeof(int)*strlen(variable_string);
+
+	send(socketKernel,&interruptHandler,sizeof(char),0);
+	send(socketKernel,&comandoObtenerCompartida,sizeof(char),0);
+	send(socketKernel,&pid,sizeof(int),0);
+
+
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,variable_string,tamanio,0);
+	free(variable_string);
+
+	int valor_variable_int;
+	recv(socketKernel,&valor_variable_int,sizeof(int),0);
+
+	log_info(loggerConPantalla, "Valor de la variable compartida: %d", valor_variable_int);
+	int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+	free(string_cortado);
+	return valor_variable_int;
+}
+t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
+	char** string_cortado = string_split(variable, "\n");
+	char* variable_string = string_new();
+	char interruptHandler = 'X';
+	char comandoAsignarCompartida = 'G';
+	int pid = pcb_actual->pid;
+
+
+
+	string_append(&variable_string, "!");
+	string_append(&variable_string, string_cortado[0]);
+	int tamanio = sizeof(int)*strlen(variable_string);
+
+	log_info(loggerConPantalla, "Asignando el valor %d: de id: %s", valor,variable);
+	send(socketKernel,&interruptHandler,sizeof(char),0);
+	send(socketKernel,&comandoAsignarCompartida,sizeof(char),0);
+	send(socketKernel,&pid,sizeof(int),0);
+	send(socketKernel,&tamanio,sizeof(int),0);
+	send(socketKernel,variable_string,tamanio,0);
+	send(socketKernel,&valor,sizeof(int),0);
+	free(variable_string);
+
+	int i = 0;
+	while(string_cortado[i] != NULL){
+		free(string_cortado[i]);
+		i++;
+	}
+	free(string_cortado);
+	return valor;
+}
+//SEMAFOROS ANSISOP
 
