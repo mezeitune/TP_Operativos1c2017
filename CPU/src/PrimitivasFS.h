@@ -174,8 +174,8 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			int pid= pcb_actual->pid;
 			send(socketKernel,&pid,sizeof(int),0);
 			send(socketKernel,&descriptor_archivo,sizeof(int),0);
-		//	send(socketKernel,&valor,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			send(socketKernel,&tamanio,sizeof(int),0);
+			send(socketKernel,(char*)informacion,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 			if(resultadoEjecucion==1)
 			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d");
