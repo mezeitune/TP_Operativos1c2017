@@ -16,7 +16,24 @@ typedef struct FS{//Para poder guardar en la lista
 t_list* listaTablasArchivosPorProceso;
 
 
+void excepcion(int codigoError){
 
+	switch(codigoError){
+
+		case -1:
+
+			break;
+
+		case -2;
+
+			break;
+
+		case -3;
+
+			break;
+
+	}
+}
 
 int validarArchivoFS(char* ruta){
 	char orden = 'V';
@@ -31,16 +48,27 @@ int validarArchivoFS(char* ruta){
 	return validado;
 }
 
-void crearArchivoFS(){
-	char orden = 'V';
-	char* archivoAVerificar="alumno.bin";
-	int tamano=sizeof(int)*strlen(archivoAVerificar);
+int crearArchivoFS(int socket_aceptado, char* direccion ){
+
 	int validado;
+
+	char** array_dir=string_n_split(direccion, 12, "/");
+	   int d=0;
+	   while(!(array_dir[d] == NULL)){
+	      d++;
+	   }
+	char* nombreArchivo=array_dir[d];
+	int tamanoNombre=sizeof(int)*strlen(nombreArchivo);
+	char orden = 'C';
 	send(socketFyleSys,&orden,sizeof(char),0);
-	send(socketFyleSys,&tamano,sizeof(int),0);
-	send(socketFyleSys,archivoAVerificar,tamano,0);
+	send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+	send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+
 	recv(socketFyleSys,&validado,sizeof(int),0);
-	printf("La validacion fue %d \n",validado);
+
+
+	return validado;
+
 }
 
 void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends y recv al FS
@@ -152,6 +180,7 @@ void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 		if(encontro==0){
 			resultadoEjecucion=0;
+			excepcion(-1);//No encontro en tabla
 		}else{
 			//borrar de la tabla de archivo por proceso
 			//borrar de la tabla global
@@ -191,6 +220,7 @@ void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
+		excepcion(-1);//no encontro en tabla
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -211,6 +241,7 @@ void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 		if(encontro==0){
 			resultadoEjecucion=0;
+			excepcion(-1);//no encontro en tabla
 		}else{
 			//borrar de la tabla de archivo por proceso
 			//borrar de la tabla global
@@ -254,6 +285,7 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
+		excepcion(-1);//no encontro en tabla
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -274,6 +306,7 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 		if(encontro==0){
 			resultadoEjecucion=0;
+			excepcion(-1);//no encontro en tabla
 		}else{
 			int tiene_permisoLectura=0;
 			const char *permiso_lectura = "r";
@@ -292,6 +325,7 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 			}else{
 				resultadoEjecucion=0;//No tiene permiso de lectura para ejecutar esta instruccion
 				//Faltaria poner algun codigo de error o algo asi
+				excepcion(-2);//falta de permiso lectura
 			}
 
 
@@ -333,6 +367,7 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
+		excepcion(-1);//no encontro en tabla
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -353,6 +388,7 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 		if(encontro==0){
 			resultadoEjecucion=0;
+			excepcion(-1);//no encontro en tabla
 		}else{
 
 
@@ -371,6 +407,7 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 			}else{
 				resultadoEjecucion=0;
 				//retornar codigo de error o algo asi
+				excepcion(-3);//no tiene permiso de escritura
 			}
 
 
@@ -453,6 +490,12 @@ void abrirArchivoEnTablas(int socket_aceptado){
 
 
 	int elArchivoExiste=validarArchivoFS(direccionAValidar);
+	int tiene_permisoCreacion=0;
+	const char *permiso_creacion = "c";
+	if(string_contains(flags, permiso_creacion)){
+		tiene_permisoCreacion=1;
+	}
+
 
 	if(elArchivoExiste==1){
 
@@ -473,6 +516,14 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		   }
 		}
 
+		if(tiene_permisoCreacion==1 && encontro==0){
+			int validacionCrear=crearArchivoFS(socket_aceptado,direccionAValidar);
+			if(validacionCrear==0){
+				int validado=0;
+				send(socket_aceptado,&validado,sizeof(int),0);
+			}
+		}
+
 		if(encontro==0){
 	    	  contadorFilasTablaGlobal++;
 	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccionAValidar;
@@ -490,6 +541,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 
 	}else{
 		int validado=0;
+		excepcion(-1);//no encontro en tabla
 		send(socket_aceptado,&validado,sizeof(int),0);
 	}
 
@@ -511,10 +563,6 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
 				case 'V'://validar archivo
 					printf("Validando que el archivo indicado exista \n");
 					validarArchivoFS("alumno.bin");
-					break;
-				case 'C'://crear archivo
-					printf("Creando el archivo indacdo \n");
-					crearArchivoFS();
 					break;
 				case 'B'://borrar archivo
 					printf("Borrando el archivo indacado \n");
