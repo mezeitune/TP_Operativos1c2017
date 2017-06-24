@@ -83,6 +83,7 @@ void disminuirGradoMultiprogramacion();
 void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
 void gestionarFinalizacionProgramaEnCpu(int socket);
+
 void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
 void finalizarHiloPrograma(int pid);
 
@@ -267,6 +268,8 @@ void finalizarHiloPrograma(int pid){
 
 			informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
 			eliminarSocket(consola->socketHiloPrograma);
+
+
 		//free(mensaje); TODO: Ver porque rompe este free;
 	free(consola);
 }

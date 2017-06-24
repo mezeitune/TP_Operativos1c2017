@@ -49,7 +49,6 @@ t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola);
 void gestionarNuevaCPU(int socketCPU,int quantum);
 void gestionarRRFinQuantum(int socket);
 void handShakeCPU(int socketCPU);
-void inicializarExitCodeArray();
 //---------ConnectionHandler-------//
 
 //------InterruptHandler-----//
@@ -265,6 +264,8 @@ void interruptHandler(int socketAceptado,char orden){
 					break;
 		case  'L':	gestionarLiberar(socketAceptado);
 					break;
+		case 'S':	excepcionStackOverflow(socketAceptado);
+			break;
 		default:
 			break;
 	}
@@ -334,8 +335,6 @@ int buscarProcesoYTerminarlo(int pid){
 
 	t_pcb *procesoATerminar;
 	t_cpu *cpuAFinalizar = malloc(sizeof(t_cpu));
-
-	char comandoFinalizar = 'F';
 
 	_Bool verificarPid(t_pcb* pcb){
 			return (pcb->pid==pid);
@@ -486,42 +485,6 @@ int indiceEnArray(char** array, char* elemento){
 	return array[i] ? i:-1;
 }
 
-void inicializarExitCodeArray(){
-	int i;
-	for(i = 0 ; i< CANTIDADEXCEPCIONES ; i++){
-		exitCodeArray [i] = malloc (sizeof(t_exitCode));
-	}
-
-	exitCodeArray[EXIT_OK]->value = 0;
-	exitCodeArray[EXIT_OK]->mensaje= "Programa finalizado exitosamente";
-
-	exitCodeArray[EXIT_RESOURCE]->value = -1;
-	exitCodeArray[EXIT_RESOURCE]->mensaje= "No se puedieron reservar recursos para ejecutar el programa";
-
-	exitCodeArray[EXIT_FILE_NOT_FOUND]->value = -2;
-	exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje= "El programa intento acceder a un archivo que no existe";
-
-	exitCodeArray[EXIT_READ_PERMISSIONS]->value = -3;
-	exitCodeArray[EXIT_READ_PERMISSIONS]->mensaje= "El programa intento leer un archivo sin permisos";
-
-	exitCodeArray[EXIT_WRITE_PERMISSIONS]->value = -4;
-	exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje= "El programa intento escribir un archivo sin permisos";
-
-	exitCodeArray[EXIT_MEMORY_EXCEPTION]->value = -5;
-	exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje= "Excepcion de memoria";
-
-	exitCodeArray[EXIT_DISCONNECTED_CONSOLE]->value = -6;
-	exitCodeArray[EXIT_DISCONNECTED_CONSOLE]->mensaje= "Finalizado a traves de desconexion de consola";
-
-	exitCodeArray[EXIT_END_OF_PROCESS]->value = -7;
-	exitCodeArray[EXIT_END_OF_PROCESS]->mensaje= "Finalizado a traves del comando Finalizar Programa";
-
-	exitCodeArray[EXIT_PAGE_OVERSIZE]->value = -8;
-	exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje= "Se intento reservar mas memoria que el tamano de una pagina";
-
-	exitCodeArray[EXIT_PAGE_LIMIT]->value = -9;
-	exitCodeArray[EXIT_PAGE_LIMIT]->mensaje= "No se pueden asignar mas paginas al proceso";
-}
 
 t_pcb* expropiar(int socket){
 	char comandoExpropiar='F';
