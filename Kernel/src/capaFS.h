@@ -345,9 +345,14 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 	int tamanioDeLaInstruccionEnBytes;//vendria a ser un offset
 	recv(socket_aceptado,&pid,sizeof(int),0);
 	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
-	recv(socket_aceptado,&informacionPunteroARecibir,sizeof(int),0);
 	recv(socket_aceptado,&tamanioDeLaInstruccionEnBytes,sizeof(int),0);
 
+    char* bufferr = malloc(tamanioDeLaInstruccionEnBytes);
+    recv(socket_aceptado,bufferr,tamanioDeLaInstruccionEnBytes,0);
+    strcpy(bufferr + tamanioDeLaInstruccionEnBytes, "\0");
+
+
+	//falta recv del buffer
 
 	int k;
 	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
@@ -400,10 +405,29 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 
 			if(tiene_permisoEscritura==1){
-				int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacionPunteroARecibir;
+				int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3];
 
 				//sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
 				//si salio todo bien y mando la info leida al CPU
+
+
+				char** array_dir=string_n_split(tablaGlobalArchivos[tablaAVer->tablaArchivoPorProceso[i][1]][0], 12, "/");
+				   int d=0;
+				   while(!(array_dir[d] == NULL)){
+				      d++;
+				   }
+				char* nombreArchivo=array_dir[d];
+				int tamanoArchivoAMandar=sizeof(int)*strlen(nombreArchivo);
+
+				send(socketFyleSys,&tamanoArchivoAMandar,sizeof(int),0);
+				send(socketFyleSys,nombreArchivo,tamanoArchivoAMandar,0);
+				send(socketFyleSys,&punteroADondeVaALeer,sizeof(int),0);
+				send(socketFyleSys,&tamanioDeLaInstruccionEnBytes,sizeof(int),0);
+				send(socketFyleSys,bufferr,tamanioDeLaInstruccionEnBytes,0);
+
+
+//recvs
+
 			}else{
 				resultadoEjecucion=0;
 				//retornar codigo de error o algo asi
@@ -540,7 +564,8 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		int validacionCrear=crearArchivoFS(socket_aceptado,direccionAValidar);
 		if(validacionCrear==0){
 			int validado=0;
-			send(socket_aceptado,&validado,sizeof(int),0);
+			excepcion(-1,socket_aceptado);
+			//send(socket_aceptado,&validado,sizeof(int),0);
 		}
 
   	  contadorFilasTablaGlobal++;
@@ -551,11 +576,13 @@ void abrirArchivoEnTablas(int socket_aceptado){
   	  //agregarlo en la tabla del proceso
   	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal);
 
-
+  	  int validado=1;
+  	  send(socket_aceptado,&validado,sizeof(int),0);
+  	  send(socket_aceptado,&descriptorADevolver,sizeof(int),0);
 	}else{
 		int validado=0;
 		excepcion(-1,socket_aceptado);//no encontro en tabla
-		send(socket_aceptado,&validado,sizeof(int),0);
+		//send(socket_aceptado,&validado,sizeof(int),0);
 	}
 
 

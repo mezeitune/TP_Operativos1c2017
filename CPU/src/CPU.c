@@ -18,7 +18,7 @@ int main(void) {
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
 
-	signal(SIGUSR2, signalHandler);
+	signal(SIGUSR1, signalHandler);
 	signal(SIGINT, signalHandler);
 	recibirTamanioPagina(socketKernel);
 	enviarAlKernelPedidoDeNuevoProceso(socketKernel);
