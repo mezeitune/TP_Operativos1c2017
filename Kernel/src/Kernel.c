@@ -380,6 +380,7 @@ void gestionarAlocar(int socket){
 	log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
 	recv(socket,&size,sizeof(int),0);
 	reservarEspacioHeap(pid,size,socket);
+	actualizarAlocar(pid,size);
 	actualizarSysCalls(pid);
 }
 
@@ -453,6 +454,8 @@ void obtenerValorDeSharedVar(int socket){
 	pthread_mutex_unlock(&mutexVariablesGlobales);
 	log_info(loggerConPantalla, "Valor obtenido: %d", valor);
 	send(socket,&valor,sizeof(int),0);
+
+	actualizarSysCalls(pid);
 }
 
 void guardarValorDeSharedVar(int socket){
@@ -469,6 +472,7 @@ void guardarValorDeSharedVar(int socket){
 	pthread_mutex_lock(&mutexVariablesGlobales);
 	variablesGlobales[indice] = valorAGuardar;
 	pthread_mutex_unlock(&mutexVariablesGlobales);
+	actualizarSysCalls(pid);
 }
 
 int indiceEnArray(char** array, char* elemento){

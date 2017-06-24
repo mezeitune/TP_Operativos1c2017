@@ -327,6 +327,8 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	buffer->bitUso = -1;
 	escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),(void *) buffer);
 
+	printf("Liberando size:%d\n",buffer->size);
+	actualizarLiberar(pid,buffer->size);
 
 	while(i < list_size(listaAdmHeap))
 		{

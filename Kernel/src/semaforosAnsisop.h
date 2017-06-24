@@ -105,6 +105,8 @@ void waitSemaforoAnsisop(int socketCPU){
 
 		sem_post(&sem_ListaSemYPCB);
 	}
+
+	actualizarSysCalls(pid);
 }
 void signalSemaforoAnsisop(int socketCpu){
 	char* semaforo;
@@ -119,36 +121,8 @@ void signalSemaforoAnsisop(int socketCpu){
 	sem_post(&sem_semAumentados);
 
 
-
-
-
-
-
-
-	/*pthread_mutex_lock(&mutexListaSemAumentados);
-	if(semAumentado->semaforo->valor > 0) list_add(listaSemAumentados, (void*)semAumentado->semaforo->id);
-	pthread_mutex_unlock(&mutexListaSemAumentados);
-
-	sem_post(&sem_semAumentados);*/
-	//free(semAumentado);
-	//chequearColaDeSemaforo(semaforo); NO LO USO
+	actualizarSysCalls(pid);
 }
-
-/*void chequearColaDeSemaforo(char* semaforoId){
-	int pid;
-	_Bool verificaId(t_semaforoAsociado* semaforoAsociado){
-		return !strcmp(semaforoAsociado->semaforo->id,semaforoId);
-	}
-
-	t_semaforoAsociado* semaforoAsociado = list_remove_by_condition(listaSemaforosAsociados,(void*)verificaId);
-
-	/*TODO: Aca lo mismo. Podes hacer un signal, y hacer la logica de mandar de Bloqueados a Ready, en otro hilo
-	if(semaforoAsociado->pids->elements_count > 0){ // Tenemos un proceso que esta esperando ese semaforo
-		pid = list_remove(semaforoAsociado->pids,0);
-		/*Continuara...*/
-	/*}
-}*/
-
 int consultarSemaforo(char* semaforoId){
 	int expropiar = 1;
 	t_semaforo* semaforoAsociado = malloc(sizeof(t_semaforo));
@@ -170,15 +144,6 @@ int consultarSemaforo(char* semaforoId){
 
 	pthread_mutex_unlock(&mutexListaSemaforos);
 
-/*
-	semaforoAsociado = list_remove_by_condition(listaSemaforosAsociados,(void*)verificaId);
-	if(semaforoAsociado/*->semaforo->valor < 1) expropiar = -1;
-
-	list_add(listaSemaforosAsociados,semaforoAsociado);
-	pthread_mutex_unlock(&mutexListaSemaforos);
-*/
-	//free(semaforoAsociado);
-
 	return expropiar;
 }
 
@@ -198,14 +163,6 @@ void disminuirSemaforo(char* semaforoId){
 
 	pthread_mutex_unlock(&mutexListaSemaforos);
 
-	/*
-	t_semaforoAsociado *semaforoAsociado = malloc(sizeof(t_semaforoAsociado));
-	pthread_mutex_lock(&mutexListaSemaforos);
-	semaforoAsociado = list_remove_by_condition(listaSemaforosAsociados,(void*)verificaId);
-	semaforoAsociado/*->semaforo->valor -= 1;
-	list_add(listaSemaforosAsociados,semaforoAsociado);
-	pthread_mutex_unlock(&mutexListaSemaforos);
-*/
 }
 
 void aumentarSemaforo(char* semaforoId){ /*TODO: Ojo con lo que se haga con el semaforo devuelto. Hay que eliminar la entrada anterior y actualizar por la nueva*/
@@ -223,14 +180,6 @@ void aumentarSemaforo(char* semaforoId){ /*TODO: Ojo con lo que se haga con el s
 	list_add(listaSemaforosGlobales,semaforoAsociado);
 
 	pthread_mutex_unlock(&mutexListaSemaforos);
-
-	/*
-	pthread_mutex_lock(&mutexListaSemaforos);
-	semaforoAsociado = list_remove_by_condition(listaSemaforosAsociados,(void*)verificaId);
-	semaforoAsociado/*->semaforo->valor += 1;
-	list_add(listaSemaforosAsociados,semaforoAsociado);
-	pthread_mutex_unlock(&mutexListaSemaforos);
-	*/
 
 }
 

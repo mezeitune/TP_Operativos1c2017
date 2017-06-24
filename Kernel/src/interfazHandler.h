@@ -50,7 +50,7 @@ void interfazHandler(){
 						break;
 					}
 					printf("\t\tDatos del proceso:%d\t\t\n",pid);
-					printf("\tPID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\n");
+					printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
 					obtenerDatosProceso(pid);
 					break;
 				case 'R':
@@ -121,8 +121,8 @@ void obtenerDatosProceso(int pid){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
 
-
-	printf("\t%d\t\t%d\t\t\t\%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap);
+	printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+			proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 
 	list_add(listaContable,proceso);
 	pthread_mutex_unlock(&mutexListaContable);
