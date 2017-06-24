@@ -24,11 +24,11 @@ void excepcion(int codigoError){
 
 			break;
 
-		case -2;
+		case -2:
 
 			break;
 
-		case -3;
+		case -3:
 
 			break;
 

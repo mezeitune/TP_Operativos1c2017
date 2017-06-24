@@ -21,13 +21,10 @@ void inicializarLog(char *rutaDeLog){
 }
 void signalHandler(int signum)
 {
-    if (signum == SIGUSR1 || signum == SIGINT )
+    if (signum == SIGUSR1)
     {
     	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso de PID %d y cerrando CPU ...",pcb_actual->pid);
     	cpuFinalizada=0;
     }
-    if (signum == SIGUSR2){
-    	log_warning(loggerConPantalla,"Se esta expropiando el proceso de PID %d ejecutando ultima instruccion y desalojandolo de CPU ...",pcb_actual->pid);
-    	cpuExpropiada=0;
-    }
+
 }
