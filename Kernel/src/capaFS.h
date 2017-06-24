@@ -16,7 +16,7 @@ typedef struct FS{//Para poder guardar en la lista
 t_list* listaTablasArchivosPorProceso;
 
 
-void excepcion(int codigoError){
+void excepcion(int codigoError,int socket){
 
 	switch(codigoError){
 
@@ -180,7 +180,7 @@ void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 		if(encontro==0){
 			resultadoEjecucion=0;
-			excepcion(-1);//No encontro en tabla
+			excepcion(-1,socket_aceptado);//No encontro en tabla
 		}else{
 			//borrar de la tabla de archivo por proceso
 			//borrar de la tabla global
@@ -220,7 +220,7 @@ void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
-		excepcion(-1);//no encontro en tabla
+		excepcion(-1,socket_aceptado);//no encontro en tabla
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -241,7 +241,7 @@ void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 		if(encontro==0){
 			resultadoEjecucion=0;
-			excepcion(-1);//no encontro en tabla
+			excepcion(-1,socket_aceptado);//no encontro en tabla
 		}else{
 			//borrar de la tabla de archivo por proceso
 			//borrar de la tabla global
@@ -285,7 +285,7 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
-		excepcion(-1);//no encontro en tabla
+		excepcion(-1,socket_aceptado);//no encontro en tabla
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -306,7 +306,7 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 		if(encontro==0){
 			resultadoEjecucion=0;
-			excepcion(-1);//no encontro en tabla
+			excepcion(-1,socket_aceptado);//no encontro en tabla
 		}else{
 			int tiene_permisoLectura=0;
 			const char *permiso_lectura = "r";
@@ -325,7 +325,7 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 			}else{
 				resultadoEjecucion=0;//No tiene permiso de lectura para ejecutar esta instruccion
 				//Faltaria poner algun codigo de error o algo asi
-				excepcion(-2);//falta de permiso lectura
+				excepcion(-2,socket_aceptado);//falta de permiso lectura
 			}
 
 
@@ -367,7 +367,7 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
-		excepcion(-1);//no encontro en tabla
+		excepcion(-1,socket_aceptado);//no encontro en tabla
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -388,7 +388,7 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 		if(encontro==0){
 			resultadoEjecucion=0;
-			excepcion(-1);//no encontro en tabla
+			excepcion(-1,socket_aceptado);//no encontro en tabla
 		}else{
 
 
@@ -407,7 +407,7 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 			}else{
 				resultadoEjecucion=0;
 				//retornar codigo de error o algo asi
-				excepcion(-3);//no tiene permiso de escritura
+				excepcion(-3,socket_aceptado);//no tiene permiso de escritura
 			}
 
 
@@ -517,11 +517,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		}
 
 		if(tiene_permisoCreacion==1 && encontro==0){
-			int validacionCrear=crearArchivoFS(socket_aceptado,direccionAValidar);
-			if(validacionCrear==0){
-				int validado=0;
-				send(socket_aceptado,&validado,sizeof(int),0);
-			}
+
 		}
 
 		if(encontro==0){
@@ -539,9 +535,26 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		send(socket_aceptado,&validado,sizeof(int),0);
 		send(socket_aceptado,&descriptorADevolver,sizeof(int),0);
 
+	}else if(tiene_permisoCreacion==1){
+
+		int validacionCrear=crearArchivoFS(socket_aceptado,direccionAValidar);
+		if(validacionCrear==0){
+			int validado=0;
+			send(socket_aceptado,&validado,sizeof(int),0);
+		}
+
+  	  contadorFilasTablaGlobal++;
+  	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccionAValidar;
+  	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
+  	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
+
+  	  //agregarlo en la tabla del proceso
+  	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal);
+
+
 	}else{
 		int validado=0;
-		excepcion(-1);//no encontro en tabla
+		excepcion(-1,socket_aceptado);//no encontro en tabla
 		send(socket_aceptado,&validado,sizeof(int),0);
 	}
 

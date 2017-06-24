@@ -48,8 +48,12 @@ void administrarFinProcesos();
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
+void removerDeColaEjecucion(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 void liberarMemoriaDinamica(int pid,int cantiPaginasCodigo);
+
+
+
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
 
@@ -83,6 +87,7 @@ void disminuirGradoMultiprogramacion();
 void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
 void gestionarFinalizacionProgramaEnCpu(int socket);
+
 void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
 void finalizarHiloPrograma(int pid);
 
@@ -249,8 +254,15 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados,procesoTerminar);
 	pthread_mutex_unlock(&mutexColaTerminados);
+}
 
-
+void removerDeColaEjecucion(int pid){
+	_Bool verificaPid(t_pcb* proceso){
+			return (proceso->pid == pid);
+		}
+	pthread_mutex_lock(&mutexColaEjecucion);
+	list_remove_by_condition(colaEjecucion, (void*)verificaPid);
+	pthread_mutex_unlock(&mutexColaEjecucion);
 }
 void finalizarHiloPrograma(int pid){
 	char* mensaje = malloc(sizeof(char)*10);
@@ -267,6 +279,8 @@ void finalizarHiloPrograma(int pid){
 
 			informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
 			eliminarSocket(consola->socketHiloPrograma);
+
+
 		//free(mensaje); TODO: Ver porque rompe este free;
 	free(consola);
 }
