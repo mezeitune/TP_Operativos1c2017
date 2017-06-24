@@ -1,4 +1,5 @@
 /*
+ /*
  * contabilidad.h
  *
  *  Created on: 8/6/2017
@@ -14,27 +15,35 @@
 typedef struct{
 	int pid;
 	int cantRafagas;
-	//int cantOpPrivilegiadas;
 	int cantPaginasHeap;
-	//lo del heap
+	int cantAlocar;
+	int sizeAlocar;
+	int cantLiberar;
+	int sizeLiberar;
 	int cantSysCalls;
 }t_contable;
 
 
 t_list* listaContable;
 void crearInformacionContable(int pid);
+void actualizarAlocar(int pid,int size);
+void actualizarLiberar(int pid,int size);
 void actualizarRafagas(int pid, int rafagas);
 t_contable* buscarInformacionContable(int pid);
 
 void crearInformacionContable(int pid){
-	t_contable* contabilidadProceso = malloc(sizeof(t_contable));
-	contabilidadProceso->pid=pid;
-	contabilidadProceso->cantRafagas=0;
-	contabilidadProceso->cantSysCalls=0;
-	contabilidadProceso->cantPaginasHeap=0;
+	t_contable* proceso = malloc(sizeof(t_contable));
+	proceso->pid=pid;
+	proceso->cantRafagas=0;
+	proceso->cantPaginasHeap=0;
+	proceso->cantAlocar = 0;
+	proceso->cantLiberar = 0;
+	proceso->sizeAlocar = 0;
+	proceso->sizeLiberar = 0;
+	proceso->cantSysCalls=0;
 
 	pthread_mutex_lock(&mutexListaContable);
-	list_add(listaContable,contabilidadProceso);
+	list_add(listaContable,proceso);
 	pthread_mutex_unlock(&mutexListaContable);
 
 }
@@ -42,7 +51,7 @@ void crearInformacionContable(int pid){
 void actualizarSysCalls(int pid){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* contabilidad = buscarInformacionContable(pid);
-	contabilidad->cantSysCalls++;
+	contabilidad->cantSysCalls+=1;
 	list_add(listaContable,contabilidad);
 	pthread_mutex_unlock(&mutexListaContable);
 }
@@ -51,7 +60,7 @@ void actualizarSysCalls(int pid){
 void aumentarPaginasHeap(int pid){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* contabilidad = buscarInformacionContable(pid);
-	contabilidad->cantPaginasHeap++;
+	contabilidad->cantPaginasHeap+=1;
 	list_add(listaContable,contabilidad);
 	pthread_mutex_unlock(&mutexListaContable);
 }
@@ -60,10 +69,30 @@ void aumentarPaginasHeap(int pid){
 void actualizarRafagas(int pid, int rafagas){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* contabilidad = buscarInformacionContable(pid);
-	contabilidad->cantRafagas += rafagas;
+	if(rafagas > contabilidad->cantRafagas) contabilidad->cantRafagas = rafagas;
+	else contabilidad->cantRafagas += rafagas;
 	list_add(listaContable,contabilidad);
 	pthread_mutex_unlock(&mutexListaContable);
 }
+
+void actualizarAlocar(int pid,int size){
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* contabilidad = buscarInformacionContable(pid);
+	contabilidad->cantAlocar +=1;
+	contabilidad->sizeAlocar += size;
+	list_add(listaContable,contabilidad);
+	pthread_mutex_unlock(&mutexListaContable);
+}
+
+void actualizarLiberar(int pid,int size){
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* contabilidad = buscarInformacionContable(pid);
+	contabilidad->cantLiberar +=1;
+	contabilidad->sizeLiberar += size;
+	list_add(listaContable,contabilidad);
+	pthread_mutex_unlock(&mutexListaContable);
+}
+
 
 t_contable* buscarInformacionContable(int pid){
 	_Bool verificaPid(t_contable* contabilidad){

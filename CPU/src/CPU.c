@@ -72,7 +72,7 @@ void expropiarPorKernel(){
 
 void expropiarPorStackOverflow(){
 	char interruptHandler= 'X';
-	char caseStackOverflow = 'S';
+	char caseStackOverflow = 'K';
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseStackOverflow,sizeof(char),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);

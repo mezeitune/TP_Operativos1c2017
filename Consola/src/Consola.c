@@ -70,7 +70,7 @@ void connectionHandler() {
 				cerrarTodo();
 				break;
 			default:
-				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
+				log_error(loggerConPantalla,"Orden %c no definida", orden);
 				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			}

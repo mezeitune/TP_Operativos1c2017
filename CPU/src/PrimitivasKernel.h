@@ -38,7 +38,7 @@ void wait(t_nombre_semaforo identificador_semaforo){
 }
 void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	char interruptHandler = 'X';
-	char comandoSignal = 'L';
+	char comandoSignal = 'S';
 	int pid = pcb_actual->pid;
 
 	char** string_cortado = string_split(identificador_semaforo, "\n");
@@ -108,7 +108,7 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	char** string_cortado = string_split(variable, "\n");
 	char* variable_string = string_new();
 	char interruptHandler = 'X';
-	char comandoObtenerCompartida = '0';
+	char comandoObtenerCompartida = 'O';
 	int pid = pcb_actual->pid;
 	string_append(&variable_string, "!");
 	string_append(&variable_string, string_cortado[0]);

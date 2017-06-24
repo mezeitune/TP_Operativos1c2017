@@ -112,8 +112,7 @@ int main() {
 }
 
 void connectionHandler(int socketAceptado, char orden) {
-
-	if(orden == '\0')nuevaOrdenDeAccion(socketAceptado, orden);
+	log_info(loggerConPantalla,"Ejecutando Connection Handler--->Socket:%d",socketAceptado);
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
@@ -136,31 +135,14 @@ void connectionHandler(int socketAceptado, char orden) {
 					recv(socketAceptado,&orden,sizeof(char),0);
 					interruptHandler(socketAceptado,orden);
 					break;
-
-					/*TODO:Llevar al Interrupt handler*/
 		case 'R':	gestionarRRFinQuantum(socketAceptado);
-					break;
-		case 'K':
-					recibirPidDeCpu(socketAceptado);
-					break;
-		case 'S':
-					obtenerValorDeSharedVar(socketAceptado);
-					break;
-		case 'G':
-					guardarValorDeSharedVar(socketAceptado);
-					break;
-		case 'W':
-					waitSemaforoAnsisop(socketAceptado);
-					break;
-		case 'L':
-					signalSemaforoAnsisop(socketAceptado);
 					break;
 		default:
 					if(orden == '\0') break;
 					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 					break;
 		}
-	orden = '\0';
+	log_info(loggerConPantalla,"Connection Handler finalizado--->Socket:%d",socketAceptado);
 	return;
 }
 
@@ -262,11 +244,20 @@ void interruptHandler(int socketAceptado,char orden){
 					break;
 		case 'L':	gestionarLiberar(socketAceptado);
 					break;
-		case 'S':	excepcionStackOverflow(socketAceptado);
-			break;
+		case 'K':	excepcionStackOverflow(socketAceptado);
+					break;
+		case 'O':	obtenerValorDeSharedVar(socketAceptado);
+					break;
+		case 'G':	guardarValorDeSharedVar(socketAceptado);
+					break;
+		case 'W':	waitSemaforoAnsisop(socketAceptado);
+					break;
+		case 'S':	signalSemaforoAnsisop(socketAceptado);
+					break;
 		default:
 			break;
 	}
+	log_warning(loggerConPantalla,"Interrupt Handler finalizado");
 }
 
 
@@ -449,6 +440,8 @@ void obtenerVariablesCompartidasDeLaConfig(){
 void obtenerValorDeSharedVar(int socket){
 	int tamanio;
 	char* identificador;
+	int pid;
+	recv(socket,&pid,sizeof(int),0);
 	recv(socket,&tamanio,sizeof(int),0);
 	identificador = malloc(tamanio);
 	recv(socket,identificador,tamanio,0);
@@ -464,7 +457,9 @@ void obtenerValorDeSharedVar(int socket){
 
 void guardarValorDeSharedVar(int socket){
 	int tamanio, valorAGuardar;
+	int pid;
 	char* identificador;
+	recv(socket,&pid,sizeof(int),0);
 	recv(socket,&tamanio,sizeof(int),0);
 	identificador = malloc(tamanio);
 	recv(socket,identificador,tamanio,0);
@@ -483,13 +478,6 @@ int indiceEnArray(char** array, char* elemento){
 	return array[i] ? i:-1;
 }
 
-
-
-void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
-		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
-		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
-		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, nuevaOrden);
-}
 void selectorConexiones() {
 	log_info(loggerConPantalla,"Iniciando selector de conexiones");
 	int maximoFD;
@@ -545,7 +533,7 @@ void selectorConexiones() {
 										}
 									}
 									else if(socket != 0) {
-											recv(socket, &orden, sizeof(char), MSG_WAITALL);
+											recv(socket, &orden, sizeof(char), 0);
 											connectionHandler(socket, orden);
 									}
 							}

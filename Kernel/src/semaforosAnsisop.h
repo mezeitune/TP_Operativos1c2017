@@ -75,10 +75,11 @@ void recibirNombreSemaforo(int socketCpu,char ** semaforo){
 }
 
 void waitSemaforoAnsisop(int socketCPU){
-	int expropiar;
+	int expropiar,pid;
 	char* semaforo;
 	t_semYPCB *semYPCB = malloc(sizeof(t_semYPCB));
 
+	recv(socketCPU,&pid,sizeof(int),0);
 	recibirNombreSemaforo(socketCPU,&semaforo);
 	log_info(loggerConPantalla, "Procesando instruccion atomica Wait--/*->semaforo*/: %s", semaforo);
 
@@ -105,10 +106,11 @@ void waitSemaforoAnsisop(int socketCPU){
 		sem_post(&sem_ListaSemYPCB);
 	}
 }
-void signalSemaforoAnsisop(int socketAceptado){
+void signalSemaforoAnsisop(int socketCpu){
 	char* semaforo;
-
-	recibirNombreSemaforo(socketAceptado,&semaforo);
+	int pid;
+	recv(socketCpu,&pid,sizeof(int),0);
+	recibirNombreSemaforo(socketCpu,&semaforo);
 	aumentarSemaforo(semaforo);
 
 	log_info(loggerConPantalla, "Procesando instruccion atomica Signal--/*->semaforo*/: %s", semaforo);
