@@ -23,7 +23,7 @@ void signalHandler(int signum)
 {
     if (signum == SIGUSR1)
     {
-    	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso de PID %d y cerrando CPU ...",pcb_actual->pid);
+    	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso y cerrando CPU ...",pcb_actual->pid);
     	cpuFinalizada=0;
     }
 

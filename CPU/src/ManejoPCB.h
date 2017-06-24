@@ -1,13 +1,13 @@
 //----------------------------------Manejo PCB------------------------------------------
 void esperarPCB(){
 
-	while(cpuOcupada==1){
+	while(cpuOcupada==1 || cpuFinalizada==1){
 		log_info(loggerConPantalla," CPU Esperando un script");
 		cantidadInstruccionesAEjecutarPorKernel = quantum;
 		recibirPCB();
 		cpuOcupada--;
 	}
-
+	CerrarPorSignal();
 }
 void recibirPCB(){
 

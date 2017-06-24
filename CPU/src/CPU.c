@@ -23,10 +23,9 @@ int main(void) {
 	recibirTamanioPagina(socketKernel);
 	enviarAlKernelPedidoDeNuevoProceso(socketKernel);
 	recibirYMostrarAlgortimoDePlanificacion(socketKernel);
-	while(cpuFinalizada!=0){
+
 	esperarPCB();
-	}
-	CerrarPorSignal();
+
 	return 0;
 }
 
