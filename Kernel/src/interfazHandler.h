@@ -49,8 +49,8 @@ void interfazHandler(){
 						log_error(loggerConPantalla,"Proceso no existente");
 						break;
 					}
-					printf("\t\tDatos del proceso:%d\t\t\n",pid);
-					printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
+					printf("Datos del proceso:%d\t\t\n",pid);
+					printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
 					obtenerDatosProceso(pid);
 					break;
 				case 'R':
@@ -121,7 +121,7 @@ void obtenerDatosProceso(int pid){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
 
-	printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+	printf("%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
 			proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 
 	list_add(listaContable,proceso);
