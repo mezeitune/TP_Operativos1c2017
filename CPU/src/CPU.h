@@ -52,7 +52,7 @@ int cantidadPaginasTotales();
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden);
 void connectionHandlerKernel(int socketAceptado, char orden);
 //-----------------------------------------------------------------------------------------------------------------
-void expropiar();
+void expropiarVoluntariamente();
 void expropiarPorRR();
 void expropiarPorKernel();
 void CerrarPorSignal();
