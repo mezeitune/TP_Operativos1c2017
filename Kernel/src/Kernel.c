@@ -376,10 +376,18 @@ int buscarProcesoYTerminarlo(int pid){
 
 void gestionarAlocar(int socket){
 	int size,pid;
+    pthread_t heapThread;
+    t_alocar* data= malloc(sizeof(t_alocar));
 	recv(socket,&pid,sizeof(int),0);
 	log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
 	recv(socket,&size,sizeof(int),0);
-	reservarEspacioHeap(pid,size,socket);
+	data->pid = pid;
+	data->size = size;
+	data->socket = socket;
+	pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
+
+
+	//reservarEspacioHeap(pid,size,socket);
 	actualizarAlocar(pid,size);
 	actualizarSysCalls(pid);
 }

@@ -32,10 +32,16 @@ typedef struct{
 	int offset;
 }t_punteroCpu;
 
+typedef struct{
+	int pid;
+	int size;
+	int socket;
+}t_alocar;
+
 t_list* listaAdmHeap;
 
 
-void reservarEspacioHeap(int pid, int size,int socket);
+void reservarEspacioHeap(t_alocar* data);
 int verificarEspacioLibreHeap(int size, int pid);
 int reservarPaginaHeap(int pid,int pagina);
 void compactarPaginaHeap(int pagina, int pid);
@@ -47,36 +53,37 @@ void destruirTodasLasPaginasHeapDeProceso(int pidProc);
 int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid,int size);
 void liberarBloqueHeap(int pid, int pagina, int offset);
 
-void reservarEspacioHeap(int pid, int size, int socket){
-	log_info(loggerConPantalla,"---Reservando espacio de memoria dinamica---\n");
+void reservarEspacioHeap(t_alocar* data){
+	log_info(loggerConPantalla,"Reservando espacio de memoria dinamica--->PID:%d",data->pid);
 	t_punteroCpu* puntero = malloc(sizeof(t_punteroCpu));
 
 
-	puntero->pagina = verificarEspacioLibreHeap(size, pid);
+	puntero->pagina = verificarEspacioLibreHeap(data->size, data->pid);
 
 	if(puntero->pagina  == -1){
 
-		puntero->pagina = obtenerPaginaSiguiente(pid);
-		if(reservarPaginaHeap(pid,puntero->pagina)<0){
+		puntero->pagina = obtenerPaginaSiguiente(data->pid);
+		if(reservarPaginaHeap(data->pid,puntero->pagina)<0){
 			log_error(loggerConPantalla,"No hay espacio suficiente en memoria para reservar una nueva pagina\n");
 			/*TODO: Avisar a Consola, expropiar proceso y terminarlo, liberando recursos*/
 				return;
 			}
-		aumentarPaginasHeap(pid);
+		aumentarPaginasHeap(data->pid);
 		}
 
 
-	puntero->offset = reservarBloqueHeap(pid, size, puntero->pagina);
+	puntero->offset = reservarBloqueHeap(data->pid, data->size, puntero->pagina);
 
 	printf("\nPagina que se le da para ese espacio de memoria:%d\n",puntero->pagina);
-	send(socket,&puntero->pagina,sizeof(int),0);
-	send(socket,&puntero->offset,sizeof(int),0);
+	send(data->socket,&puntero->pagina,sizeof(int),0);
+	send(data->socket,&puntero->offset,sizeof(int),0);
+	free(data);
 }
 
 
 
 int verificarEspacioLibreHeap(int size, int pid){
-	log_info(loggerConPantalla,"----Verificando espacio libre para memoria dinamica-----\n");
+	log_info(loggerConPantalla,"Verificando espacio libre en Heap--->PID:%d",pid);
 	int i = 0;
 	printf("PID Del Proceso:%d\n",pid);
 	printf("Size A Reservar:%d\n",size);
