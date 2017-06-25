@@ -30,7 +30,7 @@ enum {
 	EXIT_PAGE_LIMIT,
 	EXIT_STACKOVERFLOW
 };
-
+int resultadoEjecucion=-1;
 
 t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
 void inicializarExitCodeArray();
@@ -45,6 +45,7 @@ void excepcionPermisosEscritura(int socket,int pid);
 void excepcionPermisosLectura(int socket,int pid);
 void excepecionPermisosCrear(int socket);
 void excepcionArchivoInexistente(int socket,int pid);
+void excepcionPageSizeLimit(int socket,int pid);
 void excepcionStackOverflow(int socket);
 
 
@@ -86,6 +87,15 @@ void excepcionArchivoInexistente(int socket,int pid){ /*TODO*/
 	log_error(loggerConPantalla,"Informando a Consola excepcion por archivo inexistente");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje,strlen(exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje));
 
+}
+
+void excepcionPageSizeLimit(int socket,int pid){
+	log_error(loggerConPantalla,"Informando a Consola excepecion de exceso de memoria dinamica");
+	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje,strlen(exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje));
+	send(socket,&resultadoEjecucion,sizeof(int),0);
+	t_pcb* proceso = expropiar(socket);
+	removerDeColaEjecucion(pid);
+	terminarProceso(proceso,exitCodeArray[EXIT_PAGE_OVERSIZE]->value);
 }
 
 void excepcionStackOverflow(int socket){

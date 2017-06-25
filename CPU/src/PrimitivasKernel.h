@@ -64,6 +64,7 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 //HEAP
 t_puntero reservar (t_valor_variable espacio){
 	int pagina,offset;
+	int resultadoEjecucion;
 	char comandoInterruptHandler = 'X';
 	char comandoReservarMemoria = 'R';
 	int pid = pcb_actual->pid;
@@ -71,6 +72,12 @@ t_puntero reservar (t_valor_variable espacio){
 	send(socketKernel,&comandoReservarMemoria,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&espacio,sizeof(int),0);
+
+	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	if(resultadoEjecucion < 0) {
+		expropiarPorKernel();
+		return 0;
+	}
 	recv(socketKernel,&pagina,sizeof(int),0);
 	recv(socketKernel,&offset,sizeof(int),0);
 

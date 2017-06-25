@@ -374,17 +374,23 @@ int buscarProcesoYTerminarlo(int pid){
 void gestionarAlocar(int socket){
 	int size,pid;
     pthread_t heapThread;
-    t_alocar* data= malloc(sizeof(t_alocar));
 	recv(socket,&pid,sizeof(int),0);
 	log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
+	actualizarSysCalls(pid);
 	recv(socket,&size,sizeof(int),0);
+
+	if(size > config_paginaSize) {
+		excepcionPageSizeLimit(socket,pid);
+		return;
+	}
+
+	t_alocar* data= malloc(sizeof(t_alocar));
 	data->pid = pid;
 	data->size = size;
 	data->socket = socket;
 	pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
 
 	actualizarAlocar(pid,size);
-	actualizarSysCalls(pid);
 }
 
 void gestionarLiberar(int socket){

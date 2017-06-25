@@ -60,7 +60,7 @@ void expropiar(){
 
 }
 void expropiarPorKernel(){
-	log_error(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel\n", pcb_actual->pid);
+	log_error(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 
 	free(pcb_actual);

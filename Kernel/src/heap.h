@@ -57,7 +57,7 @@ void liberarBloqueHeap(int pid, int pagina, int offset);
 void reservarEspacioHeap(t_alocar* data){
 	log_info(loggerConPantalla,"Reservando espacio de memoria dinamica--->PID:%d",data->pid);
 	t_punteroCpu* puntero = malloc(sizeof(t_punteroCpu));
-
+	int resultadoEjecucion;
 
 	puntero->pagina = verificarEspacioLibreHeap(data->size, data->pid);
 
@@ -76,6 +76,7 @@ void reservarEspacioHeap(t_alocar* data){
 	puntero->offset = reservarBloqueHeap(data->pid, data->size, puntero->pagina);
 
 	//printf("\nPagina que se le da para ese espacio de memoria:%d\n",puntero->pagina);
+	send(data->socket,&resultadoEjecucion,sizeof(int),0);
 	send(data->socket,&puntero->pagina,sizeof(int),0);
 	send(data->socket,&puntero->offset,sizeof(int),0);
 	free(data);
