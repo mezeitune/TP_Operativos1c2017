@@ -64,7 +64,6 @@ void gestionarLiberar(int socket);
 
 
 //---------Conexiones---------------//
-void nuevaOrdenDeAccion(int puertoCliente, char nuevaOrden);
 void selectorConexiones();
 int flagFinalizarKernel = 0;
 //---------Conexiones-------------//
@@ -384,8 +383,6 @@ void gestionarAlocar(int socket){
 	data->socket = socket;
 	pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
 
-
-	//reservarEspacioHeap(pid,size,socket);
 	actualizarAlocar(pid,size);
 	actualizarSysCalls(pid);
 }
@@ -397,7 +394,7 @@ void gestionarLiberar(int socket){
 	recv(socket,&pagina,sizeof(int),0);
 	recv(socket,&offset,sizeof(int),0);
 
-	printf("\nLiberar pagina :%d\n",pagina);
+	//printf("\nLiberar pagina :%d\n",pagina);
 
 	liberarBloqueHeap(pid,pagina,offset);
 	actualizarSysCalls(pid);

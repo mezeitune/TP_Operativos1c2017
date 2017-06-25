@@ -32,7 +32,8 @@ pthread_mutex_t mutexListaCodigo;
 pthread_mutex_t mutexListaSemaforos;
 pthread_mutex_t mutexListaSemYPCB;
 pthread_mutex_t mutexListaSemAumentados;
-
+pthread_mutex_t mutexListaAdminHeap;
+pthread_mutex_t mutexMemoria;
 
 
 sem_t sem_admitirNuevoProceso;
@@ -65,7 +66,8 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaSemaforos,NULL);
 		pthread_mutex_init(&mutexListaSemYPCB,NULL);
 		pthread_mutex_init(&mutexListaSemAumentados,NULL);
-
+		pthread_mutex_init(&mutexListaAdminHeap,NULL);
+		pthread_mutex_init(&mutexMemoria,NULL);
 
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_administrarFinProceso,0,0);
