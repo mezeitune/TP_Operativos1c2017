@@ -13,7 +13,7 @@
 
 typedef struct {
 	int pid;
-	struct tm* fechaInicio;
+	time_t tiempoInicio;
 	int cantImpresiones;
 	int socketHiloKernel;
 	pthread_t idHilo;
@@ -37,14 +37,12 @@ void actualizarCantidadImpresiones(int pid);
 void crearHiloPrograma(){
 	t_hiloPrograma* nuevoPrograma = malloc(sizeof(t_hiloPrograma));
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
+	nuevoPrograma->tiempoInicio= time(NULL);
+	nuevoPrograma->cantImpresiones = 0;
+
 	int err = pthread_create(&nuevoPrograma->idHilo , NULL ,(void*)iniciarPrograma ,&nuevoPrograma->socketHiloKernel);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
-    time_t tiempoInicio ;
-    time(&tiempoInicio);
-	nuevoPrograma->fechaInicio=malloc(sizeof(struct tm));
-	nuevoPrograma->fechaInicio=localtime(&tiempoInicio);
-	nuevoPrograma->cantImpresiones = 0;
 
 	pthread_mutex_lock(&mutexListaHilos);
 	list_add(listaHilosProgramas,nuevoPrograma);
@@ -110,17 +108,12 @@ void gestionarCierrePrograma(int pidFinalizar){
 	pthread_mutex_lock(&mutexListaHilos);
 	t_hiloPrograma* programaAFinalizar = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
 	pthread_mutex_unlock(&mutexListaHilos);
-
 	close(programaAFinalizar->socketHiloKernel);
 
-	time_t tiempoFinalizacion;
-	time(&tiempoFinalizacion);
-	struct tm* fechaFinalizacion = malloc(sizeof(struct tm));
-	fechaFinalizacion=localtime(&tiempoFinalizacion);
-	double tiempoEjecucion= difftime(mktime(programaAFinalizar->fechaInicio),tiempoFinalizacion);
+	time_t tiempoFinalizacion = time(NULL);
+	double tiempoEjecucion = difftime(time(NULL),programaAFinalizar->tiempoInicio);
 
-	printf("Datos de proceso finalizado\n");
-	printf("\tHora de inicializacion:%s \n\tHora de finalizacion:%s\n\tTiempo de ejecucion:%e \n\tCantidad de impresiones:%d\n",asctime(programaAFinalizar->fechaInicio),asctime(fechaFinalizacion),tiempoEjecucion,programaAFinalizar->cantImpresiones);
+	printf("\tHora de inicializacion:%s\n\tHora de finalizacion:%s\n\tTiempo de ejecucion:%f\n\tCantidad de impresiones:%d\n",asctime(gmtime(&programaAFinalizar->tiempoInicio)),asctime(gmtime(&tiempoFinalizacion)),tiempoEjecucion,programaAFinalizar->cantImpresiones);
 
 	free(programaAFinalizar);
 }

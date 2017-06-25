@@ -74,7 +74,6 @@ void connectionHandler() {
 				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			}
-		orden = '\0';
 	}
 	pthread_kill(hiloInterfazUsuario,0);
 }
@@ -93,7 +92,7 @@ void cerrarTodo(){
 	int desplazamiento = 0;
 	pthread_mutex_lock(&mutexListaHilos);
 	int cantidad= listaHilosProgramas->elements_count;
-
+	flagCerrarConsola = 0;
 	if(cantidad == 0) {
 		char comandoCerrarSocket= 'Z';
 		send(socketKernel,&comandoCerrarSocket,sizeof(char),0);
@@ -129,7 +128,6 @@ void cerrarTodo(){
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
 
 	free(mensaje);
-	flagCerrarConsola = 0;
 }
 void recibirDatosDelKernel(int socketHiloKernel){
 	int pid;
