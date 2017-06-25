@@ -1,4 +1,9 @@
 //-----------------------------LOGS, CONFIGS Y SIGNALS------------------------------------------------------
+
+#include <stdbool.h>
+#include <signal.h>
+
+
 void leerConfiguracion(char* ruta) {
 	configuracion_memoria = config_create(ruta);
 	ipMemoria = config_get_string_value(configuracion_memoria, "IP_MEMORIA");

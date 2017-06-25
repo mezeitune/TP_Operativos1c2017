@@ -267,6 +267,9 @@ void gestionarCierreCpu(int socket){
 	pthread_mutex_lock(&mutexListaCPU);
 	list_remove_and_destroy_by_condition(listaCPU,(void*)verificaSocket,free);
 	pthread_mutex_unlock(&mutexListaCPU);
+
+	if(strcmp(config_algoritmo, "RR")) sem_wait(&sem_CPU);
+
 	eliminarSocket(socket);
 }
 
