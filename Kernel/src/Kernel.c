@@ -112,7 +112,6 @@ int main() {
 }
 
 void connectionHandler(int socketAceptado, char orden) {
-	log_info(loggerConPantalla,"Ejecutando Connection Handler--->Socket:%d",socketAceptado);
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socketAceptado);
 	}
@@ -142,7 +141,6 @@ void connectionHandler(int socketAceptado, char orden) {
 					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 					break;
 		}
-	log_info(loggerConPantalla,"Connection Handler finalizado--->Socket:%d",socketAceptado);
 	return;
 }
 
