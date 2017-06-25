@@ -379,7 +379,7 @@ void gestionarAlocar(int socket){
 	actualizarSysCalls(pid);
 	recv(socket,&size,sizeof(int),0);
 
-	if(size > config_paginaSize) {
+	if(size > config_paginaSize - sizeof(t_bloqueMetadata)*2) {
 		excepcionPageSizeLimit(socket,pid);
 		return;
 	}

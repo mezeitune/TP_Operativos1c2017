@@ -227,6 +227,9 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 	}
 	pthread_mutex_unlock(&mutexListaAdminHeap);
 	i = 0;
+
+	printf("\nVoy a escribir un size de :%d\n",sizeReal);
+
 	while(i < config_paginaSize){
 
 
