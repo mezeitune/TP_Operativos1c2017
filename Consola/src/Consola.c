@@ -94,14 +94,19 @@ void cerrarTodo(){
 	pthread_mutex_lock(&mutexListaHilos);
 	int cantidad= listaHilosProgramas->elements_count;
 
+	if(cantidad == 0) {
+		char comandoCerrarSocket= 'Z';
+		send(socketKernel,&comandoCerrarSocket,sizeof(char),0);
+		close(socketKernel);
+		return;
+	}
+
 	int mensajeSize = sizeof(int) + sizeof(int)* cantidad;
-
 	char* mensaje= malloc(mensajeSize);
-
 	t_hiloPrograma* procesoACerrar = malloc(sizeof(t_hiloPrograma));
-
 	memcpy(mensaje+desplazamiento,&cantidad,sizeof(int));
 	desplazamiento += sizeof(int);
+
 
 	for(i=0;i<cantidad;i++){
 		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
@@ -112,6 +117,8 @@ void cerrarTodo(){
 
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreConsola,sizeof(char),0);
+
+
 	send(socketKernel,&mensajeSize,sizeof(int),0);
 	send(socketKernel,mensaje,mensajeSize,0);
 

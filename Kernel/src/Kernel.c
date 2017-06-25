@@ -42,7 +42,7 @@
 void recibirPidDeCpu(int socket);
 
 //--------ConnectionHandler--------//
-void connectionHandler(int socketAceptado, char orden);
+void connectionHandler(int socket, char orden);
 void inicializarListas();
 int atenderNuevoPrograma(int socketAceptado);
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola);
@@ -110,30 +110,32 @@ int main() {
 	return 0;
 }
 
-void connectionHandler(int socketAceptado, char orden) {
+void connectionHandler(int socket, char orden) {
 	_Bool verificarPid(t_consola* pidNuevo){
-		return (pidNuevo->socketHiloPrograma == socketAceptado);
+		return (pidNuevo->socketHiloPrograma == socket);
 	}
 	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
 	char comandoDesdeCPU;
 	switch (orden) {
-		case 'A':	atenderNuevoPrograma(socketAceptado);
+		case 'A':	atenderNuevoPrograma(socket);
 					break;
-		case 'N':	gestionarNuevaCPU(socketAceptado,quantum);
+		case 'N':	gestionarNuevaCPU(socket,quantum);
 					break;
-		case 'T':	gestionarFinalizacionProgramaEnCpu(socketAceptado);
+		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
 		case 'F'://Para el FS
-					recv(socketAceptado,&comandoDesdeCPU,sizeof(char),0);
-					interfazHandlerParaFileSystem(comandoDesdeCPU,socketAceptado);//En vez de la V , poner el recv de la orden que quieras hacer con FS
+					recv(socket,&comandoDesdeCPU,sizeof(char),0);
+					interfazHandlerParaFileSystem(comandoDesdeCPU,socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
-		case 'P':	handShakeCPU(socketAceptado);
+		case 'P':	handShakeCPU(socket);
 					break;
 		case 'X':
-					recv(socketAceptado,&orden,sizeof(char),0);
-					interruptHandler(socketAceptado,orden);
+					recv(socket,&orden,sizeof(char),0);
+					interruptHandler(socket,orden);
 					break;
-		case 'R':	gestionarRRFinQuantum(socketAceptado);
+		case 'R':	gestionarRRFinQuantum(socket);
+					break;
+		case 'Z':	eliminarSocket(socket);
 					break;
 		default:
 					if(orden == '\0') break;

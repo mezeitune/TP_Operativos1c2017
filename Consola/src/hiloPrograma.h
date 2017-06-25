@@ -53,13 +53,20 @@ void crearHiloPrograma(){
 
 void* iniciarPrograma(int* socketHiloKernel){
 	char *ruta = malloc(200 * sizeof(char));
+	int comandoCerrarSocket='Z';
+
+	_Bool verificaSocket(t_hiloPrograma* programa){
+		return programa->socketHiloKernel == *socketHiloKernel;
+	}
 
 	printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
 	scanf("%s", ruta);
 
 	if ((enviarLecturaArchivo(ruta,*socketHiloKernel)) < 0) {
-		log_warning(loggerConPantalla,"\nEl archivo indicado es inexistente");
-		/*TODO: Que el socket cierre el hilo*/
+		log_error(loggerConPantalla,"El archivo indicado es inexistente");
+		send(*socketHiloKernel,&comandoCerrarSocket,sizeof(char),0);
+		list_remove_and_destroy_by_condition(listaHilosProgramas,(void*)verificaSocket,free);
+		close(*socketHiloKernel);
 		pthread_mutex_unlock(&mutex_crearHilo);
 		return -1;
 	}
