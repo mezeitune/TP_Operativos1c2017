@@ -126,13 +126,13 @@ void gestionarCierrePrograma(int pidFinalizar){
 	char* tiempoFinalizacion= malloc(12);
 	tiempoFinalizacion = temporal_get_string_time();
 
-	int TiempoEjecucion;
+	//int TiempoEjecucion;
 
-	TiempoEjecucion =tiempoEjecucion(tiempoInicio2,tiempoFinalizacion);
+	//TiempoEjecucion =tiempoEjecucion(tiempoInicio2,tiempoFinalizacion);
 
-	tiempoFinalizacion = temporal_get_string_time();
+	//tiempoFinalizacion = temporal_get_string_time();
 
-	printf("\tHora de inicializacion:%s\n\tHora de finalizacion:%s\n\tTiempo de ejecucion:%d Segundos\n\tCantidad de impresiones:%d\n",tiempoInicio,tiempoFinalizacion,TiempoEjecucion,programaAFinalizar->cantImpresiones);
+	printf("\tHora de inicializacion:%s\n\tHora de finalizacion:%s\n\tTiempo de ejecucion: Segundos\n\tCantidad de impresiones:%d\n",tiempoInicio,tiempoFinalizacion/*,TiempoEjecucion*/,programaAFinalizar->cantImpresiones);
 	free(tiempoInicio2);
 	free(tiempoFinalizacion);
 	free(programaAFinalizar);

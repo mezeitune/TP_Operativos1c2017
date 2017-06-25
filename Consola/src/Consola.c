@@ -199,8 +199,16 @@ int tiempoEjecucion(char* tiempoInicio2,char* tiempoFinalizacion){
 	int tiempoFinalizacion3;
 	tiempoInicio3= atoi(tiempoInicioI);
 	tiempoFinalizacion3= atoi(tiempoFinalizacion2);
+	int hora1= tiempoFinalizacion3/100000;
+	printf("%d\n",hora1);
+	int hora2= tiempoInicio3/100000;
+	int hora3 = hora1-hora2;
+	printf("%d\n",hora3);
 	int tiempoEjecucion = tiempoFinalizacion3-tiempoInicio3;
 	tiempoEjecucion = tiempoEjecucion/1000;
+	if(hora3==1){
+			return (tiempoEjecucion-40);
+		}else
 	return tiempoEjecucion;
 
 }
