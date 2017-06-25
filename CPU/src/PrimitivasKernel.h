@@ -76,7 +76,7 @@ t_puntero reservar (t_valor_variable espacio){
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion < 0) {
 		expropiarPorKernel();
-		return 0;
+		return 0;/*TODO: No funciona todavia*/
 	}
 	recv(socketKernel,&pagina,sizeof(int),0);
 	recv(socketKernel,&offset,sizeof(int),0);

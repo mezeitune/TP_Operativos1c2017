@@ -27,8 +27,9 @@
 #include "semaforosAnsisop.h"
 #include "comandosCPU.h"
 #include "heap.h"
-#include "Excepciones.h"
 #include "conexionConsola.h"
+#include "excepeciones.h"
+#include "listasAdministrativas.h"
 
 
 /*---PAUSA PLANIFICACION---*/
@@ -48,9 +49,6 @@ void administrarFinProcesos();
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
-void removerDeColaEjecucion(int pid);
-void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
-void liberarMemoriaDinamica(int pid,int cantiPaginasCodigo);
 
 
 
@@ -88,15 +86,8 @@ void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
 void gestionarFinalizacionProgramaEnCpu(int socket);
 
-void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
-void finalizarHiloPrograma(int pid);
 
 int contadorPid=0;
-t_list* colaNuevos;
-t_list* colaListos;
-t_list* colaTerminados;
-t_list* colaEjecucion;
-t_list* colaBloqueados;
 
 
 t_list* listaEnEspera;
@@ -177,13 +168,10 @@ void administrarFinProcesos(){
 					list_remove_by_condition(colaEjecucion, (void*)verificaPid);
 					pthread_mutex_unlock(&mutexColaEjecucion);
 
-					cambiarEstadoATerminado(proceso,EXIT_OK);
 					disminuirGradoMultiprogramacion();
 					sem_post(&sem_admitirNuevoProceso);
 
-					finalizarHiloPrograma(proceso->pid);
-					liberarRecursosEnMemoria(proceso);
-					//liberarMemoriaDinamica(proceso->pid,proceso->cantidadPaginasCodigo);
+					terminarProceso(proceso,exitCodeArray[EXIT_OK]->value);
 					/*TODO: Ver que terminar de FS*/
 					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
 				}else {
@@ -197,24 +185,26 @@ void administrarFinProcesos(){
 	}
 }
 
-void liberarMemoriaDinamica(int pid,int cantPaginasCodigo){
-	int cantPaginasHeap;
-	int numeroPagina;
+void liberarMemoriaDinamica(int pid){
+	log_info(loggerConPantalla,"Liberando Memoria Dinamica ");
+	int bloquesSinLiberar;
+	int sizeSinLiberar;
 	_Bool verificaPid(t_contable* proceso){
 		return proceso->pid == pid;
 	}
 
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
-	cantPaginasHeap = proceso->cantPaginasHeap;
+	bloquesSinLiberar = proceso->cantAlocar - proceso->cantLiberar;
+	sizeSinLiberar = proceso->sizeAlocar - proceso->sizeLiberar;
 	list_add(listaContable,proceso);
 	pthread_mutex_unlock(&mutexListaContable);
 
-	while (cantPaginasHeap > 0){
-		numeroPagina = stackSize + cantPaginasCodigo + cantPaginasHeap;
-		destruirPaginaHeap(pid,numeroPagina);
-		cantPaginasHeap --;
+	if(bloquesSinLiberar > 0){
+		log_warning(loggerConPantalla,"El proceso no libero %d bloques de Heap, acumulando %d bytes--->PID:%d",bloquesSinLiberar,sizeSinLiberar,pid);
+		destruirTodasLasPaginasHeapDeProceso(pid);
 	}
+
 }
 
 
@@ -232,9 +222,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 	log_info(loggerConPantalla,"Cambiando nuevo proceso desde Nuevos a Listos--->PID: %d",proceso->pid);
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
 				log_error(loggerConPantalla ,"No se pudo reservar recursos para ejecutar el programa");
-				interruptHandler(codigoPrograma->socketHiloConsola,'A'); // Informa a consola error por no poder reservar recursos
-				cambiarEstadoATerminado(proceso,-1); /*TODO:Cambiar exitCODE*/
-				finalizarHiloPrograma(proceso->pid);
+				excepcionReservaRecursos(codigoPrograma->socketHiloConsola,proceso);
 			}
 	else{
 			encolarProcesoListo(proceso);
@@ -245,45 +233,6 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 	free(codigoPrograma);
 }
 
-void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
-	_Bool verificaPid(t_pcb* pcb){
-			return (pcb->pid == procesoTerminar->pid);
-		}
-
-	procesoTerminar->exitCode=exit;
-	pthread_mutex_lock(&mutexColaTerminados);
-	list_add(colaTerminados,procesoTerminar);
-	pthread_mutex_unlock(&mutexColaTerminados);
-}
-
-void removerDeColaEjecucion(int pid){
-	_Bool verificaPid(t_pcb* proceso){
-			return (proceso->pid == pid);
-		}
-	pthread_mutex_lock(&mutexColaEjecucion);
-	list_remove_by_condition(colaEjecucion, (void*)verificaPid);
-	pthread_mutex_unlock(&mutexColaEjecucion);
-}
-void finalizarHiloPrograma(int pid){
-	char* mensaje = malloc(sizeof(char)*10);
-
-	t_consola* consola = malloc(sizeof(t_consola));
-	mensaje = "Finalizar";
-
-	_Bool verificaPid(t_consola* consolathread){
-			return (consolathread->pid == pid);
-	}
-			pthread_mutex_lock(&mutexListaConsolas);
-			consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
-			pthread_mutex_unlock(&mutexListaConsolas);
-
-			informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
-			eliminarSocket(consola->socketHiloPrograma);
-
-
-		//free(mensaje); TODO: Ver porque rompe este free;
-	free(consola);
-}
 
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
 	log_info(loggerConPantalla, "Inicializando proceso en memoria--->PID: %d", proceso->pid);

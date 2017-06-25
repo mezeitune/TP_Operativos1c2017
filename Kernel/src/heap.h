@@ -233,9 +233,6 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
 		memcpy(&auxBloque,buffer,sizeof(t_bloqueMetadata));
 
-		//memcpy(&auxBloque->bitUso,buffer , sizeof(int));
-		//memcpy(&auxBloque->size,buffer + sizeof(int), sizeof(int));
-
 		/*printf("Leo:\n");
 		printf("Pagina:%d\n",pagina);
 		printf("Offset:%d\n",i);
@@ -289,6 +286,7 @@ void destruirPaginaHeap(int pidProc, int pagina){ //Si quiero destruir una pági
 	t_adminBloqueHeap* aux;
 	int i = 0;
 
+	pthread_mutex_lock(&mutexListaAdminHeap);
 	while(i < list_size(listaAdmHeap))
 	{
 		aux = list_get(listaAdmHeap,i);
@@ -298,12 +296,15 @@ void destruirPaginaHeap(int pidProc, int pagina){ //Si quiero destruir una pági
 			break;
 		}
 	}
+	pthread_mutex_unlock(&mutexListaAdminHeap);
+
 }
 
 void destruirTodasLasPaginasHeapDeProceso(int pidProc){ //Elimino todas las estructuras administrativas de heap asociadas a un PID
 	t_adminBloqueHeap* aux;
 	int i = 0;
 
+	pthread_mutex_lock(&mutexListaAdminHeap);
 	while(i < list_size(listaAdmHeap))
 	{
 		aux = list_get(listaAdmHeap,i);
@@ -312,6 +313,8 @@ void destruirTodasLasPaginasHeapDeProceso(int pidProc){ //Elimino todas las estr
 			list_remove(listaAdmHeap,i);
 		}
 	}
+	pthread_mutex_lock(&mutexListaAdminHeap);
+
 }
 
 int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int size){
@@ -357,8 +360,10 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	printf("Offset:%d\n",i);
 	printf("BitUso:%d\n",bloque.bitUso);
 	printf("Size:%d\n",bloque.size);
-	bloque.bitUso = -1;
 	*/
+	bloque.bitUso = -1;
+	/*TODO: Poder saber bien cuanto estoy liberando*/
+	printf("\n\nEstoy liberando:%d\n\n",bloque.size);
 	actualizarLiberar(pid,bloque.size);
 	memcpy(buffer,&bloque,sizeof(t_bloqueMetadata));
 	escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),buffer);

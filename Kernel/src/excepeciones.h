@@ -5,11 +5,12 @@
  *      Author: utnso
  */
 
-#ifndef EXCEPCIONES_H_
-#define EXCEPCIONES_H_
+#ifndef EXCEPECIONES_H_
+#define EXCEPECIONES_H_
 #define CANTIDADEXCEPCIONES 12
 #include "conexionConsola.h"
-#include "planificacion.h"
+#include "sockets.h"
+#include "listasAdministrativas.h"
 
 typedef struct{
 	int value;
@@ -36,8 +37,14 @@ t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
 void inicializarExitCodeArray();
 void terminarProceso(t_pcb* pcb,int exitCode);
 t_pcb* expropiar(int socket);
+void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
+void finalizarHiloPrograma(int pid);
+void removerDeColaEjecucion(int pid);
+void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
+void liberarMemoriaDinamica(int pid);
 
-void excepcionReservaRecursos(int socketAceptado);
+
+void excepcionReservaRecursos(int socketAceptado,t_pcb* pcb);
 void excepcionPlanificacionDetenida(int socket);
 
 /*TODO: Finalizar bien los procesos*/
@@ -49,9 +56,11 @@ void excepcionPageSizeLimit(int socket,int pid);
 void excepcionStackOverflow(int socket);
 
 
-void excepcionReservaRecursos(int socket){ /*TODO*/
+void excepcionReservaRecursos(int socket,t_pcb* proceso){ /*TODO*/
 	log_error(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos");
 	informarConsola(socket,exitCodeArray[EXIT_RESOURCE]->mensaje,strlen(exitCodeArray[EXIT_RESOURCE]->mensaje));
+	cambiarEstadoATerminado(proceso,exitCodeArray[EXIT_RESOURCE]->value); /*TODO:Cambiar exitCODE*/
+	finalizarHiloPrograma(proceso->pid);
 	log_error(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socket);
 }
 
@@ -107,8 +116,10 @@ void excepcionStackOverflow(int socket){
 }
 
 void terminarProceso(t_pcb* proceso,int exitCode){
+	log_info(loggerConPantalla,"Liberando recursos--->PID:%d",proceso->pid);
 	finalizarHiloPrograma(proceso->pid);
 	liberarRecursosEnMemoria(proceso);
+	liberarMemoriaDinamica(proceso->pid);
 	cambiarEstadoATerminado(proceso,exitCodeArray[EXIT_STACKOVERFLOW]->value);
 }
 
@@ -122,7 +133,46 @@ t_pcb* expropiar(int socket){
 	removerDeColaEjecucion(pcb->pid);
 	return pcb;
 }
+void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
+	_Bool verificaPid(t_pcb* pcb){
+			return (pcb->pid == procesoTerminar->pid);
+		}
 
+	procesoTerminar->exitCode=exit;
+	pthread_mutex_lock(&mutexColaTerminados);
+	list_add(colaTerminados,procesoTerminar);
+	pthread_mutex_unlock(&mutexColaTerminados);
+}
+void finalizarHiloPrograma(int pid){
+	char* mensaje = malloc(sizeof(char)*10);
+
+	t_consola* consola = malloc(sizeof(t_consola));
+	mensaje = "Finalizar";
+
+	_Bool verificaPid(t_consola* consolathread){
+			return (consolathread->pid == pid);
+	}
+		pthread_mutex_lock(&mutexListaConsolas);
+		consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
+		pthread_mutex_unlock(&mutexListaConsolas);
+
+		informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
+		eliminarSocket(consola->socketHiloPrograma);
+
+
+	//free(mensaje); TODO: Ver porque rompe este free;
+	free(consola);
+}
+
+
+void removerDeColaEjecucion(int pid){
+	_Bool verificaPid(t_pcb* proceso){
+			return (proceso->pid == pid);
+		}
+	pthread_mutex_lock(&mutexColaEjecucion);
+	list_remove_by_condition(colaEjecucion, (void*)verificaPid);
+	pthread_mutex_unlock(&mutexColaEjecucion);
+}
 
 void inicializarExitCodeArray(){
 	int i;
@@ -169,4 +219,4 @@ void inicializarExitCodeArray(){
 
 
 }
-#endif /* EXCEPCIONES_H_ */
+#endif /* EXCEPECIONES_H_ */

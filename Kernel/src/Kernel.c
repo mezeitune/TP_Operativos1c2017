@@ -35,8 +35,8 @@
 #include "contabilidad.h"
 #include "semaforosAnsisop.h"
 #include "comandosCPU.h"
+#include "excepeciones.h"
 #include "heap.h"
-#include "Excepciones.h"
 #include "sockets.h"
 
 void recibirPidDeCpu(int socket);
@@ -225,8 +225,6 @@ void interruptHandler(int socketAceptado,char orden){
 
 	switch(orden){
 
-		case 'A':	excepcionReservaRecursos(socketAceptado);
-					break;
 		case 'B':	excepcionPlanificacionDetenida(socketAceptado);
 					break;
 		case 'C':	gestionarCierreCpu(socketAceptado); /*TODO: Rompe porque la CPU esta esperando un PCB*/
@@ -389,7 +387,6 @@ void gestionarAlocar(int socket){
 	data->size = size;
 	data->socket = socket;
 	pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
-
 	actualizarAlocar(pid,size);
 }
 
