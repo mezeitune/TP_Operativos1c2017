@@ -154,7 +154,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
-	if(descriptor_archivo==1){
+	if(descriptor_archivo==DESCRIPTOR_SALIDA){
 
 		char comandoImprimir = 'X';
 		char comandoImprimirPorConsola = 'P';

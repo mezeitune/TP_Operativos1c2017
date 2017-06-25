@@ -13,7 +13,7 @@
 
 typedef struct {
 	int pid;
-	time_t tiempoInicio;
+	char* tiempoInicio;
 	int cantImpresiones;
 	int socketHiloKernel;
 	pthread_t idHilo;
@@ -25,6 +25,8 @@ pthread_mutex_t mutexRecibirDatos;
 
 sem_t sem_crearHilo;
 t_list* listaHilosProgramas;
+char*tiempoInicio;
+int tiempoEjecucion (char* tiempoInicio,char* tiempoFinalizacion);
 
 void crearHiloPrograma();
 void* iniciarPrograma(int* socketHiloKernel);
@@ -37,7 +39,12 @@ void actualizarCantidadImpresiones(int pid);
 void crearHiloPrograma(){
 	t_hiloPrograma* nuevoPrograma = malloc(sizeof(t_hiloPrograma));
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
-	nuevoPrograma->tiempoInicio= time(NULL);
+
+
+	tiempoInicio = malloc (12);
+	tiempoInicio = temporal_get_string_time();
+
+	nuevoPrograma->tiempoInicio= tiempoInicio;
 	nuevoPrograma->cantImpresiones = 0;
 
 	int err = pthread_create(&nuevoPrograma->idHilo , NULL ,(void*)iniciarPrograma ,&nuevoPrograma->socketHiloKernel);
@@ -89,6 +96,8 @@ void finalizarPrograma(){
 		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
 
 			proceso = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
+
+
 				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
 				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
 				send(proceso->socketHiloKernel,&procesoATerminar, sizeof(int), 0);
@@ -106,16 +115,52 @@ void gestionarCierrePrograma(int pidFinalizar){
 		return (proceso->pid == pidFinalizar);
 	}
 	pthread_mutex_lock(&mutexListaHilos);
+
 	t_hiloPrograma* programaAFinalizar = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
+
 	pthread_mutex_unlock(&mutexListaHilos);
 	close(programaAFinalizar->socketHiloKernel);
+	char* tiempoInicio2 = malloc(12);
+	tiempoInicio2 = programaAFinalizar->tiempoInicio;
 
-	time_t tiempoFinalizacion = time(NULL);
-	double tiempoEjecucion = difftime(time(NULL),programaAFinalizar->tiempoInicio);
+	char* tiempoFinalizacion= malloc(12);
+	tiempoFinalizacion = temporal_get_string_time();
 
-	printf("\tHora de inicializacion:%s\n\tHora de finalizacion:%s\n\tTiempo de ejecucion:%f\n\tCantidad de impresiones:%d\n",asctime(gmtime(&programaAFinalizar->tiempoInicio)),asctime(gmtime(&tiempoFinalizacion)),tiempoEjecucion,programaAFinalizar->cantImpresiones);
+	int TiempoEjecucion;
+
+	TiempoEjecucion =tiempoEjecucion(tiempoInicio2,tiempoFinalizacion);
+
+	tiempoFinalizacion = temporal_get_string_time();
+
+	printf("\tHora de inicializacion:%s\n\tHora de finalizacion:%s\n\tTiempo de ejecucion:%d Segundos\n\tCantidad de impresiones:%d\n",tiempoInicio,tiempoFinalizacion,TiempoEjecucion,programaAFinalizar->cantImpresiones);
 
 	free(programaAFinalizar);
+}
+char* remove_all_chars(char* str, char c) {
+	char* str2 = str;
+    char *pr = str2, *pw = str2;
+    while (*pr) {
+        *pw = *pr++;
+        pw += (*pw != c);
+    }
+    *pw = '\0';
+    return str2;
+}
+int tiempoEjecucion(char* tiempoInicio2,char* tiempoFinalizacion){
+
+	char* tiempoInicioI=remove_all_chars(tiempoInicio2,':');
+
+	char* tiempoFinalizacion2= remove_all_chars(tiempoFinalizacion,':');
+
+
+	int tiempoInicio3;
+	int tiempoFinalizacion3;
+	tiempoInicio3= atoi(tiempoInicioI);
+	tiempoFinalizacion3= atoi(tiempoFinalizacion2);
+	int tiempoEjecucion = tiempoFinalizacion3-tiempoInicio3;
+	tiempoEjecucion = tiempoEjecucion/1000;
+	return tiempoEjecucion;
+
 }
 
 
