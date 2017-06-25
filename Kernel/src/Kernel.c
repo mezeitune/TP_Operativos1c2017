@@ -390,6 +390,9 @@ void gestionarLiberar(int socket){
 	log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d",pid);
 	recv(socket,&pagina,sizeof(int),0);
 	recv(socket,&offset,sizeof(int),0);
+
+	printf("\nLiberar pagina :%d\n",pagina);
+
 	liberarBloqueHeap(pid,pagina,offset);
 	actualizarSysCalls(pid);
 	int resultadoEjecucion = 1;

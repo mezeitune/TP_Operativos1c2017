@@ -68,6 +68,7 @@ void reservarEspacioHeap(int pid, int size, int socket){
 
 	puntero->offset = reservarBloqueHeap(pid, size, puntero->pagina);
 
+	printf("\nPagina que se le da para ese espacio de memoria:%d\n",puntero->pagina);
 	send(socket,&puntero->pagina,sizeof(int),0);
 	send(socket,&puntero->offset,sizeof(int),0);
 }
@@ -221,6 +222,8 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 		//memcpy(&auxBloque->size,buffer + sizeof(int), sizeof(int));
 
 		printf("Leo:\n");
+		printf("Pagina:%d\n",pagina);
+		printf("Offset:%d\n",i);
 		printf("BitUso:%d\n",auxBloque.bitUso);
 		printf("Size:%d\n",auxBloque.size);
 
@@ -232,6 +235,8 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 			printf("Escribo:\n");
 			printf("BitUso:%d\n",auxBloque.bitUso);
 			printf("Size:%d\n",auxBloque.size);
+			printf("Pagina:%d\n",pagina);
+			printf("Offset:%d\n",i);
 
 			escribirEnMemoria(pid,pagina,i,sizeof(t_bloqueMetadata),buffer); //Escribo y reservo el metadata que se quiere reservar
 
@@ -239,6 +244,12 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 			if(aux->sizeDisponible > 0){
 				auxBloque.bitUso = -1;
 				auxBloque.size = aux->sizeDisponible;
+
+				printf("Escribo:\n");
+				printf("Bit uso: %d\n",auxBloque.bitUso);
+				printf("Size disponible: %d\n",auxBloque.size);
+				printf("Pagina:%d\n",pagina);
+				printf("Offset:%d",i);
 				memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
 
 				escribirEnMemoria(pid,pagina,i+sizeof(t_bloqueMetadata)+sizeReal,sizeof(t_bloqueMetadata),buffer); //Anuncio cuanto espacio libre queda en el heap en el siguiente metadata
@@ -321,26 +332,39 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	log_info(loggerConPantalla,"Liberando bloque de memoria dinamica--->PID:%d",pid);
 	int i = 0;
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
-	t_bloqueMetadata* buffer= malloc(sizeof(t_bloqueMetadata));
 
-	buffer = (t_bloqueMetadata*) leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
-	buffer->bitUso = -1;
-	escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),(void *) buffer);
 
-	printf("Liberando size:%d\n",buffer->size);
-	actualizarLiberar(pid,buffer->size);
+
+	t_bloqueMetadata bloque;
+	void *buffer=malloc(sizeof(t_bloqueMetadata));
+	//buffer = (t_bloqueMetadata*) leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
+
+	buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
+	memcpy(&bloque,buffer,sizeof(t_bloqueMetadata));
+
+	printf("Leo:\n");
+	printf("Pagina:%d\n",pagina);
+	printf("Offset:%d\n",i);
+	printf("BitUso:%d\n",bloque.bitUso);
+	printf("Size:%d\n",bloque.size);
+	bloque.bitUso = -1;
+	actualizarLiberar(pid,bloque.size);
+
+
+	memcpy(buffer,&bloque,sizeof(t_bloqueMetadata));
+	escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),buffer);
+
 
 	while(i < list_size(listaAdmHeap))
 		{
 			aux = list_get(listaAdmHeap,i);
 			if(aux->pagina == pagina && aux->pid == pid){
-				aux->sizeDisponible = aux->sizeDisponible + buffer ->size;
+				aux->sizeDisponible = aux->sizeDisponible + bloque .size;
 				list_replace(listaAdmHeap,i,aux);
 				break;
 			}
 			i++;
 		}
-	free(buffer);
 }
 
 #endif /* HEAP_H_ */
