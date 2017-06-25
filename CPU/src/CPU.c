@@ -45,6 +45,7 @@ void CerrarPorSignal(){
 
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
+	send(socketMemoria,&comandoInterruptHandler,sizeof(char),0);
 	 //hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
 	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
 	free(pcb_actual);

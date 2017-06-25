@@ -76,6 +76,7 @@ void* connection_Listener();
 
 //--------------------Funciones Conexiones----------------------------//
 int recibirConexion(int socket_servidor);
+void gestionarCierreDeConexion(int socket);
 //----------------------Funciones Conexiones----------------------------//
 
 char nuevaOrdenDeAccion(int puertoCliente);
@@ -541,20 +542,26 @@ void *connection_handler(void *socket_desc)
 			send(sock,&marco_size,sizeof(int),0);
 			break;
 		case 'X':
-			perror("recv failed");
+			gestionarCierreDeConexion(sock);
+			orden = '\0';
 			break;
 		default:
-			log_warning(loggerConPantalla,"\nError: Orden %c no definida\n",orden);
+			log_error(loggerConPantalla,"Orden no definida %c",orden);
 			break;
 		}
 		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
 		//imprimirBitMap();
 		//imprimirEstructurasAdministrativas();
-		orden = nuevaOrdenDeAccion(sock);
+		if(orden != '\0') orden = nuevaOrdenDeAccion(sock);
 	}
 
-	printf("Cliente %d desconectado",sock);
+	log_warning(loggerConPantalla,"Cliente %d desconectado",sock);
 	return 0;
+}
+
+void gestionarCierreDeConexion(int socket){
+	log_warning(loggerConPantalla,"Desconectando cliente %d",socket);
+	close(socket);
 }
 
 void *connection_Listener()
