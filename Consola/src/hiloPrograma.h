@@ -13,9 +13,9 @@
 
 typedef struct {
 	int pid;
-	char* tiempoInicio;
 	int cantImpresiones;
 	int socketHiloKernel;
+	struct tm tiempoInicio;
 	pthread_t idHilo;
 }t_hiloPrograma;
 
@@ -25,8 +25,10 @@ pthread_mutex_t mutexRecibirDatos;
 
 sem_t sem_crearHilo;
 t_list* listaHilosProgramas;
-char*tiempoInicio;
-int tiempoEjecucion (char* tiempoInicio,char* tiempoFinalizacion);
+
+time_t now;
+struct tm beg;
+
 
 void crearHiloPrograma();
 void* iniciarPrograma(int* socketHiloKernel);
@@ -40,11 +42,7 @@ void crearHiloPrograma(){
 	t_hiloPrograma* nuevoPrograma = malloc(sizeof(t_hiloPrograma));
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
 
-
-	tiempoInicio = malloc (12);
-	tiempoInicio = temporal_get_string_time();
-
-	nuevoPrograma->tiempoInicio= tiempoInicio;
+	nuevoPrograma->tiempoInicio= *localtime(&(time_t){time(NULL)});
 	nuevoPrograma->cantImpresiones = 0;
 
 	int err = pthread_create(&nuevoPrograma->idHilo , NULL ,(void*)iniciarPrograma ,&nuevoPrograma->socketHiloKernel);
@@ -120,21 +118,14 @@ void gestionarCierrePrograma(int pidFinalizar){
 
 	pthread_mutex_unlock(&mutexListaHilos);
 	close(programaAFinalizar->socketHiloKernel);
-	char* tiempoInicio2 = malloc(12);
-	tiempoInicio2 = programaAFinalizar->tiempoInicio;
+	struct tm tiempoFinalizacion = *localtime(&(time_t){time(NULL)});
+	double seconds = difftime(mktime(&(tiempoFinalizacion)), mktime(&(programaAFinalizar->tiempoInicio)));
 
-	char* tiempoFinalizacion= malloc(12);
-	tiempoFinalizacion = temporal_get_string_time();
 
-	//int TiempoEjecucion;
+	printf("\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
 
-	//TiempoEjecucion =tiempoEjecucion(tiempoInicio2,tiempoFinalizacion);
+	printf("\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
 
-	//tiempoFinalizacion = temporal_get_string_time();
-
-	printf("\tHora de inicializacion:%s\n\tHora de finalizacion:%s\n\tTiempo de ejecucion: Segundos\n\tCantidad de impresiones:%d\n",tiempoInicio,tiempoFinalizacion/*,TiempoEjecucion*/,programaAFinalizar->cantImpresiones);
-	free(tiempoInicio2);
-	free(tiempoFinalizacion);
 	free(programaAFinalizar);
 }
 
