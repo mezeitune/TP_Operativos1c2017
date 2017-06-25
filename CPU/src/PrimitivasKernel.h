@@ -73,29 +73,44 @@ t_puntero reservar (t_valor_variable espacio){
 	send(socketKernel,&espacio,sizeof(int),0);
 	recv(socketKernel,&pagina,sizeof(int),0);
 	recv(socketKernel,&offset,sizeof(int),0);
+
 	t_puntero puntero = pagina * config_paginaSize + offset;
+	printf("El puntero es %d",puntero);
 	return puntero;
 }
 void liberar (t_puntero puntero){
-	int num_pagina = puntero / config_paginaSize;
-	int offset = puntero - (num_pagina * config_paginaSize);
+
+	int num_paginaDelStack = puntero / config_paginaSize;
+	int offsetDelStack = puntero - (num_paginaDelStack * config_paginaSize);
+	int punteroHeap;
+	char* mensajeRecibido;
+	if ( conseguirDatosMemoria(&mensajeRecibido, num_paginaDelStack,offsetDelStack, sizeof(int))<0)
+		{
+		printf("No se pudo solicitar el contenido\n");
+		}
+		else{
+			punteroHeap=atoi(mensajeRecibido);
+		}
 	int pid = pcb_actual->pid;
 	char comandoInterruptHandler = 'X';
 	char comandoLiberarMemoria = 'L';
 	int resultadoEjecucion;
 	int tamanio = sizeof(t_puntero);
 
+	int num_paginaHeap = punteroHeap/ config_paginaSize;
+	int offsetHeap = punteroHeap - (num_paginaHeap * config_paginaSize);
+
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);
-	send(socketKernel,&num_pagina,sizeof(int),0);
-	send(socketKernel,&offset,tamanio,0);
+	send(socketKernel,&num_paginaHeap,sizeof(int),0);
+	send(socketKernel,&offsetHeap,tamanio,0);
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
-		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
+		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",punteroHeap);
 	else
-		log_info(loggerConPantalla,"No se ha podido liberar el heap apuntada por",puntero);
+		log_info(loggerConPantalla,"No se ha podido liberar el heap apuntada por",punteroHeap);
 }
 //HEAP
 
