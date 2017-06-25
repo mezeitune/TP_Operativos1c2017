@@ -178,7 +178,32 @@ void actualizarCantidadImpresiones(int pid){
 	list_add(listaHilosProgramas,programa);
 	pthread_mutex_unlock(&mutexListaHilos);
 }
+char* remove_all_chars(char* str, char c) {
+	char* str2 = str;
+    char *pr = str2, *pw = str2;
+    while (*pr) {
+        *pw = *pr++;
+        pw += (*pw != c);
+    }
+    *pw = '\0';
+    return str2;
+}
+int tiempoEjecucion(char* tiempoInicio2,char* tiempoFinalizacion){
 
+	char* tiempoInicioI=remove_all_chars(tiempoInicio2,':');
+
+	char* tiempoFinalizacion2= remove_all_chars(tiempoFinalizacion,':');
+
+
+	int tiempoInicio3;
+	int tiempoFinalizacion3;
+	tiempoInicio3= atoi(tiempoInicioI);
+	tiempoFinalizacion3= atoi(tiempoFinalizacion2);
+	int tiempoEjecucion = tiempoFinalizacion3-tiempoInicio3;
+	tiempoEjecucion = tiempoEjecucion/1000;
+	return tiempoEjecucion;
+
+}
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);
 	ipKernel = config_get_string_value(configuracion_Consola, "IP_KERNEL");
