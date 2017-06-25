@@ -102,8 +102,8 @@ void excepcionPageSizeLimit(int socket,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepecion de exceso de memoria dinamica");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje,strlen(exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje));
 	send(socket,&resultadoEjecucion,sizeof(int),0);
-	t_pcb* proceso = expropiar(socket);
-	removerDeColaEjecucion(pid);
+	t_pcb* proceso = recibirYDeserializarPcb(socket);
+	removerDeColaEjecucion(proceso->pid);
 	terminarProceso(proceso,exitCodeArray[EXIT_PAGE_OVERSIZE]->value);
 }
 
@@ -120,7 +120,7 @@ void terminarProceso(t_pcb* proceso,int exitCode){
 	finalizarHiloPrograma(proceso->pid);
 	liberarRecursosEnMemoria(proceso);
 	liberarMemoriaDinamica(proceso->pid);
-	cambiarEstadoATerminado(proceso,exitCodeArray[EXIT_STACKOVERFLOW]->value);
+	cambiarEstadoATerminado(proceso,exitCode);
 }
 
 t_pcb* expropiar(int socket){

@@ -188,7 +188,6 @@ void compactarPaginaHeap(int pagina, int pid){
 		}
 	}
 	free(buffer);
-	printf("Saliendo de compactar pagina heap\n");
 }
 
 void escribirContenidoPaginaHeap(int pagina, int pid, int offset, int size, void *contenido){
@@ -278,7 +277,6 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 		}
 
 	}
-	printf("Terminada reserva bloque heap\n");
 	free(buffer);
 	//free(auxBloque);
 	//free(aux);
@@ -316,7 +314,7 @@ void destruirTodasLasPaginasHeapDeProceso(int pidProc){ //Elimino todas las estr
 			list_remove(listaAdmHeap,i);
 		}
 	}
-	pthread_mutex_lock(&mutexListaAdminHeap);
+	pthread_mutex_unlock(&mutexListaAdminHeap);
 
 }
 
