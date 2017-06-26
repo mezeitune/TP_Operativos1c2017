@@ -41,7 +41,11 @@ t_pcb* expropiarVoluntariamente(int socket);
 t_pcb* expropiarPorEjecucion(int socket);
 void cambiarEstadoATerminado(t_pcb* procesoTerminar);
 void finalizarHiloPrograma(int pid);
+
+void cambiarEstadoCpu(int socket,int estado);
 void removerDeColaEjecucion(int pid);
+
+
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 void liberarMemoriaDinamica(int pid);
 
@@ -131,6 +135,7 @@ void excepcionStackOverflow(int socket){
 	proceso->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
 	removerDeColaEjecucion(proceso->pid);
 	encolarEnListaParaTerminar(proceso);
+	cambiarEstadoCpu(socket,0);
 	sem_post(&sem_CPU);
 }
 
@@ -154,6 +159,7 @@ t_pcb* expropiarVoluntariamente(int socket){
 	send(socket,&comandoExpropiar,sizeof(char),0);
 	pcb = recibirYDeserializarPcb(socket);
 	removerDeColaEjecucion(pcb->pid);
+	cambiarEstadoCpu(socket,0);
 	sem_post(&sem_CPU);
 	return pcb;
 }
@@ -165,6 +171,7 @@ t_pcb* expropiarPorEjecucion(int socket){
 		send(socket,&resultadoEjecucion,sizeof(char),0);
 		pcb = recibirYDeserializarPcb(socket);
 		removerDeColaEjecucion(pcb->pid);
+		cambiarEstadoCpu(socket,0);
 		sem_post(&sem_CPU);
 		return pcb;
 }
@@ -198,6 +205,18 @@ void finalizarHiloPrograma(int pid){
 	free(consola);
 }
 
+
+void cambiarEstadoCpu(int socket,int estado){
+	_Bool verificaSocket(t_cpu* cpu){
+		return cpu->socket == socket;
+	}
+	pthread_mutex_lock(&mutexListaCPU);
+	t_cpu* cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
+	cpu->enEjecucion = estado;
+	list_add(listaCPU,cpu);
+	pthread_mutex_unlock(&mutexListaCPU);
+
+}
 
 void removerDeColaEjecucion(int pid){
 	_Bool verificaPid(t_pcb* proceso){

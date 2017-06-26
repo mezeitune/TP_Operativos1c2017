@@ -275,6 +275,7 @@ void planificarCortoPlazo(){
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
+		printf("Saque un proceso de listos\n");
 
 		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
@@ -616,20 +617,6 @@ void disminuirGradoMultiprogramacion(){
 	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 }
 
-void listaEsperaATerminados(){
-	int indice;
-	t_pcb* proceso;
-
-	pthread_mutex_lock(&mutexListaEspera);
-	if(!list_is_empty(listaEspera)){
-
-		for(indice = 0; indice< listaEspera->elements_count ; indice++){
-			proceso = list_get(listaEspera,indice);
-			terminarProceso(proceso);
-		}
-	}
-	pthread_mutex_unlock(&mutexListaEspera);
-}
 
 int obtenerPaginaSiguiente(int pid){
 	int pagina;

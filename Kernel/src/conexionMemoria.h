@@ -41,6 +41,7 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 	pthread_mutex_unlock(&mutexMemoria);
+	log_info(loggerConPantalla,"Servicio de escritura finalizado--->PID:%d",pid);
 	return resultadoEjecucion;
 }
 
@@ -61,6 +62,7 @@ void* leerDeMemoria(int pid,int pagina,int offset,int size){
 		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 
 		pthread_mutex_unlock(&mutexMemoria);
+		log_info(loggerConPantalla,"Servicio de lectura finalizado--->PID:%d",pid);
 		/*TODO: Deberia devolver el resultado de ejecucion. Que el buffer lo cambie por referencia*/
 		return buffer;
 

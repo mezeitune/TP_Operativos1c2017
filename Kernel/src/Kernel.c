@@ -396,7 +396,10 @@ int buscarProcesoYTerminarlo(int pid){
 			pthread_mutex_lock(&mutexListaHilos);
 			if(list_any_satisfy(listaHilos,(void*)verificarPidHilo)){
 					t_hilo* hilo=list_remove_by_condition(listaHilos,(void*)verificarPidHilo);
-					pthread_kill(hilo->hilo,SIGUSR1);
+
+					pthread_mutex_lock(&mutexMemoria); /*TODO: Para garantizarme que no se este ejecutando un servicio a Memoria*/
+					pthread_kill(hilo->hilo,SIGUSR1); // Seria lo mismo con FS
+					pthread_mutex_unlock(&mutexMemoria);
 			}
 			pthread_mutex_unlock(&mutexListaHilos);
 

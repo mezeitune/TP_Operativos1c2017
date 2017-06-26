@@ -89,13 +89,11 @@ void reservarEspacioHeap(t_alocar* data){
 
 void signalHandler(int signal){
 
-	pthread_mutex_lock(&mutexMemoria);
 	if(signal==SIGUSR1){
 	log_error(loggerConPantalla,"Un servicio de Alocar se ha abortado porque el proceso debio ser expropiado");
 	int valor;
 	pthread_exit(&valor);
 	}
-	pthread_mutex_unlock(&mutexMemoria);
 
 }
 
