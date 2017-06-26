@@ -239,8 +239,7 @@ void gestionarRRFinQuantum(int socket){
 	pthread_mutex_unlock(&mutexListaCPU);
 
 	/*else*/if(cpu->fSignal){
-		sem_post(&sem_envioPCB);
-		printf("\n\n\n\n\n\nPCB: %d\n\n\n\n\n\n", pcb->pid);
+		//sem_post(&sem_envioPCB);
 		sem_wait(&sem_eliminacionCPU);
 	}
 
@@ -300,9 +299,8 @@ void gestionarCierreCpu(int socket){
 	}
 
 	printf("\n\nHOLAAAA\n\n");
-	if(flagHuboAlgunProceso){
-		if(strcmp(config_algoritmo, "RR")) sem_wait(&sem_envioPCB);
-	}
+	if(flagHuboAlgunProceso)if(strcmp(config_algoritmo, "RR")) sem_wait(&sem_envioPCB);
+
 
 
 	if(!flagHuboAlgunProceso)/* if(strcmp(config_algoritmo, "RR")) */sem_wait(&sem_CPU);
