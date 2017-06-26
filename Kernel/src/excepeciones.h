@@ -36,7 +36,8 @@ int resultadoEjecucion=-1;
 t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
 void inicializarExitCodeArray();
 void terminarProceso(t_pcb* pcb,int exitCode);
-t_pcb* expropiar(int socket);
+t_pcb* expropiarVoluntariamente(int socket);
+t_pcb* expropiarPorEjecucion(int socket);
 void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
 void finalizarHiloPrograma(int pid);
 void removerDeColaEjecucion(int pid);
@@ -87,7 +88,7 @@ void excepcionPermisosLecutra(int socket,int pid){ /*TODO*/
 
 void excepecionPermisosCrear(int socket){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de creacion");
-	t_pcb* proceso = expropiar(socket);
+	t_pcb* proceso = expropiarVoluntariamente(socket);
 	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje));
 	terminarProceso(proceso,exitCodeArray[EXIT_CREATE_PERMISSIONS]->value);
 }
@@ -101,9 +102,7 @@ void excepcionArchivoInexistente(int socket,int pid){ /*TODO*/
 void excepcionPageSizeLimit(int socket,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepecion de exceso de memoria dinamica");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje,strlen(exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje));
-	send(socket,&resultadoEjecucion,sizeof(int),0);
-	t_pcb* proceso = recibirYDeserializarPcb(socket);
-	removerDeColaEjecucion(proceso->pid);
+	t_pcb* proceso = expropiarPorEjecucion(socket);
 	terminarProceso(proceso,exitCodeArray[EXIT_PAGE_OVERSIZE]->value);
 }
 
@@ -123,7 +122,7 @@ void terminarProceso(t_pcb* proceso,int exitCode){
 	cambiarEstadoATerminado(proceso,exitCode);
 }
 
-t_pcb* expropiar(int socket){
+t_pcb* expropiarVoluntariamente(int socket){
 	t_pcb* pcb;
 	log_info(loggerConPantalla,"Expropiando pcb---CPU:%d",socket);
 	char comandoExpropiar='F';
@@ -132,6 +131,16 @@ t_pcb* expropiar(int socket){
 	pcb = recibirYDeserializarPcb(socket);
 	removerDeColaEjecucion(pcb->pid);
 	return pcb;
+}
+
+t_pcb* expropiarPorEjecucion(int socket){
+	t_pcb* pcb;
+	int resultadoEjecucion=-1;
+	log_info(loggerConPantalla,"Expropiando pcb---CPU:%d",socket);
+		send(socket,&resultadoEjecucion,sizeof(char),0);
+		pcb = recibirYDeserializarPcb(socket);
+		removerDeColaEjecucion(pcb->pid);
+		return pcb;
 }
 void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
 	_Bool verificaPid(t_pcb* pcb){

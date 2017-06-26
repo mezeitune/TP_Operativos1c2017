@@ -9,7 +9,7 @@
  */
 #include "Consola.h"
 #include "hiloPrograma.h"
-#include <time.h>
+
 
 void signalSigIntHandler(int signum);
 
@@ -50,11 +50,11 @@ void signalSigIntHandler(int signum)
 
 void connectionHandler() {
 	char orden;
+	imprimirInterfaz();
 	while (flagCerrarConsola) {
-		pthread_mutex_lock(&mutex_crearHilo);
-
-		imprimirInterfaz();
 		scanf("%c", &orden);
+		pthread_mutex_lock(&mutex_crearHilo);
+		imprimirInterfaz();
 
 		switch (orden) {
 			case 'I':
@@ -70,10 +70,11 @@ void connectionHandler() {
 				cerrarTodo();
 				break;
 			default:
-				log_error(loggerConPantalla,"Orden %c no definida", orden);
+				//log_error(loggerConPantalla,"Orden %c no definida", orden);
 				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			}
+
 	}
 	pthread_kill(hiloInterfazUsuario,0);
 }
@@ -161,11 +162,14 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		printf("\n%s\n",mensaje);
 		actualizarCantidadImpresiones(pid);
 		free(mensaje);
+		imprimirInterfaz();
 		pthread_mutex_unlock(&mutexRecibirDatos);
 	}
 
 	gestionarCierrePrograma(pid);
 	log_warning(loggerConPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado",pid,socketHiloKernel);
+	imprimirInterfaz();
+
 }
 
 void actualizarCantidadImpresiones(int pid){
@@ -178,40 +182,7 @@ void actualizarCantidadImpresiones(int pid){
 	list_add(listaHilosProgramas,programa);
 	pthread_mutex_unlock(&mutexListaHilos);
 }
-char* remove_all_chars(char* str, char c) {
-	char* str2 = str;
-    char *pr = str2, *pw = str2;
-    while (*pr) {
-        *pw = *pr++;
-        pw += (*pw != c);
-    }
-    *pw = '\0';
-    return str2;
-}
-int tiempoEjecucion(char* tiempoInicio2,char* tiempoFinalizacion){
 
-	char* tiempoInicioI=remove_all_chars(tiempoInicio2,':');
-
-	char* tiempoFinalizacion2= remove_all_chars(tiempoFinalizacion,':');
-
-
-	int tiempoInicio3;
-	int tiempoFinalizacion3;
-	tiempoInicio3= atoi(tiempoInicioI);
-	tiempoFinalizacion3= atoi(tiempoFinalizacion2);
-	int hora1= tiempoFinalizacion3/100000;
-	printf("%d\n",hora1);
-	int hora2= tiempoInicio3/100000;
-	int hora3 = hora1-hora2;
-	printf("%d\n",hora3);
-	int tiempoEjecucion = tiempoFinalizacion3-tiempoInicio3;
-	tiempoEjecucion = tiempoEjecucion/1000;
-	if(hora3==1){
-			return (tiempoEjecucion-40);
-		}else
-	return tiempoEjecucion;
-
-}
 void leerConfiguracion(char* ruta) {
 	configuracion_Consola = config_create(ruta);
 	ipKernel = config_get_string_value(configuracion_Consola, "IP_KERNEL");

@@ -76,8 +76,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			cantidadInstruccionesAEjecutarPorKernel--;
 			cantidadIntruccionesEjecutadas++;
 		}
-		printf("\n\nHOLLAAA\n\n");
-		expropiar();
+		expropiarVoluntariamente();
 	}
 }
 void ejecutarInstruccion(){
@@ -101,7 +100,7 @@ void ejecutarInstruccion(){
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
 
 	if(cpuExpropiada == -1 || cpuBloqueada == 0 ){
-		expropiar();
+		expropiarVoluntariamente();
 	}
 }
 //----------------------------Manejo Instrucciones-------------------------------------

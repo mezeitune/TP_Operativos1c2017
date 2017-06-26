@@ -383,7 +383,7 @@ int buscarProcesoYTerminarlo(int pid){
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 			pthread_mutex_unlock(&mutexListaCPU);
 
-			procesoATerminar=expropiar(cpuAFinalizar->socket);
+			procesoATerminar=expropiarVoluntariamente(cpuAFinalizar->socket);
 			liberarRecursosEnMemoria(procesoATerminar);
 		}
 		pthread_mutex_unlock(&mutexColaEjecucion);

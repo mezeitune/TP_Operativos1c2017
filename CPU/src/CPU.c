@@ -51,7 +51,7 @@ void CerrarPorSignal(){
 	free(pcb_actual);
 	exit(1);
 }
-void expropiar(){
+void expropiarVoluntariamente(){
 
 	if(cpuExpropiada == -1) expropiarPorKernel();
 	if(cpuFinalizada == 0) CerrarPorSignal();
