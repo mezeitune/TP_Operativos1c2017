@@ -83,7 +83,8 @@ void guardarValorDeSharedVar(int socket);
 int main() {
 
 	flagPlanificacion = 1;
-
+	flagHuboAlgunProceso = 0;
+	flagCPUSeDesconecto = 0;
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
 	imprimirConfiguraciones();
@@ -111,6 +112,9 @@ int main() {
 }
 
 void connectionHandler(int socket, char orden) {
+
+	int valor;
+
 	_Bool verificarPid(t_consola* pidNuevo){
 		return (pidNuevo->socketHiloPrograma == socket);
 	}
@@ -120,6 +124,8 @@ void connectionHandler(int socket, char orden) {
 		case 'A':	atenderNuevoPrograma(socket);
 					break;
 		case 'N':	gestionarNuevaCPU(socket,quantum);
+					sem_getvalue(&sem_CPU, &valor);
+					printf("\n\nVALOR SEMCPU: %d\n\n", valor);
 					break;
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
@@ -202,6 +208,7 @@ void gestionarNuevaCPU(int socketCPU,int quantum){
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
 	cpu->enEjecucion = 0;
+	cpu->fSignal = 0;
 
 	pthread_mutex_lock(&mutexListaCPU);
 	list_add(listaCPU,cpu);
@@ -210,12 +217,22 @@ void gestionarNuevaCPU(int socketCPU,int quantum){
 }
 
 void gestionarRRFinQuantum(int socket){
+
+
 	int cantidadDeRafagas;
+
 	recv(socket,&cantidadDeRafagas,sizeof(int),0);
+
 	cpuEjecucionAOciosa(socket);
+
 	t_pcb* pcb = recibirYDeserializarPcb(socket);
+
+
+
 	actualizarRafagas(pcb->pid,cantidadDeRafagas);
+
 	agregarAFinQuantum(pcb);
+
 }
 
 void recibirPidDeCpu(int socket){
@@ -259,18 +276,27 @@ void interruptHandler(int socketAceptado,char orden){
 
 
 void gestionarCierreCpu(int socket){
-	log_warning(loggerConPantalla,"La CPU  %d se ha cerrado",socket);
 
 	_Bool verificaSocket(t_cpu* cpu){
 		return cpu->socket == socket;
 	}
+
+	if(flagHuboAlgunProceso) sem_wait(&sem_envioPCB);
+
+
+	printf("\n\nHOLAAAA\n\n");
+	if(!flagHuboAlgunProceso)/* if(strcmp(config_algoritmo, "RR"))*/ sem_wait(&sem_CPU);
+
+
 	pthread_mutex_lock(&mutexListaCPU);
 	list_remove_and_destroy_by_condition(listaCPU,(void*)verificaSocket,free);
 	pthread_mutex_unlock(&mutexListaCPU);
 
-	if(strcmp(config_algoritmo, "RR")) sem_wait(&sem_CPU);
 
 	eliminarSocket(socket);
+
+	log_warning(loggerConPantalla,"La CPU  %d se ha cerrado",socket);
+	sem_post(&sem_eliminacionCPU);
 }
 
 void imprimirPorConsola(socketAceptado){

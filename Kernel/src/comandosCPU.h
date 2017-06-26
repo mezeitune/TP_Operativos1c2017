@@ -14,6 +14,7 @@ t_list* listaCPU;
 
 typedef struct CPU {
 	int enEjecucion;
+	int fSignal;
 	int pid;
 	int socket;
 }t_cpu;

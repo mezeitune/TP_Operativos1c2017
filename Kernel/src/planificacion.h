@@ -33,6 +33,8 @@
 
 
 /*---PAUSA PLANIFICACION---*/
+int flagHuboAlgunProceso;
+int flagCPUSeDesconecto;
 int flagTerminarPlanificadorLargoPlazo = 0;
 int flagPlanificacion;
 void verificarPausaPlanificacion();
@@ -147,19 +149,27 @@ void administrarFinProcesos(){
 	while(!flagTerminarPlanificadorLargoPlazo){
 		sem_wait(&sem_administrarFinProceso);
 
+
+
+
 			pthread_mutex_lock(&mutexListaCPU);
 			cpu=list_remove_by_condition(listaCPU,(void*)verificaCpu);
 			send(cpu->socket,&ok,sizeof(char),0);
-			proceso= recibirYDeserializarPcb(cpu->socket);
-			cpu->enEjecucion=0;
+			proceso = recibirYDeserializarPcb(cpu->socket);
+			cpu->enEjecucion = 0;
 			list_add(listaCPU,cpu);
 			pthread_mutex_unlock(&mutexListaCPU);
 
-			sem_post(&sem_CPU);
+			if(!cpu->fSignal) sem_post(&sem_CPU);
+			else{
+				printf("\n\nCPU SIGNAL: %d\n\n",cpu->fSignal);
+				sem_post(&sem_envioPCB);
+				sem_wait(&sem_eliminacionCPU);
+			}
+
 
 			log_warning(loggerConPantalla, "Terminando proceso exitos desde CPU:%d--->PID:%d", cpu->socket,proceso->pid);
 			actualizarRafagas(proceso->pid,proceso->cantidadInstrucciones);
-
 				if(flagPlanificacion){
 
 					listaEsperaATerminados();
@@ -181,6 +191,9 @@ void administrarFinProcesos(){
 					pthread_mutex_unlock(&mutexListaEspera);
 					/*No hay que disminuir aca lo diminuyo cuando lo saco de ejecucion*/
 				}
+			///else flagCPUSeDesconecto = 0;
+			//if(flagCPUSeDesconecto) flagCPUSeDesconecto = 0;
+
 
 	}
 }
@@ -306,7 +319,6 @@ void planificarCortoPlazo(){
 
 		verificarPausaPlanificacion();
 
-		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaListos);
 
 
@@ -314,10 +326,11 @@ void planificarCortoPlazo(){
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
+		sem_wait(&sem_CPU);
 
-		pthread_mutex_lock(&mutexListaCPU);
 		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
+			pthread_mutex_lock(&mutexListaCPU);
 			cpuEnEjecucion = list_remove_by_condition(listaCPU,(void*) verificarCPU);
 			cpuEnEjecucion->enEjecucion = 1;
 			list_add(listaCPU, cpuEnEjecucion);
@@ -332,8 +345,10 @@ void planificarCortoPlazo(){
 			send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
 
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+			flagHuboAlgunProceso = 1;
 			log_info(loggerConPantalla,"Pcb encolado en Ejecucion--->PID:%d",pcbListo->pid);
 		}
+		//pthread_mutex_unlock(&mutexListaCPU);
 
 	}
 }
@@ -593,12 +608,18 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 	t_cpu* cpu;
+	int cpuFinalizada;
 	_Bool verificaCpu(t_cpu* cpu){
 				return (cpu->socket == socketCPU);
-			}
+	}
+
+			recv(socketCPU, &cpuFinalizada, sizeof(int),0);
 			pthread_mutex_lock(&mutexListaCPU);
 			cpu = list_remove_by_condition(listaCPU, (void*)verificaCpu);
 			cpu->enEjecucion = 2;
+			printf("\n\nSIGNAL: %d\n\n",cpuFinalizada);
+			if(!cpuFinalizada) cpu->fSignal = 1;
+
 			list_add(listaCPU,cpu);
 			pthread_mutex_unlock(&mutexListaCPU);
 

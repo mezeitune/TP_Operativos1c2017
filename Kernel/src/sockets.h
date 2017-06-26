@@ -30,6 +30,7 @@ void eliminarSocket(int socket){
 	FD_CLR(socket,&master);
 	pthread_mutex_unlock(&mutex_masterSet);
 	close(socket);
+
 }
 
 

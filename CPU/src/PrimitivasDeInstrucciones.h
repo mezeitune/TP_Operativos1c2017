@@ -190,6 +190,7 @@ void finalizar (){
 		char permiso;
 
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
+		send(socketKernel, &cpuFinalizada, sizeof(int),0);
 		recv(socketKernel,&permiso,sizeof(char),0);
 
 		serializarPcbYEnviar(pcb_actual,socketKernel);
@@ -201,10 +202,10 @@ void finalizar (){
 			CerrarPorSignal();
 		}
 		else{
-		cpuExpropiada = 1;
-		cpuOcupada=1;
-		recibiPcb=1;
-		esperarPCB();
+			cpuExpropiada = 1;
+			cpuOcupada=1;
+			recibiPcb=1;
+			esperarPCB();
 		}
 }
 

@@ -41,6 +41,10 @@ sem_t sem_administrarFinProceso;
 sem_t sem_planificacion;
 sem_t sem_colaListos;
 sem_t sem_CPU;
+
+sem_t sem_envioPCB;
+sem_t sem_eliminacionCPU;
+
 sem_t sem_ordenSelect;
 sem_t sem_ordenUI;
 sem_t sem_listaFinQuantum;
@@ -73,6 +77,10 @@ void inicializarSemaforos(){
 		sem_init(&sem_administrarFinProceso,0,0);
 		sem_init(&sem_colaListos,0,0);
 		sem_init(&sem_CPU,0,0);
+
+		sem_init(&sem_envioPCB,0,0);
+		sem_init(&sem_eliminacionCPU,0,0);
+
 		sem_init(&sem_planificacion,0,1);
 		sem_init(&sem_ordenSelect,0,0);
 		sem_init(&sem_ordenUI,0,1);
