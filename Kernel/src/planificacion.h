@@ -239,7 +239,6 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 			}
 	else{
 			encolarProcesoListo(proceso);
-			crearInformacionContable(proceso->pid);
 			aumentarGradoMultiprogramacion();
 			sem_post(&sem_colaListos);
 	}

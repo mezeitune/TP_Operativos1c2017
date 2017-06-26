@@ -166,8 +166,6 @@ int atenderNuevoPrograma(int socketAceptado){
 		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
 		codigoPrograma->pid=proceso->pid;
-
-		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
 		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 
 		if(!flagPlanificacion) {
@@ -178,6 +176,8 @@ int atenderNuevoPrograma(int socketAceptado){
 					free(codigoPrograma);
 					return -1;
 						}
+		cargarConsola(proceso->pid,codigoPrograma->socketHiloConsola);
+		crearInformacionContable(proceso->pid);
 
 		pthread_mutex_lock(&mutexColaNuevos);
 		list_add(colaNuevos,proceso);
