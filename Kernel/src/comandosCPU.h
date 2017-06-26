@@ -28,17 +28,20 @@ void cpuEjecucionAOciosa(int socketCPU);
 void cpuEjecucionAOciosa(int socketCPU){
 
 	t_cpu *cpu = malloc(sizeof(t_cpu));
-
+	int cpuFinalizada;
 
 	_Bool verificaSocket(t_cpu* unaCpu){
 		return (unaCpu->socket == socketCPU);
 	}
 
-
+	recv(socketCPU,&cpuFinalizada, sizeof(int),0);
 
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
 	cpu->enEjecucion = 0;
+	if(!cpuFinalizada) cpu->fSignal = 1;
+
+
 	list_add(listaCPU,cpu);
 	pthread_mutex_unlock(&mutexListaCPU);
 

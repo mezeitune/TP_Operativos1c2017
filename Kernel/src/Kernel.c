@@ -218,16 +218,34 @@ void gestionarNuevaCPU(int socketCPU,int quantum){
 
 void gestionarRRFinQuantum(int socket){
 
+	t_cpu *cpu = malloc(sizeof(t_cpu));
+	t_pcb* pcb;
 
 	int cantidadDeRafagas;
+	int cpuFinalizada;
+	_Bool verificaSocket(t_cpu* unaCpu){
+		return (unaCpu->socket == socket);
+	}
 
+	recv(socket,&cpuFinalizada, sizeof(int),0);
 	recv(socket,&cantidadDeRafagas,sizeof(int),0);
+	pcb = recibirYDeserializarPcb(socket);
 
-	cpuEjecucionAOciosa(socket);
+	pthread_mutex_lock(&mutexListaCPU);
+	cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
+	cpu->enEjecucion = 0;
+	if(!cpuFinalizada) cpu->fSignal = 1;
+	list_add(listaCPU,cpu);
+	pthread_mutex_unlock(&mutexListaCPU);
 
-	t_pcb* pcb = recibirYDeserializarPcb(socket);
+	/*else*/if(cpu->fSignal){
+		sem_post(&sem_envioPCB);
+		printf("\n\n\n\n\n\nPCB: %d\n\n\n\n\n\n", pcb->pid);
+		sem_wait(&sem_eliminacionCPU);
+	}
 
 
+	/*if(cpuFinalizada)*/ sem_post(&sem_CPU);
 
 	actualizarRafagas(pcb->pid,cantidadDeRafagas);
 
@@ -281,11 +299,13 @@ void gestionarCierreCpu(int socket){
 		return cpu->socket == socket;
 	}
 
-	if(flagHuboAlgunProceso) sem_wait(&sem_envioPCB);
-
-
 	printf("\n\nHOLAAAA\n\n");
-	if(!flagHuboAlgunProceso)/* if(strcmp(config_algoritmo, "RR"))*/ sem_wait(&sem_CPU);
+	if(flagHuboAlgunProceso){
+		if(strcmp(config_algoritmo, "RR")) sem_wait(&sem_envioPCB);
+	}
+
+
+	if(!flagHuboAlgunProceso)/* if(strcmp(config_algoritmo, "RR")) */sem_wait(&sem_CPU);
 
 
 	pthread_mutex_lock(&mutexListaCPU);

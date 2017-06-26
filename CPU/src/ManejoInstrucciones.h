@@ -76,6 +76,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			cantidadInstruccionesAEjecutarPorKernel--;
 			cantidadIntruccionesEjecutadas++;
 		}
+		printf("\n\nHOLLAAA\n\n");
 		expropiar();
 	}
 }

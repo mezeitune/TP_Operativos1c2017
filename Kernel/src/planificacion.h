@@ -159,10 +159,10 @@ void administrarFinProcesos(){
 			cpu->enEjecucion = 0;
 			list_add(listaCPU,cpu);
 			pthread_mutex_unlock(&mutexListaCPU);
+			printf("\n\nCPU SIGNAL RR: %d\n\n",cpu->fSignal);
 
 			if(!cpu->fSignal) sem_post(&sem_CPU);
 			else{
-				printf("\n\nCPU SIGNAL: %d\n\n",cpu->fSignal);
 				sem_post(&sem_envioPCB);
 				sem_wait(&sem_eliminacionCPU);
 			}
@@ -307,7 +307,7 @@ void planificarCortoPlazo(){
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
 	_Bool verificarCPU(t_cpu* cpu){
-		return (cpu->enEjecucion == 0);
+		return (cpu->enEjecucion == 0/* && cpu->fSignal == 0*/);
 	}
 	char comandoEnviarPcb = 'S';
 
@@ -320,7 +320,6 @@ void planificarCortoPlazo(){
 		verificarPausaPlanificacion();
 
 		sem_wait(&sem_colaListos);
-
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
@@ -397,6 +396,7 @@ void agregarAFinQuantum(t_pcb* pcb){
 	pthread_mutex_unlock(&mutexColaEjecucion);
 
 	sem_post(&sem_listaFinQuantum);
+	printf("\n\nTAMANIO FIN QUANTUM: %d\n\n", list_size(listaFinQuantum));
 
 
 }

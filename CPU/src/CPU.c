@@ -89,8 +89,8 @@ void expropiarPorStackOverflow(){
 void expropiarPorRR(){
 
 	char comandoExpropiarCpu = 'R';
-
 	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+	send(socketKernel, &cpuFinalizada, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
