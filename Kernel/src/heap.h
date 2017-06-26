@@ -218,7 +218,7 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 	int offset=0;
 	int i = 0;
-	int sizeReal = size;
+	int sizeLibreViejo;
 	void *buffer=malloc(sizeof(t_bloqueMetadata));
 
 	pthread_mutex_lock(&mutexListaAdminHeap);
@@ -226,22 +226,19 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 	{
 		aux = list_get(listaAdmHeap,i);
 		if(aux->pagina == pagina && aux->pid == pid){
-			if(aux->sizeDisponible <= size + sizeof(t_bloqueMetadata)){
-				sizeReal = aux->sizeDisponible;
-				aux->sizeDisponible = 0;
+			if(size + sizeof(t_bloqueMetadata) >= aux->sizeDisponible){
+				return -16; //CODIGO DE ERROR - NO SE PUEDE HACER ESTA RESERVA
 			}
 			else{
 				aux->sizeDisponible = aux->sizeDisponible - size - sizeof(t_bloqueMetadata);
+				list_replace(listaAdmHeap,i,aux);
+				break;
 			}
-			list_replace(listaAdmHeap,i,aux);
-			break;
 		}
 		i++;
 	}
 	pthread_mutex_unlock(&mutexListaAdminHeap);
 	i = 0;
-
-	printf("\nVoy a escribir un size de :%d\n",sizeReal);
 
 	while(i < config_paginaSize){
 
@@ -255,10 +252,10 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 		printf("BitUso:%d\n",auxBloque.bitUso);
 		printf("Size:%d\n",auxBloque.size);
 */
-		if(auxBloque.size >= size && auxBloque.bitUso == -1){
-
+		if(auxBloque.size >= size + sizeof(t_bloqueMetadata) && auxBloque.bitUso == -1){
+			sizeLibreViejo = auxBloque.size;
 			auxBloque.bitUso = 1;
-			auxBloque.size = sizeReal;
+			auxBloque.size = size;
 			memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
 			/*printf("Escribo:\n");
 			printf("BitUso:%d\n",auxBloque.bitUso);
@@ -269,21 +266,21 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 			escribirEnMemoria(pid,pagina,i,sizeof(t_bloqueMetadata),buffer); //Escribo y reservo el metadata que se quiere reservar
 
 			offset = i;
-			if(aux->sizeDisponible > 0){
-				auxBloque.bitUso = -1;
-				auxBloque.size = aux->sizeDisponible;
 
-				/*printf("Escribo:\n");
-				printf("Bit uso: %d\n",auxBloque.bitUso);
-				printf("Size disponible: %d\n",auxBloque.size);
-				printf("Pagina:%d\n",pagina);
-				printf("Offset:%d",i);
-				*/
-				memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
+			auxBloque.bitUso = -1;
+			auxBloque.size = sizeLibreViejo - size - sizeof(t_bloqueMetadata);
 
-				escribirEnMemoria(pid,pagina,i+sizeof(t_bloqueMetadata)+sizeReal,sizeof(t_bloqueMetadata),buffer); //Anuncio cuanto espacio libre queda en el heap en el siguiente metadata
+			/*printf("Escribo:\n");
+			printf("Bit uso: %d\n",auxBloque.bitUso);
+			printf("Size disponible: %d\n",auxBloque.size);
+			printf("Pagina:%d\n",pagina);
+			printf("Offset:%d",i);
+			*/
+			memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
 
-			}
+			escribirEnMemoria(pid,pagina,i+sizeof(t_bloqueMetadata)+size,sizeof(t_bloqueMetadata),buffer); //Anuncio cuanto espacio libre queda en el heap en el siguiente metadata
+
+
 			break;
 		}
 		else{
@@ -345,7 +342,7 @@ int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int si
 		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
 		memcpy(&auxBloque,buffer,sizeof(t_bloqueMetadata));
 
-		if(auxBloque.size >= size && auxBloque.bitUso == -1){
+		if(auxBloque.size >= size + sizeof(t_bloqueMetadata) && auxBloque.bitUso == -1){
 			printf("Saliendo Pagina Heap Bloque Suficiente\n");
 			free(buffer);
 			return 1;
