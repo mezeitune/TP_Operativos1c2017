@@ -39,7 +39,13 @@
 #include "heap.h"
 #include "sockets.h"
 
-void recibirPidDeCpu(int socket);
+
+typedef struct{
+	pthread_t hilo;
+	int pid;
+}t_hilo;
+
+t_list* listaHilos;
 
 //--------ConnectionHandler--------//
 void connectionHandler(int socket, char orden);
@@ -346,7 +352,6 @@ void gestionarCierreConsola(int socket){
 			for(i=0;i<cantidad;i++){
 				pid = *((int*)procesosAFinalizar+desplazamiento);
 						buscarProcesoYTerminarlo(pid);
-						finalizarHiloPrograma(pid);
 						desplazamiento ++;
 			}
 
@@ -376,18 +381,24 @@ int buscarProcesoYTerminarlo(int pid){
 				return (cpu->pid==pid);
 			}
 
+	_Bool verificarPidHilo(t_hilo* hilo){
+					return (hilo->pid==pid);
+				}
+
 	pthread_mutex_lock(&mutexColaEjecucion);
 		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
+			pthread_mutex_unlock(&mutexColaEjecucion);
 
 			pthread_mutex_lock(&mutexListaCPU);
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 			pthread_mutex_unlock(&mutexListaCPU);
 
+			if(list_any_satisfy(listaHilos,(void*)verificarPidHilo)){
+					t_hilo* hilo=list_remove_by_condition(listaHilos,(void*)verificarPidHilo);
+					pthread_kill(hilo->hilo,SIGUSR1);
+			}
 			procesoATerminar=expropiarVoluntariamente(cpuAFinalizar->socket);
-			liberarRecursosEnMemoria(procesoATerminar);
 		}
-		pthread_mutex_unlock(&mutexColaEjecucion);
-
 
 	pthread_mutex_lock(&mutexColaNuevos);
 	if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
@@ -412,9 +423,8 @@ int buscarProcesoYTerminarlo(int pid){
 		}
 	pthread_mutex_unlock(&mutexColaBloqueados);
 
-	cambiarEstadoATerminado(procesoATerminar,exitCodeArray[EXIT_END_OF_PROCESS]->value);
+	terminarProceso(procesoATerminar,exitCodeArray[EXIT_END_OF_PROCESS]->value);
 
-	/*TODO: Liberar heap*/
 	return 0;
 }
 
@@ -435,7 +445,16 @@ void gestionarAlocar(int socket){
 	data->pid = pid;
 	data->size = size;
 	data->socket = socket;
-	pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
+	int err=pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
+	if(err){
+		printf("ERROR; return code from pthread_create() is %d\n", err);
+		return;
+	}
+	t_hilo* hilo = malloc(sizeof(t_hilo));/*TODO: MUTEX*/
+	hilo->pid = pid;
+	hilo->hilo = heapThread;
+	list_add(listaHilos,hilo);
+
 	actualizarAlocar(pid,size);
 }
 
@@ -485,6 +504,8 @@ void inicializarListas(){
 
 	listaSemaforosGlobales = list_create();
 	listaSemYPCB = list_create();
+
+	listaHilos = list_create();
 }
 void obtenerVariablesCompartidasDeLaConfig(){
 	int tamanio = tamanioArray(shared_vars);

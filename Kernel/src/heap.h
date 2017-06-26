@@ -41,6 +41,8 @@ typedef struct{
 
 t_list* listaAdmHeap;
 
+void signalHandler(int signal);
+
 
 void reservarEspacioHeap(t_alocar* data);
 int verificarEspacioLibreHeap(int size, int pid);
@@ -56,8 +58,11 @@ void liberarBloqueHeap(int pid, int pagina, int offset);
 
 void reservarEspacioHeap(t_alocar* data){
 	log_info(loggerConPantalla,"Reservando espacio de memoria dinamica--->PID:%d",data->pid);
+	int resultadoEjecucion=0;
+
+	signal(SIGUSR1,signalHandler);
+
 	t_punteroCpu* puntero = malloc(sizeof(t_punteroCpu));
-	int resultadoEjecucion;
 
 	puntero->pagina = verificarEspacioLibreHeap(data->size, data->pid);
 
@@ -82,6 +87,15 @@ void reservarEspacioHeap(t_alocar* data){
 	free(data);
 }
 
+void signalHandler(int signal){
+
+	if(signal==SIGUSR1){
+	log_error(loggerConPantalla,"Un servicio de Alocar se ha abortado porque el proceso debio ser expropiado");
+	int valor;
+	pthread_exit(&valor);
+	}
+
+}
 
 
 int verificarEspacioLibreHeap(int size, int pid){
