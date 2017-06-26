@@ -423,7 +423,8 @@ int buscarProcesoYTerminarlo(int pid){
 		}
 	pthread_mutex_unlock(&mutexColaBloqueados);
 
-	terminarProceso(procesoATerminar,exitCodeArray[EXIT_END_OF_PROCESS]->value);
+	procesoATerminar->exitCode = exitCodeArray[EXIT_END_OF_PROCESS]->value;
+	terminarProceso(procesoATerminar);
 
 	return 0;
 }

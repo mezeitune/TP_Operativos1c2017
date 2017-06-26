@@ -35,10 +35,10 @@ int resultadoEjecucion=-1;
 
 t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
 void inicializarExitCodeArray();
-void terminarProceso(t_pcb* pcb,int exitCode);
+void terminarProceso(t_pcb* pcb);
 t_pcb* expropiarVoluntariamente(int socket);
 t_pcb* expropiarPorEjecucion(int socket);
-void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit);
+void cambiarEstadoATerminado(t_pcb* procesoTerminar);
 void finalizarHiloPrograma(int pid);
 void removerDeColaEjecucion(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
@@ -60,7 +60,8 @@ void excepcionStackOverflow(int socket);
 void excepcionReservaRecursos(int socket,t_pcb* proceso){ /*TODO*/
 	log_error(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos");
 	informarConsola(socket,exitCodeArray[EXIT_RESOURCE]->mensaje,strlen(exitCodeArray[EXIT_RESOURCE]->mensaje));
-	cambiarEstadoATerminado(proceso,exitCodeArray[EXIT_RESOURCE]->value); /*TODO:Cambiar exitCODE*/
+	proceso->exitCode = exitCodeArray[EXIT_RESOURCE]->value;
+	cambiarEstadoATerminado(proceso); /*TODO:Cambiar exitCODE*/
 	finalizarHiloPrograma(proceso->pid);
 	log_error(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socket);
 }
@@ -90,7 +91,8 @@ void excepecionPermisosCrear(int socket){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de creacion");
 	t_pcb* proceso = expropiarVoluntariamente(socket);
 	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje));
-	terminarProceso(proceso,exitCodeArray[EXIT_CREATE_PERMISSIONS]->value);
+	proceso->exitCode = exitCodeArray[EXIT_CREATE_PERMISSIONS]->value;
+	terminarProceso(proceso);
 }
 
 void excepcionArchivoInexistente(int socket,int pid){ /*TODO*/
@@ -103,7 +105,8 @@ void excepcionPageSizeLimit(int socket,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepecion de exceso de memoria dinamica");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje,strlen(exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
-	terminarProceso(proceso,exitCodeArray[EXIT_PAGE_OVERSIZE]->value);
+	proceso->exitCode = exitCodeArray[EXIT_PAGE_OVERSIZE]->value;
+	terminarProceso(proceso);
 }
 
 void excepcionStackOverflow(int socket){
@@ -111,15 +114,20 @@ void excepcionStackOverflow(int socket){
 	t_pcb* pcb=recibirYDeserializarPcb(socket);
 	informarConsola(buscarSocketHiloPrograma(pcb->pid),exitCodeArray[EXIT_STACKOVERFLOW]->mensaje,strlen(exitCodeArray[EXIT_STACKOVERFLOW]->mensaje));
 	removerDeColaEjecucion(pcb->pid);
-	terminarProceso(pcb,exitCodeArray[EXIT_STACKOVERFLOW]->value);
+	pcb->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
+	terminarProceso(pcb);
 }
 
-void terminarProceso(t_pcb* proceso,int exitCode){
+void terminarProceso(t_pcb* proceso){
 	log_info(loggerConPantalla,"Liberando recursos--->PID:%d",proceso->pid);
+
 	finalizarHiloPrograma(proceso->pid);
 	liberarRecursosEnMemoria(proceso);
 	liberarMemoriaDinamica(proceso->pid);
-	cambiarEstadoATerminado(proceso,exitCode);
+	cambiarEstadoATerminado(proceso);
+
+	disminuirGradoMultiprogramacion();
+	sem_post(&sem_admitirNuevoProceso);
 }
 
 t_pcb* expropiarVoluntariamente(int socket){
@@ -142,12 +150,11 @@ t_pcb* expropiarPorEjecucion(int socket){
 		removerDeColaEjecucion(pcb->pid);
 		return pcb;
 }
-void cambiarEstadoATerminado(t_pcb* procesoTerminar,int exit){
+void cambiarEstadoATerminado(t_pcb* procesoTerminar){
 	_Bool verificaPid(t_pcb* pcb){
 			return (pcb->pid == procesoTerminar->pid);
 		}
 
-	procesoTerminar->exitCode=exit;
 	pthread_mutex_lock(&mutexColaTerminados);
 	list_add(colaTerminados,procesoTerminar);
 	pthread_mutex_unlock(&mutexColaTerminados);

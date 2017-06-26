@@ -170,18 +170,14 @@ void administrarFinProcesos(){
 
 			log_warning(loggerConPantalla, "Terminando proceso exitos desde CPU:%d--->PID:%d", cpu->socket,proceso->pid);
 			actualizarRafagas(proceso->pid,proceso->cantidadInstrucciones);
+
 				if(flagPlanificacion){
 
 					listaEsperaATerminados();
 
-					pthread_mutex_lock(&mutexColaEjecucion);
-					list_remove_by_condition(colaEjecucion, (void*)verificaPid);
-					pthread_mutex_unlock(&mutexColaEjecucion);
-
-					disminuirGradoMultiprogramacion();
-					sem_post(&sem_admitirNuevoProceso);
-
-					terminarProceso(proceso,exitCodeArray[EXIT_OK]->value);
+					removerDeColaEjecucion(proceso->pid);
+					proceso->exitCode = exitCodeArray[EXIT_OK]->value;
+					terminarProceso(proceso);
 					/*TODO: Ver que terminar de FS*/
 					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
 				}else {
@@ -318,13 +314,13 @@ void planificarCortoPlazo(){
 
 		verificarPausaPlanificacion();
 
+		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaListos);
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
-		sem_wait(&sem_CPU);
 
 		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
@@ -649,29 +645,15 @@ void disminuirGradoMultiprogramacion(){
 
 void listaEsperaATerminados(){
 	int indice;
-	t_pcb* pcbBuffer;
-	t_pcb* aux;
+	t_pcb* proceso;
 
 	pthread_mutex_lock(&mutexListaEspera);
 	if(!list_is_empty(listaEnEspera)){
 
-		pthread_mutex_lock(&mutexColaTerminados);
-		list_add_all(listaEnEspera, colaTerminados);
-		pthread_mutex_unlock(&mutexColaTerminados);
-
-		pthread_mutex_lock(&mutexColaEjecucion);
-		for (indice = 0; indice < list_size(listaEnEspera); indice++) {
-
-			pcbBuffer = list_remove(listaEnEspera,indice);
-			disminuirGradoMultiprogramacion(); // ACA TA
-
-			for (indice = 0; indice < list_size(colaEjecucion)-1; ++indice) {
-				aux = list_get(colaEjecucion,indice);
-				if(aux->pid == pcbBuffer->pid) list_remove(colaEjecucion, indice);
-
-			}
+		for(indice = 0; indice< listaEnEspera->elements_count ; indice++){
+			proceso = list_get(listaEnEspera,indice);
+			terminarProceso(proceso);
 		}
-		pthread_mutex_unlock(&mutexColaEjecucion);
 	}
 	pthread_mutex_unlock(&mutexListaEspera);
 }
