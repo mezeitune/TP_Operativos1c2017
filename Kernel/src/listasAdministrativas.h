@@ -14,6 +14,7 @@ t_list* colaTerminados;
 t_list* colaEjecucion;
 t_list* colaBloqueados;
 
+t_list* listaEspera;
 
 
 #endif /* LISTASADMINISTRATIVAS_H_ */

@@ -40,7 +40,6 @@ int flagPlanificacion;
 void verificarPausaPlanificacion();
 void reanudarPLanificacion();
 void pausarPlanificacion();
-void listaEsperaATerminados();
 /*-------------------------*/
 
 /*----LARGO PLAZO--------*/
@@ -88,12 +87,7 @@ void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
 void gestionarFinalizacionProgramaEnCpu(int socket);
 
-
 int contadorPid=0;
-
-
-t_list* listaEnEspera;
-
 /*---PLANIFICACION GENERAL-------*/
 
 
@@ -131,66 +125,26 @@ void administrarNuevosProcesos(){
 }
 
 void administrarFinProcesos(){
-
+	int indice;
 	t_pcb* proceso;
-	t_cpu* cpu;
-	char ok;
-	_Bool verificarPidConsola(t_consola* consola){
-				return (consola->pid == proceso->pid);
-					}
-
-	_Bool verificaPid(t_pcb* pcb){
-		return (pcb->pid == proceso->pid);
-	}
-	_Bool verificaCpu(t_cpu* cpu){
-			return (cpu->enEjecucion == 2);
-		}
 
 	while(!flagTerminarPlanificadorLargoPlazo){
+
 		sem_wait(&sem_administrarFinProceso);
 
-
-
-
-			pthread_mutex_lock(&mutexListaCPU);
-			cpu=list_remove_by_condition(listaCPU,(void*)verificaCpu);
-			send(cpu->socket,&ok,sizeof(char),0);
-			proceso = recibirYDeserializarPcb(cpu->socket);
-			cpu->enEjecucion = 0;
-			list_add(listaCPU,cpu);
-			pthread_mutex_unlock(&mutexListaCPU);
-			printf("\n\nCPU SIGNAL RR: %d\n\n",cpu->fSignal);
-
-			if(!cpu->fSignal) sem_post(&sem_CPU);
-			else{
-				sem_post(&sem_envioPCB);
-				sem_wait(&sem_eliminacionCPU);
-			}
-
-
-			log_warning(loggerConPantalla, "Terminando proceso exitos desde CPU:%d--->PID:%d", cpu->socket,proceso->pid);
-			actualizarRafagas(proceso->pid,proceso->cantidadInstrucciones);
-
 				if(flagPlanificacion){
+					pthread_mutex_lock(&mutexListaEspera);
+						if(!list_is_empty(listaEspera)){
 
-					listaEsperaATerminados();
-
-					removerDeColaEjecucion(proceso->pid);
-					proceso->exitCode = exitCodeArray[EXIT_OK]->value;
-					terminarProceso(proceso);
+							for(indice = 0; indice< listaEspera->elements_count ; indice++){
+								proceso=list_remove(listaEspera,indice);
+								terminarProceso(proceso);
+							}
+						}
+						pthread_mutex_unlock(&mutexListaEspera);
 					/*TODO: Ver que terminar de FS*/
 					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
-				}else {
-
-					pthread_mutex_lock(&mutexListaEspera);
-					list_add(listaEnEspera, proceso);
-					pthread_mutex_unlock(&mutexListaEspera);
-					/*No hay que disminuir aca lo diminuyo cuando lo saco de ejecucion*/
 				}
-			///else flagCPUSeDesconecto = 0;
-			//if(flagCPUSeDesconecto) flagCPUSeDesconecto = 0;
-
-
 	}
 }
 
@@ -609,17 +563,36 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 	}
 
 			recv(socketCPU, &cpuFinalizada, sizeof(int),0);
+			t_pcb* proceso = recibirYDeserializarPcb(socketCPU);
+			sem_post(&sem_CPU);
+
+
+			proceso->exitCode = exitCodeArray[EXIT_OK]->value;
+			completarRafagas(proceso->pid,proceso->cantidadInstrucciones);
+			removerDeColaEjecucion(proceso->pid);
+
+			pthread_mutex_lock(&mutexListaEspera);
+			list_add(listaEspera,proceso);
+			pthread_mutex_unlock(&mutexListaEspera);
+
+			/*TODO: No entiendo este manejo*/
 			pthread_mutex_lock(&mutexListaCPU);
 			cpu = list_remove_by_condition(listaCPU, (void*)verificaCpu);
-			cpu->enEjecucion = 2;
+			cpu->enEjecucion = 0;
 			printf("\n\nSIGNAL: %d\n\n",cpuFinalizada);
 			if(!cpuFinalizada) cpu->fSignal = 1;
-
 			list_add(listaCPU,cpu);
 			pthread_mutex_unlock(&mutexListaCPU);
 
-			sem_post(&sem_administrarFinProceso);
+			if(!cpu->fSignal) sem_post(&sem_CPU);
+					else{
+						sem_post(&sem_envioPCB);
+						sem_wait(&sem_eliminacionCPU);
+					}
+			/*TODO: HAsta aca*/
 
+
+			sem_post(&sem_administrarFinProceso);
 }
 
 void liberarRecursosEnMemoria(t_pcb* proceso){
@@ -648,10 +621,10 @@ void listaEsperaATerminados(){
 	t_pcb* proceso;
 
 	pthread_mutex_lock(&mutexListaEspera);
-	if(!list_is_empty(listaEnEspera)){
+	if(!list_is_empty(listaEspera)){
 
-		for(indice = 0; indice< listaEnEspera->elements_count ; indice++){
-			proceso = list_get(listaEnEspera,indice);
+		for(indice = 0; indice< listaEspera->elements_count ; indice++){
+			proceso = list_get(listaEspera,indice);
 			terminarProceso(proceso);
 		}
 	}

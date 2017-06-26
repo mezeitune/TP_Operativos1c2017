@@ -29,6 +29,7 @@ void crearInformacionContable(int pid);
 void actualizarAlocar(int pid,int size);
 void actualizarLiberar(int pid,int size);
 void actualizarRafagas(int pid, int rafagas);
+void completarRafagas(int pid, int rafagas);
 t_contable* buscarInformacionContable(int pid);
 
 void crearInformacionContable(int pid){
@@ -75,6 +76,14 @@ void actualizarRafagas(int pid, int rafagas){
 	pthread_mutex_unlock(&mutexListaContable);
 }
 
+void completarRafagas(int pid, int rafagas){
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* contabilidad = buscarInformacionContable(pid);
+	if(rafagas > contabilidad->cantRafagas) contabilidad->cantRafagas = rafagas;
+	else contabilidad->cantRafagas = rafagas;
+	list_add(listaContable,contabilidad);
+	pthread_mutex_unlock(&mutexListaContable);
+}
 void actualizarAlocar(int pid,int size){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* contabilidad = buscarInformacionContable(pid);

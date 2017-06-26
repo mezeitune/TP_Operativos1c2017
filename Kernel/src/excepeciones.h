@@ -11,6 +11,7 @@
 #include "conexionConsola.h"
 #include "sockets.h"
 #include "listasAdministrativas.h"
+#include "sincronizacion.h"
 
 typedef struct{
 	int value;
@@ -54,16 +55,22 @@ void excepcionPermisosLectura(int socket,int pid);
 void excepecionPermisosCrear(int socket);
 void excepcionArchivoInexistente(int socket,int pid);
 void excepcionPageSizeLimit(int socket,int pid);
+void excepecionCantidadDePaginas(int socket,int pid);
 void excepcionStackOverflow(int socket);
 
+void encolarEnListaParaTerminar(t_pcb* proceso){
+	pthread_mutex_lock(&mutexListaEspera);
+	list_add(listaEspera,proceso);
+	pthread_mutex_unlock(&mutexListaEspera);
+
+	sem_post(&sem_administrarFinProceso);
+}
 
 void excepcionReservaRecursos(int socket,t_pcb* proceso){ /*TODO*/
 	log_error(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos");
 	informarConsola(socket,exitCodeArray[EXIT_RESOURCE]->mensaje,strlen(exitCodeArray[EXIT_RESOURCE]->mensaje));
 	proceso->exitCode = exitCodeArray[EXIT_RESOURCE]->value;
-	cambiarEstadoATerminado(proceso); /*TODO:Cambiar exitCODE*/
-	finalizarHiloPrograma(proceso->pid);
-	log_error(loggerConPantalla,"El programa ANSISOP enviado por socket: %d ha sido expulsado del sistema e se ha informado satifactoriamente",socket);
+	encolarEnListaParaTerminar(proceso);
 }
 
 void excepcionPlanificacionDetenida(int socket){
@@ -92,7 +99,7 @@ void excepecionPermisosCrear(int socket){
 	t_pcb* proceso = expropiarVoluntariamente(socket);
 	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje));
 	proceso->exitCode = exitCodeArray[EXIT_CREATE_PERMISSIONS]->value;
-	terminarProceso(proceso);
+	encolarEnListaParaTerminar(proceso);
 }
 
 void excepcionArchivoInexistente(int socket,int pid){ /*TODO*/
@@ -106,16 +113,25 @@ void excepcionPageSizeLimit(int socket,int pid){
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje,strlen(exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_PAGE_OVERSIZE]->value;
-	terminarProceso(proceso);
+	encolarEnListaParaTerminar(proceso);
+}
+
+void excepecionCantidadDePaginas(int socket,int pid){
+	log_error(loggerConPantalla,"Informando a Consola excepecion de exceso de paginas");
+	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_LIMIT]->mensaje,strlen(exitCodeArray[EXIT_PAGE_LIMIT]->mensaje));
+	t_pcb* proceso = expropiarPorEjecucion(socket);
+	proceso->exitCode = exitCodeArray[EXIT_PAGE_LIMIT]->value;
+	encolarEnListaParaTerminar(proceso);
 }
 
 void excepcionStackOverflow(int socket){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por StackOverflow");
-	t_pcb* pcb=recibirYDeserializarPcb(socket);
-	informarConsola(buscarSocketHiloPrograma(pcb->pid),exitCodeArray[EXIT_STACKOVERFLOW]->mensaje,strlen(exitCodeArray[EXIT_STACKOVERFLOW]->mensaje));
-	removerDeColaEjecucion(pcb->pid);
-	pcb->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
-	terminarProceso(pcb);
+	t_pcb* proceso=recibirYDeserializarPcb(socket);
+	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_STACKOVERFLOW]->mensaje,strlen(exitCodeArray[EXIT_STACKOVERFLOW]->mensaje));
+	proceso->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
+	removerDeColaEjecucion(proceso->pid);
+	encolarEnListaParaTerminar(proceso);
+	sem_post(&sem_CPU);
 }
 
 void terminarProceso(t_pcb* proceso){
@@ -138,6 +154,7 @@ t_pcb* expropiarVoluntariamente(int socket){
 	send(socket,&comandoExpropiar,sizeof(char),0);
 	pcb = recibirYDeserializarPcb(socket);
 	removerDeColaEjecucion(pcb->pid);
+	sem_post(&sem_CPU);
 	return pcb;
 }
 
@@ -148,6 +165,7 @@ t_pcb* expropiarPorEjecucion(int socket){
 		send(socket,&resultadoEjecucion,sizeof(char),0);
 		pcb = recibirYDeserializarPcb(socket);
 		removerDeColaEjecucion(pcb->pid);
+		sem_post(&sem_CPU);
 		return pcb;
 }
 void cambiarEstadoATerminado(t_pcb* procesoTerminar){

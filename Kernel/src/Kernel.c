@@ -151,7 +151,7 @@ void connectionHandler(int socket, char orden) {
 					break;
 		default:
 					if(orden == '\0') break;
-					log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
+					log_error(loggerConPantalla,"Orden %c no definida", orden);
 					break;
 		}
 	return;
@@ -393,10 +393,13 @@ int buscarProcesoYTerminarlo(int pid){
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 			pthread_mutex_unlock(&mutexListaCPU);
 
+			pthread_mutex_lock(&mutexListaHilos);
 			if(list_any_satisfy(listaHilos,(void*)verificarPidHilo)){
 					t_hilo* hilo=list_remove_by_condition(listaHilos,(void*)verificarPidHilo);
 					pthread_kill(hilo->hilo,SIGUSR1);
 			}
+			pthread_mutex_unlock(&mutexListaHilos);
+
 			procesoATerminar=expropiarVoluntariamente(cpuAFinalizar->socket);
 		}
 
@@ -451,10 +454,13 @@ void gestionarAlocar(int socket){
 		printf("ERROR; return code from pthread_create() is %d\n", err);
 		return;
 	}
+
 	t_hilo* hilo = malloc(sizeof(t_hilo));/*TODO: MUTEX*/
 	hilo->pid = pid;
 	hilo->hilo = heapThread;
+	pthread_mutex_lock(&mutexListaHilos);
 	list_add(listaHilos,hilo);
+	pthread_mutex_unlock(&mutexListaHilos);
 
 	actualizarAlocar(pid,size);
 }
@@ -500,7 +506,7 @@ void inicializarListas(){
 	listaTablasArchivosPorProceso = list_create();
 
 	listaFinQuantum = list_create();
-	listaEnEspera = list_create();
+	listaEspera = list_create();
 	listaContable = list_create();
 
 	listaSemaforosGlobales = list_create();

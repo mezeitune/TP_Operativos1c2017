@@ -13,6 +13,7 @@
 #include "conexionMemoria.h"
 #include "contabilidad.h"
 #include "sincronizacion.h"
+#include "excepeciones.h"
 
 typedef struct
 {
@@ -70,8 +71,7 @@ void reservarEspacioHeap(t_alocar* data){
 
 		puntero->pagina = obtenerPaginaSiguiente(data->pid);
 		if(reservarPaginaHeap(data->pid,puntero->pagina)<0){
-			log_error(loggerConPantalla,"No hay espacio suficiente en memoria para reservar una nueva pagina\n");
-			/*TODO: Avisar a Consola, expropiar proceso y terminarlo, liberando recursos*/
+			excepecionCantidadDePaginas(data->socket,data->pid);
 				return;
 			}
 		aumentarPaginasHeap(data->pid);
@@ -89,11 +89,13 @@ void reservarEspacioHeap(t_alocar* data){
 
 void signalHandler(int signal){
 
+	pthread_mutex_lock(&mutexMemoria);
 	if(signal==SIGUSR1){
 	log_error(loggerConPantalla,"Un servicio de Alocar se ha abortado porque el proceso debio ser expropiado");
 	int valor;
 	pthread_exit(&valor);
 	}
+	pthread_mutex_unlock(&mutexMemoria);
 
 }
 
@@ -130,7 +132,7 @@ int verificarEspacioLibreHeap(int size, int pid){
 
 int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva para el proceso
 	log_info(loggerConPantalla,"Reservando pagina de heap--->PID:%d",pid);
-
+	int resultadoEjecucion;
 	t_bloqueMetadata aux ;
 
 	void* buffer=malloc(sizeof(t_bloqueMetadata));
@@ -138,9 +140,10 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	aux.size = config_paginaSize - sizeof(t_bloqueMetadata);
 	memcpy(buffer,&aux,sizeof(t_bloqueMetadata));
 
-	reservarPaginaEnMemoria(pid);
+	resultadoEjecucion=reservarPaginaEnMemoria(pid);
+	if(resultadoEjecucion < 0) return -1;
 
-	int resultadoEjecucion=escribirEnMemoria(pid,pagina,0,sizeof(t_bloqueMetadata),buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
+	resultadoEjecucion=escribirEnMemoria(pid,pagina,0,sizeof(t_bloqueMetadata),buffer);  //Para indicar que está sin usar y que tiene tantos bits libres para utilizarse
 
 
 	t_adminBloqueHeap* bloqueAdmin=malloc(sizeof(t_adminBloqueHeap));
