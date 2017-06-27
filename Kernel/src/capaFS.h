@@ -36,6 +36,7 @@ void excepcion(int codigoError,int socket){
 }
 
 int validarArchivoFS(char* ruta){
+	log_info(loggerConPantalla,"Validadno que el archivo indicado exista");
 	char orden = 'V';
 	int tamano=sizeof(int)*strlen(ruta);
 	int validado;
@@ -72,6 +73,7 @@ int crearArchivoFS(int socket_aceptado, char* direccion ){
 }
 
 void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends y recv al FS
+	log_info(loggerConPantalla,"Moviendo puntero");
 	int pid;
 	int descriptorArchivo;
 	int posicion;
@@ -140,6 +142,7 @@ void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends
 }
 
 void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
+	log_info(loggerConPantalla,"Borrando el archivo indicado");
 	int pid;
 	int descriptorArchivo;
 	int resultadoEjecucion ;
@@ -207,6 +210,7 @@ void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 }
 
 void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
+	log_info(loggerConPantalla,"Cerrando el archivo indicado");
 	int pid;
 	int descriptorArchivo;
 	int resultadoEjecucion ;
@@ -269,6 +273,7 @@ void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 }
 
 void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
+	log_info(loggerConPantalla,"Obteniendo datos del archivo indicado");
 	int pid;
 	int descriptorArchivo;
 	int resultadoEjecucion;
@@ -353,6 +358,7 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 }
 
 void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
+	log_info(loggerConPantalla,"Guardando datos del archivo indicado");
 	int pid;
 	int descriptorArchivo;
 	int resultadoEjecucion;
@@ -511,6 +517,7 @@ int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
 }
 
 void abrirArchivoEnTablas(int socket_aceptado){
+	log_info(loggerConPantalla,"Abriendo un archivo en las tablas");
 	int pid;
 	int tamanoDireccion;
 	int tamanoFlags;
@@ -608,41 +615,33 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
 
 		switch(orden){
 				case 'A'://abrir archivo
-					printf("abriendo un archivo en las tablas \n");
 					abrirArchivoEnTablas(socket_aceptado);
 					break;
 				case 'V'://validar archivo
-					printf("Validando que el archivo indicado exista \n");
 					validarArchivoFS("alumno.bin");
 					break;
 				case 'B'://borrar archivo
-					printf("Borrando el archivo indicado \n");
 					borrarArchivoFS(socket_aceptado);
 					break;
 				case 'O'://obtener datos
-					printf("Obteniendo datos del archivo indicado \n");
 					obtenerArchivoFS(socket_aceptado);
 					break;
 				case 'G'://guardar archivo
-					printf("Guardando datos del archivo indicado \n");
 					guardarArchivoFS(socket_aceptado);
 					break;
 				case 'P'://guardar archivo
-					printf("Cerrando el archivo indicado \n");
 					cerrarArchivoFS(socket_aceptado);
 					break;
 				case 'M'://guardar archivo
-					printf("Moviendo puntero \n");
 					moverCursorArchivoFS(socket_aceptado);
 					break;
-
 			default:
 				if(orden == '\0') break;
-				log_warning(loggerConPantalla ,"\nOrden no reconocida\n");
+				log_error(loggerConPantalla ,"Orden no reconocida: %c",orden);
 				break;
 			}
 			orden = '\0';
-			log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler de File System\n");
+			log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler de File System");
 			return;
 
 }

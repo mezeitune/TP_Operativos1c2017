@@ -138,14 +138,8 @@ void cerrarTodo(){
 }
 
 void connectionHandler(int socket, char orden) {
-
 	int valor;
-
-	_Bool verificarPid(t_consola* pidNuevo){
-		return (pidNuevo->socketHiloPrograma == socket);
-	}
-	int quantum = 0; //SI ES 0 ES FIFO SINO ES UN QUANTUM
-	char comandoDesdeCPU;
+	int quantum = 0; //FIFO--->0 ; RR != 0
 	switch (orden) {
 		case 'A':	atenderNuevoPrograma(socket);
 					break;
@@ -155,7 +149,7 @@ void connectionHandler(int socket, char orden) {
 					break;
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
-		case 'F'://Para el FS
+		case 'F':	/*TODO: Crear un hilo para cada servicio de FS*/
 					recv(socket,&orden,sizeof(char),0);
 					interfazHandlerParaFileSystem(orden,socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;

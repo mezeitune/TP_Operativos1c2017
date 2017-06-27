@@ -31,8 +31,8 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 		return descriptorArchivoAbierto;
 	}
 	else {
+		log_error(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s");
 		expropiarPorKernel();
-		log_info(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s");
 		return 0;
 	}
 }
@@ -59,8 +59,8 @@ void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 	if(resultadoEjecucion==1)
 		log_info(loggerConPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d");
 	else {
+		log_error(loggerConPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d");
 		expropiarPorKernel();
-		log_info(loggerConPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d");
 	}
 }
 
@@ -86,7 +86,7 @@ void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
 	if(resultadoEjecucion==1)
 	log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d");
 	else {
-		log_info(loggerConPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d");
+		log_error(loggerConPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d");
 		expropiarPorKernel();
 	}
 
@@ -113,7 +113,10 @@ void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_varia
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
 	log_info(loggerConPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d");
-	else log_info(loggerConPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d");
+	else {
+		log_error(loggerConPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d");
+		expropiarPorKernel();
+	}
 }
 
 
@@ -148,7 +151,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 		string_append(&infoLeidaChar, infoLeida);
 		log_info(loggerConPantalla,"La informacion leida es %s",infoLeidaChar);
 	}else{
-		log_info(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
+		log_error(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
 		expropiarPorKernel();
 	}
 }
@@ -186,7 +189,10 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 			if(resultadoEjecucion==1)
 			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d");
-			else log_info(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ");
+			else {
+				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ");
+				expropiarPorKernel();
+			}
 	}
 }
 //FS
