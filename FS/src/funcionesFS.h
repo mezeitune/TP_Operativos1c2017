@@ -144,16 +144,18 @@ void borrarArchivoFunction(int socket_cliente){
 			   bitarray_clean_bit(bitarray,indice);
 		      d++;
 		   }
-
+		   send(socket_cliente,&validado,sizeof(char),0);
 		   //send diciendo que se elimino correctamente el archivo
 	   }
 	   else
 	   {
 		   validado=0;
+		   send(socket_cliente,&validado,sizeof(char),0);
 	      //send que no se pudo eliminar el archivo
 	   }
 	} else {
 		validado=0;
+		send(socket_cliente,&validado,sizeof(char),0);
 		//send diciendo que hubo un error y no se pudo eliminar el archivo
 	}
 

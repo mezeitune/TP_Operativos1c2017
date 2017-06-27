@@ -98,7 +98,8 @@ void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
-
+		excepcionArchivoInexistente(socket_aceptado,pid);
+		return;
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -119,10 +120,13 @@ void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends
 
 		if(encontro==0){
 			resultadoEjecucion=0;
+			excepcionArchivoInexistente(socket_aceptado,pid);
+			return;
 		}else{
 
 			tablaAVer->tablaArchivoPorProceso[i][3]=posicion;
 
+			/*TODO: No encuentro la funcion en FS*/
 			//hacer los sends para que el FS verifique que esa posicion existe dentro del archivo
 			//si recibo 0 siginfica que algo anda mal
 			//si recibo 1 significa que esta todo ok
@@ -160,6 +164,8 @@ void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
+		excepcionArchivoInexistente(socket_aceptado,pid);
+		return;
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -184,14 +190,19 @@ void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 		}else{
 			//borrar de la tabla de archivo por proceso
 			//borrar de la tabla global
-
 			//hacer los sends para que el FS borre ese archivo y deje los bloques libres
-
-			resultadoEjecucion=1;
+			char comandoBorrarArchivo='B';
+			send(socketFyleSys,comandoBorrarArchivo,sizeof(char),0);
+			//send(socketFyleSys,&tamanioArchivo,sizeof(int),0); TODO: Encontrar el size del file
+			//send(socketFyleSys,nombreArchivo,strlen(nombreArchivo)*sizeof(char),0); TODO: Encontrar el nombre del archivo
+			recv(socketFyleSys,&resultadoEjecucion,sizeof(char),0);
+				if(resultadoEjecucion < 0) {
+					excepecionBorrarArchivo(socket_aceptado,pid);
+					return;
+				}
 		}
 
 	}
-
 	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
 }
 
@@ -239,9 +250,11 @@ void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 		   }
 		}
 
-		if(encontro==0){
-			resultadoEjecucion=0;
-			excepcion(-1,socket_aceptado);//no encontro en tabla
+		if(encontro==0){//no encontro en tabla
+			excepcionArchivoInexistente(socket_aceptado,pid);
+			return;
+			//resultadoEjecucion=0;
+			//excepcion(-1,socket_aceptado);
 		}else{
 			//borrar de la tabla de archivo por proceso
 			//borrar de la tabla global
@@ -285,7 +298,9 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 
 	if(tablaExiste==0){
 		resultadoEjecucion=0;
-		excepcion(-1,socket_aceptado);//no encontro en tabla
+		excepcionArchivoInexistente(socket_aceptado,pid);
+		return;
+		//excepcion(-1,socket_aceptado);//no encontro en tabla
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
 		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
@@ -304,9 +319,9 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 		   }
 		}
 
-		if(encontro==0){
-			resultadoEjecucion=0;
-			excepcion(-1,socket_aceptado);//no encontro en tabla
+		if(encontro==0){//no encontro en tabla
+			excepcionArchivoInexistente(socket_aceptado,pid);
+			return;
 		}else{
 			int tiene_permisoLectura=0;
 			const char *permiso_lectura = "r";
@@ -318,22 +333,22 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 			if(tiene_permisoLectura==1){
 				int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacionPunteroARecibir;
 
-				//sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
-				//si salio todo bien y mando la info leida al CPU
-
-				resultadoEjecucion=1;
+				//TODO: sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
+				recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
+				if(resultadoEjecucion<0){
+					excepcionFileSystem(socket_aceptado,pid);
+					return;
+				}
 			}else{
-				resultadoEjecucion=0;//No tiene permiso de lectura para ejecutar esta instruccion
-				//Faltaria poner algun codigo de error o algo asi
-				excepcion(-2,socket_aceptado);//falta de permiso lectura
+				//No tiene permiso de lectura para ejecutar esta instruccion
+				excepcionPermisosLectura(socket_aceptado,pid);
+				return;
 			}
-
-
-
 
 		}
 
 	}
+	//TODO: si salio todo bien y mando la info leida al CPU
 	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
 }
 
@@ -499,15 +514,17 @@ void abrirArchivoEnTablas(int socket_aceptado){
 	int pid;
 	int tamanoDireccion;
 	int tamanoFlags;
-	void* direccion = malloc(tamanoDireccion);
+	char* direccion;
 	int descriptorADevolver;
-	void* flags = malloc(tamanoFlags);
+	char* flags;
 	recv(socket_aceptado,&pid,sizeof(int),0);
 	recv(socket_aceptado,&tamanoDireccion,sizeof(int),0);
+	direccion = malloc(tamanoDireccion);
+	strcpy(direccion + tamanoDireccion, "\0");
 	recv(socket_aceptado,direccion,tamanoDireccion,0);
 	recv(socket_aceptado,&tamanoFlags,sizeof(int),0);
+	flags= malloc(tamanoFlags);
 	recv(socket_aceptado,flags,tamanoFlags,0);
-
 
 	char* direccionAValidar=string_new();
 	string_append(&direccionAValidar, direccion);
@@ -563,9 +580,8 @@ void abrirArchivoEnTablas(int socket_aceptado){
 
 		int validacionCrear=crearArchivoFS(socket_aceptado,direccionAValidar);
 		if(validacionCrear==0){
-			int validado=0;
-			excepcion(-1,socket_aceptado);
-			//send(socket_aceptado,&validado,sizeof(int),0);
+			excepcionArchivoInexistente(socket_aceptado,pid);
+			return;
 		}
 
   	  contadorFilasTablaGlobal++;
@@ -580,20 +596,15 @@ void abrirArchivoEnTablas(int socket_aceptado){
   	  send(socket_aceptado,&validado,sizeof(int),0);
   	  send(socket_aceptado,&descriptorADevolver,sizeof(int),0);
 	}else{
-		int validado=0;
-		excepcion(-1,socket_aceptado);//no encontro en tabla
-		//send(socket_aceptado,&validado,sizeof(int),0);
+		//no encontro en tabla. No tiene permisos para crear
+		excepcionPermisosCrear(socket_aceptado,pid);
+		return;
 	}
-
-
 }
 
 
 void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
-		log_info(loggerConPantalla,"Iniciando Interfaz Handler Para File System\n");
-		//int pid;
-		char* mensajeRecibido;
-
+		log_info(loggerConPantalla,"Iniciando Interfaz Handler Para File System");
 
 		switch(orden){
 				case 'A'://abrir archivo
@@ -605,7 +616,7 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
 					validarArchivoFS("alumno.bin");
 					break;
 				case 'B'://borrar archivo
-					printf("Borrando el archivo indacado \n");
+					printf("Borrando el archivo indicado \n");
 					borrarArchivoFS(socket_aceptado);
 					break;
 				case 'O'://obtener datos

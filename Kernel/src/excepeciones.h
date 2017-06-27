@@ -30,52 +30,45 @@ enum {
 	EXIT_END_OF_PROCESS,
 	EXIT_PAGE_OVERSIZE,
 	EXIT_PAGE_LIMIT,
-	EXIT_STACKOVERFLOW
+	EXIT_STACKOVERFLOW,
+	EXIT_FILE_NOT_DELETE, /*TODO*/
+	EXIT_FILESYSTEM_EXCEPTION /*TODO*/
 };
 int resultadoEjecucion=-1;
 
 t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
 void inicializarExitCodeArray();
-void terminarProceso(t_pcb* pcb);
+
+/*Rutinas para finalizar un proceso*/
 t_pcb* expropiarVoluntariamente(int socket);
 t_pcb* expropiarPorEjecucion(int socket);
-void cambiarEstadoATerminado(t_pcb* procesoTerminar);
-void finalizarHiloPrograma(int pid);
-
 void cambiarEstadoCpu(int socket,int estado);
 void removerDeColaEjecucion(int pid);
 
-
+void terminarProceso(t_pcb* pcb);
+void finalizarHiloPrograma(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 void liberarMemoriaDinamica(int pid);
+void cambiarEstadoATerminado(t_pcb* procesoTerminar);
+
+void encolarEnListaParaTerminar(t_pcb* proceso);
 
 
-void excepcionReservaRecursos(int socketAceptado,t_pcb* pcb);
 void excepcionPlanificacionDetenida(int socket);
 
-/*TODO: Finalizar bien los procesos*/
+/*FileSystem*/
+void excepecionFileSystem(int socket,int pid);
 void excepcionPermisosEscritura(int socket,int pid);
 void excepcionPermisosLectura(int socket,int pid);
-void excepecionPermisosCrear(int socket);
+void excepcionPermisosCrear(int socket,int pid);
 void excepcionArchivoInexistente(int socket,int pid);
+
+/*Memoria*/
+void excepcionReservaRecursos(int socketAceptado,t_pcb* pcb);
 void excepcionPageSizeLimit(int socket,int pid);
 void excepecionCantidadDePaginas(int socket,int pid);
 void excepcionStackOverflow(int socket);
 
-void encolarEnListaParaTerminar(t_pcb* proceso){
-	pthread_mutex_lock(&mutexListaEspera);
-	list_add(listaEspera,proceso);
-	pthread_mutex_unlock(&mutexListaEspera);
-
-	sem_post(&sem_administrarFinProceso);
-}
-
-void excepcionReservaRecursos(int socket,t_pcb* proceso){ /*TODO*/
-	log_error(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos");
-	informarConsola(socket,exitCodeArray[EXIT_RESOURCE]->mensaje,strlen(exitCodeArray[EXIT_RESOURCE]->mensaje));
-	proceso->exitCode = exitCodeArray[EXIT_RESOURCE]->value;
-	encolarEnListaParaTerminar(proceso);
-}
 
 void excepcionPlanificacionDetenida(int socket){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido");
@@ -87,29 +80,62 @@ void excepcionPlanificacionDetenida(int socket){
 	eliminarSocket(socket);
 }
 
+/*
+ * Excepeciones de FileSystem. TODO: Escritura.
+ */
+void excepcionFileSystem(int socket,int pid){
+	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de lectura");
+	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje));
+	t_pcb* proceso = expropiarPorEjecucion(socket);
+	proceso->exitCode = exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value;
+	encolarEnListaParaTerminar(proceso);
+}
+
 void excepcionPermisosEscritura(int socketCPU,int pid){ /*TODO*/
 	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de escritura");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje));
 
 }
-void excepcionPermisosLecutra(int socket,int pid){ /*TODO*/
+void excepcionPermisosLectura(int socket,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de lectura");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_READ_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_READ_PERMISSIONS]->mensaje));
-
+	t_pcb* proceso = expropiarPorEjecucion(socket);
+	proceso->exitCode = exitCodeArray[EXIT_READ_PERMISSIONS]->value;
+	encolarEnListaParaTerminar(proceso);
 }
 
-void excepecionPermisosCrear(int socket){
+void excepcionPermisosCrear(int socket,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de creacion");
-	t_pcb* proceso = expropiarVoluntariamente(socket);
-	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje));
+	t_pcb* proceso = expropiarPorEjecucion(socket);
+	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje));
 	proceso->exitCode = exitCodeArray[EXIT_CREATE_PERMISSIONS]->value;
 	encolarEnListaParaTerminar(proceso);
 }
 
-void excepcionArchivoInexistente(int socket,int pid){ /*TODO*/
+void excepcionArchivoInexistente(int socket,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por archivo inexistente");
+	t_pcb* proceso = expropiarPorEjecucion(socket);
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje,strlen(exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje));
+	proceso->exitCode = exitCodeArray[EXIT_FILE_NOT_FOUND]->value;
+	encolarEnListaParaTerminar(proceso);
+}
 
+void excepecionBorrarArchivo(int socket,int pid){
+	log_error(loggerConPantalla,"Informando a Consola excepcion por archivo inexistente");
+	t_pcb* proceso = expropiarPorEjecucion(socket);
+	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILE_NOT_DELETE]->mensaje,strlen(exitCodeArray[EXIT_FILE_NOT_DELETE]->mensaje));
+	proceso->exitCode = exitCodeArray[EXIT_FILE_NOT_DELETE]->value;
+	encolarEnListaParaTerminar(proceso);
+}
+
+/*
+ * Excepeciones Memoria
+ */
+void excepcionReservaRecursos(int socket,t_pcb* proceso){
+	log_error(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos");
+	informarConsola(socket,exitCodeArray[EXIT_RESOURCE]->mensaje,strlen(exitCodeArray[EXIT_RESOURCE]->mensaje));
+	proceso->exitCode = exitCodeArray[EXIT_RESOURCE]->value;
+	encolarEnListaParaTerminar(proceso);
 }
 
 void excepcionPageSizeLimit(int socket,int pid){
@@ -139,6 +165,9 @@ void excepcionStackOverflow(int socket){
 	sem_post(&sem_CPU);
 }
 
+/*
+ * Rutinas para finalizar un proceso
+ */
 void terminarProceso(t_pcb* proceso){
 	log_info(loggerConPantalla,"Liberando recursos--->PID:%d",proceso->pid);
 
@@ -226,6 +255,15 @@ void removerDeColaEjecucion(int pid){
 	list_remove_by_condition(colaEjecucion, (void*)verificaPid);
 	pthread_mutex_unlock(&mutexColaEjecucion);
 }
+
+void encolarEnListaParaTerminar(t_pcb* proceso){
+	pthread_mutex_lock(&mutexListaEspera);
+	list_add(listaEspera,proceso);
+	pthread_mutex_unlock(&mutexListaEspera);
+
+	sem_post(&sem_administrarFinProceso);
+}
+
 
 void inicializarExitCodeArray(){
 	int i;

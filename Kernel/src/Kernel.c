@@ -48,6 +48,7 @@ typedef struct{
 t_list* listaHilos;
 
 void signalHandler(int signum);
+void cerrarTodo();
 //--------ConnectionHandler--------//
 void connectionHandler(int socket, char orden);
 void inicializarListas();
@@ -122,9 +123,18 @@ int main() {
 void signalHandler(int signum){
 	if(signum== SIGINT){
 		log_error(loggerConPantalla,"El proceso Kernel se ha abortado");
-		log_error(loggerConPantalla,"Iniciando rutina de cierre");
+		cerrarTodo();
 		exit(1);
 	}
+}
+
+void cerrarTodo(){
+	log_error(loggerConPantalla,"Iniciando rutina de cierre");
+
+	/*Limpiar los pcbs*/
+	/*Recibir todos los pcb en ejecucion*/
+	/*Avisar a Memoria que se desconecta*/
+	/*Hacer signal a todos los hilos, y setear los flags para que terminen*/
 }
 
 void connectionHandler(int socket, char orden) {
@@ -146,8 +156,8 @@ void connectionHandler(int socket, char orden) {
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
 		case 'F'://Para el FS
-					recv(socket,&comandoDesdeCPU,sizeof(char),0);
-					interfazHandlerParaFileSystem(comandoDesdeCPU,socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
+					recv(socket,&orden,sizeof(char),0);
+					interfazHandlerParaFileSystem(orden,socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
 		case 'P':	handShakeCPU(socket);
 					break;
