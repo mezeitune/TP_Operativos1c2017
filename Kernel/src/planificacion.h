@@ -280,15 +280,14 @@ void planificarCortoPlazo(){
 
 		printf("Saque un proceso de listos\n");
 
+		pthread_mutex_lock(&mutexListaCPU);
 		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
-			pthread_mutex_lock(&mutexListaCPU);
 			cpuEnEjecucion = list_remove_by_condition(listaCPU,(void*) verificarCPU);
 			cpuEnEjecucion->enEjecucion = 1;
+			cpuEnEjecucion->pid = pcbListo->pid;
 			list_add(listaCPU, cpuEnEjecucion);
 			pthread_mutex_unlock(&mutexListaCPU);
-
-			cpuEnEjecucion->pid = pcbListo->pid;
 
 			pthread_mutex_lock(&mutexColaEjecucion);
 			list_add(colaEjecucion, pcbListo);
@@ -299,8 +298,12 @@ void planificarCortoPlazo(){
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 			flagHuboAlgunProceso = 1;
 			log_info(loggerConPantalla,"Pcb encolado en Ejecucion--->PID:%d",pcbListo->pid);
+		}else{
+			pthread_mutex_unlock(&mutexListaCPU);
+			pthread_mutex_lock(&mutexColaListos);
+			list_add_in_index(colaListos,0,pcbListo);
+			pthread_mutex_unlock(&mutexColaListos);
 		}
-		//pthread_mutex_unlock(&mutexListaCPU);
 
 	}
 }
@@ -568,7 +571,6 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 
 			recv(socketCPU, &cpuFinalizada, sizeof(int),0);
 			t_pcb* proceso = recibirYDeserializarPcb(socketCPU);
-			sem_post(&sem_CPU);
 
 
 			proceso->exitCode = exitCodeArray[EXIT_OK]->value;
@@ -579,8 +581,12 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 			list_add(listaEspera,proceso);
 			pthread_mutex_unlock(&mutexListaEspera);
 
+			sem_post(&sem_administrarFinProceso);
+			cambiarEstadoCpu(socketCPU,0);
+			sem_post(&sem_CPU);
+
 			/*TODO: No entiendo este manejo*/
-			pthread_mutex_lock(&mutexListaCPU);
+			/*pthread_mutex_lock(&mutexListaCPU);
 			cpu = list_remove_by_condition(listaCPU, (void*)verificaCpu);
 			cpu->enEjecucion = 0;
 			printf("\n\nSIGNAL: %d\n\n",cpuFinalizada);
@@ -593,10 +599,10 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 						sem_post(&sem_envioPCB);
 						sem_wait(&sem_eliminacionCPU);
 					}
+					*/
 			/*TODO: HAsta aca*/
 
 
-			sem_post(&sem_administrarFinProceso);
 }
 
 void liberarRecursosEnMemoria(t_pcb* proceso){

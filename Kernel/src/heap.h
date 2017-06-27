@@ -339,6 +339,7 @@ void destruirTodasLasPaginasHeapDeProceso(int pidProc){ //Elimino todas las estr
 		{
 			list_remove(listaAdmHeap,i);
 		}
+		i++;
 	}
 	pthread_mutex_unlock(&mutexListaAdminHeap);
 

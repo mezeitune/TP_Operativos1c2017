@@ -172,7 +172,11 @@ void terminarProceso(t_pcb* proceso){
 	log_info(loggerConPantalla,"Liberando recursos--->PID:%d",proceso->pid);
 
 	finalizarHiloPrograma(proceso->pid);
+
+	pthread_mutex_lock(&mutexMemoria);
 	liberarRecursosEnMemoria(proceso);
+	pthread_mutex_unlock(&mutexMemoria);
+
 	liberarMemoriaDinamica(proceso->pid);
 	cambiarEstadoATerminado(proceso);
 
@@ -205,6 +209,7 @@ t_pcb* expropiarPorEjecucion(int socket){
 		return pcb;
 }
 void cambiarEstadoATerminado(t_pcb* procesoTerminar){
+	log_info(loggerConPantalla,"Almacenando en Terminados--->PID:%d",procesoTerminar->pid);
 	_Bool verificaPid(t_pcb* pcb){
 			return (pcb->pid == procesoTerminar->pid);
 		}
@@ -252,7 +257,7 @@ void removerDeColaEjecucion(int pid){
 			return (proceso->pid == pid);
 		}
 	pthread_mutex_lock(&mutexColaEjecucion);
-	list_remove_by_condition(colaEjecucion, (void*)verificaPid);
+	list_remove_and_destroy_by_condition(colaEjecucion, (void*)verificaPid,free);
 	pthread_mutex_unlock(&mutexColaEjecucion);
 }
 
