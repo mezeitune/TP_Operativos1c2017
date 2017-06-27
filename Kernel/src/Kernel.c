@@ -47,6 +47,7 @@ typedef struct{
 
 t_list* listaHilos;
 
+void signalHandler(int signum);
 //--------ConnectionHandler--------//
 void connectionHandler(int socket, char orden);
 void inicializarListas();
@@ -111,10 +112,19 @@ int main() {
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
 
+	signal(SIGINT,signalHandler);
 
 	selectorConexiones(socketServidor);
 
 	return 0;
+}
+
+void signalHandler(int signum){
+	if(signum== SIGINT){
+		log_error(loggerConPantalla,"El proceso Kernel se ha abortado");
+		log_error(loggerConPantalla,"Iniciando rutina de cierre");
+		exit(1);
+	}
 }
 
 void connectionHandler(int socket, char orden) {
