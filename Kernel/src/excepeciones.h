@@ -7,7 +7,7 @@
 
 #ifndef EXCEPECIONES_H_
 #define EXCEPECIONES_H_
-#define CANTIDADEXCEPCIONES 12
+#define CANTIDADEXCEPCIONES 14
 #include "conexionConsola.h"
 #include "sockets.h"
 #include "listasAdministrativas.h"
@@ -32,7 +32,7 @@ enum {
 	EXIT_PAGE_LIMIT,
 	EXIT_STACKOVERFLOW,
 	EXIT_FILE_NOT_DELETE, /*TODO*/
-	EXIT_FILESYSTEM_EXCEPTION /*TODO*/
+	EXIT_FILESYSTEM_EXCEPTION
 };
 int resultadoEjecucion=-1;
 
@@ -66,7 +66,7 @@ void excepcionArchivoInexistente(int socket,int pid);
 /*Memoria*/
 void excepcionReservaRecursos(int socketAceptado,t_pcb* pcb);
 void excepcionPageSizeLimit(int socket,int pid);
-void excepecionCantidadDePaginas(int socket,int pid);
+void excepcionCantidadDePaginas(int socket,int pid);
 void excepcionStackOverflow(int socket);
 
 
@@ -120,13 +120,6 @@ void excepcionArchivoInexistente(int socket,int pid){
 	encolarEnListaParaTerminar(proceso);
 }
 
-void excepecionBorrarArchivo(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por archivo inexistente");
-	t_pcb* proceso = expropiarPorEjecucion(socket);
-	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILE_NOT_DELETE]->mensaje,strlen(exitCodeArray[EXIT_FILE_NOT_DELETE]->mensaje));
-	proceso->exitCode = exitCodeArray[EXIT_FILE_NOT_DELETE]->value;
-	encolarEnListaParaTerminar(proceso);
-}
 
 /*
  * Excepeciones Memoria
@@ -146,7 +139,7 @@ void excepcionPageSizeLimit(int socket,int pid){
 	encolarEnListaParaTerminar(proceso);
 }
 
-void excepecionCantidadDePaginas(int socket,int pid){
+void excepcionCantidadDePaginas(int socket,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepecion de exceso de paginas");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_LIMIT]->mensaje,strlen(exitCodeArray[EXIT_PAGE_LIMIT]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
@@ -186,13 +179,16 @@ void terminarProceso(t_pcb* proceso){
 
 t_pcb* expropiarVoluntariamente(int socket){
 	t_pcb* pcb;
-	log_info(loggerConPantalla,"Expropiando pcb---CPU:%d",socket);
+	log_info(loggerConPantalla,"Expropiando pcb--->CPU:%d",socket);
 	char comandoExpropiar='F';
+	int rafagas;
 
 	send(socket,&comandoExpropiar,sizeof(char),0);
 	pcb = recibirYDeserializarPcb(socket);
+	recv(socket,&rafagas,sizeof(int),0);
+	actualizarRafagas(pcb->pid,rafagas);
 	removerDeColaEjecucion(pcb->pid);
-	cambiarEstadoCpu(socket,0);
+	cambiarEstadoCpu(socket,OCIOSA);
 	sem_post(&sem_CPU);
 	return pcb;
 }
@@ -200,11 +196,14 @@ t_pcb* expropiarVoluntariamente(int socket){
 t_pcb* expropiarPorEjecucion(int socket){
 	t_pcb* pcb;
 	int resultadoEjecucion=-1;
-	log_info(loggerConPantalla,"Expropiando pcb---CPU:%d",socket);
+	int rafagas;
+	log_info(loggerConPantalla,"Expropiando pcb--->CPU:%d",socket);
 		send(socket,&resultadoEjecucion,sizeof(char),0);
 		pcb = recibirYDeserializarPcb(socket);
+		recv(socket,&rafagas,sizeof(int),0);
+		actualizarRafagas(pcb->pid,rafagas);
 		removerDeColaEjecucion(pcb->pid);
-		cambiarEstadoCpu(socket,0);
+		cambiarEstadoCpu(socket,OCIOSA);
 		sem_post(&sem_CPU);
 		return pcb;
 }
@@ -219,11 +218,10 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar){
 	pthread_mutex_unlock(&mutexColaTerminados);
 }
 void finalizarHiloPrograma(int pid){
-	char* mensaje = malloc(sizeof(char)*10);
-
+	int size=sizeof(char)* strlen("Finalizar");
+	char* mensaje = malloc(size);
 	t_consola* consola = malloc(sizeof(t_consola));
-	mensaje = "Finalizar";
-
+	strcpy(mensaje,"Finalizar");
 	_Bool verificaPid(t_consola* consolathread){
 			return (consolathread->pid == pid);
 	}
@@ -231,11 +229,10 @@ void finalizarHiloPrograma(int pid){
 		consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
 		pthread_mutex_unlock(&mutexListaConsolas);
 
-		informarConsola(consola->socketHiloPrograma,mensaje,strlen(mensaje));
+		informarConsola(consola->socketHiloPrograma,mensaje,size);
 		eliminarSocket(consola->socketHiloPrograma);
 
-
-	//free(mensaje); TODO: Ver porque rompe este free;
+	free(mensaje);
 	free(consola);
 }
 
@@ -246,7 +243,7 @@ void cambiarEstadoCpu(int socket,int estado){
 	}
 	pthread_mutex_lock(&mutexListaCPU);
 	t_cpu* cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
-	cpu->enEjecucion = estado;
+	cpu->estado = estado;
 	list_add(listaCPU,cpu);
 	pthread_mutex_unlock(&mutexListaCPU);
 
@@ -312,6 +309,11 @@ void inicializarExitCodeArray(){
 
 	exitCodeArray[EXIT_STACKOVERFLOW]->value = -11;
 	exitCodeArray[EXIT_STACKOVERFLOW]->mensaje= "El programa sufrio StackOverflow";
+
+
+	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value = -13;
+	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje="Ha surgido una excepecion de Filesystem";
+
 
 
 }

@@ -78,7 +78,7 @@ void reservarEspacioHeap(t_alocar* data){
 		pthread_mutex_unlock(&mutexMemoria);
 
 					if(resultadoEjecucion < 0){
-							excepecionCantidadDePaginas(data->socket,data->pid);
+							excepcionCantidadDePaginas(data->socket,data->pid);
 							return;
 					}
 

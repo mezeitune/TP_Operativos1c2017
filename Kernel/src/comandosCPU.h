@@ -12,9 +12,10 @@
 
 t_list* listaCPU;
 
+enum {EJECUCTANDO,OCIOSA};
+
 typedef struct CPU {
-	int enEjecucion;
-	int fSignal;
+	int estado;
 	int pid;
 	int socket;
 }t_cpu;
@@ -38,10 +39,7 @@ void cpuEjecucionAOciosa(int socketCPU){
 
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
-	cpu->enEjecucion = 0;
-	if(!cpuFinalizada) cpu->fSignal = 1;
-
-
+	cpu->estado = OCIOSA;
 	list_add(listaCPU,cpu);
 	pthread_mutex_unlock(&mutexListaCPU);
 

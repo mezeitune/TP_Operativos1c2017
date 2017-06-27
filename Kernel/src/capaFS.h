@@ -200,7 +200,7 @@ void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 			//send(socketFyleSys,nombreArchivo,strlen(nombreArchivo)*sizeof(char),0); TODO: Encontrar el nombre del archivo
 			recv(socketFyleSys,&resultadoEjecucion,sizeof(char),0);
 				if(resultadoEjecucion < 0) {
-					excepecionBorrarArchivo(socket_aceptado,pid);
+					excepcionArchivoInexistente(socket_aceptado,pid);
 					return;
 				}
 		}

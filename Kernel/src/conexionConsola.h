@@ -8,7 +8,6 @@
 #ifndef CONEXIONCONSOLA_H_
 #define CONEXIONCONSOLA_H_
 
-
 typedef struct CONSOLA{
 	int pid;
 	int socketHiloPrograma;

@@ -227,8 +227,7 @@ void gestionarNuevaCPU(int socketCPU,int quantum){
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
-	cpu->enEjecucion = 0;
-	cpu->fSignal = 0;
+	cpu->estado = OCIOSA;
 
 	pthread_mutex_lock(&mutexListaCPU);
 	list_add(listaCPU,cpu);
@@ -237,10 +236,7 @@ void gestionarNuevaCPU(int socketCPU,int quantum){
 }
 
 void gestionarRRFinQuantum(int socket){
-
-	t_cpu *cpu = malloc(sizeof(t_cpu));
 	t_pcb* pcb;
-
 	int cantidadDeRafagas;
 	int cpuFinalizada;
 	_Bool verificaSocket(t_cpu* unaCpu){
@@ -250,32 +246,15 @@ void gestionarRRFinQuantum(int socket){
 	recv(socket,&cpuFinalizada, sizeof(int),0);
 	recv(socket,&cantidadDeRafagas,sizeof(int),0);
 	pcb = recibirYDeserializarPcb(socket);
-
-	pthread_mutex_lock(&mutexListaCPU);
-	cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
-	cpu->enEjecucion = 0;
-	if(!cpuFinalizada) cpu->fSignal = 1;
-	list_add(listaCPU,cpu);
-	pthread_mutex_unlock(&mutexListaCPU);
-
-	/*else*/if(cpu->fSignal){
-		//sem_post(&sem_envioPCB);
-		sem_wait(&sem_eliminacionCPU);
-	}
-
-
-	/*if(cpuFinalizada)*/ sem_post(&sem_CPU);
-
+	cambiarEstadoCpu(socket,OCIOSA);
 	actualizarRafagas(pcb->pid,cantidadDeRafagas);
-
+	removerDeColaEjecucion(pcb->pid);
 	agregarAFinQuantum(pcb);
+	sem_post(&sem_CPU);
+
 
 }
 
-void recibirPidDeCpu(int socket){
-int pid;
-	recv(socket,&pid,sizeof(int),0);
-}
 void interruptHandler(int socketAceptado,char orden){
 	log_warning(loggerConPantalla,"Ejecutando interrupt handler");
 
@@ -283,7 +262,7 @@ void interruptHandler(int socketAceptado,char orden){
 
 		case 'B':	excepcionPlanificacionDetenida(socketAceptado);
 					break;
-		case 'C':	gestionarCierreCpu(socketAceptado); /*TODO: Rompe porque la CPU esta esperando un PCB*/
+		case 'C':	gestionarCierreCpu(socketAceptado);
 					break;
 		case 'E':	gestionarCierreConsola(socketAceptado);
 					break;
@@ -318,23 +297,14 @@ void gestionarCierreCpu(int socket){
 		return cpu->socket == socket;
 	}
 
-	printf("\n\nHOLAAAA\n\n");
-	if(flagHuboAlgunProceso)if(strcmp(config_algoritmo, "RR")) sem_wait(&sem_envioPCB);
-
-
-
-	if(!flagHuboAlgunProceso)/* if(strcmp(config_algoritmo, "RR")) */sem_wait(&sem_CPU);
-
+	/*TODO: Saque el WAIT porque en el peor de los casos, el planificador se activara, vera que no hay cpus ociosas, y guardara devuelta el pcb en la cola de listos*/
 
 	pthread_mutex_lock(&mutexListaCPU);
 	list_remove_and_destroy_by_condition(listaCPU,(void*)verificaSocket,free);
 	pthread_mutex_unlock(&mutexListaCPU);
-
-
 	eliminarSocket(socket);
 
-	log_warning(loggerConPantalla,"La CPU  %d se ha cerrado",socket);
-	sem_post(&sem_eliminacionCPU);
+	log_error(loggerConPantalla,"La CPU %d se ha cerrado",socket);
 }
 
 void imprimirPorConsola(socketAceptado){
@@ -472,7 +442,7 @@ void gestionarAlocar(int socket){
 		return;
 	}
 
-	t_hilo* hilo = malloc(sizeof(t_hilo));/*TODO: MUTEX*/
+	t_hilo* hilo = malloc(sizeof(t_hilo));
 	hilo->pid = pid;
 	hilo->hilo = heapThread;
 	pthread_mutex_lock(&mutexListaHilos);
@@ -489,7 +459,6 @@ void gestionarLiberar(int socket){
 	recv(socket,&pagina,sizeof(int),0);
 	recv(socket,&offset,sizeof(int),0);
 
-	//printf("\nLiberar pagina :%d\n",pagina);
 	liberarBloqueHeap(pid,pagina,offset);
 	actualizarSysCalls(pid);
 	int resultadoEjecucion = 1;

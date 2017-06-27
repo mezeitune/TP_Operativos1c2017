@@ -259,7 +259,7 @@ void planificarCortoPlazo(){
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
 	_Bool verificarCPU(t_cpu* cpu){
-		return (cpu->enEjecucion == 0/* && cpu->fSignal == 0*/);
+		return (cpu->estado == OCIOSA);
 	}
 	char comandoEnviarPcb = 'S';
 
@@ -278,13 +278,13 @@ void planificarCortoPlazo(){
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
-		printf("Saque un proceso de listos\n");
+		printf("\nSaque un proceso de listos\n");
 
 		pthread_mutex_lock(&mutexListaCPU);
 		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
 			cpuEnEjecucion = list_remove_by_condition(listaCPU,(void*) verificarCPU);
-			cpuEnEjecucion->enEjecucion = 1;
+			cpuEnEjecucion->estado = EJECUCTANDO;
 			cpuEnEjecucion->pid = pcbListo->pid;
 			list_add(listaCPU, cpuEnEjecucion);
 			pthread_mutex_unlock(&mutexListaCPU);
@@ -299,10 +299,13 @@ void planificarCortoPlazo(){
 			flagHuboAlgunProceso = 1;
 			log_info(loggerConPantalla,"Pcb encolado en Ejecucion--->PID:%d",pcbListo->pid);
 		}else{
+			printf("\nLo meti devuelta en listos\n");
 			pthread_mutex_unlock(&mutexListaCPU);
 			pthread_mutex_lock(&mutexColaListos);
 			list_add_in_index(colaListos,0,pcbListo);
 			pthread_mutex_unlock(&mutexColaListos);
+			sem_post(&sem_colaListos);
+
 		}
 
 	}
@@ -346,10 +349,6 @@ void agregarAFinQuantum(t_pcb* pcb){
 	pthread_mutex_lock(&mutexListaFinQuantum);
 	list_add(listaFinQuantum, pcb);
 	pthread_mutex_unlock(&mutexListaFinQuantum);
-
-	pthread_mutex_lock(&mutexColaEjecucion);
-	list_remove_by_condition(colaEjecucion, (void*)verificarPidPcb);
-	pthread_mutex_unlock(&mutexColaEjecucion);
 
 	sem_post(&sem_listaFinQuantum);
 	printf("\n\nTAMANIO FIN QUANTUM: %d\n\n", list_size(listaFinQuantum));
@@ -563,7 +562,6 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 
 void gestionarFinalizacionProgramaEnCpu(int socketCPU){
-	t_cpu* cpu;
 	int cpuFinalizada;
 	_Bool verificaCpu(t_cpu* cpu){
 				return (cpu->socket == socketCPU);
@@ -572,7 +570,6 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 			recv(socketCPU, &cpuFinalizada, sizeof(int),0);
 			t_pcb* proceso = recibirYDeserializarPcb(socketCPU);
 
-
 			proceso->exitCode = exitCodeArray[EXIT_OK]->value;
 			completarRafagas(proceso->pid,proceso->cantidadInstrucciones);
 			removerDeColaEjecucion(proceso->pid);
@@ -580,27 +577,9 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 			pthread_mutex_lock(&mutexListaEspera);
 			list_add(listaEspera,proceso);
 			pthread_mutex_unlock(&mutexListaEspera);
-
 			sem_post(&sem_administrarFinProceso);
-			cambiarEstadoCpu(socketCPU,0);
+			cambiarEstadoCpu(socketCPU,OCIOSA);
 			sem_post(&sem_CPU);
-
-			/*TODO: No entiendo este manejo*/
-			/*pthread_mutex_lock(&mutexListaCPU);
-			cpu = list_remove_by_condition(listaCPU, (void*)verificaCpu);
-			cpu->enEjecucion = 0;
-			printf("\n\nSIGNAL: %d\n\n",cpuFinalizada);
-			if(!cpuFinalizada) cpu->fSignal = 1;
-			list_add(listaCPU,cpu);
-			pthread_mutex_unlock(&mutexListaCPU);
-
-			if(!cpu->fSignal) sem_post(&sem_CPU);
-					else{
-						sem_post(&sem_envioPCB);
-						sem_wait(&sem_eliminacionCPU);
-					}
-					*/
-			/*TODO: HAsta aca*/
 
 
 }

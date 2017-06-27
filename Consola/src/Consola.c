@@ -147,7 +147,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 
 		pthread_mutex_lock(&mutexRecibirDatos);
 
-		log_warning(loggerConPantalla,"Socket %d recibiendo mensaje para PID %d",socketHiloKernel,pid);
+		log_warning(loggerConPantalla,"Hilo:%d--->PID:%d",socketHiloKernel,pid);
 
 		mensaje = malloc(size * sizeof(char));
 		recv(socketHiloKernel,mensaje,size,0);
@@ -156,7 +156,6 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		if(strcmp(mensaje,"Finalizar")==0) {
 			flagCerrarHilo = 0;
 			free(mensaje);
-			pthread_mutex_unlock(&mutexRecibirDatos);
 			break;
 		}
 		printf("\n%s\n",mensaje);
@@ -169,6 +168,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 	gestionarCierrePrograma(pid);
 	log_warning(loggerConPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado",pid,socketHiloKernel);
 	imprimirInterfaz();
+	pthread_mutex_unlock(&mutexRecibirDatos);
 
 }
 
