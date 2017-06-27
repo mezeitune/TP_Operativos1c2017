@@ -93,7 +93,8 @@ void liberar (t_puntero puntero){
 	char* mensajeRecibido;
 	if ( conseguirDatosMemoria(&mensajeRecibido, num_paginaDelStack,offsetDelStack, sizeof(int))<0)
 		{
-		printf("No se pudo solicitar el contenido\n");
+		log_info(loggerConPantalla,"No se pudo solicitar el contenido\n");
+		expropiarPorDireccionInvalida();
 		}
 		else{
 			punteroHeap=atoi(mensajeRecibido);
