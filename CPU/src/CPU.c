@@ -38,7 +38,7 @@ int main(void) {
 
 
 
-//------------------------------MANEJO DE ESTADOS DE CPU--------------------------------------
+//------------------------------EXPROPIAR PROCESOS-------------------------------------
 void CerrarPorSignal(){
 	char comandoInterruptHandler='X';
 	char comandoCierreCpu='C';
@@ -46,7 +46,8 @@ void CerrarPorSignal(){
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
 	send(socketMemoria,&comandoInterruptHandler,sizeof(char),0);
-	 //hacer un send a memoria para avisar que se desconecto la CPU y que no se ponga como loca
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+
 	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
 	free(pcb_actual);
 	exit(1);
@@ -63,20 +64,34 @@ void expropiarVoluntariamente(){
 void expropiarPorKernel(){
 	log_error(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	free(pcb_actual);
 	recibiPcb=1;
 	cpuExpropiada = 1;
 	cpuOcupada=1;
 	esperarPCB();
 }
-
+void expropiarPorDireccionInvalida(){
+	log_error(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
+	char interruptHandler= 'X';
+	char caseDireccionInvalida= 'M';
+	send(socketKernel,&interruptHandler,sizeof(char),0);
+	send(socketKernel,&caseDireccionInvalida,sizeof(char),0);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	free(pcb_actual);
+	recibiPcb=1;
+	cpuExpropiada = 1;
+	cpuOcupada=1;
+	esperarPCB();
+}
 void expropiarPorStackOverflow(){
 	char interruptHandler= 'X';
 	char caseStackOverflow = 'K';
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseStackOverflow,sizeof(char),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
 
 	free(pcb_actual);
@@ -98,7 +113,7 @@ void expropiarPorRR(){
 	esperarPCB();
 }
 
-//------------------------------MANEJO DE ESTADOS DE CPU--------------------------------------
+//------------------------------EXPROPIAR PROCESOS--------------------------------------
 
 
 

@@ -157,6 +157,17 @@ void excepecionCantidadDePaginas(int socket,int pid){
 void excepcionStackOverflow(int socket){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por StackOverflow");
 	t_pcb* proceso=recibirYDeserializarPcb(socket);
+	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje));
+	proceso->exitCode =  exitCodeArray[EXIT_MEMORY_EXCEPTION]->value;
+	removerDeColaEjecucion(proceso->pid);
+	encolarEnListaParaTerminar(proceso);
+	cambiarEstadoCpu(socket,0);
+	sem_post(&sem_CPU);
+}
+void excepcionDireccionInvalida(int socket){
+	log_error(loggerConPantalla,"Informando a Consola excepcion por Direccion Invalida de Memoria pedido por un proceso ANSISOP");
+	t_pcb* proceso=recibirYDeserializarPcb(socket);
+	//recv(socket,);
 	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_STACKOVERFLOW]->mensaje,strlen(exitCodeArray[EXIT_STACKOVERFLOW]->mensaje));
 	proceso->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
 	removerDeColaEjecucion(proceso->pid);

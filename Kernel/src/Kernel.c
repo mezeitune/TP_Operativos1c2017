@@ -297,6 +297,9 @@ void interruptHandler(int socketAceptado,char orden){
 					break;
 		case 'K':	excepcionStackOverflow(socketAceptado);
 					break;
+		case 'M':
+					excepcionDireccionInvalida(socketAceptado);
+					break;
 		case 'O':	obtenerValorDeSharedVar(socketAceptado);
 					break;
 		case 'G':	guardarValorDeSharedVar(socketAceptado);

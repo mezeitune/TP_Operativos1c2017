@@ -28,7 +28,7 @@
 #include <parser/metadata_program.h>
 #include "PCB.h"
 //-----------------------------------------------------------------------------------------------------------------
-
+char* devolverStringFlags(t_banderas flags);
 //-----------------------------------------------------------------------------------------------------------------
 int almacenarDatosEnMemoria(char* buffer, int size,int paginaAGuardar,int offset);
 int conseguirDatosMemoria (char** instruccion, int paginaSolicitada,int offset,int size);
@@ -55,9 +55,12 @@ void connectionHandlerKernel(int socketAceptado, char orden);
 void expropiarVoluntariamente();
 void expropiarPorRR();
 void expropiarPorKernel();
+void expropiarPorDireccionInvalida();
+void expropiarPorStackOverflow();
 void CerrarPorSignal();
 void stackOverflow();
-char* devolverStringFlags(t_banderas flags);
+
+
 //-----------------------------------------------------------------------------------------------------------------
 void leerConfiguracion(char* ruta);
 void imprimirConfiguraciones();

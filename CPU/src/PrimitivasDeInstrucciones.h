@@ -192,6 +192,7 @@ void finalizar (){
 		send(socketKernel, &cpuFinalizada, sizeof(int),0);
 
 		serializarPcbYEnviar(pcb_actual,socketKernel);
+		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 		free(pcb_actual);
@@ -216,7 +217,8 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 
 
 		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, sizeof(t_valor_variable))<0){
-				printf("No se pudo solicitar el contenido\n");
+			log_info(loggerConPantalla,"No se pudo solicitar el contenido\n");
+			expropiarPorDireccionInvalida();
 		}else{
 				valor_variable_char=mensajeRecibido;
 		}
@@ -294,7 +296,8 @@ list_add(pcb_actual->indiceStack, nodo);
 char** string_cortado = string_split(etiqueta, "\n");
 int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
 	if(program_counter == -1){
-		printf("No se encontro la funcion %s en el indice de etiquetas\n", string_cortado[0]);
+		log_info(loggerConPantalla,"No se encontro la funcion %s en el indice de etiquetas\n", string_cortado[0]);
+		expropiarPorDireccionInvalida();
 	} else {
 		pcb_actual->programCounter = (program_counter - 1);
 	}
@@ -318,6 +321,7 @@ char** string_cortado = string_split(etiqueta, "\n");
 int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
 	if(program_counter == -1){
 		log_info(loggerConPantalla, "No se encontro la etiqueta: %s en el indice de etiquetas", string_cortado[0]);
+		expropiarPorDireccionInvalida();
 	} else {
 		pcb_actual->programCounter = (program_counter-1);
 		log_info(loggerConPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter,etiqueta);
