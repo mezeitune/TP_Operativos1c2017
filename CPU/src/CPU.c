@@ -150,12 +150,15 @@ void stackOverflow(){
 char* devolverStringFlags(t_banderas flags){
 	char *flagsAConcatenar = string_new();
 	if(flags.creacion==true){
+		printf("Tiene permiso de creacion\n");
 		string_append(&flagsAConcatenar, "c");
 	}
 	if(flags.lectura==true){
+		printf("Tiene permiso de lectura\n");
 		string_append(&flagsAConcatenar, "r");
 	}
 	if(flags.escritura==true){
+		printf("Tiene permiso de escritura\n");
 		string_append(&flagsAConcatenar, "w");
 	}
 

@@ -525,22 +525,24 @@ void abrirArchivoEnTablas(int socket_aceptado){
 	int descriptorADevolver;
 	char* flags;
 	recv(socket_aceptado,&pid,sizeof(int),0);
+	printf("%d\n",pid);
 	recv(socket_aceptado,&tamanoDireccion,sizeof(int),0);
+	printf("%d\n",tamanoDireccion);
 	direccion = malloc(tamanoDireccion);
-	strcpy(direccion + tamanoDireccion, "\0");
 	recv(socket_aceptado,direccion,tamanoDireccion,0);
+	strcpy(direccion + tamanoDireccion, "\0");
+	printf("%s\n",direccion);
 	recv(socket_aceptado,&tamanoFlags,sizeof(int),0);
+	printf("%d\n",tamanoFlags);
 	flags= malloc(tamanoFlags);
 	recv(socket_aceptado,flags,tamanoFlags,0);
+	printf("%s",flags);
+	printf("Recibi todo\n");
 
-	char* direccionAValidar=string_new();
-	string_append(&direccionAValidar, direccion);
-
-
-	int elArchivoExiste=validarArchivoFS(direccionAValidar);
+	int elArchivoExiste=validarArchivoFS(direccion);
 	int tiene_permisoCreacion=0;
-	const char *permiso_creacion = "c";
-	if(string_contains(flags, permiso_creacion)){
+	char permiso_creacion = 'c';
+	if(string_contains(flags,&permiso_creacion)){
 		tiene_permisoCreacion=1;
 	}
 
@@ -555,7 +557,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		   for(j = 0; j<3 ; j++)
 		   {
 
-		      if(strcmp(tablaGlobalArchivos[i][0],direccionAValidar) == 0){
+		      if(strcmp(tablaGlobalArchivos[i][0],direccion) == 0){
 		    	  encontro=1;
 		    	  tablaGlobalArchivos[i][1]=tablaGlobalArchivos[i][1]+1;//aumento el open
 
@@ -570,7 +572,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 
 		if(encontro==0){
 	    	  contadorFilasTablaGlobal++;
-	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccionAValidar;
+	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccion;
 	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
 	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
 
@@ -585,14 +587,14 @@ void abrirArchivoEnTablas(int socket_aceptado){
 
 	}else if(tiene_permisoCreacion==1){
 
-		int validacionCrear=crearArchivoFS(socket_aceptado,direccionAValidar);
+		int validacionCrear=crearArchivoFS(socket_aceptado,direccion);
 		if(validacionCrear==0){
 			excepcionArchivoInexistente(socket_aceptado,pid);
 			return;
 		}
 
   	  contadorFilasTablaGlobal++;
-  	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccionAValidar;
+  	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccion;
   	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
   	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
 

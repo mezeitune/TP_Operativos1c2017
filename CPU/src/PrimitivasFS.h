@@ -10,17 +10,23 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	send(socketKernel,&comandoAbrirArchivo,sizeof(char),0);
 	int pid= pcb_actual->pid;
 	send(socketKernel,&pid,sizeof(int),0);
-	int tamanoDireccion=sizeof(int)*strlen(direccion);
+
+	printf("Direccion: %s\n",direccion);
+	int tamanoDireccion=sizeof(char)*strlen(direccion);
 	send(socketKernel,&tamanoDireccion,sizeof(int),0);
 	send(socketKernel,direccion,tamanoDireccion,0);
 
+	printf("%s\n", flags.creacion ? "true" : "false");
+	printf("%s\n", flags.escritura ? "true" : "false");
+	printf("%s\n", flags.lectura ? "true" : "false");
 	//enviar los flags al kernel
 	char* flagsAEnviar;
 	flagsAEnviar = devolverStringFlags(flags);
-	int tamanoFlags=sizeof(int)*strlen(flagsAEnviar);
+	printf("%s\n",flagsAEnviar);
+	int tamanoFlags=sizeof(char)*strlen(flagsAEnviar);
 	send(socketKernel,&tamanoFlags,sizeof(int),0);
 	send(socketKernel,flagsAEnviar,tamanoFlags,0);
-
+	printf("Envie todo\n");
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
