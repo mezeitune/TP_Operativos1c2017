@@ -23,7 +23,6 @@ void handshakeMemoria();
 
 
 int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
-	pthread_mutex_lock(&mutexMemoria);
 	log_info(loggerConPantalla,"Escribiendo en memoria--->PID:%d",pid);
 	char comandoEscribir= 'C';
 	int resultadoEjecucion = 0;
@@ -40,13 +39,11 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 	send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + size,0);
 
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
-	pthread_mutex_unlock(&mutexMemoria);
 	log_info(loggerConPantalla,"Servicio de escritura finalizado--->PID:%d",pid);
 	return resultadoEjecucion;
 }
 
 void* leerDeMemoria(int pid,int pagina,int offset,int size){
-	pthread_mutex_lock(&mutexMemoria);
 	log_info(loggerConPantalla,"Leyendo de memoria--->PID:%d",pid);
 	char comandoSolicitud= 'S';
 	void* buffer = malloc(size);
@@ -61,7 +58,6 @@ void* leerDeMemoria(int pid,int pagina,int offset,int size){
 		strcpy(buffer+size,"\0");
 		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 
-		pthread_mutex_unlock(&mutexMemoria);
 		log_info(loggerConPantalla,"Servicio de lectura finalizado--->PID:%d",pid);
 		/*TODO: Deberia devolver el resultado de ejecucion. Que el buffer lo cambie por referencia*/
 		return buffer;
@@ -69,7 +65,6 @@ void* leerDeMemoria(int pid,int pagina,int offset,int size){
 }
 
 int reservarPaginaEnMemoria(int pid){
-	pthread_mutex_lock(&mutexMemoria);
 	log_info(loggerConPantalla,"Solicitando nueva pagina a memoria--->PID:%d",pid);
 	char comandoReservarPagina = 'G';
 	int cantidadPaginas = 1;
@@ -80,7 +75,6 @@ int reservarPaginaEnMemoria(int pid){
 	send(socketMemoria,&pid,sizeof(int),0);
 	send(socketMemoria,&cantidadPaginas,sizeof(int),0);
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
-	pthread_mutex_unlock(&mutexMemoria);
 	return resultadoEjecucion;
 }
 
@@ -98,7 +92,6 @@ void handshakeMemoria(){
 
 
 int pedirMemoria(t_pcb* procesoListo){
-	pthread_mutex_lock(&mutexMemoria);
 		log_info(loggerConPantalla, "Solicitando Memoria--->PID: %d", procesoListo->pid);
 		void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
 		int paginasTotalesRequeridas = procesoListo->cantidadPaginasCodigo + stackSize;
@@ -112,7 +105,6 @@ int pedirMemoria(t_pcb* procesoListo){
 		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 
 		free(mensajeAMemoria);
-		pthread_mutex_unlock(&mutexMemoria);
 		return resultadoEjecucion;
 }
 

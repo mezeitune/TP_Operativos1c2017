@@ -183,11 +183,14 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 
 void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 	log_info(loggerConPantalla,"Cambiando nuevo proceso desde Nuevos a Listos--->PID: %d",proceso->pid);
+	pthread_mutex_lock(&mutexMemoria);
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
+		pthread_mutex_unlock(&mutexMemoria);
 				log_error(loggerConPantalla ,"No se pudo reservar recursos para ejecutar el programa");
 				excepcionReservaRecursos(codigoPrograma->socketHiloConsola,proceso);
 			}
 	else{
+		pthread_mutex_unlock(&mutexMemoria);
 			encolarProcesoListo(proceso);
 			aumentarGradoMultiprogramacion();
 			sem_post(&sem_colaListos);

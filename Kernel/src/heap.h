@@ -59,26 +59,35 @@ void liberarBloqueHeap(int pid, int pagina, int offset);
 
 void reservarEspacioHeap(t_alocar* data){
 	log_info(loggerConPantalla,"Reservando espacio de memoria dinamica--->PID:%d",data->pid);
-	int resultadoEjecucion=0;
+	int resultadoEjecucion;
 
 	signal(SIGUSR1,handlerExpropiado);
 
 	t_punteroCpu* puntero = malloc(sizeof(t_punteroCpu));
 
+	pthread_mutex_lock(&mutexMemoria);
 	puntero->pagina = verificarEspacioLibreHeap(data->size, data->pid);
+	pthread_mutex_unlock(&mutexMemoria);
 
 	if(puntero->pagina  == -1){
 
 		puntero->pagina = obtenerPaginaSiguiente(data->pid);
-		if(reservarPaginaHeap(data->pid,puntero->pagina)<0){
-			excepecionCantidadDePaginas(data->socket,data->pid);
-				return;
-			}
+
+		pthread_mutex_lock(&mutexMemoria);
+		resultadoEjecucion = reservarPaginaHeap(data->pid,puntero->pagina);
+		pthread_mutex_unlock(&mutexMemoria);
+
+					if(resultadoEjecucion < 0){
+							excepecionCantidadDePaginas(data->socket,data->pid);
+							return;
+					}
+
 		aumentarPaginasHeap(data->pid);
 		}
 
-
+	pthread_mutex_lock(&mutexMemoria);
 	puntero->offset = reservarBloqueHeap(data->pid, data->size, puntero->pagina);
+	pthread_mutex_unlock(&mutexMemoria);
 
 	//printf("\nPagina que se le da para ese espacio de memoria:%d\n",puntero->pagina);
 	send(data->socket,&resultadoEjecucion,sizeof(int),0);
@@ -154,12 +163,13 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	*/
 	list_add(listaAdmHeap, bloqueAdmin);
 	free(buffer);
+	log_info(loggerConPantalla,"Pagina de heap %d reservada--->PID:%d",pagina,pid);
 	return resultadoEjecucion;
 }
 
 
 void compactarPaginaHeap(int pagina, int pid){
-	log_info(loggerConPantalla,"Compactando pagina de heap");
+	log_info(loggerConPantalla,"Compactando pagina de heap %d--->PID :%d",pagina,pid);
 	int offset = 0;
 	t_bloqueMetadata actual;
 	t_bloqueMetadata siguiente;
@@ -203,6 +213,7 @@ void compactarPaginaHeap(int pagina, int pid){
 		}
 	}
 	free(buffer);
+	log_info(loggerConPantalla,"Pagina de heap %d compactada--->PID :%d",pagina,pid);
 }
 
 void escribirContenidoPaginaHeap(int pagina, int pid, int offset, int size, void *contenido){
@@ -228,6 +239,8 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 		aux = list_get(listaAdmHeap,i);
 		if(aux->pagina == pagina && aux->pid == pid){
 			if(size + sizeof(t_bloqueMetadata) >= aux->sizeDisponible){
+				pthread_mutex_unlock(&mutexListaAdminHeap);
+				printf("\nEntre a un error\n");
 				return -16; //CODIGO DE ERROR - NO SE PUEDE HACER ESTA RESERVA
 			}
 			else{
@@ -292,6 +305,7 @@ int reservarBloqueHeap(int pid,int size,int pagina){
 	free(buffer);
 	//free(auxBloque);
 	//free(aux);
+	log_info(loggerConPantalla,"Bloque de pagina heap %d reservado --->PID:%d",pagina,pid);
 	return offset;
 }
 
@@ -365,7 +379,11 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	t_bloqueMetadata bloque;
 
 	void *buffer=malloc(sizeof(t_bloqueMetadata));
+
+	pthread_mutex_lock(&mutexMemoria);
 	buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata));
+	pthread_mutex_unlock(&mutexMemoria);
+
 	memcpy(&bloque,buffer,sizeof(t_bloqueMetadata));
 
 	/*printf("Leo:\n");
@@ -379,7 +397,10 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	printf("\n\nEstoy liberando:%d\n\n",bloque.size);
 	actualizarLiberar(pid,bloque.size);
 	memcpy(buffer,&bloque,sizeof(t_bloqueMetadata));
+
+	pthread_mutex_lock(&mutexMemoria);
 	escribirEnMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata),buffer);
+	pthread_mutex_unlock(&mutexMemoria);
 
 	pthread_mutex_lock(&mutexListaAdminHeap);
 	while(i < list_size(listaAdmHeap))
