@@ -1,6 +1,7 @@
 #ifndef _CAPAFS_
 #define _CAPAFS_
 #include "sockets.h"
+#include <commons/collections/list.h>
 
 //EN GENERAL FALTAN SENDS Y RECVS AL FS PARA SABER SI EL RESULTADO DE EJECUCION ESTA BIEN
 //Y QUE EL FS HAGA LO QUE TENGA QUE HACER SIN PROBLEMAS
@@ -15,28 +16,18 @@ typedef struct FS{//Para poder guardar en la lista
 }t_tablaArchivoPorProceso;
 t_list* listaTablasArchivosPorProceso;
 
+typedef struct{
+	char* path;
+	int open;
+}t_entradaTablaGlobal;
+t_list* listaTablaArchivosGlobal;
 
-void excepcion(int codigoError,int socket){
+void agregarEntradaEnTablaGlobal(char* direccion,int sizeDireccion);
 
-	switch(codigoError){
 
-		case -1:
-
-			break;
-
-		case -2:
-
-			break;
-
-		case -3:
-
-			break;
-
-	}
-}
 
 int validarArchivoFS(char* ruta){
-	log_info(loggerConPantalla,"Validadno que el archivo indicado exista");
+	log_info(loggerConPantalla,"Validando que el archivo exista--->Ruta:%s",ruta);
 	char orden = 'V';
 	int tamano=sizeof(int)*strlen(ruta);
 	int validado;
@@ -45,11 +36,12 @@ int validarArchivoFS(char* ruta){
 	send(socketFyleSys,ruta,tamano,0);
 	recv(socketFyleSys,&validado,sizeof(int),0);
 
-	//printf("\n \n %d \n \n ",validado);
+	log_info(loggerConPantalla,"Archivo validado--->Ruta:%s",ruta);
 	return validado;
 }
 
 int crearArchivoFS(int socket_aceptado, char* direccion ){
+	log_info(loggerConPantalla,"Creando archivo en FileSystem---> %s",direccion);
 
 	int validado;
 
@@ -67,7 +59,7 @@ int crearArchivoFS(int socket_aceptado, char* direccion ){
 
 	recv(socketFyleSys,&validado,sizeof(int),0);
 
-
+	log_info(loggerConPantalla,"Archivo creado en FileSystem---> %s",direccion);
 	return validado;
 
 }
@@ -142,12 +134,12 @@ void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends
 }
 
 void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
-	log_info(loggerConPantalla,"Borrando el archivo indicado");
 	int pid;
 	int descriptorArchivo;
 	int resultadoEjecucion ;
 	recv(socket_aceptado,&pid,sizeof(int),0);
 	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
+	log_info(loggerConPantalla,"Borrando un archivo--->PID:%d",pid);
 
 	int k;
 	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
@@ -474,6 +466,7 @@ int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
 	int tablaExiste=0;
 	int dondeEstaElPid;
 	//verificar que la tabla de ese pid exista
+
 	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
 		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
 		if(tablaAVerificar->pid==pid){
@@ -525,58 +518,60 @@ void abrirArchivoEnTablas(int socket_aceptado){
 	int descriptorADevolver;
 	char* flags;
 	recv(socket_aceptado,&pid,sizeof(int),0);
-	printf("%d\n",pid);
+	printf("PID:%d\n",pid);
 	recv(socket_aceptado,&tamanoDireccion,sizeof(int),0);
-	printf("%d\n",tamanoDireccion);
+	printf("Tamano direccion%d\n",tamanoDireccion);
 	direccion = malloc(tamanoDireccion);
 	recv(socket_aceptado,direccion,tamanoDireccion,0);
 	strcpy(direccion + tamanoDireccion, "\0");
-	printf("%s\n",direccion);
+	printf("Direccion %s\n",direccion);
 	recv(socket_aceptado,&tamanoFlags,sizeof(int),0);
-	printf("%d\n",tamanoFlags);
+	printf("Tamano flags%d\n",tamanoFlags);
 	flags= malloc(tamanoFlags);
 	recv(socket_aceptado,flags,tamanoFlags,0);
-	printf("%s",flags);
+	printf("Flags %s",flags);
 	printf("Recibi todo\n");
 
-	int elArchivoExiste=validarArchivoFS(direccion);
+	int archivoExistente=validarArchivoFS(direccion);
 	int tiene_permisoCreacion=0;
 	char permiso_creacion = 'c';
 	if(string_contains(flags,&permiso_creacion)){
 		tiene_permisoCreacion=1;
 	}
 
+	if(!archivoExistente && !tiene_permisoCreacion){ // No existe el archivo y no tiene permisos
+				excepcionPermisosCrear(socket_aceptado,pid);
+				free(direccion);
+				free(flags);
+				return;
+	}
 
-	if(elArchivoExiste==1){
 
+	if(archivoExistente==1){
 		//me fijo que exista en la tabla global de archivos
-		int j,i,k;
-		int encontro=0;
+		int i,j;
+		int entradaGlobalExistente=0;
 		for(i = 0; i < contadorFilasTablaGlobal; ++i)
 		{
 		   for(j = 0; j<3 ; j++)
 		   {
 
 		      if(strcmp(tablaGlobalArchivos[i][0],direccion) == 0){
-		    	  encontro=1;
+		    	  entradaGlobalExistente=1;
 		    	  tablaGlobalArchivos[i][1]=tablaGlobalArchivos[i][1]+1;//aumento el open
-
 		    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,i);
 		      }
 		   }
 		}
 
-		if(tiene_permisoCreacion==1 && encontro==0){
+		if(tiene_permisoCreacion && !entradaGlobalExistente){
 
 		}
 
-		if(encontro==0){
-	    	  contadorFilasTablaGlobal++;
-	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccion;
-	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
-	    	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
-
-	    	  //agregarlo en la tabla del proceso
+		if(!entradaGlobalExistente){
+			//Agrego a la tabla global
+				agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
+	    	//agrego en la tabla del proceso
 	    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal);
 
 		}
@@ -589,14 +584,12 @@ void abrirArchivoEnTablas(int socket_aceptado){
 
 		int validacionCrear=crearArchivoFS(socket_aceptado,direccion);
 		if(validacionCrear==0){
-			excepcionArchivoInexistente(socket_aceptado,pid);
+			excepcionFileSystem(socket_aceptado,pid);
+			free(direccion);
+			free(flags);
 			return;
 		}
-
-  	  contadorFilasTablaGlobal++;
-  	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=direccion;
-  	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
-  	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
+		agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
 
   	  //agregarlo en la tabla del proceso
   	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal);
@@ -604,10 +597,6 @@ void abrirArchivoEnTablas(int socket_aceptado){
   	  int validado=1;
   	  send(socket_aceptado,&validado,sizeof(int),0);
   	  send(socket_aceptado,&descriptorADevolver,sizeof(int),0);
-	}else{
-		//no encontro en tabla. No tiene permisos para crear
-		excepcionPermisosCrear(socket_aceptado,pid);
-		return;
 	}
 }
 
@@ -647,4 +636,73 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
 			return;
 
 }
+
+
+void agregarEntradaEnTablaGlobal(char* direccion,int sizeDireccion){
+	  contadorFilasTablaGlobal++;
+	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]= malloc(sizeDireccion);
+	  strcpy(tablaGlobalArchivos[contadorFilasTablaGlobal][0],direccion);
+	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
+	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
+}
+
+/*
+int verificaTablaArchivosGlobal(char* direccion){
+
+	_Bool verificaDireccion(t_entradaTablaGlobal* entrada){
+		if(strcmp(entrada->path,direccion)==0)return 1;
+		else return 0;
+	}
+
+	if(list_any_satisfy(listaTablaArchivosGlobal,(void*)verificaDireccion)) return 1;
+	return 0;
+}
+
+void abrirArchivo(socket){
+	log_info(loggerConPantalla,"Abriendo un archivo en las tablas");
+		int pid;
+		int tamanoDireccion;
+		int tamanoFlags;
+		char* direccion;
+		int descriptorADevolver;
+		char* flags;
+		recv(socket,&pid,sizeof(int),0);
+		printf("PID:%d\n",pid);
+		recv(socket,&tamanoDireccion,sizeof(int),0);
+		printf("Tamano direccion%d\n",tamanoDireccion);
+		direccion = malloc(tamanoDireccion);
+		recv(socket,direccion,tamanoDireccion,0);
+		strcpy(direccion + tamanoDireccion, "\0");
+		printf("Direccion %s\n",direccion);
+		recv(socket,&tamanoFlags,sizeof(int),0);
+		printf("Tamano flags%d\n",tamanoFlags);
+		flags= malloc(tamanoFlags);
+		recv(socket,flags,tamanoFlags,0);
+		printf("Flags %s",flags);
+		printf("Recibi todo\n");
+
+		int elArchivoExiste=validarArchivoFS(direccion);
+		int tiene_permisoCreacion=0;
+		int encontro;
+		char permiso_creacion = 'c';
+		if(string_contains(flags,&permiso_creacion)){
+			tiene_permisoCreacion=1;
+		}
+
+		if(!elArchivoExiste && !tiene_permisoCreacion){ // No existe el archivo y no tiene permisos
+					excepcionPermisosCrear(socket,pid);
+					free(direccion);
+					free(flags);
+					return;
+		}
+
+		if(elArchivoExiste==1){
+
+			encontro = validadTablaArchivoGlobal(direccion);
+			descriptorADevolver = agregarATablaPorProcesoYDevolverDescriptor(flags,)//me fijo que exista en la tabla global de archivos
+
+}
+}
+*/
+
 #endif
