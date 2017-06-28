@@ -3,6 +3,7 @@
 t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas flags){
 
 	t_descriptor_archivo descriptorArchivoAbierto;
+	int descriptor;
 	char comandoCapaFS = 'F';
 	char comandoAbrirArchivo = 'A';
 	int resultadoEjecucion ;
@@ -31,18 +32,18 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	send(socketKernel,flagHarcodeado,tamanoFlags,0);
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-
+	recv(socketKernel,&descriptor,sizeof(int),0);
+	descriptorArchivoAbierto = (t_descriptor_archivo) descriptor;
 	printf("resultado:%d\n",resultadoEjecucion);
-	if(resultadoEjecucion==1){
-		recv(socketKernel,&descriptorArchivoAbierto,sizeof(int),0);
-		log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s");
-		return descriptorArchivoAbierto;
-	}
-	else {
-		log_error(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s");
+	printf("descriptor:%d\n",descriptorArchivoAbierto);
+	//log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor);
+
+	if(!resultadoEjecucion){
+	//	log_error(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s",pid,descriptor);
 		expropiarPorKernel();
 		return 0;
 	}
+	return descriptorArchivoAbierto;
 }
 
 

@@ -153,6 +153,7 @@ void connectionHandler(int socket, char orden) {
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
 		case 'F':	/*TODO: Crear un hilo para cada servicio de FS*/
+					//printf("Yendo a FS\n");
 					interfaceHandlerFileSystem(socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
 		case 'P':	handShakeCPU(socket);
@@ -166,11 +167,9 @@ void connectionHandler(int socket, char orden) {
 		case 'Z':	eliminarSocket(socket);
 					break;
 		default:
-					if(orden == '\0') break;
 					log_error(loggerConPantalla,"Orden %c no definida", orden);
 					break;
 		}
-	orden = '\0';
 	return;
 }
 

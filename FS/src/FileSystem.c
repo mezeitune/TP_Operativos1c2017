@@ -108,7 +108,7 @@ void inicializarLog(char *rutaDeLog){
 void connectionHandler(int socket_cliente)
 {
 	char orden;
-	recv(socket_cliente,&orden,sizeof(char),0);
+	read(socket_cliente,&orden,sizeof(char));
 	log_info(loggerConPantalla,"Iniciando rutina de atencion");
     	switch(orden){
 		case 'V'://validar archivo

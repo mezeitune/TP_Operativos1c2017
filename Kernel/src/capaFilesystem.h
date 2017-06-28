@@ -130,6 +130,7 @@ void abrirArchivo(int socket){
 		 send(socket,&fileDescriptor,sizeof(int),0);
 		 printf("File descriptor:%d\n",fileDescriptor);
 		 printf("Mande todo\n");
+		 sleep(10000);
 		log_info(loggerConPantalla,"Finalizo la apertura del archivo");
 }
 
