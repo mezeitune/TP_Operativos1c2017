@@ -452,7 +452,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 	flags= malloc(tamanoFlags);
 	recv(socket_aceptado,flags,tamanoFlags,0);
 	printf("Flags %s",flags);
-	printf("Recibi todo\n");
+	strcpy(flags + tamanoFlags, "\0");
 
 	int archivoExistente=validarArchivoFS(direccion);
 	int tiene_permisoCreacion=0;
