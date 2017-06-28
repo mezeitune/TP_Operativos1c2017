@@ -38,8 +38,8 @@ int flagCPUSeDesconecto;
 int flagTerminarPlanificadorLargoPlazo = 0;
 int flagPlanificacion;
 void verificarPausaPlanificacion();
-void reanudarPLanificacion();
-void pausarPlanificacion();
+void interfaceReanudarPlanificacion();
+void interfacePausarPlanificacion();
 /*-------------------------*/
 
 /*----LARGO PLAZO--------*/
@@ -216,7 +216,7 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
 
-void pausarPlanificacion(){
+void interfacePausarPlanificacion(){
 
 	if(!flagPlanificacion)log_warning(loggerConPantalla, "Planificacion ya pausada");
 	else{
@@ -224,9 +224,10 @@ void pausarPlanificacion(){
 		sem_wait(&sem_planificacion);
 		log_info(loggerConPantalla, "Se pauso la planificacion");
 	}
+	printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
 }
 
-void reanudarPLanificacion(){
+void interfaceReanudarPlanificacion(){
 
 	if(flagPlanificacion) log_warning(loggerConPantalla, "Planificacion no se encuentra pausada");
 	else{
@@ -238,6 +239,7 @@ void reanudarPLanificacion(){
 
 		log_info(loggerConPantalla, "Se reanudo la planificacion");
 	}
+	printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
 }
 
 void verificarPausaPlanificacion(){

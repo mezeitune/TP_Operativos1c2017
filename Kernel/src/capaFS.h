@@ -561,15 +561,18 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
 
 }
 
+void inicializarArchivoTablaGlobal(){
+	tablaGlobalArchivos = malloc(sizeof(void*) * 50);
+}
 
 void agregarEntradaEnTablaGlobal(char* direccion,int sizeDireccion){
 	log_info(loggerConPantalla,"Agregando una nueva entrada a la tabla global de archivos--->Direccion :%s",direccion);
 	  contadorFilasTablaGlobal++;
 	  printf("Antes del malloc\n");
-	  tablaGlobalArchivos = malloc(contadorFilasTablaGlobal * (sizeof(char)*20+sizeof(int)*2));
+	  tablaGlobalArchivos[contadorFilasTablaGlobal] = malloc(sizeDireccion + sizeof(int)*2);
 	  printf("Despues del malloc\n");
-	  strcpy(tablaGlobalArchivos[contadorFilasTablaGlobal][0],direccion);
-	  printf("Despues del strcpy\n");
+	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]=*(char*) direccion;
+	  printf("Despues del malloc\n");
 	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
 	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
 }

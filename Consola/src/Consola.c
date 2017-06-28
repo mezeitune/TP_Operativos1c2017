@@ -50,10 +50,12 @@ void signalSigIntHandler(int signum)
 
 void connectionHandler() {
 	char orden;
+	int cont=0;
 	imprimirInterfaz();
 	while (flagCerrarConsola) {
-		scanf("%c", &orden);
 		pthread_mutex_lock(&mutex_crearHilo);
+		scanf("%c", &orden);
+		cont++;
 		imprimirInterfaz();
 
 		switch (orden) {
@@ -70,13 +72,13 @@ void connectionHandler() {
 				cerrarTodo();
 				break;
 			default:
-				//log_error(loggerConPantalla,"Orden %c no definida", orden);
+				if(cont!=2)log_error(loggerConPantalla,"Orden %c no definida", orden);
+				else cont=0;
 				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			}
 
 	}
-	pthread_kill(hiloInterfazUsuario,0);
 }
 
 void limpiarPantalla(){

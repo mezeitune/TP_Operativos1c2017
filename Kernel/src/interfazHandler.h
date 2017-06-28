@@ -10,16 +10,23 @@
 #include "capaFS.h"
 
 void interfazHandler();
+
+void interfaceObtenerListadoProcesos();
+void interfaceObtenerDatosProceso();
+void interfaceFinalizarProcesoVoluntariamente();
+
+void interfaceSolicitarContenidoMemoria();
+
 void imprimirInterfazUsuario();
-void modificarGradoMultiprogramacion();
+void interfaceModificarGradoMultiprogramacion();
 void finalizarProcesoVoluntariamente(int pid);
-void obtenerListadoProcesos();
 void obtenerDatosProceso(int pid);
 void mostrarProcesos(char orden);
 void imprimirListadoDeProcesos(t_list* listaPid);
 void filtrarPorPidYMostrar(t_list* cola);
 void interfazHandlerParaFileSystem(char orden,int socket_aceptado);
 int verificarProcesoExistente(int pid);
+int verificarProcesoNoTerminado(int pid);
 
 pthread_t interfaz;
 int flagTerminarUI=0;
@@ -31,86 +38,120 @@ t_log *loggerConPantalla;
 
 void interfazHandler(){
 	char orden;
-	char *mensajeRecibido;
-	int pid;
-
-
+	int cont = 0;
 	while(1){
 		scanf("%c",&orden);
+		cont++;
 		switch(orden){
-
-				case 'L':
-					obtenerListadoProcesos();
-					break;
-				case 'O':
-					printf("Ingrese el pid del proceso\n");
-					scanf("%d",&pid);
-					if(verificarProcesoExistente(pid)<0){
-						log_error(loggerConPantalla,"Proceso no existente");
-						break;
-					}
-					printf("Datos del proceso:%d\t\t\n",pid);
-					printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
-					obtenerDatosProceso(pid);
-					break;
-				case 'R':
-					reanudarPLanificacion();
-					printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
-					break;
-				case 'P':
-					pausarPlanificacion();
-					printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
-					break;
+				case 'L': 	interfaceObtenerListadoProcesos();
+							break;
+				case 'O': 	interfaceObtenerDatosProceso();
+							break;
+				case 'R':	interfaceReanudarPlanificacion();
+							break;
+				case 'P':	interfacePausarPlanificacion();
+							break;
 				case 'G':
 					/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
 					break;
-				case 'M':
-					pthread_mutex_lock(&mutexNuevoProceso);
-					modificarGradoMultiprogramacion();
-					pthread_mutex_unlock(&mutexNuevoProceso);
-
-					break;
-				case 'K':
-					printf("Ingrese el pid del proceso a finalizar\n");
-					scanf("%d",&pid);
-					/*TODO: Corroborar que no haya sido eliminado antes*/
-
-					finalizarProcesoVoluntariamente(pid);
-					break;
-				case 'S':
-					if((solicitarContenidoAMemoria(&mensajeRecibido))<0){
-						printf("No se pudo solicitar el contenido\n");
-						break;
-					}
-					else{
-						printf("El mensaje recibido de la Memoria es : %s\n" , mensajeRecibido);
-						}
-					break;
-				case 'I':
-						imprimirInterfazUsuario();
-						break;
+				case 'M':	interfaceModificarGradoMultiprogramacion();
+							break;
+				case 'K':	interfaceFinalizarProcesoVoluntariamente();
+							break;
+				case 'S':	interfaceSolicitarContenidoMemoria();
+							break;
+				case 'I':	imprimirInterfazUsuario();
+							break;
 				case 'F':
 					printf("Enviando instrucciones a File System");
 					interfazHandlerParaFileSystem('A',1);
 					break;
 				default:
-					log_error(loggerConPantalla ,"Orden no reconocida");
+					if(cont!=2)log_error(loggerConPantalla ,"Orden no reconocida");
+					else cont = 0;
 					break;
 		}
 	}
 
 }
 
-int verificarProcesoExistente(int pid){
+
+void interfaceObtenerDatosProceso(){
+	printf("Ingrese el pid del proceso\n");
+	scanf("%d",&pid);
+		if(verificarProcesoExistente(pid)<0){
+			log_error(loggerConPantalla,"Proceso no existente");
+			return;
+		}
+	printf("Datos del proceso--->%d\t\t\n",pid);
+	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
+	obtenerDatosProceso(pid);
+}
+
+void interfaceFinalizarProcesoVoluntariamente(){
+	printf("Ingrese el pid del proceso a finalizar\n");
+	scanf("%d",&pid);
+			if(verificarProcesoExistente(pid)<0){
+				log_error(loggerConPantalla,"Proceso no existente");
+				return;
+				}
+			if(verificarProcesoNoTerminado(pid)<0){
+				log_error(loggerConPantalla,"Proceso ya finalizado");
+				return;
+				}
+	finalizarProcesoVoluntariamente(pid);
+}
+
+
+void interfaceSolicitarContenidoMemoria(){
+	char* mensaje;
+	if((solicitarContenidoAMemoria(&mensaje))<0){
+			printf("No se pudo solicitar el contenido\n");
+			return;
+		}
+	printf("El mensaje recibido de la Memoria es : %s\n" , mensaje);
+}
+
+
+int verificarProcesoNoTerminado(int pid){
 	int resultado;
-	_Bool verificaPid(t_contable* proceso){
+	_Bool verificaPid(t_pcb* proceso){
+		return proceso->pid == pid;
+	}
+
+	pthread_mutex_lock(&mutexColaTerminados);
+	if(list_any_satisfy(colaTerminados,(void*)verificaPid)) resultado = -1;
+	else resultado = 0;
+	pthread_mutex_unlock(&mutexColaTerminados);
+	return resultado;
+}
+
+int verificarProcesoExistente(int pid){
+	_Bool verificaPid(t_pcb* proceso){
 			return proceso->pid == pid;
 		}
-	pthread_mutex_lock(&mutexListaContable);
-	if(list_any_satisfy(listaContable,(void*)verificaPid)) resultado=0;
-	else resultado=-1;
-	pthread_mutex_unlock(&mutexListaContable);
-	return resultado;
+	pthread_mutex_lock(&mutexColaNuevos);
+	if(list_any_satisfy(colaNuevos,(void*)verificaPid)) return 1;
+	pthread_mutex_unlock(&mutexColaNuevos);
+
+	pthread_mutex_lock(&mutexColaListos);
+	if(list_any_satisfy(colaListos,(void*)verificaPid)) return 1;
+	pthread_mutex_unlock(&mutexColaListos);
+
+	pthread_mutex_lock(&mutexColaEjecucion);
+	if(list_any_satisfy(colaEjecucion,(void*)verificaPid)) return 1;
+	pthread_mutex_unlock(&mutexColaEjecucion);
+
+	pthread_mutex_lock(&mutexColaBloqueados);
+	if(list_any_satisfy(colaBloqueados,(void*)verificaPid)) return 1;
+	pthread_mutex_unlock(&mutexColaBloqueados);
+
+	pthread_mutex_lock(&mutexColaTerminados);
+	if(list_any_satisfy(colaTerminados,(void*)verificaPid)) return 1;
+	pthread_mutex_unlock(&mutexColaTerminados);
+
+
+	return -1;
 }
 
 void obtenerDatosProceso(int pid){
@@ -129,7 +170,7 @@ void obtenerDatosProceso(int pid){
 }
 
 
-void obtenerListadoProcesos(){
+void interfaceObtenerListadoProcesos(){
 	char orden;
 	scanf("%c",&orden);
 	switch(orden){
@@ -193,7 +234,7 @@ void mostrarProcesos(char orden){
 
 void imprimirListadoDeProcesos(t_list* listaPid){
 	printf("Cantidad de procesos: %d\n", listaPid->elements_count);
-	printf("\tPID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\n");
+	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
 	int pid;
 	int i;
 	for(i=0 ; i<listaPid->elements_count ; i++){
@@ -209,13 +250,13 @@ void finalizarProcesoVoluntariamente(int pid){
 	pthread_mutex_lock(&mutexNuevoProceso);
 	buscarProcesoYTerminarlo(pid);
 	pthread_mutex_unlock(&mutexNuevoProceso);
-	log_info(loggerConPantalla,"Proceso finalizado-----PID: %d",pid);
+	log_info(loggerConPantalla,"Proceso finalizado voluntariamente--->PID: %d",pid);
 }
 
 
-void modificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a uno menor*/
+void interfaceModificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a uno menor*/
 	int nuevoGrado;
-
+	pthread_mutex_lock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
 	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
@@ -231,6 +272,7 @@ void modificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a uno menor
 	pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 
 	sem_post(&sem_admitirNuevoProceso);
+	pthread_mutex_unlock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
 }
 
