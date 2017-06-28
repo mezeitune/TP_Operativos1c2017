@@ -136,6 +136,7 @@ void connectionHandler(int socket_cliente)
 			break;
 		}
     	log_info(loggerConPantalla,"Finalizando rutina de atencion");
+    	orden = '\0';
 }
 void selectorConexiones() {
 	log_info(loggerConPantalla,"Iniciando selector de conexiones");

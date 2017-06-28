@@ -28,10 +28,10 @@ int buscarIndiceEnTablaProceso(int pid,int*indicePid);
 
 int validarArchivoFS(char* ruta){
 	log_info(loggerConPantalla,"Validando que el archivo exista--->Ruta:%s",ruta);
-	char orden = 'V';
+	char ordenValidarArchivo = 'V';
 	int tamano=sizeof(int)*strlen(ruta);
 	int validado;
-	send(socketFyleSys,&orden,sizeof(char),0);
+	send(socketFyleSys,&ordenValidarArchivo,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);
 	send(socketFyleSys,ruta,tamano,0);
 	recv(socketFyleSys,&validado,sizeof(int),0);
@@ -390,8 +390,9 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 	send(socket_aceptado,&resultadoEjecucion,sizeof(int),0);
 }
 
-int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
+int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i,int pid){
 	int descriptorADevolver;
+	log_info(loggerConPantalla,"Agregando entrada a tabla por proceso");
 	//agregarlo en la tabla del proceso
 	//y agregarlo con el flag y el file descriptor y el indice hacia la tabla global
 
@@ -482,7 +483,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		      if(strcmp(tablaGlobalArchivos[i][0],direccion) == 0){
 		    	  entradaGlobalExistente=1;
 		    	  tablaGlobalArchivos[i][1]=tablaGlobalArchivos[i][1]+1;//aumento el open
-		    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,i);
+		    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,i,pid);
 		      }
 		   }
 		}
@@ -495,7 +496,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 			//Agrego a la tabla global
 				agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
 	    	//agrego en la tabla del proceso
-	    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal);
+	    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal,pid);
 
 		}
 
@@ -515,7 +516,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 		agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
 
   	  //agregarlo en la tabla del proceso
-  	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal);
+  	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal,pid);
 
   	  int validado=1;
   	  send(socket_aceptado,&validado,sizeof(int),0);
@@ -562,9 +563,13 @@ void interfazHandlerParaFileSystem(char orden,int socket_aceptado){
 
 
 void agregarEntradaEnTablaGlobal(char* direccion,int sizeDireccion){
+	log_info(loggerConPantalla,"Agregando una nueva entrada a la tabla global de archivos--->Direccion :%s",direccion);
 	  contadorFilasTablaGlobal++;
-	  tablaGlobalArchivos[contadorFilasTablaGlobal][0]= malloc(sizeDireccion);
+	  printf("Antes del malloc\n");
+	  tablaGlobalArchivos = malloc(contadorFilasTablaGlobal * (sizeof(char)*20+sizeof(int)*2));
+	  printf("Despues del malloc\n");
 	  strcpy(tablaGlobalArchivos[contadorFilasTablaGlobal][0],direccion);
+	  printf("Despues del strcpy\n");
 	  tablaGlobalArchivos[contadorFilasTablaGlobal][1]=1;//el open
 	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
 }

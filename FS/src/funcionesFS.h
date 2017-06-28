@@ -57,6 +57,7 @@ void crearArchivoFunction(int socket_cliente){
 	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
 	void* nombreArchivo = malloc(tamanoArchivo);
 	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+	strcpy(nombreArchivo + tamanoArchivo, "\0");
 	log_info(loggerConPantalla,"Creando archivo--->Nombre:%s",nombreArchivo);
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
@@ -95,15 +96,12 @@ void crearArchivoFunction(int socket_cliente){
 
 		validado=1;
 		send(socket_cliente,&validado,sizeof(int),0);
-		//send avisando al kernel que salio todo ok
+		printf("Se creo el archivo\n");
 	}else{
 		validado=0;
 		send(socket_cliente,&validado,sizeof(int),0);
+		printf("No se creo el archivo\n");
 	}
-
-
-
-
 
 }
 
