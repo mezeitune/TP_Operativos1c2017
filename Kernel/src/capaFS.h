@@ -16,13 +16,8 @@ typedef struct FS{//Para poder guardar en la lista
 }t_tablaArchivoPorProceso;
 t_list* listaTablasArchivosPorProceso;
 
-typedef struct{
-	char* path;
-	int open;
-}t_entradaTablaGlobal;
-t_list* listaTablaArchivosGlobal;
 
-void agregarEntradaEnTablaGlobal(char* direccion,int sizeDireccion);
+void agregarEntradaTablaGlobal(char* direccion,int sizeDireccion);
 int buscarIndiceEnTablaProceso(int pid,int*indicePid);
 
 
@@ -494,7 +489,8 @@ void abrirArchivoEnTablas(int socket_aceptado){
 
 		if(!entradaGlobalExistente){
 			//Agrego a la tabla global
-				agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
+			agregarEntradaTablaGlobal(direccion,tamanoDireccion);
+
 	    	//agrego en la tabla del proceso
 	    	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal,pid);
 
@@ -513,7 +509,7 @@ void abrirArchivoEnTablas(int socket_aceptado){
 			free(flags);
 			return;
 		}
-		agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
+		agregarEntradaTablaGlobal(direccion,tamanoDireccion);
 
   	  //agregarlo en la tabla del proceso
   	  descriptorADevolver=agregarATablaPorProcesoYDevolverDescriptor(flags,contadorFilasTablaGlobal,pid);
@@ -565,7 +561,7 @@ void inicializarArchivoTablaGlobal(){
 	tablaGlobalArchivos = malloc(sizeof(void*) * 50);
 }
 
-void agregarEntradaEnTablaGlobal(char* direccion,int sizeDireccion){
+void agregarEntradaTablaGlobal(char* direccion,int sizeDireccion){
 	log_info(loggerConPantalla,"Agregando una nueva entrada a la tabla global de archivos--->Direccion :%s",direccion);
 	  contadorFilasTablaGlobal++;
 	  printf("Antes del malloc\n");

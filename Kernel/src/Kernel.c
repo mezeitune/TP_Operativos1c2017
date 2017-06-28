@@ -31,13 +31,14 @@
 #include "planificacion.h"
 #include "configuraciones.h"
 #include "conexionMemoria.h"
-#include "capaFS.h"
 #include "contabilidad.h"
 #include "semaforosAnsisop.h"
 #include "comandosCPU.h"
 #include "excepeciones.h"
 #include "heap.h"
 #include "sockets.h"
+
+#include "capaFilesystem.h"
 
 
 typedef struct{
@@ -126,7 +127,6 @@ void signalHandler(int signum){
 	if(signum== SIGINT){
 		log_error(loggerConPantalla,"El proceso Kernel se ha abortado");
 		cerrarTodo();
-		exit(1);
 	}
 }
 
@@ -137,6 +137,7 @@ void cerrarTodo(){
 	/*Recibir todos los pcb en ejecucion*/
 	/*Avisar a Memoria que se desconecta*/
 	/*Hacer signal a todos los hilos, y setear los flags para que terminen*/
+	exit(1);
 }
 
 void connectionHandler(int socket, char orden) {
@@ -152,8 +153,7 @@ void connectionHandler(int socket, char orden) {
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
 		case 'F':	/*TODO: Crear un hilo para cada servicio de FS*/
-					recv(socket,&orden,sizeof(char),0);
-					interfazHandlerParaFileSystem(orden,socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
+					interfaceHandlerFileSystem(socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
 					break;
 		case 'P':	handShakeCPU(socket);
 					break;
@@ -170,6 +170,7 @@ void connectionHandler(int socket, char orden) {
 					log_error(loggerConPantalla,"Orden %c no definida", orden);
 					break;
 		}
+	orden = '\0';
 	return;
 }
 
@@ -493,7 +494,7 @@ void inicializarListas(){
 	listaCPU = list_create();
 
 	listaCodigosProgramas = list_create();
-	listaTablasArchivosPorProceso = list_create();
+	//listaTablasArchivosPorProceso = list_create();
 
 	listaFinQuantum = list_create();
 	listaEspera = list_create();
@@ -503,6 +504,9 @@ void inicializarListas(){
 	listaSemYPCB = list_create();
 
 	listaHilos = list_create();
+
+	tablaArchivosGlobal = list_create();
+	listaTablas = list_create();
 }
 void obtenerVariablesCompartidasDeLaConfig(){
 	int tamanio = tamanioArray(shared_vars);

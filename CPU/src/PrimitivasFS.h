@@ -32,7 +32,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
-
+	printf("resultado:%d\n",resultadoEjecucion);
 	if(resultadoEjecucion==1){
 		recv(socketKernel,&descriptorArchivoAbierto,sizeof(int),0);
 		log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s");
