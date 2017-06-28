@@ -5,8 +5,6 @@
 #include <sys/stat.h>
 #include <sys/io.h>
 #include <sys/mman.h>
-
-
 #include <commons/bitarray.h>
 #include <commons/string.h>
 

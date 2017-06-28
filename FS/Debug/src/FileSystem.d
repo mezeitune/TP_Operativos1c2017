@@ -1,7 +1,9 @@
-src/FileSystem.d: ../src/FileSystem.c ../src/conexiones.h \
+src/FileSystem.d: ../src/FileSystem.c ../src/sockets.h ../src/logger.h \
  ../src/permisos.h ../src/configuracionesLib.h ../src/funcionesFS.h
 
-../src/conexiones.h:
+../src/sockets.h:
+
+../src/logger.h:
 
 ../src/permisos.h:
 

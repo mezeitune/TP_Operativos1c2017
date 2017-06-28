@@ -1,3 +1,6 @@
+#include "sockets.h"
+#include <commons/log.h>
+#include "logger.h"
 void printBitmap(){
 
 	int j;
@@ -18,35 +21,30 @@ void validarArchivoFunction(int socket_cliente){
 	int tamanoArchivo;
 	int validado;
 
-
-
 	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
     void* nombreArchivo = malloc(tamanoArchivo);
     recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
-
-    printf("Recibi el nombre del archivo\n ");
+    strcpy(nombreArchivo + tamanoArchivo,"\0");
+    log_info(loggerConPantalla,"Validando existencia de archivo--->Nombre:%s",nombreArchivo);
 
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
-    printf("%s", nombreArchivoRecibido);
+    printf("%s\n", nombreArchivoRecibido);
 	if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 	    // file exists
-		printf("\n el archivo existe\n");
-
+		log_info(loggerConPantalla,"El archivo existe");
 		validado=1;
 		send(socket_cliente,&validado,sizeof(int),0);
 	} else {
 	    // file doesn't exist
-	   printf("\n Archivo inexistente");
-
+	  log_warning(loggerConPantalla,"El archivo no existe");
 	   validado=0;
 	   send(socket_cliente,&validado,sizeof(int),0);
 	}
 
-    printf("\n ");//esto tiene que estar , no se por que
 }
 
 
@@ -59,7 +57,7 @@ void crearArchivoFunction(int socket_cliente){
 	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
 	void* nombreArchivo = malloc(tamanoArchivo);
 	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
-
+	log_info(loggerConPantalla,"Creando archivo--->Nombre:%s",nombreArchivo);
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
@@ -96,10 +94,11 @@ void crearArchivoFunction(int socket_cliente){
 		adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
 
 		validado=1;
+		send(socket_cliente,&validado,sizeof(int),0);
 		//send avisando al kernel que salio todo ok
 	}else{
 		validado=0;
-		//send diciendo que hubo error
+		send(socket_cliente,&validado,sizeof(int),0);
 	}
 
 

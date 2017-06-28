@@ -45,21 +45,23 @@ int crearArchivoFS(int socket_aceptado, char* direccion ){
 
 	int validado;
 
-	char** array_dir=string_n_split(direccion, 12, "/");
-	   int d=0;
+	char** array_dir=string_n_split(direccion, 12, "/"); /*TODO: HArcodeado*/
+	/*   int d=0;
 	   while(!(array_dir[d] == NULL)){
 	      d++;
 	   }
-	char* nombreArchivo=array_dir[d];
-	int tamanoNombre=sizeof(int)*strlen(nombreArchivo);
-	char orden = 'C';
-	send(socketFyleSys,&orden,sizeof(char),0);
+	   */
+	char* nombreArchivo=array_dir[0];
+	int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+	char ordenCrearArchivo = 'C';
+	send(socketFyleSys,&ordenCrearArchivo,sizeof(char),0);
 	send(socketFyleSys,&tamanoNombre,sizeof(int),0);
 	send(socketFyleSys,nombreArchivo,tamanoNombre,0);
 
 	recv(socketFyleSys,&validado,sizeof(int),0);
 
-	log_info(loggerConPantalla,"Archivo creado en FileSystem---> %s",direccion);
+	if(validado<0) log_error(loggerConPantalla,"Error al crear archivo por excepecion de FileSystem--->",direccion);
+	else log_info(loggerConPantalla,"Archivo creado en FileSystem---> %s",direccion);
 	return validado;
 
 }
@@ -451,16 +453,15 @@ void abrirArchivoEnTablas(int socket_aceptado){
 	printf("Tamano flags%d\n",tamanoFlags);
 	flags= malloc(tamanoFlags);
 	recv(socket_aceptado,flags,tamanoFlags,0);
-	printf("Flags %s",flags);
 	strcpy(flags + tamanoFlags, "\0");
+	printf("Flags %s\n",flags);
 
 	int archivoExistente=validarArchivoFS(direccion);
 	int tiene_permisoCreacion=0;
-	char permiso_creacion = 'c';
-	if(string_contains(flags,&permiso_creacion)){
+	char* permiso_creacion = "c";
+	if(string_contains(flags,permiso_creacion)){
 		tiene_permisoCreacion=1;
 	}
-
 	if(!archivoExistente && !tiene_permisoCreacion){ // No existe el archivo y no tiene permisos
 				excepcionPermisosCrear(socket_aceptado,pid);
 				free(direccion);

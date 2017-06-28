@@ -115,7 +115,7 @@ int main() {
 
 	signal(SIGINT,signalHandler);
 
-	selectorConexiones(socketServidor);
+	selectorConexiones();
 
 	return 0;
 }

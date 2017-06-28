@@ -1,22 +1,56 @@
-#include <commons/log.h>
+#ifndef _CONEXIONES_
+#define _CONEXIONES_
+#include "logger.h"
 int crear_socket_servidor(char *ip, char *puerto);
 int crear_socket_cliente(char * ip, char * puerto);
 char* recibir_string(int socket_aceptado);
 void enviar_string(int socket, char * mensaje);
 void* recibir(int socket);
 void enviar(int socket, void* cosaAEnviar, int tamanio);
-
+void *get_in_addr(struct sockaddr *sa);
 
 int contadorConexiones=0;
 
 
 int recibirConexion(int socket_servidor);
 //--------LOG----------------//
-void inicializarLog(char *rutaDeLog);
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
 
 
+int recibirConexion(int socket_servidor){
+	struct sockaddr_storage their_addr;
+	 socklen_t addr_size;
+
+
+	int estado = listen(socket_servidor, 5);
+
+	if(estado == -1){
+		log_info(loggerConPantalla,"\nError al poner el servidor en listen\n");
+		close(socket_servidor);
+		return 1;
+	}
+
+
+	if(estado == 0){
+		log_info(loggerConPantalla,"\nSe puso el socket en listen\n");
+		printf("---------------------------------------------------\n");
+	}
+
+	addr_size = sizeof(their_addr);
+
+	int socket_aceptado;
+    socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
+
+	contadorConexiones ++;
+	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
+	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
+
+	if (socket_aceptado == -1){
+		close(socket_servidor);
+		log_error(loggerConPantalla,"\nError al aceptar conexion\n");
+		return 1;
+	}
+	return socket_aceptado;
+}
 
 int crear_socket_cliente(char * ip, char * puerto){
 
@@ -154,54 +188,12 @@ void* recibir(int socket){
 	return !checkSocket ? NULL:recibido;
 }
 
-int recibirConexion(int socket_servidor){
-	struct sockaddr_storage their_addr;
-	 socklen_t addr_size;
-
-
-	int estado = listen(socket_servidor, 5);
-
-	if(estado == -1){
-		log_info(loggerConPantalla,"\nError al poner el servidor en listen\n");
-		close(socket_servidor);
-		return 1;
+void *get_in_addr(struct sockaddr *sa) {
+	if (sa->sa_family == AF_INET) {
+		return &(((struct sockaddr_in*) sa)->sin_addr);
 	}
 
-
-	if(estado == 0){
-		log_info(loggerConPantalla,"\nSe puso el socket en listen\n");
-		printf("---------------------------------------------------\n");
-	}
-
-	addr_size = sizeof(their_addr);
-
-	int socket_aceptado;
-    socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
-
-	contadorConexiones ++;
-	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
-	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
-
-	if (socket_aceptado == -1){
-		close(socket_servidor);
-		log_error(loggerConPantalla,"\nError al aceptar conexion\n");
-		return 1;
-	}
-
-	return socket_aceptado;
+	return &(((struct sockaddr_in6*) sa)->sin6_addr);
 }
 
-
-
-
-
-void inicializarLog(char *rutaDeLog){
-
-
-		mkdir("/home/utnso/Log",0755);
-
-		loggerSinPantalla = log_create(rutaDeLog,"FS", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"FS", true, LOG_LEVEL_INFO);
-
-}
-
+#endif
