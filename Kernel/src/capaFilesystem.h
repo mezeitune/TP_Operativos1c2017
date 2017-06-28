@@ -80,7 +80,7 @@ void abrirArchivo(int socket){
 		strcpy(flags + tamanoFlags, "\0");
 		printf("Flags %s\n",flags);
 
-		int archivoExistente=validarArchivoFS(direccion);
+		int archivoExistente=validarArchivo(direccion);
 		
 		int tienePermisoCreacion=0;
 		char* permiso_creacion = "c";
@@ -152,7 +152,7 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 
 	 if(!tablaProcesoExiste){
 		 printf("La tabla no existe\n");
-		 t_entradaListaTablas* entradaNuevaTabla = malloc(sizeof(t_tablaArchivoPorProceso));
+		 t_entradaListaTablas* entradaNuevaTabla = malloc(sizeof(t_entradaListaTablas));
 		 entradaNuevaTabla->pid = pid;
 		 entradaNuevaTabla->tablaProceso = list_create();
 
@@ -292,16 +292,16 @@ void interfaceHandlerFileSystem(int socket){
 						borrarArchivo(socket);
 						break;
 					case 'O'://obtener datos
-						obtenerArchivoFS(socket);
+					//	obtenerArchivoFS(socket);
 						break;
 					case 'G'://guardar archivo
-						guardarArchivoFS(socket);
+					//	guardarArchivoFS(socket);
 						break;
 					case 'P'://guardar archivo
-						cerrarArchivoFS(socket);
+						//cerrarArchivoFS(socket);
 						break;
 					case 'M'://guardar archivo
-						moverCursorArchivoFS(socket);
+						//moverCursorArchivoFS(socket);
 						break;
 				default:
 					log_error(loggerConPantalla ,"Orden no reconocida: %c",orden);

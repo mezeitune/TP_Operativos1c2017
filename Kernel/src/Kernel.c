@@ -116,7 +116,6 @@ int main() {
 
 	signal(SIGINT,signalHandler);
 
-	inicializarArchivoTablaGlobal();
 
 	selectorConexiones();
 

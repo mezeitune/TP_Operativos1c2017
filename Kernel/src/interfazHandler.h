@@ -7,18 +7,21 @@
 #include "sincronizacion.h"
 #include "planificacion.h"
 #include "configuraciones.h"
-#include "capaFS.h"
+#include "capaFilesystem.h"
 
 void interfazHandler();
+void imprimirInterfazUsuario();
 
 void interfaceObtenerListadoProcesos();
 void interfaceObtenerDatosProceso();
 void interfaceFinalizarProcesoVoluntariamente();
 
+void interfaceTablaGlobalArchivos();
+
 void interfaceSolicitarContenidoMemoria();
 
-void imprimirInterfazUsuario();
 void interfaceModificarGradoMultiprogramacion();
+
 void finalizarProcesoVoluntariamente(int pid);
 void obtenerDatosProceso(int pid);
 void mostrarProcesos(char orden);
@@ -51,9 +54,8 @@ void interfazHandler(){
 							break;
 				case 'P':	interfacePausarPlanificacion();
 							break;
-				case 'G':
-					/*mostrarTablaGlobalArch(); TODO HAY QUE IMPLEMENTAR*/
-					break;
+				case 'G':	interfaceTablaGlobalArchivos();
+							break;
 				case 'M':	interfaceModificarGradoMultiprogramacion();
 							break;
 				case 'K':	interfaceFinalizarProcesoVoluntariamente();
@@ -64,7 +66,7 @@ void interfazHandler(){
 							break;
 				case 'F':
 					printf("Enviando instrucciones a File System");
-					interfazHandlerParaFileSystem('A',1);
+					//interfazHandlerParaFileSystem('A',1);
 					break;
 				default:
 					if(cont!=2)log_error(loggerConPantalla ,"Orden no reconocida");
@@ -251,6 +253,18 @@ void finalizarProcesoVoluntariamente(int pid){
 	buscarProcesoYTerminarlo(pid);
 	pthread_mutex_unlock(&mutexNuevoProceso);
 	log_info(loggerConPantalla,"Proceso finalizado voluntariamente--->PID: %d",pid);
+}
+
+
+
+void interfaceTablaGlobalArchivos(){ /*TODO: Mutex tabla global*/
+	int i;
+	t_entradaTablaGlobal* entrada;
+	printf("Direccion\tOpen\n");
+	for(i=0;i<tablaArchivosGlobal->elements_count;i++){
+		entrada = list_get(tablaArchivosGlobal,i);
+		printf("%s\t%d\n",entrada->path,entrada->open);
+	}
 }
 
 
