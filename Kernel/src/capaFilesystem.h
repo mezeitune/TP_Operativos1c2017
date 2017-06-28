@@ -37,6 +37,8 @@ void abrirArchivo(int socket);
 int validarArchivoFS(char* ruta);
 int crearArchivo(int socket_aceptado, char* direccion );
 
+void borrarArchivo(int socket);
+
 /*Tabla global*/
 void aumentarOpenEnTablaGlobal(char* direccion);
 int agregarEntradaEnTablaGlobal(char* direccion,int tamanioDireccion);
@@ -130,10 +132,12 @@ void abrirArchivo(int socket){
 		 send(socket,&fileDescriptor,sizeof(int),0);
 		 printf("File descriptor:%d\n",fileDescriptor);
 		 printf("Mande todo\n");
-		 sleep(10000);
 		log_info(loggerConPantalla,"Finalizo la apertura del archivo");
 }
 
+void borrarArchivo(int socket){
+
+}
 
 int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 	log_info(loggerConPantalla,"Agregando entrada a tabla por proceso");
@@ -285,7 +289,7 @@ void interfaceHandlerFileSystem(int socket){
 						validarArchivo("alumno.bin");
 						break;
 					case 'B'://borrar archivo
-						borrarArchivoFS(socket);
+						borrarArchivo(socket);
 						break;
 					case 'O'://obtener datos
 						obtenerArchivoFS(socket);
