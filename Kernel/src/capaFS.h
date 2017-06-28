@@ -23,7 +23,7 @@ typedef struct{
 t_list* listaTablaArchivosGlobal;
 
 void agregarEntradaEnTablaGlobal(char* direccion,int sizeDireccion);
-
+int buscarIndiceEnTablaProceso(int pid,int*indicePid);
 
 
 int validarArchivoFS(char* ruta){
@@ -74,18 +74,9 @@ void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends
 	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
 	recv(socket_aceptado,&posicion,sizeof(int),0);
 
-	int k;
-	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
-	int tablaExiste=0;
-	int dondeEstaElPid;
 	//verificar que la tabla de ese pid exista
-	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
-		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
-		if(tablaAVerificar->pid==pid){
-			tablaExiste=1;
-			dondeEstaElPid=k;
-		}
-	}
+	int indicePid;
+	int tablaExiste=buscarIndiceEnTablaProceso(pid,&indicePid);
 
 
 
@@ -96,7 +87,7 @@ void moverCursorArchivoFS(int socket_aceptado){//SIN TERMINAR , faltan los sends
 		return;
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+		tablaAVer=list_get(listaTablasArchivosPorProceso,indicePid);
 
 
 		int j,i,posicion;
@@ -141,28 +132,17 @@ void borrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
 	log_info(loggerConPantalla,"Borrando un archivo--->PID:%d",pid);
 
-	int k;
-	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
-	int tablaProcesoExistente=0;
-	int dondeEstaElPid;
 	//verificar que la tabla de ese pid exista
-	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
-		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
-		if(tablaAVerificar->pid==pid){
-			tablaProcesoExistente=1;
-			dondeEstaElPid=k;
-		}
-	}
+	int indicePid;
+	int tablaExiste=buscarIndiceEnTablaProceso(pid,&indicePid);
 
 
-
-
-	if(!tablaProcesoExistente){
+	if(!tablaExiste){
 		excepcionArchivoInexistente(socket_aceptado,pid);
 		return;
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+		tablaAVer=list_get(listaTablasArchivosPorProceso,indicePid);
 
 
 		int j,i,posicion;
@@ -209,20 +189,9 @@ void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 	recv(socket_aceptado,&pid,sizeof(int),0);
 	recv(socket_aceptado,&descriptorArchivo,sizeof(int),0);
 
-	int k;
-	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
-	int tablaExiste=0;
-	int dondeEstaElPid;
 	//verificar que la tabla de ese pid exista
-	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
-		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
-		if(tablaAVerificar->pid==pid){
-			tablaExiste=1;
-			dondeEstaElPid=k;
-		}
-	}
-
-
+	int indicePid;
+	int tablaExiste=buscarIndiceEnTablaProceso(pid,&indicePid);
 
 
 	if(tablaExiste==0){
@@ -230,7 +199,7 @@ void cerrarArchivoFS(int socket_aceptado){//SIN TERMINAR
 		return;
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+		tablaAVer=list_get(listaTablasArchivosPorProceso,indicePid);
 
 
 		int j,i,posicion;
@@ -276,20 +245,9 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 	recv(socket_aceptado,&tamanioDeLaInstruccionEnBytes,sizeof(int),0);
 	log_info(loggerConPantalla,"Obteniendo datos del archivo indicado---PID:%d",pid);
 
-	int k;
-	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
-	int tablaExiste=0;
-	int dondeEstaElPid;
 	//verificar que la tabla de ese pid exista
-	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
-		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
-		if(tablaAVerificar->pid==pid){
-			tablaExiste=1;
-			dondeEstaElPid=k;
-		}
-	}
-
-
+	int indicePid;
+	int tablaExiste=buscarIndiceEnTablaProceso(pid,&indicePid);
 
 
 	if(tablaExiste==0){
@@ -297,7 +255,7 @@ void obtenerArchivoFS(int socket_aceptado){//SIN TERMINAR
 		return;
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+		tablaAVer=list_get(listaTablasArchivosPorProceso,indicePid);
 
 
 		int j,i,posicion;
@@ -359,19 +317,9 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
     strcpy(buffer + tamanioDeLaInstruccionEnBytes, "\0");
 	log_info(loggerConPantalla,"Guardando datos del archivo indicado--->PID:%d--->Datos:%s",pid,buffer);
 
-
-	int k;
-	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
-	int tablaExiste=0;
-	int dondeEstaElPid;
 	//verificar que la tabla de ese pid exista
-	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
-		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
-		if(tablaAVerificar->pid==pid){
-			tablaExiste=1;
-			dondeEstaElPid=k;
-		}
-	}
+		int indicePid;
+		int tablaExiste=buscarIndiceEnTablaProceso(pid,&indicePid);
 
 
 	if(tablaExiste==0){
@@ -379,7 +327,7 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 		excepcionArchivoInexistente(socket_aceptado,pid);
 	}else{
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+		tablaAVer=list_get(listaTablasArchivosPorProceso,indicePid);
 
 
 		int j,i,posicion;
@@ -441,23 +389,13 @@ void guardarArchivoFS(int socket_aceptado){//SIN TERMINAR
 }
 
 int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
-	int k;
 	int descriptorADevolver;
 	//agregarlo en la tabla del proceso
 	//y agregarlo con el flag y el file descriptor y el indice hacia la tabla global
 
-	t_tablaArchivoPorProceso* tablaAVerificar = malloc(sizeof(t_tablaArchivoPorProceso));
-	int tablaExiste=0;
-	int dondeEstaElPid;
 	//verificar que la tabla de ese pid exista
-
-	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
-		tablaAVerificar  = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
-		if(tablaAVerificar->pid==pid){
-			tablaExiste=1;
-			dondeEstaElPid=k;
-		}
-	}
+	int indicePid;
+	int tablaExiste=buscarIndiceEnTablaProceso(pid,&indicePid);
 
 	 if(tablaExiste==0){
 		//tabla no existe
@@ -480,7 +418,7 @@ int agregarATablaPorProcesoYDevolverDescriptor(char* flags, int i){
 	}else{
 		//tabla existe
 		t_tablaArchivoPorProceso* tablaAVer = malloc(sizeof(t_tablaArchivoPorProceso));
-		tablaAVer=list_get(listaTablasArchivosPorProceso,dondeEstaElPid);
+		tablaAVer=list_get(listaTablasArchivosPorProceso,indicePid);
 		tablaAVer->contadorFilasTablaPorProceso++;
 		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][0]=flags;
 		tablaAVer->tablaArchivoPorProceso[tablaAVer->contadorFilasTablaPorProceso][1]=tablaGlobalArchivos[i][3];//apunta al indice de la global
@@ -630,63 +568,19 @@ void agregarEntradaEnTablaGlobal(char* direccion,int sizeDireccion){
 	  tablaGlobalArchivos[contadorFilasTablaGlobal][2]=contadorFilasTablaGlobal;
 }
 
-/*
-int verificaTablaArchivosGlobal(char* direccion){
-
-	_Bool verificaDireccion(t_entradaTablaGlobal* entrada){
-		if(strcmp(entrada->path,direccion)==0)return 1;
-		else return 0;
-	}
-
-	if(list_any_satisfy(listaTablaArchivosGlobal,(void*)verificaDireccion)) return 1;
-	return 0;
-}
-
-void abrirArchivo(socket){
-	log_info(loggerConPantalla,"Abriendo un archivo en las tablas");
-		int pid;
-		int tamanoDireccion;
-		int tamanoFlags;
-		char* direccion;
-		int descriptorADevolver;
-		char* flags;
-		recv(socket,&pid,sizeof(int),0);
-		printf("PID:%d\n",pid);
-		recv(socket,&tamanoDireccion,sizeof(int),0);
-		printf("Tamano direccion%d\n",tamanoDireccion);
-		direccion = malloc(tamanoDireccion);
-		recv(socket,direccion,tamanoDireccion,0);
-		strcpy(direccion + tamanoDireccion, "\0");
-		printf("Direccion %s\n",direccion);
-		recv(socket,&tamanoFlags,sizeof(int),0);
-		printf("Tamano flags%d\n",tamanoFlags);
-		flags= malloc(tamanoFlags);
-		recv(socket,flags,tamanoFlags,0);
-		printf("Flags %s",flags);
-		printf("Recibi todo\n");
-
-		int elArchivoExiste=validarArchivoFS(direccion);
-		int tiene_permisoCreacion=0;
-		int encontro;
-		char permiso_creacion = 'c';
-		if(string_contains(flags,&permiso_creacion)){
-			tiene_permisoCreacion=1;
+int buscarIndiceEnTablaProceso(int pid,int* indice){
+	int k;
+	int resultado=0;
+	t_tablaArchivoPorProceso* tabla;
+	for(k=0;k<listaTablasArchivosPorProceso->elements_count;k++){
+			tabla = (t_tablaArchivoPorProceso*) list_get(listaTablasArchivosPorProceso,k);
+			if(tabla->pid==pid){
+				resultado=1;
+				*indice=k;
+			}
 		}
-
-		if(!elArchivoExiste && !tiene_permisoCreacion){ // No existe el archivo y no tiene permisos
-					excepcionPermisosCrear(socket,pid);
-					free(direccion);
-					free(flags);
-					return;
-		}
-
-		if(elArchivoExiste==1){
-
-			encontro = validadTablaArchivoGlobal(direccion);
-			descriptorADevolver = agregarATablaPorProcesoYDevolverDescriptor(flags,)//me fijo que exista en la tabla global de archivos
+	return resultado;
 
 }
-}
-*/
 
 #endif
