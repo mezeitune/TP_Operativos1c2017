@@ -156,11 +156,16 @@ int verificarProcesoExistente(int pid){
 	return -1;
 }
 
-void obtenerDatosProceso(int pid){
-
+void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
+	int i;
 	_Bool verificaPid(t_contable* proceso){
 		return proceso->pid == pid;
 	}
+
+	_Bool verificaPidArchivo(t_entradaListaTablas* entrada){
+		return entrada->pid == pid;
+	}
+
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
 
@@ -169,6 +174,16 @@ void obtenerDatosProceso(int pid){
 
 	list_add(listaContable,proceso);
 	pthread_mutex_unlock(&mutexListaContable);
+
+	printf("Tabla de archivos del proceso\n");
+	printf("File Descriptor\tFlags\tGlobal File Descriptor\n");
+	t_entradaListaTablas* entradaTablaProceso = list_remove_by_condition(listaTablas,(void*)verificaPidArchivo);
+	t_entradaTablaProceso* entrada;
+	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
+		entrada = list_get(entradaTablaProceso->tablaProceso,i);
+		printf("%d\t%s\t%d\n",entrada->fd,entrada->flags,entrada->globalFd);
+	}
+	list_add(listaTablas,entradaTablaProceso);
 }
 
 

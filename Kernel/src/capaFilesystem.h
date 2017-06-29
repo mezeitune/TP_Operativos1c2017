@@ -37,6 +37,7 @@ void abrirArchivo(int socket);
 int validarArchivoFS(char* ruta);
 int crearArchivo(int socket_aceptado, char* direccion );
 
+void escribirArchivo(int socket);
 void borrarArchivo(int socket);
 
 /*Tabla global*/
@@ -139,6 +140,104 @@ void borrarArchivo(int socket){
 
 }
 
+void escribirArchivo(int socket){ /*TODO: Los permisos?*/
+	int pid;
+	int fileDescriptor;
+	int resultadoEjecucion;
+	int size;//vendria a ser un offset
+
+		recv(socket,&pid,sizeof(int),0);
+		printf("Pid:%d\n",pid);
+
+		recv(socket,&fileDescriptor,sizeof(int),0);
+		printf("FD:%d\n",fileDescriptor);
+
+		recv(socket,&size,sizeof(int),0);
+		printf("Size:%d\n",size);
+		char* informacion = malloc(size);
+
+	    recv(socket,informacion,size,0);
+	    strcpy(informacion + size, "\0");
+		printf("Data:%s\n",informacion);
+		log_info(loggerConPantalla,"Guardando datos del archivo indicado--->PID:%d--->Datos:%s",pid,informacion);
+
+
+		_Bool verificaPid(t_entradaListaTablas* entrada){
+				return entrada->pid == pid;
+			}
+
+		_Bool verificaFd(t_entradaTablaProceso* entrada){
+			return entrada->fd == fileDescriptor;
+		}
+
+		//verificar que la tabla de ese pid exista
+		int tablaProcesoExiste;
+		if(list_any_satisfy(listaTablas,(void*)verificaPid)) tablaProcesoExiste = 1;
+		else tablaProcesoExiste = 0;
+
+		int encontroFd;
+
+		if(!tablaProcesoExiste){
+			excepcionArchivoInexistente(socket,pid);
+			free(informacion);
+			return;
+		}
+
+		if(tablaProcesoExiste){
+
+			t_entradaListaTablas* entradaTablaProceso = list_remove_by_condition(listaTablas,(void*)verificaPid);
+			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
+			else encontroFd = 0;
+
+			if(!encontroFd){/*TODO: No veo esta situacion*/
+				resultadoEjecucion=0;
+				//excepcion(-1,socket_aceptado);//no encontro en tabla
+			}
+
+			if(encontroFd){
+				t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
+
+				int tiene_permisoEscritura=0;
+				const char *permiso_escritura = "w";
+				if(string_contains(entrada->flags, permiso_escritura)){
+					tiene_permisoEscritura=1;
+				}
+
+				if(!tiene_permisoEscritura){
+					excepcionPermisosEscritura(socket,pid);
+					free(informacion);
+					return;
+				}
+
+					int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3];
+
+					//sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
+					//si salio todo bien y mando la info leida al CPU
+
+
+					char** array_dir=string_n_split(tablaGlobalArchivos[tablaAVer->tablaArchivoPorProceso[i][1]][0], 12, "/");
+					   int d=0;
+					   while(!(array_dir[d] == NULL)){
+					      d++;
+					   }
+					char* nombreArchivo=array_dir[d];
+					int tamanoArchivoAMandar=sizeof(int)*strlen(nombreArchivo);
+
+					send(socketFyleSys,&tamanoArchivoAMandar,sizeof(int),0);
+					send(socketFyleSys,nombreArchivo,tamanoArchivoAMandar,0);
+					send(socketFyleSys,&punteroADondeVaALeer,sizeof(int),0);
+					send(socketFyleSys,&tamanioDeLaInstruccionEnBytes,sizeof(int),0);
+					send(socketFyleSys,informacion,tamanioDeLaInstruccionEnBytes,0);
+	//recvs
+
+				resultadoEjecucion=1;
+			}
+
+		}
+		send(socket,&resultadoEjecucion,sizeof(int),0);
+}
+
+
 int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 	log_info(loggerConPantalla,"Agregando entrada a tabla por proceso");
 	int tablaProcesoExiste;
@@ -149,6 +248,7 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 
 	if(list_any_satisfy(listaTablas,(void*)verificaPid)) tablaProcesoExiste = 1;
 	else tablaProcesoExiste = 0;
+
 
 	 if(!tablaProcesoExiste){
 		 printf("La tabla no existe\n");
@@ -295,7 +395,7 @@ void interfaceHandlerFileSystem(int socket){
 					//	obtenerArchivoFS(socket);
 						break;
 					case 'G'://guardar archivo
-					//	guardarArchivoFS(socket);
+						escribirArchivo(socket);
 						break;
 					case 'P'://guardar archivo
 						//cerrarArchivoFS(socket);
