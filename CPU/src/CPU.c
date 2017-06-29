@@ -91,7 +91,7 @@ void expropiarPorStackOverflow(){
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseStackOverflow,sizeof(char),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	//send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
 
 	free(pcb_actual);

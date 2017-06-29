@@ -139,7 +139,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 					}
 
 int posicion= (nueva_posicion_memoria->pagina * config_paginaSize) + nueva_posicion_memoria->offset;
-
+log_info(loggerConPantalla,"Definida la variable %c en la pagina %d y offset %d del stack",variable,nueva_posicion_memoria->pagina,nueva_posicion_memoria->offset);
 return posicion;
 }
 
@@ -324,7 +324,7 @@ int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->in
 		expropiarPorDireccionInvalida();
 	} else {
 		pcb_actual->programCounter = (program_counter-1);
-		log_info(loggerConPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter,etiqueta);
+		log_info(loggerConPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter+1,etiqueta);
 		cantidadInstruccionesAEjecutarPcb_Actual = cantidadInstruccionesAEjecutarPcb_Actual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
 	}
 int i = 0;
