@@ -159,6 +159,11 @@ void borrarArchivo(int socket){
 					return entrada->fd == fileDescriptor;
 				}
 
+		/*TODO: Necesito ir a buscar la ruta del archivo, para validarla*/
+		/*La busco de la sigueinte forma. Voy a la tabla por proceso, indexo con el fd.
+		 * De ahi saco el globalFd, y voy a la tabla global. Saco la direccion*/
+
+
 		//verificar que la tabla de ese pid exista
 		int tablaProcesoExiste;
 		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
@@ -174,9 +179,18 @@ void borrarArchivo(int socket){
 			else encontroFd = 0;
 			list_add(listaTablasProcesos,entradaTablaProceso);
 
-			if(!encontroFd){
+			if(!encontroFd){ /*Si ese archivo no lo tiene abierto no lo puede borrar*/
 				excepcionArchivoInexistente(socket,pid);
 			}else{
+
+				/* Voy a la tabla global y borro la entrada, y saco el indice(GlobalFd) de donde lo borre.
+				 * Aca habria que ir a cada tabla de los procesos, y borrar la entrada. Uso como key el globalFd
+				 * Habria actualizar CADA puntero de la tabla de los procesos. Solo se actualizan las tablas que tengan
+				 * a los archivos que estaban por debajo de ese indice en la tabla global. Es disminuir en uno a cada globalFd.
+				 * Todo esto deberia ir despues que el FS borre al archivo
+				 * */
+
+
 				//hacer los sends para que el FS borre ese archivo y deje los bloques libres
 				char comandoBorrarArchivo='B';
 				send(socketFyleSys,comandoBorrarArchivo,sizeof(char),0);
@@ -586,10 +600,9 @@ char* buscarDireccionEnTablaGlobal(int indice){
 }
 
 void inicializarTablaProceso(int pid){
-	 printf("La tabla no existe\n");
-	 t_indiceTablaProceso* entradaNuevaTabla = malloc(sizeof(t_indiceTablaProceso));
-	 entradaNuevaTabla->pid = pid;
-	 entradaNuevaTabla->tablaProceso = list_create();
+	 t_indiceTablaProceso* indiceNuevaTabla = malloc(sizeof(t_indiceTablaProceso));
+	 indiceNuevaTabla->pid = pid;
+	 indiceNuevaTabla->tablaProceso = list_create();
 
 	 t_entradaTablaProceso* entrada=malloc(sizeof(t_entradaTablaProceso));
 	 entrada->fd = 0;
@@ -597,9 +610,9 @@ void inicializarTablaProceso(int pid){
 	 entrada->globalFd = 0;
 	 entrada->puntero=0;
 
-	 list_add(entradaNuevaTabla->tablaProceso,entrada);
+	 list_add(indiceNuevaTabla->tablaProceso,entrada);
 
-	 list_add(listaTablasProcesos,entradaNuevaTabla);
+	 list_add(listaTablasProcesos,indiceNuevaTabla);
 }
 
 
