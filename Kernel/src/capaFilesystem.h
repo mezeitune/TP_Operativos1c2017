@@ -180,7 +180,8 @@ void borrarArchivo(int socket){
 			list_add(listaTablasProcesos,entradaTablaProceso);
 
 			if(!encontroFd){ /*Si ese archivo no lo tiene abierto no lo puede borrar*/
-				excepcionArchivoInexistente(socket,pid);
+				excepcionFileDescriptorNoAbierto(socket,pid);
+				return;
 			}else{
 
 				/* Voy a la tabla global y borro la entrada, y saco el indice(GlobalFd) de donde lo borre.
@@ -247,7 +248,7 @@ void escribirArchivo(int socket){
 
 		int encontroFd;
 
-		if(!tablaProcesoExiste){
+		if(!tablaProcesoExiste){ //El proceso nunca abrio un archivo /*TODO: Cambiar la excepcion*/
 			excepcionArchivoInexistente(socket,pid);
 			free(informacion);
 			return;
@@ -259,8 +260,8 @@ void escribirArchivo(int socket){
 			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
 			else encontroFd = 0;
 
-			if(!encontroFd){
-				excepcionArchivoInexistente(socket,pid);
+			if(!encontroFd){ /*TODO: El archivo nunca fue abierto*/
+				excepcionFileDescriptorNoAbierto(socket,pid);
 				return;
 			}
 
@@ -340,7 +341,7 @@ void leerArchivo(int socket){
 			else encontroFd = 0;
 
 			if(!encontroFd){
-				excepcionArchivoInexistente(socket,pid);
+				excepcionFileDescriptorNoAbierto(socket,pid);
 				return;
 			}
 			else{
