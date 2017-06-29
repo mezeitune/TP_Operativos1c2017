@@ -33,6 +33,7 @@ enum {
 	EXIT_STACKOVERFLOW,
 	EXIT_FILE_CANNOT_BE_DELETE,
 	EXIT_FILE_DESCRIPTOR_NOT_OPEN,
+	EXIT_DIDNOT_OPEN_TABLE,
 	EXIT_FILESYSTEM_EXCEPTION
 };
 int resultadoEjecucion=-1;
@@ -65,6 +66,7 @@ void excepcionPermisosCrear(int socket,int pid);
 void excepcionArchivoInexistente(int socket,int pid);
 void excepcionNoPudoBorrarArchivo(int socket,int pid);
 void excepcionFileDescriptorNoAbierto(int socket,int pid);
+void excepcionSinTablaArchivos(int socket,int pid);
 
 /*Memoria*/
 void excepcionReservaRecursos(int socketAceptado,t_pcb* pcb);
@@ -115,6 +117,14 @@ void excepcionFileDescriptorNoAbierto(int socket,int pid){
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILE_DESCRIPTOR_NOT_OPEN]->mensaje,strlen(exitCodeArray[EXIT_FILE_DESCRIPTOR_NOT_OPEN]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_FILE_DESCRIPTOR_NOT_OPEN]->value;
+	encolarEnListaParaTerminar(proceso);
+}
+
+void  excepcionSinTablaArchivos(int socket,int pid){
+	log_error(loggerConPantalla,"Informando a Consola excepcion porque el proceso nunca inicializo la tabla de archivos");
+	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->mensaje,strlen(exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->mensaje));
+	t_pcb* proceso = expropiarPorEjecucion(socket);
+	proceso->exitCode = exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->value;
 	encolarEnListaParaTerminar(proceso);
 }
 
@@ -350,7 +360,10 @@ void inicializarExitCodeArray(){
 	exitCodeArray[EXIT_FILE_DESCRIPTOR_NOT_OPEN]->value = -13;
 	exitCodeArray[EXIT_FILE_DESCRIPTOR_NOT_OPEN]->mensaje = "El archivo nunca abrio  el file descriptor indicado";
 
-	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value = -14;
+	exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->value = -14;
+	exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->mensaje = "El proceso nunca inicializo su tabla de archivos";
+
+	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value = -15;
 	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje="Ha surgido una excepecion de Filesystem";
 
 

@@ -47,6 +47,7 @@ void moverCursorArchivo(int socket);
 void escribirArchivo(int socket);
 void leerArchivo(int socket);
 void borrarArchivo(int socket);
+void cerrarArchivo(int socket);
 
 int validarArchivo(char* ruta);
 int crearArchivo(int socket_aceptado, char* direccion );
@@ -55,7 +56,7 @@ int crearArchivo(int socket_aceptado, char* direccion );
 void aumentarOpenEnTablaGlobal(char* direccion);
 int agregarEntradaEnTablaGlobal(char* direccion,int tamanioDireccion);
 int verificarEntradaEnTablaGlobal(char* direccion);
-void verificarAperturaFdEnTablaGlobal(int indiceGlobalFd);
+void disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal);
 int buscarIndiceEnTablaGlobal(char* direccion);
 char* buscarDireccionEnTablaGlobal(int indice);
 
@@ -63,6 +64,7 @@ char* buscarDireccionEnTablaGlobal(int indice);
 int actualizarTablaDelProceso(int pid,char* flags, int indiceEnTablaGlobal);
 void inicializarTablaProceso(int pid);
 int borrarEntradaTablaProceso(int pid,int fileDescriptor);
+void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal);
 
 void abrirArchivo(int socket){
 		int pid;
@@ -170,7 +172,7 @@ void borrarArchivo(int socket){
 		else tablaProcesoExiste = 0;
 
 		if(!tablaProcesoExiste){
-			excepcionArchivoInexistente(socket,pid);
+			excepcionSinTablaArchivos(socket,pid);
 			return;
 		}else{
 			int encontroFd;
@@ -203,12 +205,59 @@ void borrarArchivo(int socket){
 						return;
 					}
 				int indiceGlobalFd=borrarEntradaTablaProceso(pid,fileDescriptor);
-				verificarAperturaFdEnTablaGlobal(indiceGlobalFd);
+				disminuirOpenYVerificarExistenciaEntradaGlobal(indiceGlobalFd);
 			}
 
 		}
 		send(socket,&resultadoEjecucion,sizeof(int),0);
 		log_info(loggerConPantalla,"Archivo borrado--->PID:%d",pid);
+}
+
+void cerrarArchivo(int socket){
+	int pid;
+	int fileDescriptor;
+	int resultadoEjecucion ;
+	recv(socket,&pid,sizeof(int),0);
+	recv(socket,&fileDescriptor,sizeof(int),0);
+	log_info(loggerConPantalla,"Cerrando el archivo--->PID:%d--->FD:%d",pid,fileDescriptor);
+
+	_Bool verificaPid(t_indiceTablaProceso* entrada){
+						return entrada->pid == pid;
+					}
+	_Bool verificaFd(t_entradaTablaProceso* entrada){
+					return entrada->fd == fileDescriptor;
+				}
+
+		//verificar que la tabla de ese pid exista
+		int tablaProcesoExiste;
+		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
+		else tablaProcesoExiste = 0;
+
+
+
+		if(!tablaProcesoExiste){
+			excepcionSinTablaArchivos(socket,pid);
+			return;
+		}else{
+
+			int encontroFd;
+			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
+			else encontroFd = 0;
+			list_add(listaTablasProcesos,entradaTablaProceso);
+
+			if(!encontroFd){
+				excepcionFileDescriptorNoAbierto(socket,pid);
+				return;
+			}else{
+
+				int indiceTablaGlobal=borrarEntradaTablaProceso(pid,fileDescriptor);
+				disminuirOpenYVerificarExistenciaEntradaGlobal(indiceTablaGlobal);
+			}
+		}
+		resultadoEjecucion=1;
+		send(socket,&resultadoEjecucion,sizeof(int),0);
+
 }
 
 void escribirArchivo(int socket){
@@ -249,7 +298,7 @@ void escribirArchivo(int socket){
 		int encontroFd;
 
 		if(!tablaProcesoExiste){ //El proceso nunca abrio un archivo /*TODO: Cambiar la excepcion*/
-			excepcionArchivoInexistente(socket,pid);
+			excepcionSinTablaArchivos(socket,pid);
 			free(informacion);
 			return;
 		}
@@ -331,7 +380,7 @@ void leerArchivo(int socket){
 		else tablaProcesoExiste = 0;
 
 		if(!tablaProcesoExiste){
-			excepcionArchivoInexistente(socket,pid);
+			excepcionSinTablaArchivos(socket,pid);
 			return;
 		}else{
 
@@ -413,7 +462,7 @@ void moverCursorArchivo(int socket){
 
 
 		if(!tablaProcesoExiste){
-			excepcionArchivoInexistente(socket,pid);
+			excepcionSinTablaArchivos(socket,pid);
 			return;
 		}else{
 			int encontroFd;
@@ -514,6 +563,7 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 }
 
 int borrarEntradaTablaProceso(int pid,int fd){
+	log_info(loggerConPantalla,"Borrando entrada en tabla archivos--->PID:%d--->FD:%d",pid,fd);
 	int globalFd;
 	_Bool verificaPid(t_indiceTablaProceso* entrada){
 							return entrada->pid == pid;
@@ -569,14 +619,31 @@ void aumentarOpenEnTablaGlobal(char* direccion){/*TODO: Mutex tablaGlobal*/
 	list_add(tablaArchivosGlobal,entrada);
 }
 
-void verificarAperturaFdEnTablaGlobal(int indiceGlobalFd){
-	log_info(loggerConPantalla,"Verificando apertura en tabla global");
-	t_entradaTablaGlobal* entrada = list_get(tablaArchivosGlobal,indiceGlobalFd);
+void disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
+	log_info(loggerConPantalla,"Verificando apertura en tabla global--->Indice:%d",indiceTablaGlobal);
+	t_entradaTablaGlobal* entrada = list_get(tablaArchivosGlobal,indiceTablaGlobal);
 	entrada->open --;
 
 	if(entrada->open==0){
-		list_remove(tablaArchivosGlobal,indiceGlobalFd);
+		list_remove(tablaArchivosGlobal,indiceTablaGlobal);
+		actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal);
 		free(entrada);
+	}
+}
+
+void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal){
+	log_info(loggerConPantalla,"Actualizando indices globales mayores al indice eliminado:%d",indiceTablaGlobal);
+	int i;
+	int j;
+	t_indiceTablaProceso* indiceTabla;
+	t_entradaTablaProceso* entrada;
+	for(i=0;listaTablasProcesos->elements_count;i++){
+		indiceTabla = list_get(listaTablasProcesos,i);
+
+		for(j=0;j<indiceTabla->tablaProceso->elements_count;j++){
+			entrada = list_get(indiceTabla->tablaProceso,j);
+			if(entrada->globalFd > indiceTablaGlobal) entrada->globalFd--; /*TODO: No pregunto si es igual porque se supone que no existe mas en esa tabla. Corroborarlo*/
+		}
 	}
 }
 
@@ -595,6 +662,7 @@ int buscarIndiceEnTablaGlobal(char* direccion){
 }
 
 char* buscarDireccionEnTablaGlobal(int indice){
+	log_info(loggerConPantalla,"Buscando direccion en tabla global--->Indice:%s",indice);
 	t_entradaTablaGlobal* entrada = list_get(tablaArchivosGlobal,indice);
 
 	return entrada->path;
@@ -637,13 +705,13 @@ void interfaceHandlerFileSystem(int socket){
 			switch(orden){
 					case 'A':	abrirArchivo(socket);
 								break;
-					case 'B':	borrarArchivo(socket); /*TODO: Falta eliminar las entradas en TODAS las tablas y en la global*/
+					case 'B':	borrarArchivo(socket); /*TODO: Falta eliminar las entradas en TODAS las tablas y en la global. Ademas actualizar las tablas de los procesos y corroborar si alguien lo tiene abierto*/
 								break;
 					case 'O':	leerArchivo(socket); /*TODO: Falta saber que mandarle a FS*/
 								break;
 					case 'G': 	escribirArchivo(socket); /*TODO: Falta testear*/
 								break;
-					case 'P':	//cerrarArchivoFS(socket); /*TODO: Falta desarrollar: cerrarArchivo(socket)*/
+					case 'P':	cerrarArchivo(socket); /*TODO: Falta testeas*/
 								break;
 					case 'M':	moverCursorArchivo(socket); /*TODO: Falta desarrollar la validacion del tamano del archivo en FS*/
 								break;

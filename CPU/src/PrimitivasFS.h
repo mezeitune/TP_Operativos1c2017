@@ -152,9 +152,9 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
 	if(resultadoEjecucion==1){
-		recv(socketKernel,&tamanioInfoLeida,sizeof(int),0);
+		recv(socketKernel,&tamanioInfoLeida,sizeof(int),0); /*TODO: No hace falta, ya es el tamano que recibis por parametro*/
 		void* infoLeida = malloc(tamanioInfoLeida);
-		recv(socketKernel,&infoLeida,tamanioInfoLeida,0);
+		recv(socketKernel,infoLeida,tamanioInfoLeida,0);
 		char *infoLeidaChar = string_new();
 		string_append(&infoLeidaChar, infoLeida);
 		log_info(loggerConPantalla,"La informacion leida es %s",infoLeidaChar);
