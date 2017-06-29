@@ -25,24 +25,23 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	flagsAEnviar = devolverStringFlags(flags);
 
 	/*TODO: HARCODEO LOS FLAGS*/
-	char* flagHarcodeado = "rwc";
+	char* flagHarcodeado = "rw";
 	printf("%s\n",flagsAEnviar);
 	int tamanoFlags=sizeof(char)*strlen(flagHarcodeado);
 	send(socketKernel,&tamanoFlags,sizeof(int),0);
 	send(socketKernel,flagHarcodeado,tamanoFlags,0);
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	recv(socketKernel,&descriptor,sizeof(int),0);
-	descriptorArchivoAbierto = (t_descriptor_archivo) descriptor;
 	printf("resultado:%d\n",resultadoEjecucion);
-	printf("descriptor:%d\n",descriptorArchivoAbierto);
 	//log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor);
 
-	if(!resultadoEjecucion){
+	if(resultadoEjecucion < 0){
 	//	log_error(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s",pid,descriptor);
 		expropiarPorKernel();
 		return 0;
 	}
+	recv(socketKernel,&descriptor,sizeof(int),0);
+	descriptorArchivoAbierto = (t_descriptor_archivo) descriptor;
 	return descriptorArchivoAbierto;
 }
 
@@ -193,10 +192,13 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			int pid= pcb_actual->pid;
 			send(socketKernel,&pid,sizeof(int),0);
 			send(socketKernel,&descriptor_archivo,sizeof(int),0);
+			printf("Descriptor:%d\n",descriptor_archivo);
 			send(socketKernel,&tamanio,sizeof(int),0);
+			printf("Tamano:%d\n",tamanio);
 			send(socketKernel,(char*)informacion,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
+			printf("Data:%s",(char*)informacion);
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-			if(resultadoEjecucion==1)
+			if(resultadoEjecucion > 0)
 			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d");
 			else {
 				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ");

@@ -162,7 +162,7 @@ void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
 		return proceso->pid == pid;
 	}
 
-	_Bool verificaPidArchivo(t_entradaListaTablas* entrada){
+	_Bool verificaPidArchivo(t_indiceTablaProceso* entrada){
 		return entrada->pid == pid;
 	}
 
@@ -177,13 +177,13 @@ void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
 
 	printf("Tabla de archivos del proceso\n");
 	printf("File Descriptor\tFlags\tGlobal File Descriptor\n");
-	t_entradaListaTablas* entradaTablaProceso = list_remove_by_condition(listaTablas,(void*)verificaPidArchivo);
+	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
 	t_entradaTablaProceso* entrada;
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
 		printf("%d\t%s\t%d\n",entrada->fd,entrada->flags,entrada->globalFd);
 	}
-	list_add(listaTablas,entradaTablaProceso);
+	list_add(listaTablasProcesos,entradaTablaProceso);
 }
 
 

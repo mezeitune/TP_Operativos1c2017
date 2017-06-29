@@ -273,7 +273,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 	void* nombreArchivo = malloc(tamanoArchivo);
 	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
 	recv(socket_cliente,&offset,sizeof(int),0);
-	recv(socket_cliente,&size,sizeof(int),0);
+	//recv(socket_cliente,&size,sizeof(int),0);
 	recv(socket_cliente,&tamanoBuffer,sizeof(int),0);
 	void* buffer = malloc(tamanoBuffer);
 	recv(socket_cliente,buffer,tamanoBuffer,0);
@@ -396,10 +396,12 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 				adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
 
 				validado=1;
+				send(socket_cliente,&validado,sizeof(int),0);
 				//y enviamos un buen send
 
 			}else{
 				validado=0;
+				send(socket_cliente,&validado,sizeof(int),0);
 				//send con error
 			}
 
@@ -413,6 +415,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 	} else {
 		validado=0;
+		send(socket_cliente,&validado,sizeof(int),0);
 		//send diciendo que el archivo no existe
 	}
 

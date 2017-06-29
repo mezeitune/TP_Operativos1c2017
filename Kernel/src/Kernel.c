@@ -504,7 +504,7 @@ void inicializarListas(){
 	listaHilos = list_create();
 
 	tablaArchivosGlobal = list_create();
-	listaTablas = list_create();
+	listaTablasProcesos = list_create();
 }
 void obtenerVariablesCompartidasDeLaConfig(){
 	int tamanio = tamanioArray(shared_vars);
