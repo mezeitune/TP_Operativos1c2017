@@ -41,12 +41,15 @@ t_list* listaTablasProcesos;
 
 void interfaceHandlerFileSystem(int socket);
 
+/*Interface*/
 void abrirArchivo(int socket);
-int validarArchivoFS(char* ruta);
-int crearArchivo(int socket_aceptado, char* direccion );
-
+void moverCursorArchivo(int socket);
 void escribirArchivo(int socket);
+void leerArchivo(int socket);
 void borrarArchivo(int socket);
+
+int validarArchivo(char* ruta);
+int crearArchivo(int socket_aceptado, char* direccion );
 
 /*Tabla global*/
 void aumentarOpenEnTablaGlobal(char* direccion);
@@ -62,7 +65,6 @@ void inicializarTablaProceso(int pid);
 int borrarEntradaTablaProceso(int pid,int fileDescriptor);
 
 void abrirArchivo(int socket){
-	log_info(loggerConPantalla,"Abriendo un archivo");
 		int pid;
 		int tamanoDireccion;
 		int tamanoFlags;
@@ -74,7 +76,6 @@ void abrirArchivo(int socket){
 		int resultadoEjecucion;
 
 		recv(socket,&pid,sizeof(int),0);
-		printf("PID:%d\n",pid);
 
 		recv(socket,&tamanoDireccion,sizeof(int),0);
 		printf("Tamano direccion%d\n",tamanoDireccion);
@@ -82,7 +83,6 @@ void abrirArchivo(int socket){
 
 		recv(socket,direccion,tamanoDireccion,0);
 		strcpy(direccion + tamanoDireccion, "\0");
-		printf("Direccion %s\n",direccion);
 
 		recv(socket,&tamanoFlags,sizeof(int),0);
 		printf("Tamano flags%d\n",tamanoFlags);
@@ -90,13 +90,13 @@ void abrirArchivo(int socket){
 
 		recv(socket,flags,tamanoFlags,0);
 		strcpy(flags + tamanoFlags, "\0");
-		printf("Flags %s\n",flags);
+
+		log_info(loggerConPantalla,"Abriendo un archivo--->PID:%d--->Direccion:%d--->Permisos:%s",pid,direccion,flags);
 
 		int archivoExistente=validarArchivo(direccion);
 		
 		int tienePermisoCreacion=0;
 		char* permiso_creacion = "c";
-
 		if(string_contains(flags,permiso_creacion)){
 			tienePermisoCreacion=1;
 		}
@@ -115,13 +115,11 @@ void abrirArchivo(int socket){
 
 			if(!entradaGlobalExistente){
 				indiceEnTablaGlobal = agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
-				printf("No estaba en la tabla global\n");
-				printf("Indice devuelto:%d\n",indiceEnTablaGlobal);
 				}
 			else{
 				indiceEnTablaGlobal = buscarIndiceEnTablaGlobal(direccion);
-				printf("Ya estaba en la tabla global\n");
 			}
+			printf("Indice devuelto:%d\n",indiceEnTablaGlobal);
 		}
 
 		if(!archivoExistente && tienePermisoCreacion){
@@ -134,16 +132,15 @@ void abrirArchivo(int socket){
 				return;
 			}
 		indiceEnTablaGlobal=agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
+		printf("Indice devuelto:%d\n",indiceEnTablaGlobal);
 		}
 
 		aumentarOpenEnTablaGlobal(direccion);
 		fileDescriptor = actualizarTablaDelProceso(pid,flags,indiceEnTablaGlobal);
 		resultadoEjecucion = 1;
 		 send(socket,&resultadoEjecucion,sizeof(int),0);
-		 printf("resultado : %d\n",resultadoEjecucion);
 		 send(socket,&fileDescriptor,sizeof(int),0);
 		 printf("File descriptor:%d\n",fileDescriptor);
-		 printf("Mande todo\n");
 		log_info(loggerConPantalla,"Finalizo la apertura del archivo");
 }
 
@@ -250,6 +247,7 @@ void escribirArchivo(int socket){
 
 			if(!encontroFd){
 				excepcionArchivoInexistente(socket,pid);
+				return;
 			}
 
 			if(encontroFd){
@@ -288,6 +286,144 @@ void escribirArchivo(int socket){
 
 		}
 		send(socket,&resultadoEjecucion,sizeof(int),0);
+}
+
+void leerArchivo(int socket){
+	int pid;
+	int fileDescriptor;
+	int resultadoEjecucion;
+	int puntero;
+	int sizeInformacion;//vendria a ser un offset
+	char* informacion;
+		recv(socket,&pid,sizeof(int),0);
+		recv(socket,&fileDescriptor,sizeof(int),0);
+		recv(socket,&puntero,sizeof(int),0);
+		recv(socket,&sizeInformacion,sizeof(int),0);
+		log_info(loggerConPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d",pid,fileDescriptor,sizeInformacion);
+
+		//verificar que la tabla de ese pid exista
+		_Bool verificaPid(t_indiceTablaProceso* entrada){
+						return entrada->pid == pid;
+					}
+
+				_Bool verificaFd(t_entradaTablaProceso* entrada){
+					return entrada->fd == fileDescriptor;
+				}
+
+				//verificar que la tabla de ese pid exista
+		int tablaProcesoExiste;
+		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
+		else tablaProcesoExiste = 0;
+
+		if(!tablaProcesoExiste){
+			excepcionArchivoInexistente(socket,pid);
+			return;
+		}else{
+
+			int encontroFd;
+			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
+			else encontroFd = 0;
+
+			if(!encontroFd){
+				excepcionArchivoInexistente(socket,pid);
+				return;
+			}
+			else{
+				t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
+
+				int tiene_permisoLectura=0;
+				const char *permiso_lectura = "r";
+				if(string_contains(entrada->flags, permiso_lectura)){
+					tiene_permisoLectura=1;
+				}
+				if(!tiene_permisoLectura){
+					excepcionPermisosLectura(socket,pid);
+					return;
+				}
+
+				informacion = malloc(sizeInformacion);
+				/*TODO: El puntero no es el que me manda la CPU mas el desplazamiento que tengo en la entrada de la tabla del proceso?*/
+				//int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacion;
+
+
+				//TODO: sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
+				/*TODO: Esto es lo que me pide FS.*/
+				/*
+					recv(socket_cliente,&tamanoArchivo,sizeof(int),0); TODO: El tamano del archivo hay que mandarselo?
+					void* nombreArchivo = malloc(tamanoArchivo);
+					recv(socket_cliente,nombreArchivo,tamanoArchivo,0); TODO:Buscar el nombre del archivo
+					recv(socket_cliente,&offset,sizeof(int),0); TODO: esto seria, puntero + entrada->puntero
+					recv(socket_cliente,&size,sizeof(int),0);
+				*/
+
+
+				recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
+				recv(socketFyleSys,informacion,sizeInformacion,0);
+				if(resultadoEjecucion<0){
+						excepcionFileSystem(socket,pid);
+						return;
+					}
+				}
+
+			}
+			send(socket,&resultadoEjecucion,sizeof(int),0);
+			send(socket,informacion,sizeInformacion,0);
+			log_info(loggerConPantalla,"Datos obtenidos--->PID:%d--->Datos:%s",pid,informacion);
+}
+
+void moverCursorArchivo(int socket){
+		int pid;
+		int fileDescriptor;
+		int posicion;
+		int resultadoEjecucion ;
+		recv(socket,&pid,sizeof(int),0);
+		recv(socket,&fileDescriptor,sizeof(int),0);
+		recv(socket,&posicion,sizeof(int),0);
+
+		log_info(loggerConPantalla,"Moviendo puntero--->PID:%d--->FD:%d--->Posicion:%d",pid,fileDescriptor,posicion);
+
+		_Bool verificaPid(t_indiceTablaProceso* entrada){
+						return entrada->pid == pid;
+					}
+
+		_Bool verificaFd(t_entradaTablaProceso* entrada){
+						return entrada->fd == fileDescriptor;
+					}
+
+		//verificar que la tabla de ese pid exista
+		int tablaProcesoExiste;
+		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
+		else tablaProcesoExiste = 0;
+
+
+		if(!tablaProcesoExiste){
+			excepcionArchivoInexistente(socket,pid);
+			return;
+		}else{
+			int encontroFd;
+			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+					if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
+					else encontroFd = 0;
+
+			if(!encontroFd){
+						excepcionArchivoInexistente(socket,pid);
+			}else{
+
+				t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
+				entrada->puntero = posicion;
+				list_add(entradaTablaProceso->tablaProceso,entrada);
+				list_add(listaTablasProcesos,entradaTablaProceso);
+
+				/*TODO: Falta codear esta funcion en FS*/
+				//hacer los sends para que el FS verifique que esa posicion existe dentro del archivo
+				//si recibo 0 siginfica que algo anda mal
+				//si recibo 1 significa que esta todo ok
+
+				resultadoEjecucion=1;
+				send(socket,&resultadoEjecucion,sizeof(int),0);
+			}
+		}
 }
 
 int crearArchivo(int socket_aceptado, char* direccion ){
@@ -348,6 +484,7 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 		}
 	 else{
 		 printf("La tabla ya existe\n");
+
 		 t_indiceTablaProceso* entradaTablaExistente = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
 		 t_entradaTablaProceso* entrada = malloc(sizeof(t_entradaTablaProceso));
 		 entrada->fd = entradaTablaExistente->tablaProceso->elements_count + 3;
@@ -429,6 +566,7 @@ void verificarAperturaFdEnTablaGlobal(int indiceGlobalFd){
 }
 
 int buscarIndiceEnTablaGlobal(char* direccion){
+	log_info(loggerConPantalla,"Buscando indice en tabla global--->Direccion:%s",direccion);
 	int i;
 	int indice=0;
 	t_entradaTablaGlobal* entrada;
@@ -485,15 +623,15 @@ void interfaceHandlerFileSystem(int socket){
 			switch(orden){
 					case 'A':	abrirArchivo(socket);
 								break;
-					case 'B':	borrarArchivo(socket); /*TODO: Falta sends y recvs*/
+					case 'B':	borrarArchivo(socket); /*TODO: Falta eliminar las entradas en TODAS las tablas y en la global*/
 								break;
-					case 'O'://obtenerArchivoFS(socket); /*TODO: Falta desarrollar: leerArchivo(socket)*/
-						break;
+					case 'O':	leerArchivo(socket); /*TODO: Falta saber que mandarle a FS*/
+								break;
 					case 'G': 	escribirArchivo(socket); /*TODO: Falta testear*/
 								break;
 					case 'P':	//cerrarArchivoFS(socket); /*TODO: Falta desarrollar: cerrarArchivo(socket)*/
 								break;
-					case 'M':	//moverCursorArchivoFS(socket); /*TODO: Falta desarrollar: moverCursosArchivo(socket)*/
+					case 'M':	moverCursorArchivo(socket); /*TODO: Falta desarrollar la validacion del tamano del archivo en FS*/
 								break;
 					default:
 					log_error(loggerConPantalla ,"Orden no reconocida: %c",orden);
