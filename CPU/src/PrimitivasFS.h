@@ -25,7 +25,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	flagsAEnviar = devolverStringFlags(flags);
 
 	/*TODO: HARCODEO LOS FLAGS*/
-	char* flagHarcodeado = "rw";
+	char* flagHarcodeado = "rwc";
 	printf("%s\n",flagsAEnviar);
 	int tamanoFlags=sizeof(char)*strlen(flagHarcodeado);
 	send(socketKernel,&tamanoFlags,sizeof(int),0);
@@ -195,6 +195,8 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			printf("Descriptor:%d\n",descriptor_archivo);
 			send(socketKernel,&tamanio,sizeof(int),0);
 			printf("Tamano:%d\n",tamanio);
+
+
 			send(socketKernel,(char*)informacion,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			printf("Data:%s",(char*)informacion);
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);

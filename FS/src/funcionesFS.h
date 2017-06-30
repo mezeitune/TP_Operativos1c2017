@@ -262,26 +262,40 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo tengo que recibir o que onda
 	FILE *fp;
 
-	int tamanoArchivo;
+	int tamanoNombreArchivo;
 	int validado;
-	int offset;
-	int size;
+	int puntero;
 	int tamanoBuffer;
 
 
-	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-	void* nombreArchivo = malloc(tamanoArchivo);
-	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
-	recv(socket_cliente,&offset,sizeof(int),0);
-	//recv(socket_cliente,&size,sizeof(int),0);
+	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
+	printf("Tamano nombre archivo:%d\n",tamanoNombreArchivo);
+	char* nombreArchivo = malloc(tamanoNombreArchivo);
+
+	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
+	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
+	printf("Nombre archivo:%s\n",nombreArchivo);
+
+	recv(socket_cliente,&puntero,sizeof(int),0);
+	printf("Puntero:%d\n",puntero);
+
 	recv(socket_cliente,&tamanoBuffer,sizeof(int),0);
-	void* buffer = malloc(tamanoBuffer);
+	printf("Tamano de la data:%d\n",tamanoBuffer);
+	char* buffer = malloc(tamanoBuffer);
+
 	recv(socket_cliente,buffer,tamanoBuffer,0);
+	strcpy(buffer + tamanoBuffer,"\0");
+	printf("Data :%s\n",buffer);
+
+	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",nombreArchivo,buffer);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
+
+	printf("Toda la ruta :%s\n",nombreArchivoRecibido);
+	sleep(5);
 
 	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
 

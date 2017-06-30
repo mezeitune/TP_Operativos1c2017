@@ -101,11 +101,12 @@ int main() {
 	inicializarSockets();
 	inicializarSemaforos();
 
+	printf("Hola\n");
 	inicializarLog("/home/utnso/Log/logKernel.txt");
 	inicializarListas();
 	inicializarExitCodeArray();
 	handshakeMemoria();
-
+	printf("Hola\n");
 	obtenerVariablesCompartidasDeLaConfig();
 	obtenerSemaforosANSISOPDeLasConfigs();
 
@@ -118,7 +119,6 @@ int main() {
 
 
 	selectorConexiones();
-
 	return 0;
 }
 

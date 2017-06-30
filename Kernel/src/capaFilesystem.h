@@ -80,20 +80,18 @@ void abrirArchivo(int socket){
 		recv(socket,&pid,sizeof(int),0);
 
 		recv(socket,&tamanoDireccion,sizeof(int),0);
-		printf("Tamano direccion%d\n",tamanoDireccion);
 		direccion = malloc(tamanoDireccion);
 
 		recv(socket,direccion,tamanoDireccion,0);
 		strcpy(direccion + tamanoDireccion, "\0");
 
 		recv(socket,&tamanoFlags,sizeof(int),0);
-		printf("Tamano flags%d\n",tamanoFlags);
 		flags= malloc(tamanoFlags);
 
 		recv(socket,flags,tamanoFlags,0);
 		strcpy(flags + tamanoFlags, "\0");
 
-		log_info(loggerConPantalla,"Abriendo un archivo--->PID:%d--->Direccion:%d--->Permisos:%s",pid,direccion,flags);
+		log_info(loggerConPantalla,"Abriendo un archivo--->PID:%d--->Direccion:%s--->Permisos:%s",pid,direccion,flags);
 
 		int archivoExistente=validarArchivo(direccion);
 		
@@ -339,6 +337,9 @@ void escribirArchivo(int socket){
 					printf("Informacion a escribir:%s\n",informacion);
 
 
+					char comandoGuardarDatos = 'G';
+
+					send(socketFyleSys,&comandoGuardarDatos,sizeof(char),0);
 					send(socketFyleSys,&tamanoNombre,sizeof(int),0);
 					send(socketFyleSys,nombreArchivo,tamanoNombre,0);
 					send(socketFyleSys,&entrada->puntero,sizeof(int),0);
@@ -570,7 +571,7 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 		 entrada->fd = entradaTablaExistente->tablaProceso->elements_count + 3;
 		 entrada->flags = flags;
 		 entrada->globalFd = indiceEnTablaGlobal;
-
+		 printf("Agrego el indice :%d\n",entrada->globalFd);
 		 list_add(entradaTablaExistente->tablaProceso,entrada);
 		 list_add(listaTablasProcesos,entradaTablaExistente);
 

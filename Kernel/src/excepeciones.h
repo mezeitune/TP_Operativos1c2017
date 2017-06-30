@@ -7,7 +7,7 @@
 
 #ifndef EXCEPECIONES_H_
 #define EXCEPECIONES_H_
-#define CANTIDADEXCEPCIONES 14
+#define CANTIDADEXCEPCIONES 20
 #include "conexionConsola.h"
 #include "sockets.h"
 #include "listasAdministrativas.h"
