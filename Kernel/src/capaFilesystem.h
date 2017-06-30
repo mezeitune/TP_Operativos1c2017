@@ -81,7 +81,6 @@ void abrirArchivo(int socket){
 
 		recv(socket,&tamanoDireccion,sizeof(int),0);
 		direccion = malloc(tamanoDireccion);
-
 		recv(socket,direccion,tamanoDireccion,0);
 		strcpy(direccion + tamanoDireccion, "\0");
 
