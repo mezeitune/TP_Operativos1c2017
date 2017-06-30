@@ -289,7 +289,6 @@ void escribirArchivo(int socket){
 			return entrada->fd == fileDescriptor;
 		}
 
-		//verificar que la tabla de ese pid exista
 		int tablaProcesoExiste;
 		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
 		else tablaProcesoExiste = 0;
@@ -300,9 +299,7 @@ void escribirArchivo(int socket){
 			excepcionSinTablaArchivos(socket,pid);
 			free(informacion);
 			return;
-		}
-
-		if(tablaProcesoExiste){
+		}else{
 
 			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
 			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
@@ -327,16 +324,20 @@ void escribirArchivo(int socket){
 					free(informacion);
 					return;
 				}
-				char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
 
-					char** array_dir=string_n_split(direccion, 12, "/"); /*TODO WTF is this*/
-					  /* int d=0;
-					   while(!(array_dir[d] == NULL)){
-					      d++;
-					   }
-					   */
+					char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
+
+
+					char** array_dir=string_n_split(direccion, 12, "/");
 					char* nombreArchivo=array_dir[0];
 					int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+
+					printf("Tamano del nombre :%d\n",tamanoNombre);
+					printf("Nombre del archivo: %s\n",nombreArchivo);
+					printf("Puntero:%d\n",entrada->puntero);
+					printf("Tamano a escribir :%d\n",size);
+					printf("Informacion a escribir:%s\n",informacion);
+
 
 					send(socketFyleSys,&tamanoNombre,sizeof(int),0);
 					send(socketFyleSys,nombreArchivo,tamanoNombre,0);
@@ -344,10 +345,14 @@ void escribirArchivo(int socket){
 					send(socketFyleSys,&size,sizeof(int),0);
 					send(socketFyleSys,informacion,size,0);
 
+					list_add(entradaTablaProceso->tablaProceso,entrada);
+					list_add(listaTablasProcesos,entradaTablaProceso);
+
 					recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
 			}
 
 		}
+		printf("Resultado de ejecucion :%d\n",resultadoEjecucion);
 		send(socket,&resultadoEjecucion,sizeof(int),0);
 }
 
