@@ -234,7 +234,6 @@ void cerrarArchivo(int socket){
 		else tablaProcesoExiste = 0;
 
 
-
 		if(!tablaProcesoExiste){
 			excepcionSinTablaArchivos(socket,pid);
 			return;
@@ -297,7 +296,7 @@ void escribirArchivo(int socket){
 
 		int encontroFd;
 
-		if(!tablaProcesoExiste){ //El proceso nunca abrio un archivo /*TODO: Cambiar la excepcion*/
+		if(!tablaProcesoExiste){
 			excepcionSinTablaArchivos(socket,pid);
 			free(informacion);
 			return;
@@ -309,7 +308,7 @@ void escribirArchivo(int socket){
 			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
 			else encontroFd = 0;
 
-			if(!encontroFd){ /*TODO: El archivo nunca fue abierto*/
+			if(!encontroFd){
 				excepcionFileDescriptorNoAbierto(socket,pid);
 				return;
 			}
@@ -357,15 +356,14 @@ void leerArchivo(int socket){
 	int fileDescriptor;
 	int resultadoEjecucion;
 	int puntero;
-	int sizeInformacion;//vendria a ser un offset
+	int tamanioALeer;
 	char* informacion;
 		recv(socket,&pid,sizeof(int),0);
 		recv(socket,&fileDescriptor,sizeof(int),0);
 		recv(socket,&puntero,sizeof(int),0);
-		recv(socket,&sizeInformacion,sizeof(int),0);
-		log_info(loggerConPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d",pid,fileDescriptor,sizeInformacion);
+		recv(socket,&tamanioALeer,sizeof(int),0);
+		log_info(loggerConPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d",pid,fileDescriptor,tamanioALeer);
 
-		//verificar que la tabla de ese pid exista
 		_Bool verificaPid(t_indiceTablaProceso* entrada){
 						return entrada->pid == pid;
 					}
@@ -374,7 +372,6 @@ void leerArchivo(int socket){
 					return entrada->fd == fileDescriptor;
 				}
 
-				//verificar que la tabla de ese pid exista
 		int tablaProcesoExiste;
 		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
 		else tablaProcesoExiste = 0;
@@ -406,24 +403,35 @@ void leerArchivo(int socket){
 					return;
 				}
 
-				informacion = malloc(sizeInformacion);
-				/*TODO: El puntero no es el que me manda la CPU mas el desplazamiento que tengo en la entrada de la tabla del proceso?*/
-				//int punteroADondeVaALeer=tablaAVer->tablaArchivoPorProceso[i][3]+informacion;
+				char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
+				list_add(entradaTablaProceso->tablaProceso,entrada);
+				list_add(listaTablasProcesos,entradaTablaProceso);
+
+				char** array_dir=string_n_split(direccion, 12, "/");
+				char* nombreArchivo=array_dir[0];
+				int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
 
 
-				//TODO: sends a FS mandandole el puntero y el offset , y que me devuelva 0 si no encontro puntero , y 1
-				/*TODO: Esto es lo que me pide FS.*/
-				/*
-					recv(socket_cliente,&tamanoArchivo,sizeof(int),0); TODO: El tamano del archivo hay que mandarselo?
-					void* nombreArchivo = malloc(tamanoArchivo);
-					recv(socket_cliente,nombreArchivo,tamanoArchivo,0); TODO:Buscar el nombre del archivo
-					recv(socket_cliente,&offset,sizeof(int),0); TODO: esto seria, puntero + entrada->puntero
-					recv(socket_cliente,&size,sizeof(int),0);
-				*/
+
+				printf("Tamano del nombre del archivo:%d\n",tamanoNombre);
+				printf("Nombre del archivo:%s\n",nombreArchivo);
+				printf("Puntero :%d\n",puntero);
+				printf("Tamano a leer :%d\n",tamanioALeer);
 
 
+				send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+				send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+				send(socketFyleSys,&puntero,sizeof(int),0);	/*TODO: esto seria, puntero + entrada->puntero*/
+				send(socketFyleSys,&tamanioALeer,sizeof(int),0);
+
+
+				informacion = malloc(tamanioALeer);
 				recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
-				recv(socketFyleSys,informacion,sizeInformacion,0);
+				printf("Resultado de ejecucion : %d\n",resultadoEjecucion);
+
+				recv(socketFyleSys,informacion,tamanioALeer,0);
+				strcpy(informacion + tamanioALeer , "\0");
+				printf("Informacion leida :%s\n",informacion);
 				if(resultadoEjecucion<0){
 						excepcionFileSystem(socket,pid);
 						return;
@@ -432,7 +440,9 @@ void leerArchivo(int socket){
 
 			}
 			send(socket,&resultadoEjecucion,sizeof(int),0);
-			send(socket,informacion,sizeInformacion,0);
+			send(socket,informacion,tamanioALeer,0);
+
+			free(informacion);
 			log_info(loggerConPantalla,"Datos obtenidos--->PID:%d--->Datos:%s",pid,informacion);
 }
 
@@ -515,6 +525,7 @@ int crearArchivo(int socket_aceptado, char* direccion ){
 	return validado;
 
 }
+
 
 
 int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
