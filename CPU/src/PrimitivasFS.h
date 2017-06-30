@@ -42,6 +42,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	}
 	recv(socketKernel,&descriptor,sizeof(int),0);
 	descriptorArchivoAbierto = (t_descriptor_archivo) descriptor;
+	printf("Descriptor :%d\n",descriptorArchivoAbierto);
 	return descriptorArchivoAbierto;
 }
 

@@ -193,7 +193,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 		pthread_mutex_unlock(&mutexMemoria);
 			encolarProcesoListo(proceso);
 			aumentarGradoMultiprogramacion();
-			inicializarTablaProceso(proceso->pid);
+			//inicializarTablaProceso(proceso->pid);
 			sem_post(&sem_colaListos);
 	}
 	free(codigoPrograma);
@@ -292,14 +292,14 @@ void planificarCortoPlazo(){
 			list_add(listaCPU, cpuEnEjecucion);
 			pthread_mutex_unlock(&mutexListaCPU);
 
-			pthread_mutex_lock(&mutexColaEjecucion);
-			list_add(colaEjecucion, pcbListo);
-			pthread_mutex_unlock(&mutexColaEjecucion);
 
 			send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
 
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 			flagHuboAlgunProceso = 1;
+			pthread_mutex_lock(&mutexColaEjecucion);
+			list_add(colaEjecucion, pcbListo);
+			pthread_mutex_unlock(&mutexColaEjecucion);
 			log_info(loggerConPantalla,"Pcb encolado en Ejecucion--->PID:%d",pcbListo->pid);
 		}else{
 			printf("\nLo meti devuelta en listos\n");
@@ -565,18 +565,18 @@ void encolarProcesoListo(t_pcb *procesoListo){
 
 
 void gestionarFinalizacionProgramaEnCpu(int socketCPU){
-	int cpuFinalizada;
 	_Bool verificaCpu(t_cpu* cpu){
 				return (cpu->socket == socketCPU);
 	}
 
-			recv(socketCPU, &cpuFinalizada, sizeof(int),0);
 			t_pcb* proceso = recibirYDeserializarPcb(socketCPU);
+
 
 			proceso->exitCode = exitCodeArray[EXIT_OK]->value;
 			completarRafagas(proceso->pid,proceso->cantidadInstrucciones);
+			printf("Hola\n");
 			removerDeColaEjecucion(proceso->pid);
-
+			printf("Hola\n");
 			pthread_mutex_lock(&mutexListaEspera);
 			list_add(listaEspera,proceso);
 			pthread_mutex_unlock(&mutexListaEspera);

@@ -189,10 +189,8 @@ void finalizar (){
 		char comandoFinalizacion = 'T';
 
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
-		send(socketKernel, &cpuFinalizada, sizeof(int),0);
 
 		serializarPcbYEnviar(pcb_actual,socketKernel);
-		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 		free(pcb_actual);
