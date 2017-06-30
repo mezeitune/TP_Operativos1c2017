@@ -129,31 +129,32 @@ int verificarProcesoNoTerminado(int pid){
 }
 
 int verificarProcesoExistente(int pid){
+	int existe;
 	_Bool verificaPid(t_pcb* proceso){
 			return proceso->pid == pid;
 		}
 	pthread_mutex_lock(&mutexColaNuevos);
-	if(list_any_satisfy(colaNuevos,(void*)verificaPid)) return 1;
+	if(list_any_satisfy(colaNuevos,(void*)verificaPid)) existe= 1;
 	pthread_mutex_unlock(&mutexColaNuevos);
 
 	pthread_mutex_lock(&mutexColaListos);
-	if(list_any_satisfy(colaListos,(void*)verificaPid)) return 1;
+	if(list_any_satisfy(colaListos,(void*)verificaPid)) existe= 1;
 	pthread_mutex_unlock(&mutexColaListos);
 
 	pthread_mutex_lock(&mutexColaEjecucion);
-	if(list_any_satisfy(colaEjecucion,(void*)verificaPid)) return 1;
+	if(list_any_satisfy(colaEjecucion,(void*)verificaPid)) existe= 1;
 	pthread_mutex_unlock(&mutexColaEjecucion);
 
 	pthread_mutex_lock(&mutexColaBloqueados);
-	if(list_any_satisfy(colaBloqueados,(void*)verificaPid)) return 1;
+	if(list_any_satisfy(colaBloqueados,(void*)verificaPid)) existe= 1;
 	pthread_mutex_unlock(&mutexColaBloqueados);
 
 	pthread_mutex_lock(&mutexColaTerminados);
-	if(list_any_satisfy(colaTerminados,(void*)verificaPid)) return 1;
+	if(list_any_satisfy(colaTerminados,(void*)verificaPid)) existe= 1;
 	pthread_mutex_unlock(&mutexColaTerminados);
 
 
-	return -1;
+	return existe;
 }
 
 void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
