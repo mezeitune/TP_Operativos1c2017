@@ -66,7 +66,7 @@ void imprimirPorConsola(int socketAceptado);
 void gestionarFinalizarProgramaConsola(int socket);
 int buscarProcesoYTerminarlo(int pid);
 void gestionarCierreConsola(int socket);
-void gestionarCierreCpu(int socket);
+void gestionarCierreCpu(int socketCpu);
 void gestionarAlocar(int socket);
 void gestionarLiberar(int socket);
 //------InterruptHandler-----//
@@ -101,12 +101,10 @@ int main() {
 	inicializarSockets();
 	inicializarSemaforos();
 
-	printf("Hola\n");
 	inicializarLog("/home/utnso/Log/logKernel.txt");
 	inicializarListas();
 	inicializarExitCodeArray();
 	handshakeMemoria();
-	printf("Hola\n");
 	obtenerVariablesCompartidasDeLaConfig();
 	obtenerSemaforosANSISOPDeLasConfigs();
 
@@ -223,13 +221,18 @@ void handShakeCPU(int socketCPU){
 	send(socketCPU,&stackSize,sizeof(int),0);
 }
 
+
+
 void gestionarNuevaCPU(int socketCPU,int quantum){
+
 	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
 	send(socketCPU,&quantum,sizeof(int),0);
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
 	cpu->estado = OCIOSA;
+	cpu->socketInterrupciones = socketCPU +1;
+
 
 	pthread_mutex_lock(&mutexListaCPU);
 	list_add(listaCPU,cpu);
@@ -296,20 +299,23 @@ void interruptHandler(int socketAceptado,char orden){
 }
 
 
-void gestionarCierreCpu(int socket){
-
+void gestionarCierreCpu(int socketCpu){
+	log_warning(loggerConPantalla,"Gestionando cierre de CPU:%d",socketCpu);
 	_Bool verificaSocket(t_cpu* cpu){
-		return cpu->socket == socket;
+		return cpu->socket == socketCpu;
 	}
-
+int socketInterrupciones;
+t_cpu* cpu;
 	/*TODO: Saque el WAIT porque en el peor de los casos, el planificador se activara, vera que no hay cpus ociosas, y guardara devuelta el pcb en la cola de listos*/
 
 	pthread_mutex_lock(&mutexListaCPU);
-	list_remove_and_destroy_by_condition(listaCPU,(void*)verificaSocket,free);
+	cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
-	eliminarSocket(socket);
-
-	log_error(loggerConPantalla,"La CPU %d se ha cerrado",socket);
+	socketInterrupciones = cpu->socketInterrupciones;
+	eliminarSocket(socketCpu);
+	eliminarSocket(socketInterrupciones);
+	free(cpu);
+	log_error(loggerConPantalla,"La CPU %d se ha cerrado",socketCpu);
 }
 
 void imprimirPorConsola(socketAceptado){
@@ -563,11 +569,10 @@ int indiceEnArray(char** array, char* elemento){
 
 void selectorConexiones() {
 	log_info(loggerConPantalla,"Iniciando selector de conexiones");
-	int maximoFD;
 	int nuevoFD;
 	int socket;
 	char orden;
-
+	int maximoFD;
 	char remoteIP[INET6_ADDRSTRLEN];
 	socklen_t addrlen;
 	fd_set readFds;
@@ -590,6 +595,7 @@ void selectorConexiones() {
 					readFds = master;
 					pthread_mutex_unlock(&mutex_masterSet);
 
+
 					if (select(maximoFD + 1, &readFds, NULL, NULL, NULL) == -1) {
 						perror("select");
 						log_error(loggerSinPantalla,"Error en select\n");
@@ -603,20 +609,16 @@ void selectorConexiones() {
 										addrlen = sizeof remoteaddr;
 										nuevoFD = accept(socketServidor, (struct sockaddr *) &remoteaddr,&addrlen);
 
-										if (nuevoFD == -1) perror("accept");
+										pthread_mutex_lock(&mutex_masterSet);
+										FD_SET(nuevoFD, &master);
+										pthread_mutex_unlock(&mutex_masterSet);
 
-										else {
-											pthread_mutex_lock(&mutex_masterSet);
-											FD_SET(nuevoFD, &master);
-											pthread_mutex_unlock(&mutex_masterSet);
-
-											if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
-
-											log_info(loggerConPantalla,"Selectserver: nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
-										}
+										if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
+										log_info(loggerConPantalla,"Nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 									}
-									else if(socket != 0) {
+									else {
 											recv(socket, &orden, sizeof(char), 0);
+
 											connectionHandler(socket, orden);
 									}
 							}

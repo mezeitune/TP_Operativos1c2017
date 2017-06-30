@@ -27,6 +27,7 @@ pthread_mutex_t mutex_config_gradoMultiProgramacion;
 pthread_mutex_t mutex_gradoMultiProgramacion;
 pthread_mutex_t mutexListaEspera;
 pthread_mutex_t mutex_masterSet;
+pthread_mutex_t mutexMaximoFd;
 pthread_mutex_t mutexListaContable;
 pthread_mutex_t mutexListaCodigo;
 pthread_mutex_t mutexListaSemaforos;
@@ -65,6 +66,7 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutex_config_gradoMultiProgramacion,NULL);
 		pthread_mutex_init(&mutex_gradoMultiProgramacion,NULL);
 		pthread_mutex_init(&mutex_masterSet,NULL);
+		pthread_mutex_init(&mutexMaximoFd,NULL);
 		pthread_mutex_init(&mutexListaContable,NULL);
 		pthread_mutex_init(&mutexNuevoProceso,NULL);
 		pthread_mutex_init(&mutexListaCodigo,NULL);

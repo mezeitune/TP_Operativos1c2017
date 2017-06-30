@@ -5,8 +5,9 @@
 #include "ManejoPCB.h"
 #include "PrimitivasFS.h"
 #include "LogsConfigsSignals.h"
+void* atenderInterrupciones();
 
-
+pthread_t lineaInterrupciones;
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
@@ -14,6 +15,7 @@ int main(void) {
 	inicializarLog("/home/utnso/Log/logCPU.txt");
 
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
+	socketInterrupciones = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
@@ -24,6 +26,7 @@ int main(void) {
 	enviarAlKernelPedidoDeNuevoProceso(socketKernel);
 	recibirYMostrarAlgortimoDePlanificacion(socketKernel);
 
+	pthread_create(&lineaInterrupciones,NULL,atenderInterrupciones,NULL);
 	esperarPCB();
 
 	return 0;
@@ -31,7 +34,16 @@ int main(void) {
 
 
 
+void* atenderInterrupciones(){
+	char interrupcion;
 
+	while(1){
+	recv(socketInterrupciones,&interrupcion,sizeof(char),0);
+
+	//if(interrupcion == 'F') ;
+
+	}
+}
 
 
 
@@ -42,12 +54,17 @@ int main(void) {
 void CerrarPorSignal(){
 	char comandoInterruptHandler='X';
 	char comandoCierreCpu='C';
-
+	char comandoCerrarMemoria = 'X';
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
-	send(socketMemoria,&comandoInterruptHandler,sizeof(char),0);
-	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
 
+
+	shutdown(socketKernel,1);
+	shutdown(socketInterrupciones,1);
+	close(socketKernel);
+	close(socketInterrupciones);
+	close(socketMemoria);
 	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
 	free(pcb_actual);
 	exit(1);

@@ -78,6 +78,7 @@ char* ipKernel;
 //------------------Sockets Globales-------//
 int socketMemoria;
 int socketKernel;
+int socketInterrupciones;
 //-----------------------------------------//
 
 t_pcb *pcb_actual;

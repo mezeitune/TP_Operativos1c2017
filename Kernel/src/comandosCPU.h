@@ -18,6 +18,7 @@ typedef struct CPU {
 	int estado;
 	int pid;
 	int socket;
+	int socketInterrupciones;
 }t_cpu;
 
 
