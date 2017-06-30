@@ -177,12 +177,12 @@ void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
 	pthread_mutex_unlock(&mutexListaContable);
 
 	printf("Tabla de archivos del proceso\n");
-	printf("File Descriptor\tFlags\tGlobal File Descriptor\tCursos\n");
+	printf("File Descriptor\tFlags\tIndice Global\tCursor\n");
 	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
 	t_entradaTablaProceso* entrada;
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		printf("%d\t%s\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
+		printf("\t%d\t%s\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }

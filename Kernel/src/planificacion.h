@@ -574,9 +574,7 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 
 			proceso->exitCode = exitCodeArray[EXIT_OK]->value;
 			completarRafagas(proceso->pid,proceso->cantidadInstrucciones);
-			printf("Hola\n");
 			removerDeColaEjecucion(proceso->pid);
-			printf("Hola\n");
 			pthread_mutex_lock(&mutexListaEspera);
 			list_add(listaEspera,proceso);
 			pthread_mutex_unlock(&mutexListaEspera);

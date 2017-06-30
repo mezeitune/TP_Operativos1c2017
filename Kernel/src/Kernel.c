@@ -131,7 +131,8 @@ void signalHandler(int signum){
 
 void cerrarTodo(){
 	log_error(loggerConPantalla,"Iniciando rutina de cierre");
-
+	char comandoSalir = 'X';
+	send(socketFyleSys,&comandoSalir,sizeof(char),0);
 	/*Limpiar los pcbs*/
 	/*Recibir todos los pcb en ejecucion*/
 	/*Avisar a Memoria que se desconecta*/
@@ -210,7 +211,7 @@ t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
 	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP");
 	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
 	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
-	codigoPrograma->codigo = malloc(codigoPrograma->size);
+	codigoPrograma->codigo = malloc(codigoPrograma->size + sizeof(char));
 	recv(socketHiloConsola,codigoPrograma->codigo,codigoPrograma->size,0);
 	strcpy(codigoPrograma->codigo + codigoPrograma->size , "\0");
 	codigoPrograma->socketHiloConsola=socketHiloConsola;

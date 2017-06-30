@@ -261,10 +261,11 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar){
 	pthread_mutex_unlock(&mutexColaTerminados);
 }
 void finalizarHiloPrograma(int pid){
+
 	int size=sizeof(char)* strlen("Finalizar");
-	char* mensaje = malloc(size);
+	char* mensaje = malloc(size * sizeof(char));
 	t_consola* consola = malloc(sizeof(t_consola));
-	strcpy(mensaje,"Finalizar");
+	mensaje = "Finalizar";
 	_Bool verificaPid(t_consola* consolathread){
 			return (consolathread->pid == pid);
 	}
@@ -275,7 +276,7 @@ void finalizarHiloPrograma(int pid){
 		informarConsola(consola->socketHiloPrograma,mensaje,size);
 		eliminarSocket(consola->socketHiloPrograma);
 
-	free(mensaje);
+	//free(mensaje);TODO: Ver este free
 	free(consola);
 }
 

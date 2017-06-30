@@ -77,15 +77,17 @@ void abrirArchivo(int socket){
 		int indiceEnTablaGlobal;
 		int resultadoEjecucion;
 
+
 		recv(socket,&pid,sizeof(int),0);
 
 		recv(socket,&tamanoDireccion,sizeof(int),0);
-		direccion = malloc(tamanoDireccion);
+
+		direccion = malloc(tamanoDireccion*sizeof(char) + sizeof(char));
 		recv(socket,direccion,tamanoDireccion,0);
 		strcpy(direccion + tamanoDireccion, "\0");
 
 		recv(socket,&tamanoFlags,sizeof(int),0);
-		flags= malloc(tamanoFlags);
+		flags= malloc(tamanoFlags*sizeof(char)+sizeof(char));
 
 		recv(socket,flags,tamanoFlags,0);
 		strcpy(flags + tamanoFlags, "\0");
@@ -140,6 +142,7 @@ void abrirArchivo(int socket){
 		 send(socket,&resultadoEjecucion,sizeof(int),0);
 		 send(socket,&fileDescriptor,sizeof(int),0);
 		 printf("File descriptor:%d\n",fileDescriptor);
+
 		log_info(loggerConPantalla,"Finalizo la apertura del archivo");
 }
 
@@ -704,7 +707,7 @@ void inicializarTablaProceso(int pid){
 int validarArchivo(char* ruta){
 	log_info(loggerConPantalla,"Validando que el archivo exista--->Ruta:%s",ruta);
 	char ordenValidarArchivo = 'V';
-	int tamano=sizeof(int)*strlen(ruta);
+	int tamano=sizeof(char)*strlen(ruta);
 	int validado;
 	send(socketFyleSys,&ordenValidarArchivo,sizeof(char),0);
 	send(socketFyleSys,&tamano,sizeof(int),0);

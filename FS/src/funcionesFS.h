@@ -22,7 +22,7 @@ void validarArchivoFunction(int socket_cliente){
 	int validado;
 
 	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-    void* nombreArchivo = malloc(tamanoArchivo);
+    char* nombreArchivo = malloc(tamanoArchivo*sizeof(char) + sizeof(char));
     recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
     strcpy(nombreArchivo + tamanoArchivo,"\0");
     log_info(loggerConPantalla,"Validando existencia de archivo--->Nombre:%s",nombreArchivo);
