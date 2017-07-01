@@ -284,7 +284,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 	recv(socket_cliente,&tamanoBuffer,sizeof(int),0);
 	printf("Tamano de la data:%d\n",tamanoBuffer);
-	char* buffer = malloc(tamanoBuffer);
+	char* buffer = malloc(tamanoBuffer + sizeof(char));
 
 	recv(socket_cliente,buffer,tamanoBuffer,0);
 	strcpy(buffer + tamanoBuffer,"\0");
@@ -307,7 +307,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 
 		int d=0;
-		int cantidadBloques = 1;
+		int cantidadBloques = 0;
 		while(!(arrayBloques[d] == NULL)){
 			printf("%s \n",arrayBloques[d]);
 			d++;
@@ -320,7 +320,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 		char *nombreBloque = string_new();
 		string_append(&nombreBloque, puntoMontaje);
-		string_append(&nombreBloque, "Bloque/");
+		string_append(&nombreBloque, "Bloques/");
 		string_append(&nombreBloque, arrayBloques[d]);
 		string_append(&nombreBloque, ".bin");
 		printf("Nombre del ultimo bloque: %s\n",nombreBloque);
@@ -331,21 +331,19 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		printf("Cantidad restante :%d\n",cantRestante);
 		if(tamanoBuffer<cantRestante){
 			adx_store_data(nombreBloque,buffer);
+			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",nombreArchivo,buffer);
 			//send diciendo que todo esta bien
 		}else{
 			int cuantosBloquesMasNecesito=tamanoBuffer/tamanioBloques;
-			printf("PASO POR ACAAAAAAAAAA3 \n");
 			if((tamanoBuffer%tamanioBloques)>0){
 				cuantosBloquesMasNecesito++;
 			}
-			printf("PASO POR ACAAAAAAAAAA3 \n");
 			//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
 			int j;
 			int r=0;
 			int bloquesEncontrados=0;
 			int bloqs[cuantosBloquesMasNecesito];
 			for(j=0;j<cantidadBloques;j++){
-				printf("PASO POR ACAAAAAAAAAA3 \n");
 		        bool bit = bitarray_test_bit(bitarray,j);
 		        if(bit==0){
 		        	//guardar en array bloqs los bloques que voy encontrando
@@ -369,7 +367,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 					char *nombreBloque = string_new();
 					string_append(&nombreBloque, puntoMontaje);
-					string_append(&nombreBloque, "Bloque/");
+					string_append(&nombreBloque, "Bloques/");
 					char* numerito=string_itoa(bloqs[s]);
 					string_append(&nombreBloque, numerito);
 					string_append(&nombreBloque, ".bin");
@@ -430,26 +428,25 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 				validado=1;
 				send(socket_cliente,&validado,sizeof(int),0);
+				return;
 				//y enviamos un buen send
 
 			}else{
 				validado=0;
 				send(socket_cliente,&validado,sizeof(int),0);
+				return;
 				//send con error
 			}
 
 
 
 		}
-		validado=1;
-		send(socket_cliente,&validado,sizeof(int),0);
-
-	} else {
+	validado=1;
+	send(socket_cliente,&validado,sizeof(int),0);
+	}else{
 		validado=0;
-		send(socket_cliente,&validado,sizeof(int),0);
-		//send diciendo que el archivo no existe
+		send(socket_cliente,&validado,sizeof(int),0); //El archivo no existe
 	}
-
 
 }
 

@@ -193,7 +193,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 		pthread_mutex_unlock(&mutexMemoria);
 			encolarProcesoListo(proceso);
 			aumentarGradoMultiprogramacion();
-			//inicializarTablaProceso(proceso->pid);
+			inicializarTablaProceso(proceso->pid);
 			sem_post(&sem_colaListos);
 	}
 	free(codigoPrograma);
