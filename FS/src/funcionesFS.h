@@ -187,38 +187,52 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
 
-	sleep(5);
 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
 		fp = fopen(nombreArchivoRecibido, "r");
+		printf("Abri el archivo\n");
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+		printf("Obtuve el array de bloques\n");
 		   int d=0;
 		   int u=1;
 		   int offYSize=cursor+size;
-		   int cantidadBloquesQueNecesito=size/tamanioBloques;
-		   if((size%tamanioBloques)!=0){
+		   printf("size:%d\n",size);
+		   printf("Tamanio bloque:%d\n",tamanioBloques);
+
+		   int cantidadBloquesQueNecesito; /*TODO: Emprolijar*/
+		   if((size%tamanioBloques) == 0) cantidadBloquesQueNecesito = 1;
+		   if((size%tamanioBloques) < tamanioBloques) cantidadBloquesQueNecesito = 1;
+		   if((size%tamanioBloques) > tamanioBloques){
+			   cantidadBloquesQueNecesito = size / tamanioBloques;
+		   }
+/*		   if((size%tamanioBloques)!=0){
 				cantidadBloquesQueNecesito++;
 			}
+*/
+		   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesQueNecesito);
 
 		   char* infoTraidaDeLosArchivos = string_new();
 		   int hizoLoQueNecesita=0;
 		   while(!(arrayBloques[d] == NULL)){
-
+			   printf("Leyendo data del bloque:%s\n",arrayBloques[d]);
 			   if(cursor<=(tamanioBloques*u)){
+				   printf("Entre al if\n");
 				   int t;
 				   int inicial=d;
-				   for(t=inicial;t<((inicial+cantidadBloquesQueNecesito)+1);t++){
+				   for(t=inicial;t<((inicial+cantidadBloquesQueNecesito));t++){ /*TODO:t<((inicial+cantidadBloquesQueNecesito)+1) Estaba asi, pero rompia mati*/
+					   printf("Entre al for\n");
 					   hizoLoQueNecesita=1;
 					   int indice=atoi(arrayBloques[t]);
 						char *nombreBloque = string_new();
 						string_append(&nombreBloque, puntoMontaje);
-						string_append(&nombreBloque, "Bloque/");
+						string_append(&nombreBloque, "Bloques/");
 						string_append(&nombreBloque, arrayBloques[t]);
 						string_append(&nombreBloque, ".bin");
 
 						FILE *bloque=fopen(nombreBloque, "r");
+						printf("Abri el bloque\n");
 						if(t==(d+cantidadBloquesQueNecesito)){
 							int sizeQuePido=size-cursor;
 							int offsetQuePido=0;
@@ -249,7 +263,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		   }
 		//printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
 
-
+		   printf("La info leida es:%s\n",infoTraidaDeLosArchivos);
 		//si todod ok
 		validado=1;
 		send(socket_cliente,&validado,sizeof(int),0);

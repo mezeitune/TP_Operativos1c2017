@@ -141,7 +141,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	char comandoCapaFS = 'F';
 	char comandoLeerArchivo = 'O';
 	int resultadoEjecucion ;
-	int tamanioInfoLeida;
+	char* infoLeida = malloc(tamanio + sizeof(char));
 
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoLeerArchivo,sizeof(char),0);
@@ -153,15 +153,12 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	send(socketKernel,&tamanio,sizeof(int),0); //tamanio de la instruccion en bytes que quiero leer
 	printf("Tamano a leer:%d\n",tamanio);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+	printf("Resultado de ejecucion:%d\n",resultadoEjecucion);
 
-
-	if(resultadoEjecucion==1){
-		recv(socketKernel,&tamanioInfoLeida,sizeof(int),0); /*TODO: No hace falta, ya es el tamano que recibis por parametro*/
-		void* infoLeida = malloc(tamanioInfoLeida);
-		recv(socketKernel,infoLeida,tamanioInfoLeida,0);
-		char *infoLeidaChar = string_new();
-		string_append(&infoLeidaChar, infoLeida);
-		log_info(loggerConPantalla,"La informacion leida es %s",infoLeidaChar);
+	if(resultadoEjecucion>0){
+		recv(socketKernel,infoLeida,tamanio,0);
+		strcpy(infoLeida + tamanio , "\0");
+		log_info(loggerConPantalla,"La informacion leida es %s",infoLeida); /*TODO: Falta almacenarla en la posicion de memoria dada por la variable "informacion"*/
 	}else{
 		log_error(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
 		expropiarPorKernel();
