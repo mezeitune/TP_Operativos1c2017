@@ -231,7 +231,7 @@ void gestionarNuevaCPU(int socketCPU,int quantum){
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
 	cpu->estado = OCIOSA;
-	//cpu->socketInterrupciones = socketCPU +1;
+	cpu->socketInterrupciones = socketCPU +1;
 
 
 	pthread_mutex_lock(&mutexListaCPU);
@@ -311,9 +311,9 @@ t_cpu* cpu;
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
-	//socketInterrupciones = cpu->socketInterrupciones;
+	socketInterrupciones = cpu->socketInterrupciones;
 	eliminarSocket(socketCpu);
-	//eliminarSocket(socketInterrupciones);
+	eliminarSocket(socketInterrupciones);
 	free(cpu);
 	log_error(loggerConPantalla,"La CPU %d se ha cerrado",socketCpu);
 }
