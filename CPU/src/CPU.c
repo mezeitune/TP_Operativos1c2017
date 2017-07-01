@@ -129,7 +129,7 @@ void expropiarPorRR(){
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
-
+	free(pcb_actual);
 	esperarPCB();
 }
 void expropiarPorRRYCerrar(){
@@ -138,6 +138,7 @@ void expropiarPorRRYCerrar(){
 	//send(socketKernel, &cpuFinalizada, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+	free(pcb_actual);
 	return;
 }
 //------------------------------EXPROPIAR PROCESOS--------------------------------------
