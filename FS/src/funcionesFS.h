@@ -75,6 +75,7 @@ void crearArchivoFunction(int socket_cliente){
         if(bit==0){
         	encontroUnBloque=1;
         	bloqueEncontrado=j;
+        	break;
         }
 	}
 
@@ -82,7 +83,9 @@ void crearArchivoFunction(int socket_cliente){
 		fp = fopen(nombreArchivoRecibido, "ab+");
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
+
 		bitarray_set_bit(bitarray,bloqueEncontrado);
+
 		char *dataAPonerEnFile = string_new();
 		string_append(&dataAPonerEnFile, "TAMANIO=");
 		string_append(&dataAPonerEnFile, tamanioBloquesEnChar);
