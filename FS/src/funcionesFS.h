@@ -88,7 +88,7 @@ void crearArchivoFunction(int socket_cliente){
 
 		char *dataAPonerEnFile = string_new();
 		string_append(&dataAPonerEnFile, "TAMANIO=");
-		string_append(&dataAPonerEnFile, tamanioBloquesEnChar);
+		string_append(&dataAPonerEnFile, "0");
 		string_append(&dataAPonerEnFile,"\n");
 		string_append(&dataAPonerEnFile, "BLOQUES=[");
 		char* numerito=string_itoa(bloqueEncontrado);
@@ -298,39 +298,54 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 	string_append(&nombreArchivoRecibido, nombreArchivo);
 
 	printf("Toda la ruta :%s\n",nombreArchivoRecibido);
-	sleep(5);
+
 
 	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+
+
 		int d=0;
+		int cantidadBloques = 1;
 		while(!(arrayBloques[d] == NULL)){
+			printf("%s \n",arrayBloques[d]);
 			d++;
+			cantidadBloques ++;
 		}
+		d--;
+
+		printf("Cantidad de bloques :%d\n",cantidadBloques);
+
+
 		char *nombreBloque = string_new();
 		string_append(&nombreBloque, puntoMontaje);
 		string_append(&nombreBloque, "Bloque/");
 		string_append(&nombreBloque, arrayBloques[d]);
 		string_append(&nombreBloque, ".bin");
+		printf("Nombre del ultimo bloque: %s\n",nombreBloque);
 		//ver de asignar mas bloques en caso de ser necesario
-		int cantRestante=tamanioBloques-cantBytesFile(nombreBloque);
+		printf("Tamano del archivo : %d\n",atoi(obtTamanioArchivo(nombreArchivoRecibido)));
+		printf("Tamano del bloque: %d\n",tamanioBloques);
+		int cantRestante=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloques-1)*tamanioBloques));
+		printf("Cantidad restante :%d\n",cantRestante);
 		if(tamanoBuffer<cantRestante){
 			adx_store_data(nombreBloque,buffer);
-
 			//send diciendo que todo esta bien
 		}else{
 			int cuantosBloquesMasNecesito=tamanoBuffer/tamanioBloques;
+			printf("PASO POR ACAAAAAAAAAA3 \n");
 			if((tamanoBuffer%tamanioBloques)>0){
 				cuantosBloquesMasNecesito++;
 			}
+			printf("PASO POR ACAAAAAAAAAA3 \n");
 			//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
 			int j;
 			int r=0;
 			int bloquesEncontrados=0;
 			int bloqs[cuantosBloquesMasNecesito];
 			for(j=0;j<cantidadBloques;j++){
-
+				printf("PASO POR ACAAAAAAAAAA3 \n");
 		        bool bit = bitarray_test_bit(bitarray,j);
 		        if(bit==0){
 		        	//guardar en array bloqs los bloques que voy encontrando
@@ -342,6 +357,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		        	}
 		        	bloquesEncontrados++;
 		        }
+		        printf("PASO POR ACAAAAAAAAAA3 \n");
 			}
 
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
@@ -425,10 +441,8 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 
 		}
-
-
-
-
+		validado=1;
+		send(socket_cliente,&validado,sizeof(int),0);
 
 	} else {
 		validado=0;

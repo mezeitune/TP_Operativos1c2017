@@ -96,6 +96,7 @@ char *readFile(char *fileName)
 
 void adx_store_data(const char *filepath, const char *data)
 {
+	printf("Almacenando data en bloque :%s\n",filepath);
     FILE *fp = fopen(filepath, "ab");
     if (fp != NULL)
     {
@@ -105,22 +106,11 @@ void adx_store_data(const char *filepath, const char *data)
 }
 
 
-int cantBytesFile(const char *filepath){
-	FILE *fp = fopen(filepath, "r");
-	int count=0;
-	/* a holder for each character (stored as int) */
-	int c;
+int cantBytesFile(char *filepath){
 
-	/* for as long as we can get characters... */
-	while((c=fgetc(fp))) {
 
-	  /* break if end of file */
-	  if(c == EOF) break;
+	t_config* configuracion_FS = config_create(filepath);
 
-	  /* otherwise add one to the count of that particular character */
-	  count++;
-	}
-
-	return count;
+	return atoi(config_get_string_value(configuracion_FS, "TAMANIO"));
 }
 

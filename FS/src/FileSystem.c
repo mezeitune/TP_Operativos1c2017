@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <commons/bitarray.h>
+#include <commons/collections/list.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/io.h>
@@ -39,7 +40,12 @@
 
 //----------------------------//
 
+typedef struct {
+	char* path;
+	int sizeActual;
+}t_archivo;
 
+t_list* listaArchivos;
 
 int socket_servidor;
 void selectorConexiones();
