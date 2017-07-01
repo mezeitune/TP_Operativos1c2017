@@ -168,21 +168,26 @@ void borrarArchivoFunction(int socket_cliente){
 void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo tenog que recibir o que onda
 	FILE *fp;
 
-	int tamanoArchivo;
+	int tamanoNombreArchivo;
 	int validado;
-	int offset;
+	int cursor;
 	int size;
 
-	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-	void* nombreArchivo = malloc(tamanoArchivo);
-	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
-	recv(socket_cliente,&offset,sizeof(int),0);
+	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
+	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
+	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
+	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
+	recv(socket_cliente,&cursor,sizeof(int),0);
 	recv(socket_cliente,&size,sizeof(int),0);
+
+	log_info(loggerConPantalla,"Obteniendo datos--->Archivo:%s--->Cursor:%d--->Size:%d",nombreArchivo,cursor,size);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
+
+	sleep(5);
 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
@@ -191,7 +196,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 		   int d=0;
 		   int u=1;
-		   int offYSize=offset+size;
+		   int offYSize=cursor+size;
 		   int cantidadBloquesQueNecesito=size/tamanioBloques;
 		   if((size%tamanioBloques)!=0){
 				cantidadBloquesQueNecesito++;
@@ -201,7 +206,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		   int hizoLoQueNecesita=0;
 		   while(!(arrayBloques[d] == NULL)){
 
-			   if(offset<=(tamanioBloques*u)){
+			   if(cursor<=(tamanioBloques*u)){
 				   int t;
 				   int inicial=d;
 				   for(t=inicial;t<((inicial+cantidadBloquesQueNecesito)+1);t++){
@@ -215,13 +220,13 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 
 						FILE *bloque=fopen(nombreBloque, "r");
 						if(t==(d+cantidadBloquesQueNecesito)){
-							int sizeQuePido=size-offset;
+							int sizeQuePido=size-cursor;
 							int offsetQuePido=0;
 							char* data=obtenerBytesDeUnArchivo(fp,offsetQuePido,sizeQuePido);
 							string_append(&infoTraidaDeLosArchivos,data);
 						}else if(t==inicial){
 
-							int offsetQuePido=offset-(tamanioBloques*u);
+							int offsetQuePido=cursor-(tamanioBloques*u);
 							int sizeQuePido=tamanioBloques-offsetQuePido;
 							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
 
@@ -247,13 +252,11 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 
 		//si todod ok
 		validado=1;
-		//send diciendo que todo esta ok
-		//y mandando la info obtenida
-		int tamanoAMandar=sizeof(int)*strlen(infoTraidaDeLosArchivos);
-
+		send(socket_cliente,&validado,sizeof(int),0);
+		send(socket_cliente,infoTraidaDeLosArchivos,size,0);
 	} else {
-		validado=0;
-		//send diciendo que el archivo no existe
+		validado=-1;
+		send(socket_cliente,&validado,sizeof(int),0); //El archivo no existe
 	}
 
 

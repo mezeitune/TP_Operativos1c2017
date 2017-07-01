@@ -359,15 +359,14 @@ void leerArchivo(int socket){
 	int pid;
 	int fileDescriptor;
 	int resultadoEjecucion;
-	int puntero;
 	int tamanioALeer;
 	char* informacion;
+	char comandoLeer = 'O';
 
 	recv(socket,&pid,sizeof(int),0);
 	recv(socket,&fileDescriptor,sizeof(int),0);
-	recv(socket,&puntero,sizeof(int),0);
 	recv(socket,&tamanioALeer,sizeof(int),0);
-	log_info(loggerConPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Puntero:%d--->Bytes:%d",pid,fileDescriptor,puntero,tamanioALeer);
+	log_info(loggerConPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d",pid,fileDescriptor,tamanioALeer);
 
 		_Bool verificaPid(t_indiceTablaProceso* entrada){
 						return entrada->pid == pid;
@@ -405,8 +404,8 @@ void leerArchivo(int socket){
 		}
 
 		char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
-		list_add(entradaTablaProceso->tablaProceso,entrada);
-		list_add(listaTablasProcesos,entradaTablaProceso);
+
+		printf("Direccion:%s\n",direccion);
 
 		char** array_dir=string_n_split(direccion, 12, "/");
 		char* nombreArchivo=array_dir[0];
@@ -416,28 +415,32 @@ void leerArchivo(int socket){
 
 		printf("Tamano del nombre del archivo:%d\n",tamanoNombre);
 		printf("Nombre del archivo:%s\n",nombreArchivo);
-		printf("Puntero :%d\n",puntero);
+		printf("Puntero :%d\n",entrada->puntero);
 		printf("Tamano a leer :%d\n",tamanioALeer);
 
 
+
+		send(socketFyleSys,&comandoLeer,sizeof(char),0);
 		send(socketFyleSys,&tamanoNombre,sizeof(int),0);
 		send(socketFyleSys,nombreArchivo,tamanoNombre,0);
-		send(socketFyleSys,&puntero,sizeof(int),0);
+		send(socketFyleSys,&entrada->puntero,sizeof(int),0);
 		send(socketFyleSys,&tamanioALeer,sizeof(int),0);
 
+		list_add(entradaTablaProceso->tablaProceso,entrada);
+		list_add(listaTablasProcesos,entradaTablaProceso);
 
-		informacion = malloc(tamanioALeer + sizeof(char));
 
 		recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
 		printf("Resultado de ejecucion : %d\n",resultadoEjecucion);
 
+		if(resultadoEjecucion<0){
+					excepcionFileSystem(socket,pid);
+					return;
+					}
+		informacion = malloc(tamanioALeer + sizeof(char));
 		recv(socketFyleSys,informacion,tamanioALeer,0);
 		strcpy(informacion + tamanioALeer , "\0");
 		printf("Informacion leida :%s\n",informacion);
-		if(resultadoEjecucion<0){
-				excepcionFileSystem(socket,pid);
-				return;
-			}
 
 	send(socket,&resultadoEjecucion,sizeof(int),0);
 	send(socket,informacion,tamanioALeer,0);
@@ -565,6 +568,7 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 		 entrada->fd = entradaTablaExistente->tablaProceso->elements_count + 3;
 		 entrada->flags = flags;
 		 entrada->globalFd = indiceEnTablaGlobal;
+		 entrada->puntero = 0;
 		 printf("Agrego el indice :%d\n",entrada->globalFd);
 		 list_add(entradaTablaExistente->tablaProceso,entrada);
 		 list_add(listaTablasProcesos,entradaTablaExistente);//la vuelvo a agregar a la lista
