@@ -623,7 +623,8 @@ void borrarProgramDeStructAdms(int pid)
 
 int buscarFrameDePaginaDeProceso(int pid, int pagina)
 {
-	int i = funcionHash(pid,pagina);
+	int valorHash = funcionHash(pid,pagina);
+	int i = valorHash;
 	int desplazamiento = sizeof(struct_adm_memoria);
 	struct_adm_memoria aux;
 	while(i<marcos)
@@ -635,8 +636,8 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 		}
 		i++;
 	}
-	i = 0;
-	while(i<funcionHash(pid,pagina))
+	i = sizeStructsAdmMemoria;
+	while(i<valorHash)
 	{
 		memcpy(&aux, bloque_Memoria + i*desplazamiento,sizeof(struct_adm_memoria));
 		if(aux.pid == pid && aux.num_pag == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
