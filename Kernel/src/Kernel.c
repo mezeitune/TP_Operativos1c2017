@@ -231,7 +231,7 @@ void gestionarNuevaCPU(int socketCPU,int quantum){
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
 	cpu->estado = OCIOSA;
-	cpu->socketInterrupciones = socketCPU +1;
+	//cpu->socketInterrupciones = socketCPU +1;
 
 
 	pthread_mutex_lock(&mutexListaCPU);
@@ -248,14 +248,14 @@ void gestionarRRFinQuantum(int socket){
 		return (unaCpu->socket == socket);
 	}
 
-	//recv(socket,&cpuFinalizada, sizeof(int),0);
+	recv(socket,&cpuFinalizada, sizeof(int),0);
 	recv(socket,&cantidadDeRafagas,sizeof(int),0);
 	pcb = recibirYDeserializarPcb(socket);
 	cambiarEstadoCpu(socket,OCIOSA);
 	actualizarRafagas(pcb->pid,cantidadDeRafagas);
 	removerDeColaEjecucion(pcb->pid);
 	agregarAFinQuantum(pcb);
-	sem_post(&sem_CPU);
+	if(cpuFinalizada != 0) sem_post(&sem_CPU);
 
 
 }
@@ -308,12 +308,14 @@ int socketInterrupciones;
 t_cpu* cpu;
 	/*TODO: Saque el WAIT porque en el peor de los casos, el planificador se activara, vera que no hay cpus ociosas, y guardara devuelta el pcb en la cola de listos*/
 
+
+
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
-	socketInterrupciones = cpu->socketInterrupciones;
+//	socketInterrupciones = cpu->socketInterrupciones;
 	eliminarSocket(socketCpu);
-	eliminarSocket(socketInterrupciones);
+	//eliminarSocket(socketInterrupciones);
 	free(cpu);
 	log_error(loggerConPantalla,"La CPU %d se ha cerrado",socketCpu);
 }

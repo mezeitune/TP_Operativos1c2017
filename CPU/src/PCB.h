@@ -207,12 +207,12 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 		}
 	//log_info(loggerConPantalla, "Indice de Codigo deserializado");
 
-	memcpy(&pcb->indiceEtiquetasSize,pcbSerializado, sizeof(t_size));
-	pcbSerializado += sizeof(t_size);
-	pcb->indiceEtiquetas = malloc(pcb->indiceEtiquetasSize*sizeof(char));
-	memcpy(pcb->indiceEtiquetas, pcbSerializado, pcb->indiceEtiquetasSize*sizeof(char));
-	strcpy(pcb->indiceEtiquetas + pcb->indiceEtiquetasSize*sizeof(char),"\0");
-	pcbSerializado += pcb->indiceEtiquetasSize*sizeof(char);
+		memcpy(&pcb->indiceEtiquetasSize,pcbSerializado, sizeof(t_size));
+		pcbSerializado += sizeof(t_size);
+		pcb->indiceEtiquetas = malloc(pcb->indiceEtiquetasSize*sizeof(char) + sizeof(char));
+		memcpy(pcb->indiceEtiquetas, pcbSerializado, pcb->indiceEtiquetasSize*sizeof(char));
+		strcpy(pcb->indiceEtiquetas + pcb->indiceEtiquetasSize*sizeof(char),"\0");
+		pcbSerializado += pcb->indiceEtiquetasSize*sizeof(char);
 
 	pcb->indiceStack=list_create();
 

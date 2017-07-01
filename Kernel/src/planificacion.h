@@ -274,8 +274,8 @@ void planificarCortoPlazo(){
 
 		verificarPausaPlanificacion();
 
-		sem_wait(&sem_CPU);
 		printf("\n\n\nHOLAAA\n\n\n");
+		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaListos);
 
 		pthread_mutex_lock(&mutexColaListos);

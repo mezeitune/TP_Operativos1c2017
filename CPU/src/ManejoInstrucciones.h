@@ -81,7 +81,8 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			cantidadInstruccionesAEjecutarPorKernel--;
 			cantidadIntruccionesEjecutadas++;
 		}
-		expropiarVoluntariamente();
+		if(cpuFinalizada == 0) CerrarPorSignal();
+		else expropiarVoluntariamente();
 	}
 }
 void ejecutarInstruccion(){
@@ -104,7 +105,7 @@ void ejecutarInstruccion(){
 
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
 
-	if(cpuExpropiada == -1 || cpuBloqueada == 0 ){
+	if(cpuExpropiada == -1 || cpuBloqueada == 0){
 		expropiarVoluntariamente();
 	}
 }

@@ -53,24 +53,25 @@ void* atenderInterrupciones(){
 //------------------------------EXPROPIAR PROCESOS-------------------------------------
 void CerrarPorSignal(){
 
-	if(quantum > 0){
-		printf("\n\nENTRE!!!!!!!\n\n");
-		expropiarPorRRYCerrar();
-	}
-
 	char comandoInterruptHandler='X';
 	char comandoCierreCpu='C';
 	char comandoCerrarMemoria = 'X';
+
+	if(quantum > 0 && &pcb_actual->pid != NULL){
+		printf("\n\nENTRE!!!!!!!\n\n");
+		expropiarPorRRYCerrar();
+	}
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
+	serializarPcbYEnviar(pcb_actual, socketKernel);
 	send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
 
 
 	//shutdown(socketKernel,1);
-	//shutdown(socketInterrupciones,1);
+	///shutdown(socketInterrupciones,1);
 	//close(socketKernel);
 	//close(socketInterrupciones);
-	close(socketMemoria);
+	//close(socketMemoria);
 	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
 	free(pcb_actual);
 	exit(1);
@@ -128,7 +129,7 @@ void expropiarPorRR(){
 
 	char comandoExpropiarCpu = 'R';
 	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	//send(socketKernel, &cpuFinalizada, sizeof(int),0);
+	send(socketKernel, &cpuFinalizada, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
@@ -136,17 +137,16 @@ void expropiarPorRR(){
 	esperarPCB();
 }
 void expropiarPorRRYCerrar(){
+	char comandoExpropiarCpu = 'R';
 
 	if(pcb_actual->programCounter == pcb_actual->cantidadInstrucciones){
 		printf("\n\nQKHE ONDA AMEWO????\n\n");
 		return;
 	}
-	char comandoExpropiarCpu = 'R';
 	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
 	send(socketKernel, &cpuFinalizada, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	free(pcb_actual);
 	return;
 }
 //------------------------------EXPROPIAR PROCESOS--------------------------------------
