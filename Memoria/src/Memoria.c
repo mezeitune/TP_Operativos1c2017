@@ -85,11 +85,12 @@ void imprimirConfiguraciones();
 void leerConfiguracion(char* ruta);
 void inicializarMemoriaAdm();
 
-int main_inicializarPrograma();
-int main_solicitarBytesPagina();
-int main_almacenarBytesPagina();
-int main_asignarPaginasAProceso();
-int main_finalizarPrograma();
+int main_inicializarPrograma(int sock);
+int main_solicitarBytesPagina(int sock);
+int main_almacenarBytesPagina(int sock);
+int main_asignarPaginasAProceso(int sock);
+int main_finalizarPrograma(int sock);
+int main_liberarPaginaProceso(int sock);
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
 int inicializarPrograma(int pid, int cantPaginas);
@@ -97,6 +98,7 @@ void solicitarBytesPagina(int pid,int pagina, int offset, int size,char** buffer
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, void* buffer);
 int asignarPaginasAProceso(int pid, int cantPaginas, int frame);
 int finalizarPrograma(int pid);
+int liberarPaginaProceso(int pid, int pagina);
 //------------------------------------------------------------------//
 
 //void liberarBitMap(int pos, int size);
@@ -462,6 +464,38 @@ int main_finalizarPrograma(int sock)
 	sleep(retardo_memoria);
 	return 0;
 }
+int main_liberarPaginaProceso(int sock){
+	int pid;
+	int pagina;
+	int resultadoDeEjecucion;
+
+	read(sock,&pid,sizeof(int));
+	read(sock,&pagina,sizeof(int));
+
+	printf("PID:%d\tPagina:%d\n",pid,pagina);
+
+	resultadoDeEjecucion = liberarPaginaProceso(pid,pagina);
+
+	sleep(retardo_memoria);
+	return resultadoDeEjecucion;
+}
+
+int liberarPaginaProceso(int pid, int pagina){
+	printf("Liberar Pagina:%d del proceso:%d\n",pagina,pid);
+	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
+
+	int desplazamiento = sizeof(struct_adm_memoria);
+	struct_adm_memoria aux;
+	if(frame >= 0){
+		aux.num_pag = -1;
+		aux.pid = -1;
+		memcpy(bloque_Memoria + frame*desplazamiento,&aux,sizeof(struct_adm_memoria)); //Marco que en ese frame no tengo un programa asignado
+	}
+
+
+	return frame;
+
+}
 
 /*void liberarBitMap(int pos, int size)
 {
@@ -531,6 +565,10 @@ void *connection_handler(void *socket_desc)
 			break;
 		case 'G':
 			resultadoDeEjecucion = main_asignarPaginasAProceso(sock);
+			send(sock,&resultadoDeEjecucion,sizeof(int),0);
+			break;
+		case 'U':
+			resultadoDeEjecucion = main_liberarPaginaProceso(sock);
 			send(sock,&resultadoDeEjecucion,sizeof(int),0);
 			break;
 		case 'Q':
@@ -623,7 +661,8 @@ void borrarProgramDeStructAdms(int pid)
 
 int buscarFrameDePaginaDeProceso(int pid, int pagina)
 {
-	int i = funcionHash(pid,pagina);
+	int valorHash = funcionHash(pid,pagina);
+	int i = valorHash;
 	int desplazamiento = sizeof(struct_adm_memoria);
 	struct_adm_memoria aux;
 	while(i<marcos)
@@ -635,8 +674,8 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 		}
 		i++;
 	}
-	i = 0;
-	while(i<funcionHash(pid,pagina))
+	i = sizeStructsAdmMemoria;
+	while(i<valorHash)
 	{
 		memcpy(&aux, bloque_Memoria + i*desplazamiento,sizeof(struct_adm_memoria));
 		if(aux.pid == pid && aux.num_pag == pagina) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero borrar
