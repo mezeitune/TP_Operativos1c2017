@@ -198,9 +198,8 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			send(socketKernel,&tamanio,sizeof(int),0);
 			printf("Tamano:%d\n",tamanio);
 
-
-			send(socketKernel,(char*)informacion,sizeof(int),0); //puntero que apunta a la direccion donde quiero obtener la informacion
-			printf("Data:%s",(char*)informacion);
+			send(socketKernel,(char*)informacion,tamanio,0); //puntero que apunta a la direccion donde quiero obtener la informacion
+			printf("Data:%s\n",(char*)informacion);
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 			if(resultadoEjecucion > 0)
 			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d");
