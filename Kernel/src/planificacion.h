@@ -275,6 +275,7 @@ void planificarCortoPlazo(){
 		verificarPausaPlanificacion();
 
 		sem_wait(&sem_CPU);
+		printf("\n\n\nHOLAAA\n\n\n");
 		sem_wait(&sem_colaListos);
 
 		pthread_mutex_lock(&mutexColaListos);
@@ -283,9 +284,10 @@ void planificarCortoPlazo(){
 
 		printf("\nSaque un proceso de listos\n");
 
-		pthread_mutex_lock(&mutexListaCPU);
+
 		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
+			pthread_mutex_lock(&mutexListaCPU);
 			cpuEnEjecucion = list_remove_by_condition(listaCPU,(void*) verificarCPU);
 			cpuEnEjecucion->estado = EJECUCTANDO;
 			cpuEnEjecucion->pid = pcbListo->pid;
@@ -304,9 +306,11 @@ void planificarCortoPlazo(){
 		}else{
 			printf("\nLo meti devuelta en listos\n");
 			pthread_mutex_unlock(&mutexListaCPU);
+
 			pthread_mutex_lock(&mutexColaListos);
 			list_add_in_index(colaListos,0,pcbListo);
 			pthread_mutex_unlock(&mutexColaListos);
+
 			sem_post(&sem_colaListos);
 
 		}
