@@ -194,7 +194,7 @@ void finalizar (){
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 		free(pcb_actual);
-
+		printf("\n\nCPU FINALIZADA: %d\n\n", cpuFinalizada);
 		if(cpuFinalizada == 0){
 			CerrarPorSignal();
 		}

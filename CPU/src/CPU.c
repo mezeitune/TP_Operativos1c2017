@@ -53,7 +53,10 @@ void* atenderInterrupciones(){
 //------------------------------EXPROPIAR PROCESOS-------------------------------------
 void CerrarPorSignal(){
 
-	if(quantum > 0)expropiarPorRRYCerrar();
+	if(quantum > 0){
+		printf("\n\nENTRE!!!!!!!\n\n");
+		expropiarPorRRYCerrar();
+	}
 
 	char comandoInterruptHandler='X';
 	char comandoCierreCpu='C';
@@ -133,9 +136,14 @@ void expropiarPorRR(){
 	esperarPCB();
 }
 void expropiarPorRRYCerrar(){
+
+	if(pcb_actual->programCounter == pcb_actual->cantidadInstrucciones){
+		printf("\n\nQKHE ONDA AMEWO????\n\n");
+		return;
+	}
 	char comandoExpropiarCpu = 'R';
 	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	//send(socketKernel, &cpuFinalizada, sizeof(int),0);
+	send(socketKernel, &cpuFinalizada, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 	return;
