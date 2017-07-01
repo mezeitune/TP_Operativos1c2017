@@ -194,7 +194,7 @@ void finalizar (){
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 		free(pcb_actual);
-
+		printf("\n\nCPU FINALIZADA: %d\n\n", cpuFinalizada);
 		if(cpuFinalizada == 0){
 			CerrarPorSignal();
 		}
@@ -298,6 +298,7 @@ int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->in
 		expropiarPorDireccionInvalida();
 	} else {
 		pcb_actual->programCounter = (program_counter - 1);
+		cantidadInstruccionesAEjecutarPcb_Actual = cantidadInstruccionesAEjecutarPcb_Actual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
 	}
 int i = 0;
 	while(string_cortado[i] != NULL){

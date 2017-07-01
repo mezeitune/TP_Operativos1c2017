@@ -248,7 +248,7 @@ void gestionarRRFinQuantum(int socket){
 		return (unaCpu->socket == socket);
 	}
 
-	recv(socket,&cpuFinalizada, sizeof(int),0);
+	//recv(socket,&cpuFinalizada, sizeof(int),0);
 	recv(socket,&cantidadDeRafagas,sizeof(int),0);
 	pcb = recibirYDeserializarPcb(socket);
 	cambiarEstadoCpu(socket,OCIOSA);

@@ -15,7 +15,7 @@ int main(void) {
 	inicializarLog("/home/utnso/Log/logCPU.txt");
 
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
-	socketInterrupciones = crear_socket_cliente(ipKernel,puertoKernel);
+	//socketInterrupciones = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
@@ -26,7 +26,7 @@ int main(void) {
 	enviarAlKernelPedidoDeNuevoProceso(socketKernel);
 	recibirYMostrarAlgortimoDePlanificacion(socketKernel);
 
-	pthread_create(&lineaInterrupciones,NULL,atenderInterrupciones,NULL);
+	//pthread_create(&lineaInterrupciones,NULL,atenderInterrupciones,NULL);
 	esperarPCB();
 
 	return 0;
@@ -52,6 +52,12 @@ void* atenderInterrupciones(){
 
 //------------------------------EXPROPIAR PROCESOS-------------------------------------
 void CerrarPorSignal(){
+
+	if(quantum > 0){
+		printf("\n\nENTRE!!!!!!!\n\n");
+		expropiarPorRRYCerrar();
+	}
+
 	char comandoInterruptHandler='X';
 	char comandoCierreCpu='C';
 	char comandoCerrarMemoria = 'X';
@@ -60,10 +66,10 @@ void CerrarPorSignal(){
 	send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
 
 
-	shutdown(socketKernel,1);
-	shutdown(socketInterrupciones,1);
-	close(socketKernel);
-	close(socketInterrupciones);
+	//shutdown(socketKernel,1);
+	//shutdown(socketInterrupciones,1);
+	//close(socketKernel);
+	//close(socketInterrupciones);
 	close(socketMemoria);
 	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
 	free(pcb_actual);
@@ -122,14 +128,27 @@ void expropiarPorRR(){
 
 	char comandoExpropiarCpu = 'R';
 	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	send(socketKernel, &cpuFinalizada, sizeof(int),0);
+	//send(socketKernel, &cpuFinalizada, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
-
+	free(pcb_actual);
 	esperarPCB();
 }
+void expropiarPorRRYCerrar(){
 
+	if(pcb_actual->programCounter == pcb_actual->cantidadInstrucciones){
+		printf("\n\nQKHE ONDA AMEWO????\n\n");
+		return;
+	}
+	char comandoExpropiarCpu = 'R';
+	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+	send(socketKernel, &cpuFinalizada, sizeof(int),0);
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	free(pcb_actual);
+	return;
+}
 //------------------------------EXPROPIAR PROCESOS--------------------------------------
 
 
@@ -143,10 +162,12 @@ void enviarAlKernelPedidoDeNuevoProceso(int socketKernel){
 void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 	recv(socketKernel,&quantum,sizeof(int),0);
 
-		if(quantum!=0){
-			log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
+		if(quantum==0){
+			log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
+			return;
 		}
-		log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
+		log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
+		return;
 }
 //-----------------------------PEDIDOS AL KERNEL-----------------------------------------
 

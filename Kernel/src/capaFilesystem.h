@@ -103,7 +103,7 @@ void abrirArchivo(int socket){
 		}
 
 
-		if(!archivoExistente && !tienePermisoCreacion){
+		if(!archivoExistente && !tienePermisoCreacion){//El archivo no eexiste en FS y no tiene permisos para crear entonces no hace nada
 					excepcionPermisosCrear(socket,pid);
 					free(direccion);
 					free(flags);
@@ -115,7 +115,7 @@ void abrirArchivo(int socket){
 			int entradaGlobalExistente=verificarEntradaEnTablaGlobal(direccion);
 
 			if(!entradaGlobalExistente){
-				indiceEnTablaGlobal = agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
+				indiceEnTablaGlobal = agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);//almacenar el Global FD
 				}
 			else{
 				indiceEnTablaGlobal = buscarIndiceEnTablaGlobal(direccion);
@@ -568,14 +568,14 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 	 else{
 		 printf("La tabla ya existe\n");
 
-		 t_indiceTablaProceso* entradaTablaExistente = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+		 t_indiceTablaProceso* entradaTablaExistente = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);//la remuevo para actualizarlo
 		 t_entradaTablaProceso* entrada = malloc(sizeof(t_entradaTablaProceso));
 		 entrada->fd = entradaTablaExistente->tablaProceso->elements_count + 3;
 		 entrada->flags = flags;
 		 entrada->globalFd = indiceEnTablaGlobal;
 		 printf("Agrego el indice :%d\n",entrada->globalFd);
 		 list_add(entradaTablaExistente->tablaProceso,entrada);
-		 list_add(listaTablasProcesos,entradaTablaExistente);
+		 list_add(listaTablasProcesos,entradaTablaExistente);//la vuelvo a agregar a la lista
 
 		 return entrada->fd;
 	 }

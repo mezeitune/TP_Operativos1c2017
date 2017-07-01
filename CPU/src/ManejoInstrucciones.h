@@ -90,7 +90,7 @@ void ejecutarInstruccion(){
 	char orden;
 	orden = '\0';
 	char *instruccion = obtener_instruccion();
-
+	sleep(retardo_entre_instruccion);
 	log_warning(loggerConPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 
