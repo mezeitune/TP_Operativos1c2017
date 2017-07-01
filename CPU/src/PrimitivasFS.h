@@ -173,7 +173,8 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
-	if(descriptor_archivo==DESCRIPTOR_SALIDA){
+	int descriptorHardcodeado = 3;
+	/*if(descriptor_archivo==DESCRIPTOR_SALIDA){
 
 		char comandoImprimir = 'X';
 		char comandoImprimirPorConsola = 'P';
@@ -184,16 +185,16 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 		send(socketKernel,(char*)informacion,tamanio,0);
 		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 	}else {
-
-			char comandoCapaFS = 'F';
+*/
+		char comandoCapaFS = 'F';
 			char comandoEscribirArchivo = 'G';
 			int resultadoEjecucion ;
 			send(socketKernel,&comandoCapaFS,sizeof(char),0);
 			send(socketKernel,&comandoEscribirArchivo,sizeof(char),0);
 			int pid= pcb_actual->pid;
 			send(socketKernel,&pid,sizeof(int),0);
-			send(socketKernel,&descriptor_archivo,sizeof(int),0);
-			printf("Descriptor:%d\n",descriptor_archivo);
+			send(socketKernel,&descriptorHardcodeado,sizeof(int),0);
+			printf("Descriptor:%d\n",descriptorHardcodeado);
 			send(socketKernel,&tamanio,sizeof(int),0);
 			printf("Tamano:%d\n",tamanio);
 
@@ -208,6 +209,6 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 				expropiarPorKernel();
 			}
 	}
-}
+//}
 //FS
 
