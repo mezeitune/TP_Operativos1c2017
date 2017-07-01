@@ -153,10 +153,10 @@ void enviarAlKernelPedidoDeNuevoProceso(int socketKernel){
 void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 	recv(socketKernel,&quantum,sizeof(int),0);
 
-		if(quantum!=0){
-			log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
+		if(quantum==0){
+			log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
 		}
-		log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
+		log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
 }
 //-----------------------------PEDIDOS AL KERNEL-----------------------------------------
 
