@@ -53,7 +53,7 @@ void* atenderInterrupciones(){
 //------------------------------EXPROPIAR PROCESOS-------------------------------------
 void CerrarPorSignal(){
 
-	//if(quantum > 0)expropiarPorRR();
+	if(quantum > 0)expropiarPorRRYCerrar();
 
 	char comandoInterruptHandler='X';
 	char comandoCierreCpu='C';
@@ -132,7 +132,14 @@ void expropiarPorRR(){
 
 	esperarPCB();
 }
-
+void expropiarPorRRYCerrar(){
+	char comandoExpropiarCpu = 'R';
+	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+	//send(socketKernel, &cpuFinalizada, sizeof(int),0);
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	return;
+}
 //------------------------------EXPROPIAR PROCESOS--------------------------------------
 
 

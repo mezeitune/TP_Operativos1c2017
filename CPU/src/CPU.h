@@ -57,6 +57,7 @@ void expropiarPorRR();
 void expropiarPorKernel();
 void expropiarPorDireccionInvalida();
 void expropiarPorStackOverflow();
+void expropiarPorRRYCerrar();
 void CerrarPorSignal();
 void stackOverflow();
 
