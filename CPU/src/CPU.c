@@ -156,8 +156,10 @@ void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 
 		if(quantum==0){
 			log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
+			return;
 		}
 		log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
+		return;
 }
 //-----------------------------PEDIDOS AL KERNEL-----------------------------------------
 

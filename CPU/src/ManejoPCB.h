@@ -27,7 +27,7 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 	switch (orden) {
 		case 'S':
 			log_info(loggerConPantalla, "Se esta por asignar un PCB");
-
+			//recv(socketKernel,&retardo_entre_instruccion,sizeof(int),0);
 			establecerPCB(socketAceptado);
 					break;
 		default:
