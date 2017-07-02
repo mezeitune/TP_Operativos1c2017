@@ -21,15 +21,13 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	printf("%s\n", flags.escritura ? "true" : "false");
 	printf("%s\n", flags.lectura ? "true" : "false");
 	//enviar los flags al kernel
-	char* flagsAEnviar;
-	flagsAEnviar = devolverStringFlags(flags);
+	char* flagsMapeados;
+	flagsMapeados = devolverStringFlags(flags);
+	printf("%s\n",flagsMapeados);
 
-	/*TODO: HARCODEO LOS FLAGS*/
-	char* flagHarcodeado = "rwc";
-	printf("%s\n",flagsAEnviar);
-	int tamanoFlags=sizeof(char)*strlen(flagHarcodeado);
+	int tamanoFlags=sizeof(char)*strlen(flagsMapeados);
 	send(socketKernel,&tamanoFlags,sizeof(int),0);
-	send(socketKernel,flagHarcodeado,tamanoFlags,0);
+	send(socketKernel,flagsMapeados,tamanoFlags,0);
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	printf("resultado:%d\n",resultadoEjecucion);
@@ -147,7 +145,6 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	send(socketKernel,&comandoLeerArchivo,sizeof(char),0);
 	int pid= pcb_actual->pid;
 	send(socketKernel,&pid,sizeof(int),0);
-	descriptor_archivo = 3; /*TODO: Hardcodeando*/
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	printf("Descriptor:%d\n",descriptor_archivo);
 	send(socketKernel,&tamanio,sizeof(int),0); //tamanio de la instruccion en bytes que quiero leer
@@ -173,8 +170,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
-	int descriptorHardcodeado = 3;
-	/*if(descriptor_archivo==DESCRIPTOR_SALIDA){
+	if(descriptor_archivo==DESCRIPTOR_SALIDA){
 
 		char comandoImprimir = 'X';
 		char comandoImprimirPorConsola = 'P';
@@ -185,7 +181,6 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 		send(socketKernel,(char*)informacion,tamanio,0);
 		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 	}else {
-*/
 		char comandoCapaFS = 'F';
 			char comandoEscribirArchivo = 'G';
 			int resultadoEjecucion ;
@@ -193,8 +188,8 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			send(socketKernel,&comandoEscribirArchivo,sizeof(char),0);
 			int pid= pcb_actual->pid;
 			send(socketKernel,&pid,sizeof(int),0);
-			send(socketKernel,&descriptorHardcodeado,sizeof(int),0);
-			printf("Descriptor:%d\n",descriptorHardcodeado);
+			send(socketKernel,&descriptor_archivo,sizeof(int),0);
+			printf("Descriptor:%d\n",descriptor_archivo);
 			send(socketKernel,&tamanio,sizeof(int),0);
 			printf("Tamano:%d\n",tamanio);
 
@@ -208,6 +203,6 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 				expropiarPorKernel();
 			}
 	}
-//}
+}
 //FS
 

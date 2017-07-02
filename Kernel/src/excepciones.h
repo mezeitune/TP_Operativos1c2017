@@ -89,7 +89,7 @@ void excepcionPlanificacionDetenida(int socket){
  * Excepeciones de FileSystem. TODO: Escritura.
  */
 void excepcionFileSystem(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de lectura");
+	log_error(loggerConPantalla,"Informando a Consola excepcion de fileSystem");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value;
