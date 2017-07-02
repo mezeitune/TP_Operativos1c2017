@@ -236,7 +236,7 @@ void interfazReanudarPlanificacion(){
 		sem_post(&sem_planificacion);
 		sem_post(&sem_planificacion);
 		sem_post(&sem_planificacion);
-
+		sem_post(&sem_administrarFinProceso);
 		log_info(loggerConPantalla, "Se reanudo la planificacion");
 	}
 	printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);

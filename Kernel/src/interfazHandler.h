@@ -23,13 +23,19 @@ void interfaceSolicitarContenidoMemoria();
 void interfaceModificarGradoMultiprogramacion();
 
 void finalizarProcesoVoluntariamente(int pid);
-void obtenerDatosProceso(int pid);
-void mostrarProcesos(char orden);
 void imprimirListadoDeProcesos(t_list* listaPid);
 void filtrarPorPidYMostrar(t_list* cola);
 void interfazHandlerParaFileSystem(char orden,int socket_aceptado);
 int verificarProcesoExistente(int pid);
 int verificarProcesoNoTerminado(int pid);
+
+
+void obtenerDatosProceso(int pid);
+void mostrarProcesos(char orden);
+void mostrarTodosLosProcesos();
+
+void imprimirDatosContables(t_contable* proceso);
+void imprimirTablaArchivosProceso(int pid);
 
 pthread_t interfaz;
 int flagTerminarUI=0;
@@ -85,7 +91,7 @@ void interfaceObtenerDatosProceso(){
 			log_error(loggerConPantalla,"Proceso no existente");
 			return;
 		}
-	printf("Datos del proceso--->%d\t\t\n",pid);
+	printf("Datos del proceso--->%d\n",pid);
 	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
 	obtenerDatosProceso(pid);
 }
@@ -158,43 +164,48 @@ int verificarProcesoExistente(int pid){
 }
 
 void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
-	int i;
 	_Bool verificaPid(t_contable* proceso){
 		return proceso->pid == pid;
-	}
-
-	_Bool verificaPidArchivo(t_indiceTablaProceso* entrada){
-		return entrada->pid == pid;
 	}
 
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
 
-	printf("%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
-			proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
+	imprimirDatosContables(proceso);
 
 	list_add(listaContable,proceso);
 	pthread_mutex_unlock(&mutexListaContable);
-
-	printf("Tabla de archivos del proceso\n");
-	printf("File Descriptor\tFlags\tIndice Global\tCursor\n");
-	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
-	t_entradaTablaProceso* entrada;
-	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
-		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		printf("\t%d\t%s\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
-	}
-	list_add(listaTablasProcesos,entradaTablaProceso);
+	imprimirTablaArchivosProceso(pid);
 }
 
+void imprimirDatosContables(t_contable* proceso){
+	printf("%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+				proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
+}
+
+void imprimirTablaArchivosProceso(int pid){
+
+	_Bool verificaPidArchivo(t_indiceTablaProceso* entrada){
+		return entrada->pid == pid;
+	}
+	int i;
+	printf("\t\t\tTabla de archivos del proceso\n");
+		printf("\t\t\tFile Descriptor\tFlags\tIndice Global\tCursor\n");
+		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
+		t_entradaTablaProceso* entrada;
+		for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
+			entrada = list_get(entradaTablaProceso->tablaProceso,i);
+			printf("\t\t\t\t%d\t%s\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
+		}
+		list_add(listaTablasProcesos,entradaTablaProceso);
+}
 
 void interfaceObtenerListadoProcesos(){
 	char orden;
 	scanf("%c",&orden);
 	switch(orden){
 	case 'T':
-		orden = 'T';
-		mostrarProcesos(orden);
+		mostrarTodosLosProcesos();
 		break;
 	case 'C':
 		scanf("%c",&orden);
@@ -204,6 +215,14 @@ void interfaceObtenerListadoProcesos(){
 		log_error(loggerConPantalla,"Orden no reconocida\n");
 		break;
 	}
+}
+
+void mostrarTodosLosProcesos(){
+	mostrarProcesos('N');
+	mostrarProcesos('R');
+	mostrarProcesos('E');
+	mostrarProcesos('B');
+	mostrarProcesos('F');
 }
 
 void mostrarProcesos(char orden){
@@ -242,8 +261,6 @@ void mostrarProcesos(char orden){
 		pthread_mutex_lock(&mutexColaBloqueados);
 		imprimirListadoDeProcesos(list_map(colaBloqueados,(void*)transformarPid));
 		pthread_mutex_unlock(&mutexColaBloqueados);
-		break;
-	case 'T':
 		break;
 	default:
 		break;
