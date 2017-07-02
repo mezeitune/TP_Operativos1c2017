@@ -234,20 +234,22 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 						FILE *bloque=fopen(nombreBloque, "r");
 						printf("Abri el bloque\n");
 						if(t==(d+cantidadBloquesQueNecesito)){
+							printf("Entre al primer if\n");
 							int sizeQuePido=size-cursor;
 							int offsetQuePido=0;
-							char* data=obtenerBytesDeUnArchivo(fp,offsetQuePido,sizeQuePido);
+							char* data=obtenerBytesDeUnArchivo(bloque,offsetQuePido,sizeQuePido); /*TODO: Te cambio para que leea el bloque, y no el archivo en si*/
 							string_append(&infoTraidaDeLosArchivos,data);
 						}else if(t==inicial){
-
+							printf("Entre al segundo if\n");
 							int offsetQuePido=cursor-(tamanioBloques*u);
 							int sizeQuePido=tamanioBloques-offsetQuePido;
-							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(bloque,offsetQuePido , sizeQuePido));
 
 						}else{
+							printf("Entre al tercer if\n");
 							int sizeQuePido=tamanioBloques;
 							int offsetQuePido=0;
-							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(fp,offsetQuePido , sizeQuePido));
+							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(bloque,offsetQuePido , sizeQuePido));
 
 						}
 
