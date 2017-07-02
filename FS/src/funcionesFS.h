@@ -485,7 +485,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 					if(!(z==(cuantosBloquesMasNecesito-1))){
 						string_append(&metadataFile,",");
 					}
-				}
+				} /*TODO: Se concatenan bloques repetidos*/
 
 				string_append(&metadataFile,"]");
 				printf("termine de concatenar los bloques\n");

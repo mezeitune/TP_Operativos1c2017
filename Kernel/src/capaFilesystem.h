@@ -327,7 +327,7 @@ void escribirArchivo(int socket){
 
 		printf("Resultado de ejecucion :%d\n",resultadoEjecucion);
 		if(resultadoEjecucion < 0){
-			excepcionFileSystem(socket,pid);
+			excepcionFileSystem(socket,pid); /*TODO Esta rompiendo. Expropia, pero despues le llegan datos de mas*/
 			free(informacion);
 			return;
 		}
