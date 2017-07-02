@@ -202,9 +202,9 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			printf("Data:%s\n",(char*)informacion);
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 			if(resultadoEjecucion > 0)
-			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d");
+			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);
 			else {
-				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ");
+				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ",pid,descriptor_archivo);
 				expropiarPorKernel();
 			}
 	}

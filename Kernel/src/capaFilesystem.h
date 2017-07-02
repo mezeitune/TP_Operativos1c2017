@@ -161,56 +161,47 @@ void borrarArchivo(int socket){
 					return entrada->fd == fileDescriptor;
 				}
 
-		/*TODO: Necesito ir a buscar la ruta del archivo, para validarla*/
-		/*La busco de la sigueinte forma. Voy a la tabla por proceso, indexo con el fd.
-		 * De ahi saco el globalFd, y voy a la tabla global. Saco la direccion*/
 
+		int encontroFd;
+		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+		if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
+		else encontroFd = 0;
+		list_add(listaTablasProcesos,entradaTablaProceso);
 
-		//verificar que la tabla de ese pid exista
-		int tablaProcesoExiste;
-		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
-		else tablaProcesoExiste = 0;
-
-		if(!tablaProcesoExiste){
-			excepcionSinTablaArchivos(socket,pid);
+		if(!encontroFd){ /*Si ese archivo no lo tiene abierto no lo puede borrar*/
+			excepcionFileDescriptorNoAbierto(socket,pid);
 			return;
 		}else{
-			int encontroFd;
-			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
-			else encontroFd = 0;
-			list_add(listaTablasProcesos,entradaTablaProceso);
 
-			if(!encontroFd){ /*Si ese archivo no lo tiene abierto no lo puede borrar*/
-				excepcionFileDescriptorNoAbierto(socket,pid);
-				return;
-			}else{
-
-				/* Voy a la tabla global y borro la entrada, y saco el indice(GlobalFd) de donde lo borre.
-				 * Aca habria que ir a cada tabla de los procesos, y borrar la entrada. Uso como key el globalFd
-				 * Habria actualizar CADA puntero de la tabla de los procesos. Solo se actualizan las tablas que tengan
-				 * a los archivos que estaban por debajo de ese indice en la tabla global. Es disminuir en uno a cada globalFd.
-				 * Todo esto deberia ir despues que el FS borre al archivo
-				 * */
-
-
-				//hacer los sends para que el FS borre ese archivo y deje los bloques libres
-				char comandoBorrarArchivo='B';
-				send(socketFyleSys,comandoBorrarArchivo,sizeof(char),0);
-				//send(socketFyleSys,&tamanioArchivo,sizeof(int),0); TODO: Encontrar el size del file
-				//send(socketFyleSys,nombreArchivo,strlen(nombreArchivo)*sizeof(char),0); TODO: Encontrar el nombre del archivo
-				recv(socketFyleSys,&resultadoEjecucion,sizeof(char),0);
-					if(resultadoEjecucion < 0) {
-						excepcionFileSystem(socket,pid);
-						return;
-					}
-				int indiceGlobalFd=borrarEntradaTablaProceso(pid,fileDescriptor);
+			int indiceGlobalFd=borrarEntradaTablaProceso(pid,fileDescriptor);
+			printf("Indice devuelto:%d\n",indiceGlobalFd);
+			t_entradaTablaGlobal* entradaGlobal = list_get(tablaArchivosGlobal,indiceGlobalFd);
+			if(entradaGlobal->open > 1){
+				/*El proceso no puede borrar el archivo porque alguien lo tiene abierto, sin embargo lo cierra*/
 				disminuirOpenYVerificarExistenciaEntradaGlobal(indiceGlobalFd);
+				excepcionNoPudoBorrarArchivo(socket,pid);
+				return;
 			}
+			disminuirOpenYVerificarExistenciaEntradaGlobal(indiceGlobalFd);
 
+			//hacer los sends para que el FS borre ese archivo y deje los bloques libres
+			char comandoBorrarArchivo='B';
+			char* direccion = buscarDireccionEnTablaGlobal(indiceGlobalFd);
+			char** array_dir=string_n_split(direccion, 12, "/");
+			char* nombreArchivo=array_dir[0];
+			int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+			send(socketFyleSys,&comandoBorrarArchivo,sizeof(char),0);
+			send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+			send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+			recv(socketFyleSys,&resultadoEjecucion,sizeof(char),0);
+				if(resultadoEjecucion < 0) {
+					excepcionFileSystem(socket,pid);
+					return;
+				}
 		}
-		send(socket,&resultadoEjecucion,sizeof(int),0);
-		log_info(loggerConPantalla,"Archivo borrado--->PID:%d",pid);
+
+	send(socket,&resultadoEjecucion,sizeof(int),0);
+	log_info(loggerConPantalla,"Archivo borrado--->PID:%d",pid);
 }
 
 void cerrarArchivo(int socket){
@@ -522,35 +513,10 @@ int crearArchivo(int socket_aceptado, char* direccion ){
 
 int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 	log_info(loggerConPantalla,"Agregando entrada a tabla por proceso");
-	int tablaProcesoExiste;
 
 	_Bool verificaPid(t_indiceTablaProceso* entrada){
 		return entrada->pid == pid;
 	}
-
-	if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
-	else tablaProcesoExiste = 0;
-
-
-	 if(!tablaProcesoExiste){
-		 printf("La tabla no existe\n");
-		 t_indiceTablaProceso* entradaNuevaTabla = malloc(sizeof(t_indiceTablaProceso));
-		 entradaNuevaTabla->pid = pid;
-		 entradaNuevaTabla->tablaProceso = list_create();
-
-		 t_entradaTablaProceso* entrada=malloc(sizeof(t_entradaTablaProceso));
-		 entrada->fd = 3;
-		 entrada->flags = flags;
-		 entrada->globalFd = indiceEnTablaGlobal;
-		 entrada->puntero=0;
-
-		 list_add(entradaNuevaTabla->tablaProceso,entrada);
-
-		 list_add(listaTablasProcesos,entradaNuevaTabla);
-			return entrada->fd;
-		}
-	 else{
-		 printf("La tabla ya existe\n");
 
 		 t_indiceTablaProceso* entradaTablaExistente = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);//la remuevo para actualizarlo
 		 t_entradaTablaProceso* entrada = malloc(sizeof(t_entradaTablaProceso));
@@ -563,7 +529,6 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 		 list_add(listaTablasProcesos,entradaTablaExistente);//la vuelvo a agregar a la lista
 
 		 return entrada->fd;
-	 }
 }
 
 int borrarEntradaTablaProceso(int pid,int fd){

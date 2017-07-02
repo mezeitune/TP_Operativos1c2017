@@ -112,12 +112,12 @@ void crearArchivoFunction(int socket_cliente){
 void borrarArchivoFunction(int socket_cliente){
 	FILE *fp;
 
-	int tamanoArchivo;
+	int tamanoNombreArchivo;
 	int validado;
 
-	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-	void* nombreArchivo = malloc(tamanoArchivo);
-	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
+	void* nombreArchivo = malloc(tamanoNombreArchivo);
+	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
