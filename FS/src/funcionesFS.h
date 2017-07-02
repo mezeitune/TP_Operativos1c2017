@@ -206,6 +206,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		   if((size%tamanioBloques) < tamanioBloques) cantidadBloquesQueNecesito = 1;
 		   if((size%tamanioBloques) > tamanioBloques){
 			   cantidadBloquesQueNecesito = size / tamanioBloques;
+
 		   }
 /*		   if((size%tamanioBloques)!=0){
 				cantidadBloquesQueNecesito++;
@@ -287,12 +288,12 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 	int tamanoNombreArchivo;
 	int validado;
 	int puntero;
-	int tamanoBuffer;
+	int size;
 
 
 	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
 	printf("Tamano nombre archivo:%d\n",tamanoNombreArchivo);
-	char* nombreArchivo = malloc(tamanoNombreArchivo);
+	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
 
 	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
 	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
@@ -301,12 +302,12 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 	recv(socket_cliente,&puntero,sizeof(int),0);
 	printf("Puntero:%d\n",puntero);
 
-	recv(socket_cliente,&tamanoBuffer,sizeof(int),0);
-	printf("Tamano de la data:%d\n",tamanoBuffer);
-	char* buffer = malloc(tamanoBuffer + sizeof(char));
+	recv(socket_cliente,&size,sizeof(int),0);
+	printf("Tamano de la data:%d\n",size);
+	char* buffer = malloc(size + sizeof(char));
 
-	recv(socket_cliente,buffer,tamanoBuffer,0);
-	strcpy(buffer + tamanoBuffer,"\0");
+	recv(socket_cliente,buffer,size,0);
+	strcpy(buffer + size,"\0");
 	printf("Data :%s\n",buffer);
 
 	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",nombreArchivo,buffer);
@@ -326,16 +327,15 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 
 		int d=0;
-		int cantidadBloques = 0;
+		int cantidadBloquesArchivo = 0;
 		while(!(arrayBloques[d] == NULL)){
 			printf("%s \n",arrayBloques[d]);
 			d++;
-			cantidadBloques ++;
+			cantidadBloquesArchivo ++;
 		}
 		d--;
 
-		printf("Cantidad de bloques :%d\n",cantidadBloques);
-
+		printf("Cantidad de bloques :%d\n",cantidadBloquesArchivo);
 
 		char *nombreBloque = string_new();
 		string_append(&nombreBloque, puntoMontaje);
@@ -346,44 +346,74 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		//ver de asignar mas bloques en caso de ser necesario
 		printf("Tamano del archivo : %d\n",atoi(obtTamanioArchivo(nombreArchivoRecibido)));
 		printf("Tamano del bloque: %d\n",tamanioBloques);
-		int cantRestante=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloques-1)*tamanioBloques));
+		int cantRestante=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloquesArchivo-1)*tamanioBloques));
 		printf("Cantidad restante :%d\n",cantRestante);
-		if(tamanoBuffer<cantRestante){
+		sleep(5);
+		if(size<cantRestante){
 			adx_store_data(nombreBloque,buffer);
 			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",nombreArchivo,buffer);
 			//send diciendo que todo esta bien
 		}else{
-			int cuantosBloquesMasNecesito=tamanoBuffer/tamanioBloques;
-			if((tamanoBuffer%tamanioBloques)>0){
+			printf("Entre al else\n");
+			sleep(3);
+
+			int cuantosBloquesMasNecesito; /*TODO: Emprolijar*/
+		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
+		   if((size%tamanioBloques) < size) {
+			   cuantosBloquesMasNecesito= 2;
+		   }
+		   if((size%tamanioBloques) > tamanioBloques){
+			   cuantosBloquesMasNecesito = size / tamanioBloques ;
+			   cuantosBloquesMasNecesito += 1;
+			   }
+
+/*
+			int cuantosBloquesMasNecesito=size/tamanioBloques;
+
+			if((size%tamanioBloques)>0){
 				cuantosBloquesMasNecesito++;
 			}
+			*/
+
+			printf("Bloques de mas que necesito:%d\n",cuantosBloquesMasNecesito);
+			sleep(3);
 			//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
 			int j;
 			int r=0;
 			int bloquesEncontrados=0;
 			int bloqs[cuantosBloquesMasNecesito];
 			for(j=0;j<cantidadBloques;j++){
+				printf("Chekeando el bitArray\n");
 		        bool bit = bitarray_test_bit(bitarray,j);
 		        if(bit==0){
 		        	//guardar en array bloqs los bloques que voy encontrando
-		        	if(r==cuantosBloquesMasNecesito){
-		        		break;
-		        	}else{
+		        	//if(r==cuantosBloquesMasNecesito){
+		        	//	break;
+		        //	}else{
 		            	bloqs[r]=j;
 		            	r++;
-		        	}
+		        	//}
 		        	bloquesEncontrados++;
 		        }
-		        printf("PASO POR ACAAAAAAAAAA3 \n");
+
+		        if(r==cuantosBloquesMasNecesito) break;
 			}
 
+			printf("Bloques encontrados :%d\n",bloquesEncontrados); /*TODO: Cuando crea el archivo en el mismo proceso, y despues solicita esciribr, no encuentra bloques*/
+			sleep(3);
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
+				printf("Encontro los bloques necesarios \n");
 				//guardamos en los bloques deseados
 
 				int s;
-				char* loQueVaQuedandoDeBuffer=(char*)buffer;
-				for(s=0;s<cuantosBloquesMasNecesito;s++){
 
+				int sizeRestante = size;
+				int desplazamiento = 0;
+
+				//char* loQueVaQuedandoDeBuffer=(char*)buffer;/*TODO: OJO ACA, el size es 0. Deberias preguntar sobre el size a escribir, e ir actualizando eso*/
+
+				for(s=0;s<cuantosBloquesMasNecesito;s++){
+					FILE* bloque;
 					char *nombreBloque = string_new();
 					string_append(&nombreBloque, puntoMontaje);
 					string_append(&nombreBloque, "Bloques/");
@@ -391,20 +421,26 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 					string_append(&nombreBloque, numerito);
 					string_append(&nombreBloque, ".bin");
 
+					printf("Voy a guardar en el bloque:%s\n",string_itoa(bloqs[s]));
+					bloque=fopen(nombreBloque,"ab");
 
-					if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques){
+					if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
+						printf("Tengo que cortar el string\n");
 						//cortar el string
-						char* recortado=string_substring_until(loQueVaQuedandoDeBuffer, tamanioBloques);
-						adx_store_data(nombreBloque,recortado);
-						loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
+						fwrite(buffer + desplazamiento , tamanioBloques, sizeof(char),bloque);
+						//char* recortado=string_substring_until(buffer + desplazamiento, tamanioBloques);
+						//adx_store_data(nombreBloque,recortado);
+						sizeRestante -= tamanioBloques;
+						desplazamiento += tamanioBloques;
+						//loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
 
 					}else{
+						printf("No tuve que cortar el string\n");
 						//mandarlo todo de una
-						adx_store_data(nombreBloque,loQueVaQuedandoDeBuffer);
+						fwrite(buffer + desplazamiento , sizeRestante, sizeof(char),bloque);
+						//adx_store_data(nombreBloque,buffer + desplazamiento);
 					}
-
-
-
+					fclose(bloque);
 					//actualizamos el bitmap
 					bitarray_set_bit(bitarray,bloqs[s]);
 
@@ -412,38 +448,51 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 
 
-
-				//actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
-				FILE *fp = fopen(nombreArchivoRecibido, "w");//Para que borre todo lo que tenia antes
-				char *dataAPonerEnFile = string_new();
-				string_append(&dataAPonerEnFile, "TAMANIO=");
+				printf("Actualizando el metadata\n");
+				sleep(3);
+				//Obtenemos los datos viejos
 				char* tamanioArchivoViejo=obtTamanioArchivo(nombreArchivoRecibido);
 				int tamanioArchivoViejoInt=atoi(tamanioArchivoViejo);
+				 char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+
+				 printf("Termine de obtener los datos viejos\n");
+				 sleep(3);
+
+				 //actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
+				FILE *fp = fopen(nombreArchivoRecibido, "w");//Para que borre todo lo que tenia antes
+				char *metadataFile = string_new();
+				string_append(&metadataFile, "TAMANIO=");
 				int tamanioNuevo=tamanioArchivoViejoInt+(cuantosBloquesMasNecesito*tamanioBloques);
 				char* tamanioNuevoChar=string_itoa(tamanioNuevo);
-				string_append(&dataAPonerEnFile, tamanioNuevoChar);
-				string_append(&dataAPonerEnFile,"\n");
-				string_append(&dataAPonerEnFile, "BLOQUES=[");
+				string_append(&metadataFile, tamanioNuevoChar);
+				string_append(&metadataFile,"\n");
+
+				printf("Concatene el tamano actualizado\n");
+				sleep(3);
+
+				string_append(&metadataFile, "BLOQUES=[");
 				int z;
 
-				   char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 				   int d=0;
 					   while(!(arrayBloques[d] == NULL)){
-						   string_append(&dataAPonerEnFile,arrayBloques[d]);
-						   string_append(&dataAPonerEnFile,",");
+						   string_append(&metadataFile,arrayBloques[d]);
+						   string_append(&metadataFile,",");
 					      d++;
 					   }
 				for(z=0;z<cuantosBloquesMasNecesito;z++){
 					char* bloqueString=string_itoa(bloqs[z]);
-					string_append(&dataAPonerEnFile,bloqueString);
+					string_append(&metadataFile,bloqueString);
 					if(!(z==(cuantosBloquesMasNecesito-1))){
-						string_append(&dataAPonerEnFile,",");
+						string_append(&metadataFile,",");
 					}
 				}
 
-				string_append(&dataAPonerEnFile,"]");
+				string_append(&metadataFile,"]");
+				printf("termine de concatenar los bloques\n");
+				sleep(3);
 
-				adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
+				fclose(fp); //Lo cierro porque la proxima linea lo volvia a abrir
+				adx_store_data(nombreArchivoRecibido,metadataFile);
 
 				validado=1;
 				send(socket_cliente,&validado,sizeof(int),0);
@@ -451,10 +500,11 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 				//y enviamos un buen send
 
 			}else{
+				printf("No encontro los bloques necesarios\n");
+				sleep(3);
 				validado=0;
 				send(socket_cliente,&validado,sizeof(int),0);
 				return;
-				//send con error
 			}
 
 
