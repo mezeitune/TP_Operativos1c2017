@@ -228,6 +228,7 @@ t_pcb* expropiarVoluntariamente(int socket){
 
 	send(socket,&comandoExpropiar,sizeof(char),0);
 	pcb = recibirYDeserializarPcb(socket);
+
 	recv(socket,&rafagas,sizeof(int),0);
 	actualizarRafagas(pcb->pid,rafagas);
 	removerDeColaEjecucion(pcb->pid);

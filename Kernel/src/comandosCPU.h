@@ -36,15 +36,13 @@ void cpuEjecucionAOciosa(int socketCPU){
 		return (unaCpu->socket == socketCPU);
 	}
 
-	recv(socketCPU,&cpuFinalizada, sizeof(int),0);
+	//recv(socketCPU,&cpuFinalizada, sizeof(int),0);
 
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
 	cpu->estado = OCIOSA;
 	list_add(listaCPU,cpu);
 	pthread_mutex_unlock(&mutexListaCPU);
-
-
 
 	sem_post(&sem_CPU);
 }

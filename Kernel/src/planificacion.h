@@ -31,7 +31,6 @@
 #include "excepeciones.h"
 #include "listasAdministrativas.h"
 
-
 /*---PAUSA PLANIFICACION---*/
 int flagHuboAlgunProceso;
 int flagCPUSeDesconecto;
@@ -274,9 +273,11 @@ void planificarCortoPlazo(){
 
 		verificarPausaPlanificacion();
 
-		printf("\n\n\nHOLAAA\n\n\n");
+
+
 		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaListos);
+
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
@@ -298,17 +299,19 @@ void planificarCortoPlazo(){
 			send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
 
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
+
 			flagHuboAlgunProceso = 1;
 			pthread_mutex_lock(&mutexColaEjecucion);
 			list_add(colaEjecucion, pcbListo);
 			pthread_mutex_unlock(&mutexColaEjecucion);
+
 			log_info(loggerConPantalla,"Pcb encolado en Ejecucion--->PID:%d",pcbListo->pid);
 		}else{
 			printf("\nLo meti devuelta en listos\n");
 			pthread_mutex_unlock(&mutexListaCPU);
 
 			pthread_mutex_lock(&mutexColaListos);
-			list_add_in_index(colaListos,0,pcbListo);
+			list_add(colaListos,pcbListo);
 			pthread_mutex_unlock(&mutexColaListos);
 
 			sem_post(&sem_colaListos);
@@ -403,7 +406,7 @@ void pcbBloqueadoAReady(){
 
 	t_semYPCB *semYPCB;
 	t_pcb *pcbADesbloquear;
-	t_semaforo *semaforoBuffer;
+	t_semaforo *semaforoBuffer = malloc(sizeof(t_semaforo));
 
 	_Bool verificaSemId(t_semYPCB *semYPCBBuffer){
 		return (!strcmp(semYPCBBuffer->idSemaforo, semaforoBuffer/*->semaforo*/->id));
@@ -425,16 +428,19 @@ void pcbBloqueadoAReady(){
 
 			if(semaforoBuffer/*->semaforo*/->valor > 0){
 
+				log_info(loggerConPantalla,"\n\nESTOY EN MEDIANO PLAZO\n\n");
 
-				pthread_mutex_lock(&mutexListaSemYPCB);
+				sleep(2);
+
 				if(list_any_satisfy(listaSemYPCB, (void*)verificaSemId)){
 
+					pthread_mutex_lock(&mutexListaSemYPCB);
 					semYPCB = list_remove_by_condition(listaSemYPCB, (void*)verificaSemId);
 					pthread_mutex_unlock(&mutexListaSemYPCB);
 
-					pthread_mutex_lock(&mutexColaBloqueados);
 					if(list_any_satisfy(colaBloqueados, (void*)verificaIdPCB)){
 
+						pthread_mutex_lock(&mutexColaBloqueados);
 						pcbADesbloquear = list_remove_by_condition(colaBloqueados,(void*)verificaIdPCB);
 						pthread_mutex_unlock(&mutexColaBloqueados);
 
@@ -444,9 +450,7 @@ void pcbBloqueadoAReady(){
 
 						sem_post(&sem_colaListos);
 					}
-				pthread_mutex_unlock(&mutexColaBloqueados);
 				}
-			pthread_mutex_unlock(&mutexListaSemYPCB);
 			}
 		}
 	}

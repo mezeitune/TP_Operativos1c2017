@@ -37,6 +37,7 @@
 #include "excepeciones.h"
 #include "heap.h"
 #include "sockets.h"
+#include "listasAdministrativas.h"
 
 #include "capaFilesystem.h"
 
@@ -304,8 +305,8 @@ void gestionarCierreCpu(int socketCpu){
 	_Bool verificaSocket(t_cpu* cpu){
 		return cpu->socket == socketCpu;
 	}
-int socketInterrupciones;
-t_cpu* cpu;
+	int socketInterrupciones;
+	t_cpu* cpu;
 	/*TODO: Saque el WAIT porque en el peor de los casos, el planificador se activara, vera que no hay cpus ociosas, y guardara devuelta el pcb en la cola de listos*/
 
 
@@ -400,7 +401,7 @@ int buscarProcesoYTerminarlo(int pid){
 			}
 			pthread_mutex_unlock(&mutexListaHilos);
 
-			procesoATerminar=expropiarVoluntariamente(cpuAFinalizar->socket);
+			procesoATerminar = expropiarVoluntariamente(cpuAFinalizar->socket);
 		}
 
 	pthread_mutex_lock(&mutexColaNuevos);
@@ -579,7 +580,6 @@ void selectorConexiones() {
 	socklen_t addrlen;
 	fd_set readFds;
 	struct sockaddr_storage remoteaddr;// temp file descriptor list for select()
-
 
 	if (listen(socketServidor, 15) == -1) {
 	perror("listen");

@@ -28,7 +28,7 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 	int resultadoEjecucion = 0;
 	void* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + size);
 
-	strcpy(contenido + size , "\0");
+	strcpy(contenido + size, "\0");
 	memcpy(mensajeAMemoria,&comandoEscribir,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char),&pid,sizeof(int));
 	memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&pagina,sizeof(int));
@@ -110,7 +110,7 @@ int pedirMemoria(t_pcb* procesoListo){
 
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
 	log_info(loggerConPantalla, "Almacenando programa en memoria--->PID: %d", procesoListoAutorizado->pid);
-		char* particionCodigo = malloc(config_paginaSize);
+		char* particionCodigo = malloc(config_paginaSize + sizeof(char));
 		int particionSize;
 		int programSizeRestante = programSize;
 		int resultadoEjecucion=0;
