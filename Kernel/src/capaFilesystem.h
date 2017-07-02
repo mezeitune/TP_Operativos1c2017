@@ -260,10 +260,12 @@ void cerrarArchivo(int socket){
 }
 
 void escribirArchivo(int socket){
+	char comandoGuardarDatos = 'G';
 	int pid;
 	int fileDescriptor;
 	int resultadoEjecucion;
 	int size;
+
 
 		recv(socket,&pid,sizeof(int),0);
 		printf("Pid:%d\n",pid);
@@ -273,7 +275,7 @@ void escribirArchivo(int socket){
 
 		recv(socket,&size,sizeof(int),0);
 		printf("Size:%d\n",size);
-		char* informacion = malloc(size);
+		char* informacion = malloc(size + sizeof(char));
 
 	    recv(socket,informacion,size,0);
 	    strcpy(informacion + size, "\0");
@@ -289,169 +291,162 @@ void escribirArchivo(int socket){
 			return entrada->fd == fileDescriptor;
 		}
 
-		int tablaProcesoExiste;
-		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
-		else tablaProcesoExiste = 0;
 
 		int encontroFd;
+		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
 
-		if(!tablaProcesoExiste){
-			excepcionSinTablaArchivos(socket,pid);
+		if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
+		else encontroFd = 0;
+
+		if(!encontroFd){
+			list_add(listaTablasProcesos,entradaTablaProceso);
+			excepcionFileDescriptorNoAbierto(socket,pid);
+			return;
+		}
+		t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
+
+		int tiene_permisoEscritura=0;
+		const char *permiso_escritura = "w";
+		if(string_contains(entrada->flags, permiso_escritura)){
+			tiene_permisoEscritura=1;
+		}
+
+		if(!tiene_permisoEscritura){
+			list_add(entradaTablaProceso->tablaProceso,entrada);
+			list_add(listaTablasProcesos,entradaTablaProceso);
+			excepcionPermisosEscritura(socket,pid);
 			free(informacion);
 			return;
-		}else{
-
-			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
-			else encontroFd = 0;
-
-			if(!encontroFd){
-				excepcionFileDescriptorNoAbierto(socket,pid);
-				return;
-			}
-
-			if(encontroFd){
-				t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
-
-				int tiene_permisoEscritura=0;
-				const char *permiso_escritura = "w";
-				if(string_contains(entrada->flags, permiso_escritura)){
-					tiene_permisoEscritura=1;
-				}
-
-				if(!tiene_permisoEscritura){
-					excepcionPermisosEscritura(socket,pid);
-					free(informacion);
-					return;
-				}
-
-					char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
-
-
-					char** array_dir=string_n_split(direccion, 12, "/");
-					char* nombreArchivo=array_dir[0];
-					int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
-
-					printf("Tamano del nombre :%d\n",tamanoNombre);
-					printf("Nombre del archivo: %s\n",nombreArchivo);
-					printf("Puntero:%d\n",entrada->puntero);
-					printf("Tamano a escribir :%d\n",size);
-					printf("Informacion a escribir:%s\n",informacion);
-
-
-					char comandoGuardarDatos = 'G';
-
-					send(socketFyleSys,&comandoGuardarDatos,sizeof(char),0);
-					send(socketFyleSys,&tamanoNombre,sizeof(int),0);
-					send(socketFyleSys,nombreArchivo,tamanoNombre,0);
-					send(socketFyleSys,&entrada->puntero,sizeof(int),0);
-					send(socketFyleSys,&size,sizeof(int),0);
-					send(socketFyleSys,informacion,size,0);
-
-					list_add(entradaTablaProceso->tablaProceso,entrada);
-					list_add(listaTablasProcesos,entradaTablaProceso);
-
-					recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
-			}
-
 		}
+
+			char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
+
+
+			char** array_dir=string_n_split(direccion, 12, "/");
+			char* nombreArchivo=array_dir[0];
+			int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+
+			printf("Tamano del nombre :%d\n",tamanoNombre);
+			printf("Nombre del archivo: %s\n",nombreArchivo);
+			printf("Puntero:%d\n",entrada->puntero);
+			printf("Tamano a escribir :%d\n",size);
+			printf("Informacion a escribir:%s\n",informacion);
+
+
+			send(socketFyleSys,&comandoGuardarDatos,sizeof(char),0);
+			send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+			send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+			send(socketFyleSys,&entrada->puntero,sizeof(int),0);
+			send(socketFyleSys,&size,sizeof(int),0);
+			send(socketFyleSys,informacion,size,0);
+
+			list_add(entradaTablaProceso->tablaProceso,entrada);
+			list_add(listaTablasProcesos,entradaTablaProceso);
+
+			recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
+
 		printf("Resultado de ejecucion :%d\n",resultadoEjecucion);
+		if(resultadoEjecucion < 0){
+			excepcionFileSystem(socket,pid);
+			free(informacion);
+			return;
+		}
 		send(socket,&resultadoEjecucion,sizeof(int),0);
+		free(informacion);
 }
 
 void leerArchivo(int socket){
 	int pid;
 	int fileDescriptor;
 	int resultadoEjecucion;
-	int puntero;
 	int tamanioALeer;
 	char* informacion;
-		recv(socket,&pid,sizeof(int),0);
-		recv(socket,&fileDescriptor,sizeof(int),0);
-		recv(socket,&puntero,sizeof(int),0);
-		recv(socket,&tamanioALeer,sizeof(int),0);
-		log_info(loggerConPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d",pid,fileDescriptor,tamanioALeer);
+	char comandoLeer = 'O';
+
+	recv(socket,&pid,sizeof(int),0);
+	recv(socket,&fileDescriptor,sizeof(int),0);
+	recv(socket,&tamanioALeer,sizeof(int),0);
+	log_info(loggerConPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d",pid,fileDescriptor,tamanioALeer);
 
 		_Bool verificaPid(t_indiceTablaProceso* entrada){
 						return entrada->pid == pid;
 					}
 
-				_Bool verificaFd(t_entradaTablaProceso* entrada){
-					return entrada->fd == fileDescriptor;
-				}
+		_Bool verificaFd(t_entradaTablaProceso* entrada){
+			return entrada->fd == fileDescriptor;
+		}
 
-		int tablaProcesoExiste;
-		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
-		else tablaProcesoExiste = 0;
 
-		if(!tablaProcesoExiste){
-			excepcionSinTablaArchivos(socket,pid);
+
+		int encontroFd;
+		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+		if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
+		else encontroFd = 0;
+
+		if(!encontroFd){
+			list_add(listaTablasProcesos,entradaTablaProceso);
+			excepcionFileDescriptorNoAbierto(socket,pid);
 			return;
-		}else{
+		}
 
-			int encontroFd;
-			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
-			else encontroFd = 0;
+		t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
 
-			if(!encontroFd){
-				excepcionFileDescriptorNoAbierto(socket,pid);
-				return;
-			}
-			else{
-				t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
+		int tiene_permisoLectura=0;
+		const char *permiso_lectura = "r";
+		if(string_contains(entrada->flags, permiso_lectura)){
+			tiene_permisoLectura=1;
+		}
+		if(!tiene_permisoLectura){
+			list_add(entradaTablaProceso->tablaProceso,entrada);
+			list_add(listaTablasProcesos,entradaTablaProceso);
+			excepcionPermisosLectura(socket,pid);
+			return;
+		}
 
-				int tiene_permisoLectura=0;
-				const char *permiso_lectura = "r";
-				if(string_contains(entrada->flags, permiso_lectura)){
-					tiene_permisoLectura=1;
-				}
-				if(!tiene_permisoLectura){
-					excepcionPermisosLectura(socket,pid);
+		char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
+
+		printf("Direccion:%s\n",direccion);
+
+		char** array_dir=string_n_split(direccion, 12, "/");
+		char* nombreArchivo=array_dir[0];
+		int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+
+
+
+		printf("Tamano del nombre del archivo:%d\n",tamanoNombre);
+		printf("Nombre del archivo:%s\n",nombreArchivo);
+		printf("Puntero :%d\n",entrada->puntero);
+		printf("Tamano a leer :%d\n",tamanioALeer);
+
+
+
+		send(socketFyleSys,&comandoLeer,sizeof(char),0);
+		send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+		send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+		send(socketFyleSys,&entrada->puntero,sizeof(int),0);
+		send(socketFyleSys,&tamanioALeer,sizeof(int),0);
+
+		list_add(entradaTablaProceso->tablaProceso,entrada);
+		list_add(listaTablasProcesos,entradaTablaProceso);
+
+
+		recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
+		printf("Resultado de ejecucion : %d\n",resultadoEjecucion);
+
+		if(resultadoEjecucion<0){
+					excepcionFileSystem(socket,pid);
 					return;
-				}
-
-				char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
-				list_add(entradaTablaProceso->tablaProceso,entrada);
-				list_add(listaTablasProcesos,entradaTablaProceso);
-
-				char** array_dir=string_n_split(direccion, 12, "/");
-				char* nombreArchivo=array_dir[0];
-				int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
-
-
-
-				printf("Tamano del nombre del archivo:%d\n",tamanoNombre);
-				printf("Nombre del archivo:%s\n",nombreArchivo);
-				printf("Puntero :%d\n",puntero);
-				printf("Tamano a leer :%d\n",tamanioALeer);
-
-
-				send(socketFyleSys,&tamanoNombre,sizeof(int),0);
-				send(socketFyleSys,nombreArchivo,tamanoNombre,0);
-				send(socketFyleSys,&puntero,sizeof(int),0);	/*TODO: esto seria, puntero + entrada->puntero*/
-				send(socketFyleSys,&tamanioALeer,sizeof(int),0);
-
-
-				informacion = malloc(tamanioALeer);
-				recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
-				printf("Resultado de ejecucion : %d\n",resultadoEjecucion);
-
-				recv(socketFyleSys,informacion,tamanioALeer,0);
-				strcpy(informacion + tamanioALeer , "\0");
-				printf("Informacion leida :%s\n",informacion);
-				if(resultadoEjecucion<0){
-						excepcionFileSystem(socket,pid);
-						return;
 					}
-				}
+		informacion = malloc(tamanioALeer + sizeof(char));
+		recv(socketFyleSys,informacion,tamanioALeer,0);
+		strcpy(informacion + tamanioALeer , "\0");
+		printf("Informacion leida :%s\n",informacion);
 
-			}
-			send(socket,&resultadoEjecucion,sizeof(int),0);
-			send(socket,informacion,tamanioALeer,0);
+	send(socket,&resultadoEjecucion,sizeof(int),0);
+	send(socket,informacion,tamanioALeer,0);
 
-			free(informacion);
-			log_info(loggerConPantalla,"Datos obtenidos--->PID:%d--->Datos:%s",pid,informacion);
+	free(informacion);
+	log_info(loggerConPantalla,"Datos obtenidos--->PID:%d--->Datos:%s",pid,informacion);
 }
 
 void moverCursorArchivo(int socket){
@@ -573,6 +568,7 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 		 entrada->fd = entradaTablaExistente->tablaProceso->elements_count + 3;
 		 entrada->flags = flags;
 		 entrada->globalFd = indiceEnTablaGlobal;
+		 entrada->puntero = 0;
 		 printf("Agrego el indice :%d\n",entrada->globalFd);
 		 list_add(entradaTablaExistente->tablaProceso,entrada);
 		 list_add(listaTablasProcesos,entradaTablaExistente);//la vuelvo a agregar a la lista
@@ -681,7 +677,7 @@ int buscarIndiceEnTablaGlobal(char* direccion){
 }
 
 char* buscarDireccionEnTablaGlobal(int indice){
-	log_info(loggerConPantalla,"Buscando direccion en tabla global--->Indice:%s",indice);
+	log_info(loggerConPantalla,"Buscando direccion en tabla global--->Indice:%d",indice);
 	t_entradaTablaGlobal* entrada = list_get(tablaArchivosGlobal,indice);
 
 	return entrada->path;
@@ -691,15 +687,6 @@ void inicializarTablaProceso(int pid){
 	 t_indiceTablaProceso* indiceNuevaTabla = malloc(sizeof(t_indiceTablaProceso));
 	 indiceNuevaTabla->pid = pid;
 	 indiceNuevaTabla->tablaProceso = list_create();
-
-	 t_entradaTablaProceso* entrada=malloc(sizeof(t_entradaTablaProceso));
-	 entrada->fd = 0;
-	 entrada->flags = "rwc";
-	 entrada->globalFd = 0;
-	 entrada->puntero=0;
-
-	 list_add(indiceNuevaTabla->tablaProceso,entrada);
-
 	 list_add(listaTablasProcesos,indiceNuevaTabla);
 }
 
