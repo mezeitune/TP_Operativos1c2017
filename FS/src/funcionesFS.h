@@ -41,7 +41,7 @@ void validarArchivoFunction(int socket_cliente){
 	} else {
 	    // file doesn't exist
 	  log_warning(loggerConPantalla,"El archivo no existe");
-	   validado=0;
+	   validado=-1;
 	   send(socket_cliente,&validado,sizeof(int),0);
 	}
 

@@ -30,7 +30,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	printf("resultado:%d\n",resultadoEjecucion);
 	//log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor);
 
-	if(resultadoEjecucion < 0){
+	if(resultadoEjecucion < 0){ /*TODO: No se porque recibe uno positivo aunque haya excepcion*/
 	//	log_error(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s",pid,descriptor);
 		expropiarPorKernel();
 		return 0;

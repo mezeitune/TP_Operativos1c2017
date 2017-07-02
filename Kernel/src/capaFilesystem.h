@@ -595,7 +595,7 @@ void disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
 
 	if(entrada->open==0){
 		list_remove(tablaArchivosGlobal,indiceTablaGlobal);
-		if(tablaArchivosGlobal->elements_count > 0)actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal);
+		if(tablaArchivosGlobal->elements_count > 0)actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal); /*TODO: Esta jodiedno esta*/
 		free(entrada);
 	}
 }
