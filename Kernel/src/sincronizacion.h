@@ -79,7 +79,6 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaAdminHeap,NULL);
 		pthread_mutex_init(&mutexMemoria,NULL);
 		pthread_mutex_init(&mutexListaHilos,NULL);
-		pthread_mutex_init(&mutexRecibirPCB,NULL);
 
 
 

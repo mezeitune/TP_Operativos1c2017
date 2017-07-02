@@ -376,29 +376,34 @@ int buscarProcesoYTerminarlo(int pid){
 	int encontro=0;
 	t_pcb *procesoATerminar;
 	t_cpu *cpuAFinalizar = malloc(sizeof(t_cpu));
+	t_semYPCB *semYPCBAEliminar = malloc(sizeof(t_semYPCB));
 
 	_Bool verificarPid(t_pcb* pcb){
-			return (pcb->pid==pid);
-		}
+		return (pcb->pid==pid);
+	}
 	_Bool verificarPidCPU(t_cpu* cpu){
-				return (cpu->pid==pid);
-			}
+		return (cpu->pid==pid);
+	}
 
 	_Bool verificarPidHilo(t_hilo* hilo){
-					return (hilo->pid==pid);
-				}
+		return (hilo->pid==pid);
+	}
 
-if(!encontro){
-	pthread_mutex_lock(&mutexListaEspera);
+	_Bool verificarPidSemYPCB(t_semYPCB* semYPCB){
+		return (semYPCB->pcb->pid == pid);
+	}
+
+	if(!encontro){
+		pthread_mutex_lock(&mutexListaEspera);
 		if(list_any_satisfy(listaEspera,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(listaEspera,(void*)verificarPid);
 			encontro=1;
 		}
-	pthread_mutex_unlock(&mutexListaEspera);
-}
+		pthread_mutex_unlock(&mutexListaEspera);
+	}
 
-if(!encontro){
-	pthread_mutex_lock(&mutexColaEjecucion);
+	if(!encontro){
+		pthread_mutex_lock(&mutexColaEjecucion);
 		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
 			pthread_mutex_unlock(&mutexColaEjecucion);
 
@@ -419,38 +424,62 @@ if(!encontro){
 
 			procesoATerminar = expropiarVoluntariamente(cpuAFinalizar->socket);
 		}
-}
-
-if(!encontro){
-	pthread_mutex_lock(&mutexColaNuevos);
-	if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
-		procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
-		encontro = 1;
 	}
-	pthread_mutex_unlock(&mutexColaNuevos);
-}
 
-if(!encontro){
-	pthread_mutex_lock(&mutexColaListos);
+	if(!encontro){
+		pthread_mutex_lock(&mutexColaNuevos);
+		if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
+			procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
+			encontro = 1;
+		}
+		pthread_mutex_unlock(&mutexColaNuevos);
+	}
 
-	if(list_any_satisfy(colaListos,(void*)verificarPid)){
+	if(!encontro){
+		pthread_mutex_lock(&mutexColaListos);
+
+		if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
 			liberarRecursosEnMemoria(procesoATerminar);
 			sem_wait(&sem_colaListos);
 			encontro = 1;
 		}
-	pthread_mutex_unlock(&mutexColaListos);
-}
+		pthread_mutex_unlock(&mutexColaListos);
+	}
 
-if(!encontro){
-	pthread_mutex_lock(&mutexColaBloqueados);
-	if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
+	if(!encontro){
+		pthread_mutex_lock(&mutexColaBloqueados);
+		if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
-			liberarRecursosEnMemoria(procesoATerminar); /*TODO: Tambien habria que limpiarlo de la cola del semaforo asociado*/
+			liberarRecursosEnMemoria(procesoATerminar);
 			encontro = 1;
 		}
-	pthread_mutex_unlock(&mutexColaBloqueados);
-}
+		pthread_mutex_unlock(&mutexColaBloqueados);
+	}
+
+	if(!encontro){
+		pthread_mutex_lock(&mutexListaSemYPCB);
+		if(list_any_satisfy(listaSemYPCB,(void*)verificarPidSemYPCB)){
+			semYPCBAEliminar = list_remove_by_condition(listaSemYPCB,(void*)verificarPidSemYPCB);
+			procesoATerminar = semYPCBAEliminar->pcb;
+
+			liberarRecursosEnMemoria(procesoATerminar);
+			encontro = 1;
+		}
+		pthread_mutex_unlock(&mutexListaSemYPCB);
+	}
+
+
+	if(!encontro){
+		pthread_mutex_lock(&mutexListaFinQuantum);
+		if(list_any_satisfy(listaFinQuantum,(void*)verificarPid)){
+			procesoATerminar = list_remove_by_condition(listaFinQuantum,(void*)verificarPid);
+			liberarRecursosEnMemoria(procesoATerminar);
+			encontro = 1;
+		}
+		pthread_mutex_unlock(&mutexListaFinQuantum);
+	}
+
 
 	procesoATerminar->exitCode = exitCodeArray[EXIT_END_OF_PROCESS]->value;
 	terminarProceso(procesoATerminar);
