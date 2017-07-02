@@ -15,7 +15,7 @@ void recibirPCB(){
 
 		char comandoRecibirPCB;
 
-		recv(socketKernel,&comandoRecibirPCB,sizeof(char),0);
+		recv(socketKernel,&comandoRecibirPCB,sizeof(char),MSG_WAITALL);
 		log_info(loggerConPantalla, "Recibiendo PCB...\n");
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
 
@@ -35,8 +35,8 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
 				break;
 	}
-orden = '\0';
-return;
+	orden = '\0';
+	return;
 }
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);

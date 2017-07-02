@@ -37,6 +37,7 @@
 #include "excepeciones.h"
 #include "heap.h"
 #include "sockets.h"
+#include "listasAdministrativas.h"
 
 #include "capaFilesystem.h"
 
@@ -305,9 +306,6 @@ void gestionarCierreCpu(int socketCpu){
 	}
 t_cpu* cpu;
 	/*TODO: Saque el WAIT porque en el peor de los casos, el planificador se activara, vera que no hay cpus ociosas, y guardara devuelta el pcb en la cola de listos*/
-
-
-
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
@@ -365,7 +363,7 @@ void gestionarFinalizarProgramaConsola(int socket){
 
 int buscarProcesoYTerminarlo(int pid){
 	log_info(loggerConPantalla,"Finalizando proceso--->PID: %d ",pid);
-
+	int encontro=0;
 	t_pcb *procesoATerminar;
 	t_cpu *cpuAFinalizar = malloc(sizeof(t_cpu));
 
@@ -380,13 +378,16 @@ int buscarProcesoYTerminarlo(int pid){
 					return (hilo->pid==pid);
 				}
 
-
+if(!encontro){
 	pthread_mutex_lock(&mutexListaEspera);
 		if(list_any_satisfy(listaEspera,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(listaEspera,(void*)verificarPid);
+			encontro=1;
 		}
 	pthread_mutex_unlock(&mutexListaEspera);
+}
 
+if(!encontro){
 	pthread_mutex_lock(&mutexColaEjecucion);
 		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
 			pthread_mutex_unlock(&mutexColaEjecucion);
@@ -402,34 +403,44 @@ int buscarProcesoYTerminarlo(int pid){
 					pthread_mutex_lock(&mutexMemoria); /*TODO: Para garantizarme que no se este ejecutando un servicio a Memoria*/
 					pthread_kill(hilo->hilo,SIGUSR1); // Seria lo mismo con FS
 					pthread_mutex_unlock(&mutexMemoria);
+					encontro = 1;
 			}
 			pthread_mutex_unlock(&mutexListaHilos);
 
-			procesoATerminar=expropiarVoluntariamente(cpuAFinalizar->socket);
+			procesoATerminar = expropiarVoluntariamente(cpuAFinalizar->socket);
 		}
+}
 
+if(!encontro){
 	pthread_mutex_lock(&mutexColaNuevos);
 	if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
 		procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
+		encontro = 1;
 	}
 	pthread_mutex_unlock(&mutexColaNuevos);
+}
 
-
+if(!encontro){
 	pthread_mutex_lock(&mutexColaListos);
 
 	if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
 			liberarRecursosEnMemoria(procesoATerminar);
 			sem_wait(&sem_colaListos);
+			encontro = 1;
 		}
 	pthread_mutex_unlock(&mutexColaListos);
+}
 
+if(!encontro){
 	pthread_mutex_lock(&mutexColaBloqueados);
 	if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
 			liberarRecursosEnMemoria(procesoATerminar); /*TODO: Tambien habria que limpiarlo de la cola del semaforo asociado*/
+			encontro = 1;
 		}
 	pthread_mutex_unlock(&mutexColaBloqueados);
+}
 
 	procesoATerminar->exitCode = exitCodeArray[EXIT_END_OF_PROCESS]->value;
 	terminarProceso(procesoATerminar);
@@ -583,7 +594,6 @@ void selectorConexiones() {
 	socklen_t addrlen;
 	fd_set readFds;
 	struct sockaddr_storage remoteaddr;// temp file descriptor list for select()
-
 
 	if (listen(socketServidor, 15) == -1) {
 	perror("listen");

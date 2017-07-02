@@ -50,9 +50,13 @@ void crearInformacionContable(int pid){
 }
 
 void actualizarSysCalls(int pid){
+
+	t_contable* contabilidad = malloc(sizeof(t_contable));
+
+	printf("\n\nPID: %d\n\n", pid);
 	pthread_mutex_lock(&mutexListaContable);
-	t_contable* contabilidad = buscarInformacionContable(pid);
-	contabilidad->cantSysCalls+=1;
+	contabilidad = buscarInformacionContable(pid);
+	contabilidad->cantSysCalls += 1;
 	list_add(listaContable,contabilidad);
 	pthread_mutex_unlock(&mutexListaContable);
 }
