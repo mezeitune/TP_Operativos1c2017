@@ -12,7 +12,10 @@
 
 t_list* listaCPU;
 
-enum {EJECUCTANDO,OCIOSA};
+enum {	EJECUCTANDO,
+		OCIOSA,
+		FQPB
+};
 
 typedef struct CPU {
 	int estado;
@@ -22,15 +25,14 @@ typedef struct CPU {
 }t_cpu;
 
 
-void cpuEjecucionAOciosa(int socketCPU);
+void cpuEjecucionAFQPB(int socketCPU);
 
 
 
 
-void cpuEjecucionAOciosa(int socketCPU){
+void cpuEjecucionAFQPB(int socketCPU){
 
 	t_cpu *cpu = malloc(sizeof(t_cpu));
-	int cpuFinalizada;
 
 	_Bool verificaSocket(t_cpu* unaCpu){
 		return (unaCpu->socket == socketCPU);
@@ -40,7 +42,7 @@ void cpuEjecucionAOciosa(int socketCPU){
 
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
-	cpu->estado = OCIOSA;
+	cpu->estado = FQPB;
 	list_add(listaCPU,cpu);
 	pthread_mutex_unlock(&mutexListaCPU);
 

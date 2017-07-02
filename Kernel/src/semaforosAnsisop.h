@@ -86,16 +86,16 @@ void waitSemaforoAnsisop(int socketCPU){
 	log_info(loggerConPantalla, "Procesando instruccion atomica Wait--/*->semaforo*/: %s", semaforo);
 
 
-	expropiar = consultarSemaforo(semaforo);
+	//expropiar = consultarSemaforo(semaforo);
 
-	/*if((expropiar = consultarSemaforo(semaforo)) > 0)*/ disminuirSemaforo(semaforo);//ESTO ESTA BIEN ASI
+	if((expropiar = consultarSemaforo(semaforo)) > 0) disminuirSemaforo(semaforo);//ESTO ESTA BIEN ASI
 	send(socketCPU,&expropiar,sizeof(int),0);
 
 	if(expropiar == -1) {
 
 		semYPCB->pcb = recibirYDeserializarPcb(socketCPU);
 
-		cpuEjecucionAOciosa(socketCPU);
+		cpuEjecucionAFQPB(socketCPU);
 
 		semYPCB->idSemaforo = semaforo;
 

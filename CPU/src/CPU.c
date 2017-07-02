@@ -63,7 +63,7 @@ void CerrarPorSignal(){
 	}
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
-	serializarPcbYEnviar(pcb_actual, socketKernel);
+	if(&pcb_actual->pid != NULL) serializarPcbYEnviar(pcb_actual, socketKernel);
 	send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
 
 
@@ -80,7 +80,7 @@ void expropiarVoluntariamente(){
 
 	if(cpuExpropiada == -1) expropiarPorKernel();
 	if(cpuFinalizada == 0) CerrarPorSignal();
-	if(cpuBloqueada == 0)log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
+	if(cpuBloqueada == 0) log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
 	else expropiarPorRR();
 
 

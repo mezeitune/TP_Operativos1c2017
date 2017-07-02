@@ -34,12 +34,12 @@
 #include "contabilidad.h"
 #include "semaforosAnsisop.h"
 #include "comandosCPU.h"
-#include "excepeciones.h"
 #include "heap.h"
 #include "sockets.h"
 #include "listasAdministrativas.h"
 
 #include "capaFilesystem.h"
+#include "excepciones.h"
 
 
 typedef struct{
@@ -146,8 +146,6 @@ void connectionHandler(int socket, char orden) {
 		case 'A':	atenderNuevoPrograma(socket);
 					break;
 		case 'N':	gestionarNuevaCPU(socket,quantum);
-					sem_getvalue(&sem_CPU, &valor);
-					printf("\n\nVALOR SEMCPU: %d\n\n", valor);
 					break;
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
@@ -243,21 +241,33 @@ void gestionarNuevaCPU(int socketCPU,int quantum){
 
 void gestionarRRFinQuantum(int socket){
 	t_pcb* pcb;
+	t_cpu *cpu;
 	int cantidadDeRafagas;
 	int cpuFinalizada;
+
 	_Bool verificaSocket(t_cpu* unaCpu){
 		return (unaCpu->socket == socket);
 	}
 
-	recv(socket,&cpuFinalizada, sizeof(int),0);
-	recv(socket,&cantidadDeRafagas,sizeof(int),0);
-	pcb = recibirYDeserializarPcb(socket);
-	cambiarEstadoCpu(socket,OCIOSA);
-	actualizarRafagas(pcb->pid,cantidadDeRafagas);
-	removerDeColaEjecucion(pcb->pid);
-	agregarAFinQuantum(pcb);
-	if(cpuFinalizada != 0) sem_post(&sem_CPU);
 
+	cpu = list_find(listaCPU, (void*)verificaSocket);
+
+
+	if(cpu->estado != FQPB){
+
+		recv(socket,&cpuFinalizada, sizeof(int),0);
+		recv(socket,&cantidadDeRafagas,sizeof(int),0);
+
+		pthread_mutex_lock(&mutexRecibirPCB);
+		pcb = recibirYDeserializarPcb(socket);
+		pthread_mutex_unlock(&mutexRecibirPCB);
+
+		cambiarEstadoCpu(socket,OCIOSA);
+		actualizarRafagas(pcb->pid,cantidadDeRafagas);
+		removerDeColaEjecucion(pcb->pid);
+		agregarAFinQuantum(pcb);
+		if(cpuFinalizada != 0) sem_post(&sem_CPU);
+	}
 
 }
 

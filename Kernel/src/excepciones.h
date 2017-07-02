@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-#ifndef EXCEPECIONES_H_
-#define EXCEPECIONES_H_
+#ifndef EXCEPCIONES_H_
+#define EXCEPCIONES_H_
 #define CANTIDADEXCEPCIONES 20
 #include "conexionConsola.h"
 #include "sockets.h"
@@ -372,4 +372,4 @@ void inicializarExitCodeArray(){
 
 
 }
-#endif /* EXCEPECIONES_H_ */
+#endif /* EXCEPCIONES_H_ */

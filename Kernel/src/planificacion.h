@@ -28,7 +28,7 @@
 #include "comandosCPU.h"
 #include "heap.h"
 #include "conexionConsola.h"
-#include "excepeciones.h"
+#include "excepciones.h"
 #include "listasAdministrativas.h"
 
 /*---PAUSA PLANIFICACION---*/
@@ -37,8 +37,8 @@ int flagCPUSeDesconecto;
 int flagTerminarPlanificadorLargoPlazo = 0;
 int flagPlanificacion;
 void verificarPausaPlanificacion();
-void interfaceReanudarPlanificacion();
-void interfacePausarPlanificacion();
+void interfazReanudarPlanificacion();
+void interfazPausarPlanificacion();
 /*-------------------------*/
 
 /*----LARGO PLAZO--------*/
@@ -216,7 +216,7 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
 
-void interfacePausarPlanificacion(){
+void interfazPausarPlanificacion(){
 
 	if(!flagPlanificacion)log_warning(loggerConPantalla, "Planificacion ya pausada");
 	else{
@@ -227,7 +227,7 @@ void interfacePausarPlanificacion(){
 	printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
 }
 
-void interfaceReanudarPlanificacion(){
+void interfazReanudarPlanificacion(){
 
 	if(flagPlanificacion) log_warning(loggerConPantalla, "Planificacion no se encuentra pausada");
 	else{
@@ -261,7 +261,7 @@ void planificarCortoPlazo(){
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
 	_Bool verificarCPU(t_cpu* cpu){
-		return (cpu->estado == OCIOSA);
+		return (cpu->estado == OCIOSA || cpu->estado == FQPB);
 	}
 	char comandoEnviarPcb = 'S';
 
@@ -306,9 +306,9 @@ void planificarCortoPlazo(){
 			pthread_mutex_unlock(&mutexColaEjecucion);
 
 			log_info(loggerConPantalla,"Pcb encolado en Ejecucion--->PID:%d",pcbListo->pid);
+
 		}else{
 			printf("\nLo meti devuelta en listos\n");
-			pthread_mutex_unlock(&mutexListaCPU);
 
 			pthread_mutex_lock(&mutexColaListos);
 			list_add(colaListos,pcbListo);
@@ -333,12 +333,12 @@ void finQuantumAReady(){
 
 		sem_wait(&sem_listaFinQuantum);
 
-		pthread_mutex_lock(&mutexListaFinQuantum);
 			for (indice = 0; indice <= list_size(listaFinQuantum); ++indice) {
 
+				pthread_mutex_lock(&mutexListaFinQuantum);
+				pcbBuffer = list_remove(listaFinQuantum,indice);
 				pthread_mutex_unlock(&mutexListaFinQuantum);
 
-				pcbBuffer = list_remove(listaFinQuantum,indice);
 
 				pthread_mutex_lock(&mutexColaListos);
 				list_add_in_index(colaListos, list_size(colaListos),pcbBuffer);
@@ -346,7 +346,6 @@ void finQuantumAReady(){
 
 				sem_post(&sem_colaListos);
 			}
-		pthread_mutex_unlock(&mutexListaFinQuantum);
 	}
 }
 
@@ -428,10 +427,6 @@ void pcbBloqueadoAReady(){
 
 			if(semaforoBuffer/*->semaforo*/->valor > 0){
 
-				log_info(loggerConPantalla,"\n\nESTOY EN MEDIANO PLAZO\n\n");
-
-				sleep(2);
-
 				if(list_any_satisfy(listaSemYPCB, (void*)verificaSemId)){
 
 					pthread_mutex_lock(&mutexListaSemYPCB);
@@ -439,6 +434,7 @@ void pcbBloqueadoAReady(){
 					pthread_mutex_unlock(&mutexListaSemYPCB);
 
 					if(list_any_satisfy(colaBloqueados, (void*)verificaIdPCB)){
+						log_info(loggerConPantalla,"Cambiando proceso desde Bloqueado a Listo--->PID:%d",semYPCB->pcb->pid);
 
 						pthread_mutex_lock(&mutexColaBloqueados);
 						pcbADesbloquear = list_remove_by_condition(colaBloqueados,(void*)verificaIdPCB);
@@ -449,6 +445,7 @@ void pcbBloqueadoAReady(){
 						pthread_mutex_unlock(&mutexColaListos);
 
 						sem_post(&sem_colaListos);
+						free(semYPCB);
 					}
 				}
 			}
@@ -510,9 +507,9 @@ void pcbEjecucionABloqueado(){
 
 	printf("\nBloqueando Proceso\n");
 
-	pthread_mutex_lock(&mutexListaSemYPCB);
 	for (indice = 0; indice < list_size(listaSemYPCB); ++indice) {
 
+		pthread_mutex_lock(&mutexListaSemYPCB);
 		semYPCB = list_get(listaSemYPCB, indice);
 		pthread_mutex_unlock(&mutexListaSemYPCB);
 
@@ -528,7 +525,6 @@ void pcbEjecucionABloqueado(){
 
 
 	}
-	pthread_mutex_unlock(&mutexListaSemYPCB);
 	//free(semYPCB);
 }
 
@@ -577,18 +573,18 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 				return (cpu->socket == socketCPU);
 	}
 
-			t_pcb* proceso = recibirYDeserializarPcb(socketCPU);
 
+	t_pcb* proceso = recibirYDeserializarPcb(socketCPU);
 
-			proceso->exitCode = exitCodeArray[EXIT_OK]->value;
-			completarRafagas(proceso->pid,proceso->cantidadInstrucciones);
-			removerDeColaEjecucion(proceso->pid);
-			pthread_mutex_lock(&mutexListaEspera);
-			list_add(listaEspera,proceso);
-			pthread_mutex_unlock(&mutexListaEspera);
-			sem_post(&sem_administrarFinProceso);
-			cambiarEstadoCpu(socketCPU,OCIOSA);
-			sem_post(&sem_CPU);
+	proceso->exitCode = exitCodeArray[EXIT_OK]->value;
+	completarRafagas(proceso->pid,proceso->cantidadInstrucciones);
+	removerDeColaEjecucion(proceso->pid);
+	pthread_mutex_lock(&mutexListaEspera);
+	list_add(listaEspera,proceso);
+	pthread_mutex_unlock(&mutexListaEspera);
+	sem_post(&sem_administrarFinProceso);
+	cambiarEstadoCpu(socketCPU,OCIOSA);
+	sem_post(&sem_CPU);
 
 
 }

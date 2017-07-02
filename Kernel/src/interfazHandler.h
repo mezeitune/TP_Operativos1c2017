@@ -50,9 +50,9 @@ void interfazHandler(){
 							break;
 				case 'O': 	interfaceObtenerDatosProceso();
 							break;
-				case 'R':	interfaceReanudarPlanificacion();
+				case 'R':	interfazReanudarPlanificacion();
 							break;
-				case 'P':	interfacePausarPlanificacion();
+				case 'P':	interfazPausarPlanificacion();
 							break;
 				case 'G':	interfaceTablaGlobalArchivos();
 							break;

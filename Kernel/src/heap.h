@@ -13,7 +13,7 @@
 #include "conexionMemoria.h"
 #include "contabilidad.h"
 #include "sincronizacion.h"
-#include "excepeciones.h"
+#include "excepciones.h"
 
 typedef struct
 {

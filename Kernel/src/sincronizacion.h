@@ -23,6 +23,9 @@ pthread_mutex_t mutexNuevoProceso;
 pthread_mutex_t mutexListaFinQuantum;
 pthread_mutex_t mutexListaConsolas;
 pthread_mutex_t mutexListaCPU;
+
+pthread_mutex_t mutexRecibirPCB;
+
 pthread_mutex_t mutex_config_gradoMultiProgramacion;
 pthread_mutex_t mutex_gradoMultiProgramacion;
 pthread_mutex_t mutexListaEspera;
@@ -76,6 +79,10 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaAdminHeap,NULL);
 		pthread_mutex_init(&mutexMemoria,NULL);
 		pthread_mutex_init(&mutexListaHilos,NULL);
+		pthread_mutex_init(&mutexRecibirPCB,NULL);
+
+
+
 
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_administrarFinProceso,0,0);
