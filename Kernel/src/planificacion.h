@@ -107,7 +107,7 @@ void administrarNuevosProcesos(){
 	while(!flagTerminarPlanificadorLargoPlazo){
 			sem_wait(&sem_admitirNuevoProceso);
 			pthread_mutex_lock(&mutexNuevoProceso);
-				if(verificarGradoDeMultiprogramacion()==0 &&list_size(colaNuevos)>0 && flagPlanificacion) {
+				if(verificarGradoDeMultiprogramacion()==0 && list_size(colaNuevos)>0 && flagPlanificacion) {
 
 				pthread_mutex_lock(&mutexColaNuevos);
 				proceso = list_remove(colaNuevos,0);
@@ -229,17 +229,19 @@ void interfazPausarPlanificacion(){
 
 void interfazReanudarPlanificacion(){
 
+	int valor;
+
 	if(flagPlanificacion) log_warning(loggerConPantalla, "Planificacion no se encuentra pausada");
 	else{
 		flagPlanificacion = 1;
 
 		sem_post(&sem_planificacion);
-		sem_post(&sem_planificacion);
-		sem_post(&sem_planificacion);
-		sem_post(&sem_administrarFinProceso);
+		/*sem_post(&sem_administrarFinProceso); TODO: Esto hace falta? Hace que explote todo*/
 		log_info(loggerConPantalla, "Se reanudo la planificacion");
 	}
 	printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
+	sem_getvalue(&sem_planificacion, &valor);
+	printf("\n\nSEM PLANIFICACION: %d\n\n", valor);
 }
 
 void verificarPausaPlanificacion(){
@@ -271,13 +273,13 @@ void planificarCortoPlazo(){
 
 	while(1){
 
-		verificarPausaPlanificacion();
 
 
 
 		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaListos);
 
+		verificarPausaPlanificacion();
 
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
@@ -329,9 +331,9 @@ void finQuantumAReady(){
 
 	while(1){
 
-		verificarPausaPlanificacion();
 
 		sem_wait(&sem_listaFinQuantum);
+		verificarPausaPlanificacion();
 
 			for (indice = 0; indice <= list_size(listaFinQuantum); ++indice) {
 
@@ -341,7 +343,7 @@ void finQuantumAReady(){
 
 
 				pthread_mutex_lock(&mutexColaListos);
-				list_add_in_index(colaListos, list_size(colaListos),pcbBuffer);
+				list_add(colaListos,pcbBuffer);
 				pthread_mutex_unlock(&mutexColaListos);
 
 				sem_post(&sem_colaListos);
@@ -383,7 +385,7 @@ pthread_t threadId;
 	 pthread_create(&threadId,NULL, (void*)pcbBloqueadoAReady, NULL);
 
 	 while(1){
-		verificarPausaPlanificacion();
+
 		pcbEjecucionABloqueado();
 
 	}
@@ -416,8 +418,8 @@ void pcbBloqueadoAReady(){
 	}
 
 	while(1){
-		verificarPausaPlanificacion();
 		sem_wait(&sem_semAumentados);
+		verificarPausaPlanificacion();
 
 		for(i = 0; i < list_size(listaSemaforosGlobales); ++i) {
 
@@ -503,7 +505,7 @@ void pcbEjecucionABloqueado(){
 
 
 	sem_wait(&sem_ListaSemYPCB);
-
+	verificarPausaPlanificacion();
 
 	printf("\nBloqueando Proceso\n");
 

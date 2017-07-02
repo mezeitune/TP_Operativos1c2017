@@ -543,7 +543,7 @@ void enviarAImprimirALaConsola(int socketConsola, void* buffer, int size){
 
 
 void inicializarListas(){
-	colaNuevos = list_create();
+	colaNuevos = list_create();//list_create();
 	colaListos = list_create();
 	colaTerminados = list_create();
 	colaEjecucion = list_create();
