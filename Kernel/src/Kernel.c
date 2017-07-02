@@ -180,7 +180,6 @@ int atenderNuevoPrograma(int socketAceptado){
 		t_codigoPrograma* codigoPrograma = recibirCodigoPrograma(socketAceptado);
 		t_pcb* proceso=crearPcb(codigoPrograma->codigo,codigoPrograma->size);
 		codigoPrograma->pid=proceso->pid;
-		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 
 		if(!flagPlanificacion) {
 					contadorPid--;
@@ -196,7 +195,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		pthread_mutex_lock(&mutexColaNuevos);
 		list_add(colaNuevos,proceso);
 		pthread_mutex_unlock(&mutexColaNuevos);
-
+		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 		pthread_mutex_lock(&mutexListaCodigo);
 		list_add(listaCodigosProgramas,codigoPrograma);
 		pthread_mutex_unlock(&mutexListaCodigo);
@@ -304,7 +303,6 @@ void gestionarCierreCpu(int socketCpu){
 	_Bool verificaSocket(t_cpu* cpu){
 		return cpu->socket == socketCpu;
 	}
-int socketInterrupciones;
 t_cpu* cpu;
 	/*TODO: Saque el WAIT porque en el peor de los casos, el planificador se activara, vera que no hay cpus ociosas, y guardara devuelta el pcb en la cola de listos*/
 
@@ -382,6 +380,13 @@ int buscarProcesoYTerminarlo(int pid){
 					return (hilo->pid==pid);
 				}
 
+
+	pthread_mutex_lock(&mutexListaEspera);
+		if(list_any_satisfy(listaEspera,(void*)verificarPid)){
+			procesoATerminar=list_remove_by_condition(listaEspera,(void*)verificarPid);
+		}
+	pthread_mutex_unlock(&mutexListaEspera);
+
 	pthread_mutex_lock(&mutexColaEjecucion);
 		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
 			pthread_mutex_unlock(&mutexColaEjecucion);
@@ -437,7 +442,6 @@ void gestionarAlocar(int socket){
     pthread_t heapThread;
 	recv(socket,&pid,sizeof(int),0);
 	log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
-	actualizarSysCalls(pid);
 	recv(socket,&size,sizeof(int),0);
 
 	if(size > config_paginaSize - sizeof(t_bloqueMetadata)*2) {
@@ -461,7 +465,7 @@ void gestionarAlocar(int socket){
 	pthread_mutex_lock(&mutexListaHilos);
 	list_add(listaHilos,hilo);
 	pthread_mutex_unlock(&mutexListaHilos);
-
+	actualizarSysCalls(pid);
 	actualizarAlocar(pid,size);
 }
 

@@ -228,16 +228,6 @@ void cerrarArchivo(int socket){
 					return entrada->fd == fileDescriptor;
 				}
 
-		//verificar que la tabla de ese pid exista
-		int tablaProcesoExiste;
-		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
-		else tablaProcesoExiste = 0;
-
-
-		if(!tablaProcesoExiste){
-			excepcionSinTablaArchivos(socket,pid);
-			return;
-		}else{
 
 			int encontroFd;
 			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
@@ -253,7 +243,6 @@ void cerrarArchivo(int socket){
 				int indiceTablaGlobal=borrarEntradaTablaProceso(pid,fileDescriptor);
 				disminuirOpenYVerificarExistenciaEntradaGlobal(indiceTablaGlobal);
 			}
-		}
 		resultadoEjecucion=1;
 		send(socket,&resultadoEjecucion,sizeof(int),0);
 
