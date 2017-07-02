@@ -17,9 +17,6 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	send(socketKernel,&tamanoDireccion,sizeof(int),0);
 	send(socketKernel,direccion,tamanoDireccion,0);
 
-	printf("%s\n", flags.creacion ? "true" : "false");
-	printf("%s\n", flags.escritura ? "true" : "false");
-	printf("%s\n", flags.lectura ? "true" : "false");
 	//enviar los flags al kernel
 	char* flagsMapeados;
 	flagsMapeados = devolverStringFlags(flags);
