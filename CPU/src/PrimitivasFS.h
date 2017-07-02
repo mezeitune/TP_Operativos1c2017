@@ -87,10 +87,11 @@ void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion==1)
-	log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d");
+
+	if(resultadoEjecucion>0)
+	log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d",pid,descriptor_archivo);
 	else {
-		log_error(loggerConPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d");
+		log_error(loggerConPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d",pid,descriptor_archivo);
 		expropiarPorKernel();
 	}
 
