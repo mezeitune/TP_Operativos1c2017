@@ -4,7 +4,7 @@
 void printBitmap(){
 
 	int j;
-	for(j=0;j<32;j++){
+	for(j=0;j<cantidadBloques;j++){
 		/*if(bitarray_test_bit(bitarray, j)==1){
 			printf("ocupado-");
 		}else{
