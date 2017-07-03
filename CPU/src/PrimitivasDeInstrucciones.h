@@ -193,15 +193,16 @@ void finalizar (){
 		serializarPcbYEnviar(pcb_actual,socketKernel);
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
-		free(pcb_actual);
-		printf("\n\nCPU FINALIZADA: %d\n\n", cpuFinalizada);
-		if(cpuFinalizada == 0){
+
+
+		if(cpuFinalizadaPorSignal == 0){
 			CerrarPorSignal();
 		}
 		else{
-			cpuExpropiada = 1;
+			cpuExpropiadaPorKernel = 1;
 			cpuOcupada=1;
 			recibiPcb=1;
+			free(pcb_actual);
 			esperarPCB();
 		}
 }
@@ -298,7 +299,7 @@ int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->in
 		expropiarPorDireccionInvalida();
 	} else {
 		pcb_actual->programCounter = (program_counter - 1);
-		cantidadInstruccionesAEjecutarPcb_Actual = cantidadInstruccionesAEjecutarPcb_Actual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
+		cantidadInstruccionesAEjecutarDelPcbActual = cantidadInstruccionesAEjecutarDelPcbActual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
 	}
 int i = 0;
 	while(string_cortado[i] != NULL){
@@ -324,7 +325,7 @@ int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->in
 	} else {
 		pcb_actual->programCounter = (program_counter-1);
 		log_info(loggerConPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter+1,etiqueta);
-		cantidadInstruccionesAEjecutarPcb_Actual = cantidadInstruccionesAEjecutarPcb_Actual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
+		cantidadInstruccionesAEjecutarDelPcbActual = cantidadInstruccionesAEjecutarDelPcbActual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
 	}
 int i = 0;
 	while(string_cortado[i] != NULL){

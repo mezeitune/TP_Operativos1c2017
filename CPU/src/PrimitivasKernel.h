@@ -20,7 +20,7 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 
 	if(bloquearScriptONo < 0){
-		cpuBloqueada = 0;
+		cpuBloqueadaPorSemANSISOP = 0;
 		serializarPcbYEnviar(pcb_actual, socketKernel);
 		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
 		esperarPCB();

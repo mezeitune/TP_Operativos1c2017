@@ -66,22 +66,23 @@ char* obtener_instruccion(){
 }
 void EjecutarProgramaMedianteAlgoritmo(){
 
-	cantidadInstruccionesAEjecutarPcb_Actual = pcb_actual->cantidadInstrucciones;
+	cantidadInstruccionesAEjecutarDelPcbActual = pcb_actual->cantidadInstrucciones;
 
 	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
-		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarPcb_Actual){
+		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual){
 
 			ejecutarInstruccion();
-			cantidadInstruccionesAEjecutarPorKernel++;
-			cantidadIntruccionesEjecutadas++;
+			cantidadInstruccionesAEjecutarPorKernel++; //para FIFO en si
+			cantidadIntruccionesEjecutadas++;//para contabilidad del kernel
 		}
-	} else{
+	} else{//es RR con quantum = cantidadInstruccionesAEjecutarPorKernel
 		while (cantidadInstruccionesAEjecutarPorKernel > 0){
 			ejecutarInstruccion();
-			cantidadInstruccionesAEjecutarPorKernel--;
-			cantidadIntruccionesEjecutadas++;
+			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
+			cantidadIntruccionesEjecutadas++;////para contabilidad del kernel
 		}
-		if(cpuFinalizada == 0) CerrarPorSignal();
+		//Este if va por el RR
+		if(cpuFinalizadaPorSignal == 0) CerrarPorSignal();
 		else expropiarVoluntariamente();
 	}
 }
@@ -97,15 +98,15 @@ void ejecutarInstruccion(){
 
 	recv(socketKernel,&orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
 
-	printf("Orden %c \n",orden);
+	//printf("Orden Recibida Por Kernel : %c \n",orden);
 
-	if(orden == 'F') cpuExpropiada = -1;
+	if(orden == 'F') cpuExpropiadaPorKernel = -1;
 
 	free(instruccion);
 
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
 
-	if(cpuExpropiada == -1 || cpuBloqueada == 0){
+	if(cpuExpropiadaPorKernel == -1 || cpuBloqueadaPorSemANSISOP == 0){
 		expropiarVoluntariamente();
 	}
 }
