@@ -88,12 +88,16 @@ int verificarEntradaEnTablaGlobal(char* direccion);
 void disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal);
 int buscarIndiceEnTablaGlobal(char* direccion);
 char* buscarDireccionEnTablaGlobal(int indice);
+int verificarArchivoAbiertoEnTablaGlobal(int indiceTablaGlobal);
+void borrarEntradaEnTablaGlobal(int indiciTablaGlobal);
 
 /*Tabla del proceso*/
 int actualizarTablaDelProceso(int pid,char* flags, int indiceEnTablaGlobal);
+int verificarFileDescriptorAbierto(int pid,int fileDescriptor);
 void inicializarTablaProceso(int pid);
 int borrarEntradaTablaProceso(int pid,int fileDescriptor);
 void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal);
+int buscarIndiceGlobalEnTablaProceso(int pid,int fileDescriptor);
 
 void abrirArchivo(t_fsAbrir* data){
 
@@ -105,11 +109,13 @@ void abrirArchivo(t_fsAbrir* data){
 
 		int fileDescriptor;
 		int indiceEnTablaGlobal;
-		int resultadoEjecucion;
+		int resultadoEjecucion=1;
 
 		log_info(loggerConPantalla,"Abriendo un archivo--->PID:%d--->Direccion:%s--->Permisos:%s",pid,direccion,flags);
 
+		pthread_mutex_lock(&mutexFS);
 		int archivoExistente=validarArchivo(direccion);
+		pthread_mutex_unlock(&mutexFS);
 		
 		int tienePermisoCreacion=0;
 		char* permiso_creacion = "c";
@@ -127,94 +133,119 @@ void abrirArchivo(t_fsAbrir* data){
 
 
 		if(archivoExistente){
+
+			pthread_mutex_lock(&mutexTablaGlobal);
 			int entradaGlobalExistente=verificarEntradaEnTablaGlobal(direccion);
+			pthread_mutex_unlock(&mutexTablaGlobal);
 
 			if(!entradaGlobalExistente){
+				pthread_mutex_lock(&mutexTablaGlobal);
 				indiceEnTablaGlobal = agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);//almacenar el Global FD
+				pthread_mutex_unlock(&mutexTablaGlobal);
 				}
 			else{
+				pthread_mutex_lock(&mutexTablaGlobal);
 				indiceEnTablaGlobal = buscarIndiceEnTablaGlobal(direccion);
+				pthread_mutex_unlock(&mutexTablaGlobal);
 			}
-			printf("Indice devuelto:%d\n",indiceEnTablaGlobal);
 		}
 
 		if(!archivoExistente && tienePermisoCreacion){
-
+			pthread_mutex_lock(&mutexFS);
 			resultadoEjecucion=crearArchivo(socket,direccion);
-			if(resultadoEjecucion < 0){
-				excepcionFileSystem(socket,pid);
-				free(direccion);
-				free(flags);
-				return;
-			}
-		indiceEnTablaGlobal=agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
-		printf("Indice devuelto:%d\n",indiceEnTablaGlobal);
+			pthread_mutex_unlock(&mutexFS);
+				if(resultadoEjecucion < 0){
+					excepcionFileSystem(socket,pid);
+					free(direccion);
+					free(flags);
+					return;
+				}
+			pthread_mutex_lock(&mutexTablaGlobal);
+			indiceEnTablaGlobal=agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
+			pthread_mutex_unlock(&mutexTablaGlobal);
 		}
-
+		pthread_mutex_lock(&mutexTablaGlobal);
 		aumentarOpenEnTablaGlobal(direccion);
+		pthread_mutex_unlock(&mutexTablaGlobal);
+
+		pthread_mutex_lock(&mutexListaTablaArchivos);
 		fileDescriptor = actualizarTablaDelProceso(pid,flags,indiceEnTablaGlobal);
-		resultadoEjecucion = 1;
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
+
+		 pthread_mutex_lock(&mutexFS);
 		 send(socket,&resultadoEjecucion,sizeof(int),0);
 		 send(socket,&fileDescriptor,sizeof(int),0);
-		 printf("File descriptor:%d\n",fileDescriptor);
+		 pthread_mutex_unlock(&mutexFS);
 
-		log_info(loggerConPantalla,"Finalizo la apertura del archivo");
+		log_info(loggerConPantalla,"Finalizo la apertura del archivo--->PID:%d--->FD:%d",pid,fileDescriptor);
 		free(data);
 }
 
 void borrarArchivo(int socket){
-	int pid;
+		int pid;
 		int fileDescriptor;
 		int resultadoEjecucion ;
 		recv(socket,&pid,sizeof(int),0);
 		recv(socket,&fileDescriptor,sizeof(int),0);
 		log_info(loggerConPantalla,"Borrando un archivo--->PID:%d--->FD:%d",pid,fileDescriptor);
 
-		_Bool verificaPid(t_indiceTablaProceso* entrada){
-						return entrada->pid == pid;
-					}
 		_Bool verificaFd(t_entradaTablaProceso* entrada){
 					return entrada->fd == fileDescriptor;
 				}
 
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		int fileDescriptorAbierto = verificarFileDescriptorAbierto(pid,fileDescriptor);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
 
-		int encontroFd;
-		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-		if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
-		else encontroFd = 0;
-		list_add(listaTablasProcesos,entradaTablaProceso);
-
-		if(!encontroFd){ /*Si ese archivo no lo tiene abierto no lo puede borrar*/
+		if(!fileDescriptorAbierto){ /*Si ese archivo no lo tiene abierto no lo puede borrar*/
 			excepcionFileDescriptorNoAbierto(socket,pid);
 			return;
-		}else{
+		}
 
-			int indiceGlobalFd=borrarEntradaTablaProceso(pid,fileDescriptor);
-			printf("Indice devuelto:%d\n",indiceGlobalFd);
-			t_entradaTablaGlobal* entradaGlobal = list_get(tablaArchivosGlobal,indiceGlobalFd);
-			if(entradaGlobal->open > 1){
-				/*El proceso no puede borrar el archivo porque alguien lo tiene abierto, sin embargo lo cierra*/
-				disminuirOpenYVerificarExistenciaEntradaGlobal(indiceGlobalFd);
-				excepcionNoPudoBorrarArchivo(socket,pid);
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		int indiceTablaGlobal = buscarIndiceGlobalEnTablaProceso(pid,fileDescriptor);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
+
+		pthread_mutex_lock(&mutexTablaGlobal);
+		if(verificarArchivoAbiertoEnTablaGlobal(indiceTablaGlobal)<0){ //No lo puede borrar, y tampoco lo cierra.
+			pthread_mutex_unlock(&mutexTablaGlobal);
+			excepcionNoPudoBorrarArchivo(socket,pid);
+			return;
+		}
+		pthread_mutex_unlock(&mutexTablaGlobal);
+
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		borrarEntradaTablaProceso(pid,fileDescriptor);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
+
+		pthread_mutex_lock(&mutexTablaGlobal);
+		borrarEntradaEnTablaGlobal(indiceTablaGlobal); //No se disminuye el open,se borra la entrada, porque solo se puede borrar si es el unico proceso que lo tiene abierto.
+		pthread_mutex_lock(&mutexTablaGlobal);
+
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
+
+		//hacer los sends para que el FS borre ese archivo y deje los bloques libres
+		char comandoBorrarArchivo='B';
+		char* direccion = buscarDireccionEnTablaGlobal(indiceTablaGlobal);
+		char** array_dir=string_n_split(direccion, 12, "/");
+		char* nombreArchivo=array_dir[0];
+		int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+
+		pthread_mutex_lock(&mutexFS);
+		send(socketFyleSys,&comandoBorrarArchivo,sizeof(char),0);
+		send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+		send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+		recv(socketFyleSys,&resultadoEjecucion,sizeof(char),0);
+		pthread_mutex_unlock(&mutexFS);
+
+
+			if(resultadoEjecucion < 0) {
+				excepcionFileSystem(socket,pid);
 				return;
 			}
-			disminuirOpenYVerificarExistenciaEntradaGlobal(indiceGlobalFd);
 
-			//hacer los sends para que el FS borre ese archivo y deje los bloques libres
-			char comandoBorrarArchivo='B';
-			char* direccion = buscarDireccionEnTablaGlobal(indiceGlobalFd);
-			char** array_dir=string_n_split(direccion, 12, "/");
-			char* nombreArchivo=array_dir[0];
-			int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
-			send(socketFyleSys,&comandoBorrarArchivo,sizeof(char),0);
-			send(socketFyleSys,&tamanoNombre,sizeof(int),0);
-			send(socketFyleSys,nombreArchivo,tamanoNombre,0);
-			recv(socketFyleSys,&resultadoEjecucion,sizeof(char),0);
-				if(resultadoEjecucion < 0) {
-					excepcionFileSystem(socket,pid);
-					return;
-				}
-		}
 
 	send(socket,&resultadoEjecucion,sizeof(int),0);
 	log_info(loggerConPantalla,"Archivo borrado--->PID:%d",pid);
@@ -261,7 +292,7 @@ void escribirArchivo(t_fsEscribir* data){
 	int pid=data->pid;
 	int fileDescriptor=data->fd;
 	int size = data->size;
-	char* informacion = malloc(data->size + sizeof(char));
+	char* informacion = malloc(data->size);
 	informacion = data->informacion;
 
 	int resultadoEjecucion;
@@ -277,19 +308,21 @@ void escribirArchivo(t_fsEscribir* data){
 			return entrada->fd == fileDescriptor;
 		}
 
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		int fileDescriptorAbierto = verificarFileDescriptorAbierto(pid,fileDescriptor);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
 
-		int encontroFd;
-		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-
-		if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
-		else encontroFd = 0;
-
-		if(!encontroFd){
-			list_add(listaTablasProcesos,entradaTablaProceso);
+		if(!fileDescriptorAbierto){
 			excepcionFileDescriptorNoAbierto(socket,pid);
 			return;
 		}
+
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
 		t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
+
+		int cursor = entrada->puntero;
 
 		int tiene_permisoEscritura=0;
 		char *permiso_escritura = "w";
@@ -297,15 +330,20 @@ void escribirArchivo(t_fsEscribir* data){
 			tiene_permisoEscritura=1;
 		}
 
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		list_add(entradaTablaProceso->tablaProceso,entrada);
+		list_add(listaTablasProcesos,entradaTablaProceso);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
+
 		if(!tiene_permisoEscritura){
-			list_add(entradaTablaProceso->tablaProceso,entrada);
-			list_add(listaTablasProcesos,entradaTablaProceso);
 			excepcionPermisosEscritura(socket,pid);
 			free(informacion);
 			return;
 		}
 
+			pthread_mutex_lock(&mutexTablaGlobal);
 			char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
+			pthread_mutex_unlock(&mutexTablaGlobal);
 
 
 			char** array_dir=string_n_split(direccion, 12, "/");
@@ -314,22 +352,21 @@ void escribirArchivo(t_fsEscribir* data){
 
 			printf("Tamano del nombre :%d\n",tamanoNombre);
 			printf("Nombre del archivo: %s\n",nombreArchivo);
-			printf("Puntero:%d\n",entrada->puntero);
+			printf("Puntero:%d\n",cursor);
 			printf("Tamano a escribir :%d\n",size);
 			printf("Informacion a escribir:%s\n",informacion);
 
 
+			pthread_mutex_unlock(&mutexFS);
 			send(socketFyleSys,&comandoGuardarDatos,sizeof(char),0);
 			send(socketFyleSys,&tamanoNombre,sizeof(int),0);
 			send(socketFyleSys,nombreArchivo,tamanoNombre,0);
-			send(socketFyleSys,&entrada->puntero,sizeof(int),0);
+			send(socketFyleSys,&cursor,sizeof(int),0);
 			send(socketFyleSys,&size,sizeof(int),0);
 			send(socketFyleSys,informacion,size,0);
 
-			list_add(entradaTablaProceso->tablaProceso,entrada);
-			list_add(listaTablasProcesos,entradaTablaProceso);
-
 			recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
+			pthread_mutex_unlock(&mutexFS);
 
 		printf("Resultado de ejecucion :%d\n",resultadoEjecucion);
 		if(resultadoEjecucion < 0){
@@ -568,6 +605,10 @@ int agregarEntradaEnTablaGlobal(char* direccion,int tamanioDireccion){
 	return tablaArchivosGlobal->elements_count - 1 ;
 }
 
+void borrarEntradaEnTablaGlobal(int indiceTablaGlobal){
+	list_remove_and_destroy_element(tablaArchivosGlobal,indiceTablaGlobal,free);
+}
+
 int verificarEntradaEnTablaGlobal(char* direccion){ /*TODO: Mutex tablaGlobal*/
 	log_info(loggerConPantalla,"Verificando que exista entrada en tabla global--->Direccion:%s",direccion);
 
@@ -644,6 +685,40 @@ char* buscarDireccionEnTablaGlobal(int indice){
 	return entrada->path;
 }
 
+int verificarArchivoAbiertoEnTablaGlobal(int indiceTablaGlobal){
+
+	int resultado;
+
+	t_entradaTablaGlobal* entrada = list_get(tablaArchivosGlobal,indiceTablaGlobal);
+
+	if(entrada->open > 1) resultado = -1;
+	else resultado = 1;
+	return resultado;
+}
+
+
+int buscarIndiceGlobalEnTablaProceso(int pid,int fileDescriptor){
+
+	_Bool verificaPid(t_indiceTablaProceso* entrada){
+									return entrada->pid == pid;
+								}
+
+
+	_Bool verificaFd(t_entradaTablaProceso* entrada){
+				return entrada->fd == fileDescriptor;
+			}
+
+	t_indiceTablaProceso* indice = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+	t_entradaTablaProceso* entrada = list_remove_by_condition(indice->tablaProceso,(void*)verificaFd);
+
+	int indiceTablaGlobal = entrada->globalFd;
+
+	list_add(indice->tablaProceso,entrada);
+	list_add(listaTablasProcesos,indice);
+
+	return indiceTablaGlobal;
+}
+
 void inicializarTablaProceso(int pid){
 	 t_indiceTablaProceso* indiceNuevaTabla = malloc(sizeof(t_indiceTablaProceso));
 	 indiceNuevaTabla->pid = pid;
@@ -651,6 +726,22 @@ void inicializarTablaProceso(int pid){
 	 list_add(listaTablasProcesos,indiceNuevaTabla);
 }
 
+int verificarFileDescriptorAbierto(int pid,int fileDescriptor){
+	int resultado;
+	_Bool verificaPid(t_indiceTablaProceso* entrada){
+								return entrada->pid == pid;
+							}
+
+	_Bool verificaFd(t_entradaTablaProceso* entrada){
+						return entrada->fd == fileDescriptor;
+					}
+
+		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+		if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) resultado = 1;
+		else resultado = 0;
+		list_add(listaTablasProcesos,entradaTablaProceso);
+		return resultado;
+}
 
 int validarArchivo(char* ruta){
 	log_info(loggerConPantalla,"Validando que el archivo exista--->Ruta:%s",ruta);
@@ -725,10 +816,9 @@ void interfaceEscribirArchivo(int socket){
 		recv(socket,&data->fd,sizeof(int),0);
 
 		recv(socket,&data->size,sizeof(int),0);
-		data->informacion=malloc(data->size + sizeof(char));
+		data->informacion=malloc(data->size);
 
 		recv(socket,data->informacion,data->size,0);
-		strcpy(data->informacion + data->size, "\0");
 
 		data->socket =socket;
 
