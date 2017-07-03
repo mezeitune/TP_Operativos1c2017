@@ -349,6 +349,8 @@ int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int si
 
 void liberarBloqueHeap(int pid, int pagina, int offset){
 	log_info(loggerConPantalla,"Liberando bloque de memoria dinamica--->PID:%d",pid);
+
+
 	int i = 0;
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 	t_bloqueMetadata bloque;

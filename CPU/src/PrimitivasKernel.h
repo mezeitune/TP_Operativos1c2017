@@ -107,6 +107,9 @@ void liberar (t_puntero puntero){
 	int num_paginaHeap = punteroHeap/ config_paginaSize;
 	int offsetHeap = punteroHeap - (num_paginaHeap * config_paginaSize);
 
+	printf("Offset :%d de la pagina :%d\n",offsetHeap,num_paginaHeap);
+
+
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);

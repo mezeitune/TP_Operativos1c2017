@@ -526,9 +526,10 @@ void gestionarIO(int socket){
 void gestionarLiberar(int socket){
 	int pid,pagina,offset;
 	recv(socket,&pid,sizeof(int),0);
-	log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d",pid);
 	recv(socket,&pagina,sizeof(int),0);
 	recv(socket,&offset,sizeof(int),0);
+	log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d--->Pagina:%d--->Offset:%d",pid,pagina,offset);
+
 
 	liberarBloqueHeap(pid,pagina,offset);
 	actualizarSysCalls(pid);
