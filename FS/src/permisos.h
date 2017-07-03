@@ -67,7 +67,7 @@ char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
 
 		char* informacion = malloc(sizeof(char)*size);
 		fseek(fp,offset,0);
-		fread(informacion,size,sizeof(char),fp);
+		fread(informacion,sizeof(char),size,fp);
 
 		printf("La informacion leida es:%s\n",informacion);
 		fclose(fp);

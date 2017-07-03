@@ -71,9 +71,11 @@ void interfazHandler(){
 				case 'I':	imprimirInterfazUsuario();
 							break;
 				case 'F':
-					printf("Enviando instrucciones a File System");
+					testEscribirArchivo();
 					//interfazHandlerParaFileSystem('A',1);
 					break;
+				case 'Z':
+					testLeerArchivo();
 				default:
 					if(cont!=2)log_error(loggerConPantalla ,"Orden no reconocida");
 					else cont = 0;

@@ -238,7 +238,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 						string_append(&nombreBloque, arrayBloques[t]);
 						string_append(&nombreBloque, ".bin");
 
-						FILE *bloque=fopen(nombreBloque, "rb");
+						FILE *bloque=fopen(nombreBloque, "rt");
 						printf("Abri el bloque\n");
 						if(t==(d+cantidadBloquesQueNecesito)){
 							printf("Entre al primer if\n");
@@ -359,7 +359,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 			//actualizarInformacionEnBloque(direccionBloque,buffer,size);
 			//offset = getSizeBloque(bloque);//No me dice el offset correcto
-			bloque = fopen(direccionBloque,"ab");
+			bloque = fopen(direccionBloque,"at");
 			fseek(bloque,0,SEEK_END);
 			//printf("El offset es:%d\n",offset);
 			//fseek(bloque,offset,SEEK_SET);
@@ -433,7 +433,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 					string_append(&nombreBloque, ".bin");
 
 					printf("Voy a guardar en el bloque:%s\n",string_itoa(bloqs[s]));
-					bloque=fopen(nombreBloque,"ab");
+					bloque=fopen(nombreBloque,"at");
 
 					if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
 						printf("Tengo que cortar el string\n");

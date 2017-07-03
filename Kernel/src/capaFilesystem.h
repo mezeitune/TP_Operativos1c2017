@@ -751,7 +751,52 @@ void interfaceLeerArchivo(int socket){
 	pthread_create(&IOthread,NULL,(void*)leerArchivo,data);
 }
 
+void testEscribirArchivo(){
+	char comandoGuardarDatos = 'G';
+	char* nombreArchivo = "cadenas.bin";
+	int tamanoNombre = strlen(nombreArchivo);
+	int cursor=0;
+	char* informacion=string_new();
 
+	printf("Ingrese informacion a escribir\n");
+	scanf("%s",informacion);
+
+
+	int size=strlen(informacion)*sizeof(int);
+	send(socketFyleSys,&comandoGuardarDatos,sizeof(char),0);
+	send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+	send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+	send(socketFyleSys,&cursor,sizeof(int),0);
+	send(socketFyleSys,&size,sizeof(int),0);
+	send(socketFyleSys,informacion,size,0);
+
+	recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
+	printf("Resultado Ejecucion:%d\n",resultadoEjecucion);
+	sleep(5);
+}
+
+void testLeerArchivo(){
+
+	char comandoObtenerDatos = 'O';
+	char* nombreArchivo = "cadenas.bin";
+	int tamanoNombre = strlen(nombreArchivo);
+	int cursor=0;
+	char* informacion;
+	int size=16;
+
+		send(socketFyleSys,&comandoObtenerDatos,sizeof(char),0);
+		send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+		send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+		send(socketFyleSys,&cursor,sizeof(int),0);
+		send(socketFyleSys,&size,sizeof(int),0);
+
+		informacion = malloc(size);
+
+		recv(socketFyleSys,informacion,size,0);
+		printf("Informacion recibida:%s\n",informacion);
+		sleep(5);
+
+}
 
 
 
