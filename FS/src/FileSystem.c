@@ -82,9 +82,9 @@ int main(void){
 
 	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), LSB_FIRST);
 	int i;
-	for(i=0;i<cantidadBloques;i++){
-		bitarray_clean_bit(bitarray,i);
-	}
+	//for(i=0;i<cantidadBloques;i++){
+	//	bitarray_clean_bit(bitarray,i);
+	//}
 
 	printf("El tamano del bitarray es de : %d\n",bitarray_get_max_bit(bitarray));
 

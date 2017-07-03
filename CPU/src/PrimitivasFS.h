@@ -12,7 +12,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 
 	int pid= pcb_actual->pid;
 	send(socketKernel,&pid,sizeof(int),0);
-	printf("Direccion: %s\n",direccion);
+
 	int tamanoDireccion=sizeof(char)*strlen(direccion);
 	send(socketKernel,&tamanoDireccion,sizeof(int),0);
 	send(socketKernel,direccion,tamanoDireccion,0);
@@ -20,14 +20,12 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	//enviar los flags al kernel
 	char* flagsMapeados;
 	flagsMapeados = devolverStringFlags(flags);
-	printf("%s\n",flagsMapeados);
 
 	int tamanoFlags=sizeof(char)*strlen(flagsMapeados);
 	send(socketKernel,&tamanoFlags,sizeof(int),0);
 	send(socketKernel,flagsMapeados,tamanoFlags,0);
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	printf("resultado:%d\n",resultadoEjecucion);
 	//log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor);
 
 	if(resultadoEjecucion < 0){ /*TODO: No se porque recibe uno positivo aunque haya excepcion*/

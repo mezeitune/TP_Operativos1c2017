@@ -1,5 +1,6 @@
 #include "sockets.h"
 #include <commons/log.h>
+#include <commons/collections/list.h>
 #include "logger.h"
  #include <fcntl.h>
 
@@ -295,6 +296,9 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 	int puntero;
 	int size;
 
+	int cuantosBloquesMasNecesito;
+	t_list* bloquesUsados = list_create();
+
 	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
 	printf("Tamano nombre archivo:%d\n",tamanoNombreArchivo);
 	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
@@ -308,10 +312,9 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 	recv(socket_cliente,&size,sizeof(int),0);
 	printf("Tamano de la data:%d\n",size);
-	char* buffer = malloc(size + sizeof(char));
+	char* buffer = malloc(size);
 
 	recv(socket_cliente,buffer,size,0);
-	strcpy(buffer + size,"\0");
 	printf("Data :%s\n",buffer);
 
 	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",nombreArchivo,buffer);
@@ -367,7 +370,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 			//send diciendo que todo esta bien
 		}else{
 
-			int cuantosBloquesMasNecesito; /*TODO: Emprolijar*/
+			 /*TODO: Emprolijar*/
 		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
 		   if((size%tamanioBloques) < size) {
 			   cuantosBloquesMasNecesito= 2;
@@ -400,8 +403,10 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		        //	}else{
 		            	bloqs[r]=j;
 		            	r++;
+
 		        	//}
 		        	bloquesEncontrados++;
+		        	list_add(bloquesUsados,j);
 		        }
 
 		        if(r==cuantosBloquesMasNecesito) break;
@@ -428,7 +433,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 					string_append(&nombreBloque, ".bin");
 
 					printf("Voy a guardar en el bloque:%s\n",string_itoa(bloqs[s]));
-					bloque=fopen(nombreBloque,"wb");
+					bloque=fopen(nombreBloque,"ab");
 
 					if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
 						printf("Tengo que cortar el string\n");
@@ -453,69 +458,59 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 				}
 
 
-
-				printf("Actualizando el metadata\n");
-				sleep(3);
-				//Obtenemos los datos viejos
-				char* tamanioArchivoViejo=obtTamanioArchivo(nombreArchivoRecibido);
-				int tamanioArchivoViejoInt=atoi(tamanioArchivoViejo);
-				 char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
-
-				 printf("Termine de obtener los datos viejos\n");
-				 sleep(3);
-
-				 //actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
-				FILE *fp = fopen(nombreArchivoRecibido, "w");//Para que borre todo lo que tenia antes
-				char *metadataFile = string_new();
-				string_append(&metadataFile, "TAMANIO=");
-				int tamanioNuevo=tamanioArchivoViejoInt+(cuantosBloquesMasNecesito*tamanioBloques);
-				char* tamanioNuevoChar=string_itoa(tamanioNuevo);
-				string_append(&metadataFile, tamanioNuevoChar);
-				string_append(&metadataFile,"\n");
-
-				printf("Concatene el tamano actualizado\n");
-				sleep(3);
-
-				string_append(&metadataFile, "BLOQUES=[");
-				int z;
-
-				   int d=0;
-					   while(!(arrayBloques[d] == NULL)){
-						   string_append(&metadataFile,arrayBloques[d]);
-						   string_append(&metadataFile,",");
-					      d++;
-					   }
-				for(z=0;z<cuantosBloquesMasNecesito;z++){
-					char* bloqueString=string_itoa(bloqs[z]);
-					string_append(&metadataFile,bloqueString);
-					if(!(z==(cuantosBloquesMasNecesito-1))){
-						string_append(&metadataFile,",");
-					}
-				} /*TODO: Se concatenan bloques repetidos*/
-
-				string_append(&metadataFile,"]");
-				printf("termine de concatenar los bloques\n");
-				sleep(3);
-
-				fclose(fp); //Lo cierro porque la proxima linea lo volvia a abrir
-				adx_store_data(nombreArchivoRecibido,metadataFile);
-
-				validado=1;
-				send(socket_cliente,&validado,sizeof(int),0);
-				return;
-				//y enviamos un buen send
-
 			}else{
 				printf("No encontro los bloques necesarios\n");
-				sleep(3);
 				validado=0;
 				send(socket_cliente,&validado,sizeof(int),0);
 				return;
 			}
-
-
-
 		}
+
+
+		printf("Actualizando el metadata\n");
+			//Obtenemos los datos viejos
+			char* tamanioArchivoViejo=obtTamanioArchivo(nombreArchivoRecibido);
+			int tamanioArchivoViejoInt=atoi(tamanioArchivoViejo);
+			arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+
+
+			 //actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
+			FILE *fp = fopen(nombreArchivoRecibido, "w");//Para que borre todo lo que tenia antes
+			char *metadataFile = string_new();
+			string_append(&metadataFile, "TAMANIO=");
+			int tamanioNuevo = tamanioArchivoViejoInt + size;
+			//int tamanioNuevo=tamanioArchivoViejoInt+(cuantosBloquesMasNecesito*tamanioBloques); TODO: Deberia ser el SIZE recibido por parametro
+			char* tamanioNuevoChar=string_itoa(tamanioNuevo);
+			string_append(&metadataFile, tamanioNuevoChar);
+			string_append(&metadataFile,"\n");
+
+
+			string_append(&metadataFile, "BLOQUES=[");
+			int z;
+
+			printf("Antes del while\n");
+			   d=0;
+				   while(!(arrayBloques[d] == NULL)){
+					   string_append(&metadataFile,arrayBloques[d]);
+					   if(arrayBloques[d+1]== NULL) break; //Para que no quede [1,] por ejemplo, y quede [1]
+					   string_append(&metadataFile,",");
+					  d++;
+				   }
+
+				   printf("Antes de entrar al for\n");
+			for(z=0;z<cuantosBloquesMasNecesito;z++){
+				char* bloqueString=string_itoa(*(int*)list_get(bloquesUsados,z));//string_itoa(bloqs[z])
+				string_append(&metadataFile,bloqueString);
+				if(!(z==(cuantosBloquesMasNecesito+1))){ //if(!(z==(cuantosBloquesMasNecesito-1))){
+					string_append(&metadataFile,",");
+				}
+			} /*TODO: Se concatenan bloques repetidos*/
+
+			string_append(&metadataFile,"]");
+
+			fclose(fp); //Lo cierro porque la proxima linea lo volvia a abrir
+			adx_store_data(nombreArchivoRecibido,metadataFile);
+
 	validado=1;
 	send(socket_cliente,&validado,sizeof(int),0);
 	}else{
