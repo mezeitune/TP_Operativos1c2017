@@ -9,6 +9,7 @@
 #define CAPAFILESYSTEM_H_
 #include "sockets.h"
 #include <commons/collections/list.h>
+#include "sincronizacion.h"
 
 typedef struct{
 	char* path;
@@ -30,6 +31,31 @@ typedef struct{
 t_list* tablaArchivosGlobal;
 t_list* listaTablasProcesos;
 
+typedef struct{
+	int socket;
+	int pid;
+	int tamanoDireccion;
+	int tamanoFlags;
+	char* direccion;
+	char* flags;
+}t_fsAbrir;
+
+typedef struct{
+	int socket;
+	int pid;
+	int fd;
+	int size;
+	char* informacion;
+}t_fsEscribir;
+
+typedef struct{
+	int socket;
+	int pid;
+	int fd;
+	int size;
+}t_fsLeer;
+
+
 /*
  * Mutex a agregar:
  * mutexTablaArchivosGlobal;
@@ -40,12 +66,15 @@ t_list* listaTablasProcesos;
 
 
 void interfaceHandlerFileSystem(int socket);
+void interfaceAbrirArchivo(int socket);
+void interfaceEscribirArchivo(int socket);
+void interfaceLeerArchivo(int socket);
 
 /*Interface*/
-void abrirArchivo(int socket);
+void abrirArchivo(t_fsAbrir* data);
 void moverCursorArchivo(int socket);
-void escribirArchivo(int socket);
-void leerArchivo(int socket);
+void escribirArchivo(t_fsEscribir* data);
+void leerArchivo(t_fsLeer* data);
 void borrarArchivo(int socket);
 void cerrarArchivo(int socket);
 
@@ -66,31 +95,17 @@ void inicializarTablaProceso(int pid);
 int borrarEntradaTablaProceso(int pid,int fileDescriptor);
 void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal);
 
-void abrirArchivo(int socket){
-		int pid;
-		int tamanoDireccion;
-		int tamanoFlags;
-		char* direccion;
-		char* flags;
+void abrirArchivo(t_fsAbrir* data){
+
+		int socket = data->socket;
+		int pid=data->pid;
+		int tamanoDireccion=data->tamanoDireccion;
+		char* direccion=data->direccion;
+		char* flags=data->flags;
 
 		int fileDescriptor;
 		int indiceEnTablaGlobal;
 		int resultadoEjecucion;
-
-
-		recv(socket,&pid,sizeof(int),0);
-
-		recv(socket,&tamanoDireccion,sizeof(int),0);
-
-		direccion = malloc(tamanoDireccion*sizeof(char) + sizeof(char));
-		recv(socket,direccion,tamanoDireccion,0);
-		strcpy(direccion + tamanoDireccion, "\0");
-
-		recv(socket,&tamanoFlags,sizeof(int),0);
-		flags= malloc(tamanoFlags*sizeof(char)+sizeof(char));
-
-		recv(socket,flags,tamanoFlags,0);
-		strcpy(flags + tamanoFlags, "\0");
 
 		log_info(loggerConPantalla,"Abriendo un archivo--->PID:%d--->Direccion:%s--->Permisos:%s",pid,direccion,flags);
 
@@ -144,6 +159,7 @@ void abrirArchivo(int socket){
 		 printf("File descriptor:%d\n",fileDescriptor);
 
 		log_info(loggerConPantalla,"Finalizo la apertura del archivo");
+		free(data);
 }
 
 void borrarArchivo(int socket){
@@ -239,28 +255,18 @@ void cerrarArchivo(int socket){
 
 }
 
-void escribirArchivo(int socket){
+void escribirArchivo(t_fsEscribir* data){
 	char comandoGuardarDatos = 'G';
-	int pid;
-	int fileDescriptor;
+	int socket = data->socket;
+	int pid=data->pid;
+	int fileDescriptor=data->fd;
+	int size = data->size;
+	char* informacion = malloc(data->size + sizeof(char));
+	informacion = data->informacion;
+
 	int resultadoEjecucion;
-	int size;
 
-
-		recv(socket,&pid,sizeof(int),0);
-		printf("Pid:%d\n",pid);
-
-		recv(socket,&fileDescriptor,sizeof(int),0);
-		printf("FD:%d\n",fileDescriptor);
-
-		recv(socket,&size,sizeof(int),0);
-		printf("Size:%d\n",size);
-		char* informacion = malloc(size + sizeof(char));
-
-	    recv(socket,informacion,size,0);
-	    strcpy(informacion + size, "\0");
-		printf("Data:%s\n",informacion);
-		log_info(loggerConPantalla,"Guardando datos del archivo indicado--->PID:%d--->Datos:%s",pid,informacion);
+	log_info(loggerConPantalla,"Guardando datos del archivo indicado--->PID:%d--->Datos:%s",pid,informacion);
 
 
 		_Bool verificaPid(t_indiceTablaProceso* entrada){
@@ -286,7 +292,7 @@ void escribirArchivo(int socket){
 		t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
 
 		int tiene_permisoEscritura=0;
-		const char *permiso_escritura = "w";
+		char *permiso_escritura = "w";
 		if(string_contains(entrada->flags, permiso_escritura)){
 			tiene_permisoEscritura=1;
 		}
@@ -333,19 +339,19 @@ void escribirArchivo(int socket){
 		}
 		send(socket,&resultadoEjecucion,sizeof(int),0);
 		free(informacion);
+		free(data);
 }
 
-void leerArchivo(int socket){
-	int pid;
-	int fileDescriptor;
-	int resultadoEjecucion;
-	int tamanioALeer;
+void leerArchivo(t_fsLeer* data){
+	int socket = data->socket;
+	int pid=data->pid;
+	int fileDescriptor=data->fd;
+	int tamanioALeer=data->size;
 	char* informacion;
-	char comandoLeer = 'O';
 
-	recv(socket,&pid,sizeof(int),0);
-	recv(socket,&fileDescriptor,sizeof(int),0);
-	recv(socket,&tamanioALeer,sizeof(int),0);
+	char comandoLeer = 'O';
+	int resultadoEjecucion;
+
 	log_info(loggerConPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d",pid,fileDescriptor,tamanioALeer);
 
 		_Bool verificaPid(t_indiceTablaProceso* entrada){
@@ -372,7 +378,7 @@ void leerArchivo(int socket){
 		t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
 
 		int tiene_permisoLectura=0;
-		const char *permiso_lectura = "r";
+		char *permiso_lectura = "r";
 		if(string_contains(entrada->flags, permiso_lectura)){
 			tiene_permisoLectura=1;
 		}
@@ -427,6 +433,7 @@ void leerArchivo(int socket){
 
 	free(informacion);
 	log_info(loggerConPantalla,"Datos obtenidos--->PID:%d--->Datos:%s",pid,informacion);
+	free(data);
 }
 
 void moverCursorArchivo(int socket){
@@ -663,13 +670,13 @@ void interfaceHandlerFileSystem(int socket){
 			char orden;
 			recv(socket,&orden,sizeof(char),0);
 			switch(orden){
-					case 'A':	abrirArchivo(socket);
+					case 'A':	interfaceAbrirArchivo(socket);
 								break;
 					case 'B':	borrarArchivo(socket); /*TODO: Falta eliminar las entradas en TODAS las tablas y en la global. Ademas actualizar las tablas de los procesos y corroborar si alguien lo tiene abierto*/
 								break;
-					case 'O':	leerArchivo(socket); /*TODO: Falta saber que mandarle a FS*/
+					case 'O':	interfaceLeerArchivo(socket); /*TODO: Falta saber que mandarle a FS*/
 								break;
-					case 'G': 	escribirArchivo(socket); /*TODO: Falta testear*/
+					case 'G': 	interfaceEscribirArchivo(socket); /*TODO: Falta testear*/
 								break;
 					case 'P':	cerrarArchivo(socket); /*TODO: Falta testeas*/
 								break;
@@ -681,6 +688,70 @@ void interfaceHandlerFileSystem(int socket){
 				}
 		log_info(loggerConPantalla,"Finalizando atencion de Interfaz Handler de File System");
 }
+
+void interfaceAbrirArchivo(int socket){
+	pthread_t IOthread;
+
+	t_fsAbrir* data = malloc(sizeof(t_fsAbrir));
+
+	recv(socket,&data->pid,sizeof(int),0);
+
+	recv(socket,&data->tamanoDireccion,sizeof(int),0);
+	data->direccion = malloc(data->tamanoDireccion*sizeof(char) + sizeof(char));
+
+	recv(socket,data->direccion,data->tamanoDireccion,0);
+	strcpy(data->direccion + data->tamanoDireccion, "\0");
+
+	recv(socket,&data->tamanoFlags,sizeof(int),0);
+	data->flags= malloc(data->tamanoFlags*sizeof(char)+sizeof(char));
+
+	recv(socket,data->flags,data->tamanoFlags,0);
+	strcpy(data->flags + data->tamanoFlags, "\0");
+
+
+	data->socket =socket;
+
+	pthread_create(&IOthread,NULL,(void*)abrirArchivo,data);
+}
+
+void interfaceEscribirArchivo(int socket){
+
+	pthread_t IOthread;
+
+		t_fsEscribir* data = malloc(sizeof(t_fsEscribir));
+
+		recv(socket,&data->pid,sizeof(int),0);
+
+		recv(socket,&data->fd,sizeof(int),0);
+
+		recv(socket,&data->size,sizeof(int),0);
+		data->informacion=malloc(data->size + sizeof(char));
+
+		recv(socket,data->informacion,data->size,0);
+		strcpy(data->informacion + data->size, "\0");
+
+		data->socket =socket;
+
+		pthread_create(&IOthread,NULL,(void*)escribirArchivo,data);
+}
+
+void interfaceLeerArchivo(int socket){
+	pthread_t IOthread;
+
+	t_fsLeer* data = malloc(sizeof(t_fsLeer));
+
+	recv(socket,&data->pid,sizeof(int),0);
+
+	recv(socket,&data->fd,sizeof(int),0);
+
+	recv(socket,&data->size,sizeof(int),0);
+
+	data->socket=socket;
+
+	pthread_create(&IOthread,NULL,(void*)leerArchivo,data);
+}
+
+
 
 
 

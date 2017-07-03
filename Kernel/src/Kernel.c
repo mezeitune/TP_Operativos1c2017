@@ -70,6 +70,7 @@ void gestionarCierreConsola(int socket);
 void gestionarCierreCpu(int socketCpu);
 void gestionarAlocar(int socket);
 void gestionarLiberar(int socket);
+void gestionarIO(int socket);
 //------InterruptHandler-----//
 
 
@@ -140,7 +141,6 @@ void cerrarTodo(){
 }
 
 void connectionHandler(int socket, char orden) {
-	int valor;
 	int quantum = 0; //FIFO--->0 ; RR != 0
 	switch (orden) {
 		case 'A':	atenderNuevoPrograma(socket);
@@ -149,9 +149,7 @@ void connectionHandler(int socket, char orden) {
 					break;
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
-		case 'F':	/*TODO: Crear un hilo para cada servicio de FS*/
-					//printf("Yendo a FS\n");
-					interfaceHandlerFileSystem(socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
+		case 'F':	gestionarIO(socket);
 					break;
 		case 'P':	handShakeCPU(socket);
 					break;
@@ -517,6 +515,11 @@ void gestionarAlocar(int socket){
 	pthread_mutex_unlock(&mutexListaHilos);
 	actualizarSysCalls(pid);
 	actualizarAlocar(pid,size);
+}
+
+
+void gestionarIO(int socket){
+	interfaceHandlerFileSystem(socket);
 }
 
 void gestionarLiberar(int socket){

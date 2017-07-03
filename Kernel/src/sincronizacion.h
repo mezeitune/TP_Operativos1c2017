@@ -13,11 +13,15 @@
 #include <semaphore.h>
 
 void inicializarSemaforos();
+
+
 pthread_mutex_t mutexColaNuevos;
 pthread_mutex_t mutexColaListos;
 pthread_mutex_t mutexColaTerminados;
 pthread_mutex_t mutexColaEjecucion;
 pthread_mutex_t mutexColaBloqueados;
+
+pthread_mutex_t mutexListaEspera;
 
 pthread_mutex_t mutexNuevoProceso;
 pthread_mutex_t mutexListaFinQuantum;
@@ -28,17 +32,24 @@ pthread_mutex_t mutexRecibirPCB;
 
 pthread_mutex_t mutex_config_gradoMultiProgramacion;
 pthread_mutex_t mutex_gradoMultiProgramacion;
-pthread_mutex_t mutexListaEspera;
+
+
 pthread_mutex_t mutex_masterSet;
-pthread_mutex_t mutexMaximoFd;
+
 pthread_mutex_t mutexListaContable;
 pthread_mutex_t mutexListaCodigo;
 pthread_mutex_t mutexListaSemaforos;
 pthread_mutex_t mutexListaSemYPCB;
 pthread_mutex_t mutexListaSemAumentados;
 pthread_mutex_t mutexListaAdminHeap;
+
 pthread_mutex_t mutexMemoria;
+
 pthread_mutex_t mutexListaHilos;
+
+pthread_mutex_t mutexTablaGlobal;
+pthread_mutex_t mutexListaTablaArchivos;
+pthread_mutex_t mutexFS;
 
 
 sem_t sem_admitirNuevoProceso;
@@ -66,10 +77,12 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaConsolas,NULL);
 		pthread_mutex_init(&mutexListaCPU,NULL);
 		pthread_mutex_init(&mutexListaEspera,NULL);
+
 		pthread_mutex_init(&mutex_config_gradoMultiProgramacion,NULL);
 		pthread_mutex_init(&mutex_gradoMultiProgramacion,NULL);
+
 		pthread_mutex_init(&mutex_masterSet,NULL);
-		pthread_mutex_init(&mutexMaximoFd,NULL);
+
 		pthread_mutex_init(&mutexListaContable,NULL);
 		pthread_mutex_init(&mutexNuevoProceso,NULL);
 		pthread_mutex_init(&mutexListaCodigo,NULL);
@@ -77,9 +90,13 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaSemYPCB,NULL);
 		pthread_mutex_init(&mutexListaSemAumentados,NULL);
 		pthread_mutex_init(&mutexListaAdminHeap,NULL);
+
 		pthread_mutex_init(&mutexMemoria,NULL);
 		pthread_mutex_init(&mutexListaHilos,NULL);
 
+		pthread_mutex_init(&mutexTablaGlobal,NULL);
+		pthread_mutex_init(&mutexListaTablaArchivos,NULL);
+		pthread_mutex_init(&mutexFS,NULL);
 
 
 
