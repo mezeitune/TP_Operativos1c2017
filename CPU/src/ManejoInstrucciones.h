@@ -98,7 +98,7 @@ void ejecutarInstruccion(){
 
 	recv(socketKernel,&orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
 
-	printf("Orden %c \n",orden);
+	//printf("Orden Recibida Por Kernel : %c \n",orden);
 
 	if(orden == 'F') cpuExpropiadaPorKernel = -1;
 

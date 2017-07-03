@@ -132,6 +132,7 @@ void cerrarTodo(){
 	log_error(loggerConPantalla,"Iniciando rutina de cierre");
 	char comandoSalir = 'X';
 	send(socketFyleSys,&comandoSalir,sizeof(char),0);
+
 	/*Limpiar los pcbs*/
 	/*Recibir todos los pcb en ejecucion*/
 	/*Avisar a Memoria que se desconecta*/
