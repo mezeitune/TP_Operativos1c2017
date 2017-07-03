@@ -1,6 +1,8 @@
 #include "sockets.h"
 #include <commons/log.h>
 #include "logger.h"
+ #include <fcntl.h>
+
 void printBitmap(){
 
 	int j;
@@ -16,6 +18,9 @@ void printBitmap(){
 	//bitarray_clean_bit(bitarray,3);
 	printf("\n");
 }
+
+int getSizeBloque(FILE* bloque);
+void actualizarInformacionEnBloque(char* direccionBloque,char* buffer,int size);
 
 void validarArchivoFunction(int socket_cliente){
 	int tamanoArchivo;
@@ -191,7 +196,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
-		fp = fopen(nombreArchivoRecibido, "r");
+		fp = fopen(nombreArchivoRecibido, "rb");
 		printf("Abri el archivo\n");
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 		printf("Obtuve el array de bloques\n");
@@ -232,7 +237,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 						string_append(&nombreBloque, arrayBloques[t]);
 						string_append(&nombreBloque, ".bin");
 
-						FILE *bloque=fopen(nombreBloque, "r");
+						FILE *bloque=fopen(nombreBloque, "rb");
 						printf("Abri el bloque\n");
 						if(t==(d+cantidadBloquesQueNecesito)){
 							printf("Entre al primer if\n");
@@ -284,12 +289,11 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 
 void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo tengo que recibir o que onda
 	FILE *fp;
-
+	FILE* bloque;
 	int tamanoNombreArchivo;
 	int validado;
 	int puntero;
 	int size;
-
 
 	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
 	printf("Tamano nombre archivo:%d\n",tamanoNombreArchivo);
@@ -329,7 +333,6 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		int d=0;
 		int cantidadBloquesArchivo = 0;
 		while(!(arrayBloques[d] == NULL)){
-			printf("%s \n",arrayBloques[d]);
 			d++;
 			cantidadBloquesArchivo ++;
 		}
@@ -337,25 +340,32 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 		printf("Cantidad de bloques :%d\n",cantidadBloquesArchivo);
 
-		char *nombreBloque = string_new();
-		string_append(&nombreBloque, puntoMontaje);
-		string_append(&nombreBloque, "Bloques/");
-		string_append(&nombreBloque, arrayBloques[d]);
-		string_append(&nombreBloque, ".bin");
-		printf("Nombre del ultimo bloque: %s\n",nombreBloque);
+		char *direccionBloque = string_new();
+		string_append(&direccionBloque, puntoMontaje);
+		string_append(&direccionBloque, "Bloques/");
+		string_append(&direccionBloque, arrayBloques[d]);
+		string_append(&direccionBloque, ".bin");
+		printf("Direccion del ultimo bloque: %s\n",direccionBloque);
 		//ver de asignar mas bloques en caso de ser necesario
 		printf("Tamano del archivo : %d\n",atoi(obtTamanioArchivo(nombreArchivoRecibido)));
 		printf("Tamano del bloque: %d\n",tamanioBloques);
 		int cantRestante=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloquesArchivo-1)*tamanioBloques));
 		printf("Cantidad restante :%d\n",cantRestante);
-		sleep(5);
+
 		if(size<cantRestante){
-			adx_store_data(nombreBloque,buffer);
+
+			//actualizarInformacionEnBloque(direccionBloque,buffer,size);
+			//offset = getSizeBloque(bloque);//No me dice el offset correcto
+			bloque = fopen(direccionBloque,"ab");
+			fseek(bloque,0,SEEK_END);
+			//printf("El offset es:%d\n",offset);
+			//fseek(bloque,offset,SEEK_SET);
+			fwrite(buffer,sizeof(char),size,bloque);
+			//adx_store_data(direccionBloque,buffer);
 			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",nombreArchivo,buffer);
+			fclose(bloque);
 			//send diciendo que todo esta bien
 		}else{
-			printf("Entre al else\n");
-			sleep(3);
 
 			int cuantosBloquesMasNecesito; /*TODO: Emprolijar*/
 		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
@@ -376,14 +386,12 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 			*/
 
 			printf("Bloques de mas que necesito:%d\n",cuantosBloquesMasNecesito);
-			sleep(3);
 			//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
 			int j;
 			int r=0;
 			int bloquesEncontrados=0;
 			int bloqs[cuantosBloquesMasNecesito];
 			for(j=0;j<cantidadBloques;j++){
-				printf("Chekeando el bitArray\n");
 		        bool bit = bitarray_test_bit(bitarray,j);
 		        if(bit==0){
 		        	//guardar en array bloqs los bloques que voy encontrando
@@ -400,7 +408,6 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 			}
 
 			printf("Bloques encontrados :%d\n",bloquesEncontrados); /*TODO: Cuando crea el archivo en el mismo proceso, y despues solicita esciribr, no encuentra bloques*/
-			sleep(3);
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
 				printf("Encontro los bloques necesarios \n");
 				//guardamos en los bloques deseados
@@ -413,7 +420,6 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 				//char* loQueVaQuedandoDeBuffer=(char*)buffer;/*TODO: OJO ACA, el size es 0. Deberias preguntar sobre el size a escribir, e ir actualizando eso*/
 
 				for(s=0;s<cuantosBloquesMasNecesito;s++){
-					FILE* bloque;
 					char *nombreBloque = string_new();
 					string_append(&nombreBloque, puntoMontaje);
 					string_append(&nombreBloque, "Bloques/");
@@ -422,7 +428,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 					string_append(&nombreBloque, ".bin");
 
 					printf("Voy a guardar en el bloque:%s\n",string_itoa(bloqs[s]));
-					bloque=fopen(nombreBloque,"ab");
+					bloque=fopen(nombreBloque,"wb");
 
 					if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
 						printf("Tengo que cortar el string\n");
@@ -519,3 +525,41 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 }
 
+void actualizarInformacionEnBloque(char* direccionBloque,char* buffer,int size){
+
+	FILE* bloque=fopen(direccionBloque,"ab");
+	fclose(bloque);
+
+	bloque = fopen(direccionBloque,"rb");
+	int sizeAntiguo;
+	char* bufferAntiguo;
+	char* bufferTotal;
+
+	fseek(bloque,0,SEEK_END);
+	sizeAntiguo = ftell(bloque);
+	bufferAntiguo = malloc(sizeAntiguo);
+	fseek(bloque,0,SEEK_SET);
+	fread(bufferAntiguo,sizeof(char),sizeAntiguo,bloque);
+	fclose(bloque);
+
+	bloque = fopen(direccionBloque,"wb");
+
+	bufferTotal = malloc(sizeAntiguo + size);
+	strcat(bufferTotal,bufferAntiguo);
+	strcat(bufferTotal,buffer);
+
+	fwrite(bufferTotal,sizeof(char),sizeAntiguo+size,bloque);
+	fclose(bloque);
+
+}
+
+int getSizeBloque(FILE* bloque){
+	printf("Obteniendo el offset del bloque\n");
+
+	fseek(bloque,0, SEEK_END);            // me ubico en el final del archivo.
+	int offset=ftell(bloque);                     // obtengo su tamanio en BYTES.
+	fseek(bloque,0,SEEK_SET);
+
+
+	return offset;
+}
