@@ -14,7 +14,7 @@ void imprimirConfiguraciones();
 t_config* configuracion_kernel;
 
 int config_quantum;
-char *quantumSleep;
+int quantumSleep;
 char *config_algoritmo;
 char **semId;
 char **semInit;
@@ -37,7 +37,7 @@ void imprimirConfiguraciones() {
 	printf("---------------------------------------------------\n");
 	printf("CONFIGURACIONES\nIP MEMORIA:%s\nPUERTO MEMORIA:%s\nIP FS:%s\nPUERTO FS:%s\n",ipMemoria,puertoMemoria,ipFileSys,puertoFileSys);
 	printf("---------------------------------------------------\n");
-	printf(	"QUANTUM:%d\nQUANTUM SLEEP:%s\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	config_quantum, quantumSleep, config_algoritmo, config_gradoMultiProgramacion, semId, semInit, shared_vars, stackSize, config_paginaSize);
+	printf(	"QUANTUM:%d\nQUANTUM SLEEP:%d\nALGORITMO:%s\nGRADO MULTIPROG:%d\nSEM IDS:%s\nSEM INIT:%s\nSHARED VARS:%s\nSTACK SIZE:%d\nPAGINA_SIZE:%d\n",	config_quantum, quantumSleep, config_algoritmo, config_gradoMultiProgramacion, semId, semInit, shared_vars, stackSize, config_paginaSize);
 	printf("---------------------------------------------------\n");
 
 }
@@ -54,7 +54,7 @@ void leerConfiguracion(char* ruta) {
 	ipFileSys = config_get_string_value(configuracion_kernel, "IP_FS");
 	puertoFileSys = config_get_string_value(configuracion_kernel, "PUERTO_FS");
 	config_quantum = atoi(config_get_string_value(configuracion_kernel, "QUANTUM"));
-	quantumSleep = config_get_string_value(configuracion_kernel,"QUANTUM_SLEEP");
+	quantumSleep = atoi(config_get_string_value(configuracion_kernel,"QUANTUM_SLEEP"));
 	config_algoritmo = config_get_string_value(configuracion_kernel, "ALGORITMO");
 	config_gradoMultiProgramacion = atoi(config_get_string_value(configuracion_kernel,"GRADO_MULTIPROGRAMACION"));
 	semId = config_get_array_value(configuracion_kernel, "SEM_IDS");

@@ -81,16 +81,16 @@ int socketMemoria;
 int socketKernel;
 int socketInterrupciones;
 //-----------------------------------------//
-
+pthread_t lineaInterrupciones;
 t_pcb *pcb_actual;
 int cpuOcupada=1;
-int cpuFinalizada=1;
+int cpuFinalizadaPorSignal=1;
 int cantidadInstruccionesAEjecutarPorKernel=0;
-int cpuExpropiada=1;
-int cpuBloqueada=1;
+int cpuExpropiadaPorKernel=1;
+int cpuBloqueadaPorSemANSISOP=1;
 int cantidadIntruccionesEjecutadas=0;
 int quantum = 0;
-int cantidadInstruccionesAEjecutarPcb_Actual;
+int cantidadInstruccionesAEjecutarDelPcbActual;
 int recibiPcb=1;
 int retardo_entre_instruccion;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//

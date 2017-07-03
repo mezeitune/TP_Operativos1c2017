@@ -302,6 +302,8 @@ void planificarCortoPlazo(){
 
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 
+			send(cpuEnEjecucion->socket,&quantumSleep,sizeof(int),0);
+			printf("%dNFDFD",quantumSleep);
 			flagHuboAlgunProceso = 1;
 			pthread_mutex_lock(&mutexColaEjecucion);
 			list_add(colaEjecucion, pcbListo);
