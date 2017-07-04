@@ -115,7 +115,7 @@ void crearArchivoFunction(int socket_cliente){
 }
 
 
-void borrarArchivoFunction(int socket_cliente){
+void borrarArchivoFunction(int socket_cliente){ /*TODO: Tambien se podrian borrar los bloques*/
 
 	int tamanoNombreArchivo;
 	int validado;
@@ -456,10 +456,22 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 				int s;
 
 				int sizeRestante = size;
-				int desplazamiento = 0;
+				int desplazamiento = 0;//Para el buffer
 
 				//char* loQueVaQuedandoDeBuffer=(char*)buffer;/*TODO: OJO ACA, el size es 0. Deberias preguntar sobre el size a escribir, e ir actualizando eso*/
 
+				//Primero usamos el ultimo bloque - No queremos frag interna
+				bloque = fopen(direccionBloque,"ab");
+				int tamanoActual = ftell(bloque);
+				printf("Tamano actual:%d\n",tamanoActual);
+
+				fwrite(buffer,(tamanioBloques-tamanoActual),1,bloque);
+				fclose(bloque);
+
+				sizeRestante -= (tamanioBloques-tamanoActual);
+				desplazamiento += (tamanioBloques-tamanoActual);
+
+				//Despues empezamos a usar el resto que necesito
 				for(s=0;s<cuantosBloquesMasNecesito;s++){
 					char *nombreBloque = string_new();
 					string_append(&nombreBloque, puntoMontaje);
@@ -480,11 +492,12 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 						desplazamiento += tamanioBloques;
 						//loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
 
-					}else{
+					}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
 						printf("No tuve que cortar el string\n");
 						//mandarlo todo de una
 						fwrite(buffer + desplazamiento , sizeRestante, 1,bloque);
 						//adx_store_data(nombreBloque,buffer + desplazamiento);
+
 					}
 					fclose(bloque);
 

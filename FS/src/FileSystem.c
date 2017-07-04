@@ -123,20 +123,15 @@ void connectionHandler(int socket_cliente)
     	switch(orden){
 		case 'V'://validar archivo
 			validarArchivoFunction(socket_cliente);
-
 			break;
 		case 'C'://crear archivo
 			crearArchivoFunction(socket_cliente);
-
 			break;
 		case 'B'://borrar archivo
 			borrarArchivoFunction(socket_cliente);
-
 			break;
 		case 'O'://obtener datos
 			obtenerDatosArchivoFunction(socket_cliente);
-
-
 			break;
 		case 'G'://guardar archivo
 			guardarDatosArchivoFunction(socket_cliente);
