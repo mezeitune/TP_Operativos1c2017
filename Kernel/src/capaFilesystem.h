@@ -45,7 +45,7 @@ typedef struct{
 	int pid;
 	int fd;
 	int size;
-	char* informacion;
+	void* informacion;
 }t_fsEscribir;
 
 typedef struct{
@@ -292,7 +292,7 @@ void escribirArchivo(t_fsEscribir* data){
 	int pid=data->pid;
 	int fileDescriptor=data->fd;
 	int size = data->size;
-	char* informacion = malloc(data->size);
+	void* informacion = malloc(data->size);
 	informacion = data->informacion;
 
 	int resultadoEjecucion;
@@ -314,6 +314,8 @@ void escribirArchivo(t_fsEscribir* data){
 
 		if(!fileDescriptorAbierto){
 			excepcionFileDescriptorNoAbierto(socket,pid);
+			free(informacion);
+			free(data);
 			return;
 		}
 
@@ -338,6 +340,7 @@ void escribirArchivo(t_fsEscribir* data){
 		if(!tiene_permisoEscritura){
 			excepcionPermisosEscritura(socket,pid);
 			free(informacion);
+			free(data);
 			return;
 		}
 
@@ -354,7 +357,7 @@ void escribirArchivo(t_fsEscribir* data){
 			printf("Nombre del archivo: %s\n",nombreArchivo);
 			printf("Puntero:%d\n",cursor);
 			printf("Tamano a escribir :%d\n",size);
-			printf("Informacion a escribir:%s\n",informacion);
+			//printf("Informacion a escribir:%s\n",informacion);
 
 
 			pthread_mutex_unlock(&mutexFS);
@@ -384,7 +387,7 @@ void leerArchivo(t_fsLeer* data){
 	int pid=data->pid;
 	int fileDescriptor=data->fd;
 	int tamanioALeer=data->size;
-	char* informacion;
+	void* informacion;
 
 	char comandoLeer = 'O';
 	int resultadoEjecucion;
@@ -482,7 +485,7 @@ void moverCursorArchivo(int socket){
 		int pid;
 		int fileDescriptor;
 		int posicion;
-		int resultadoEjecucion ;
+		int resultadoEjecucion=1;
 		recv(socket,&pid,sizeof(int),0);
 		recv(socket,&fileDescriptor,sizeof(int),0);
 		recv(socket,&posicion,sizeof(int),0);
@@ -498,29 +501,29 @@ void moverCursorArchivo(int socket){
 					}
 
 		//verificar que la tabla de ese pid exista
-
-			int fileDescriptorAbierto; //seguir desde aca
-			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-					if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) fileDescriptorAbierto = 1;
-					else fileDescriptorAbierto = 0;
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		int fileDescriptorAbierto=verificarFileDescriptorAbierto(pid,fileDescriptor);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
 
 			if(!fileDescriptorAbierto){
 						excepcionArchivoInexistente(socket,pid);
-			}else{
-
-				t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
-				entrada->puntero = posicion;
-				list_add(entradaTablaProceso->tablaProceso,entrada);
-				list_add(listaTablasProcesos,entradaTablaProceso);
-
-				/*TODO: Falta codear esta funcion en FS*/
-				//hacer los sends para que el FS verifique que esa posicion existe dentro del archivo
-				//si recibo 0 siginfica que algo anda mal
-				//si recibo 1 significa que esta todo ok
-
-				resultadoEjecucion=1;
-				send(socket,&resultadoEjecucion,sizeof(int),0);
+						return;
 			}
+
+			pthread_mutex_lock(&mutexListaTablaArchivos);
+			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
+			t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
+			entrada->puntero = posicion;
+			list_add(entradaTablaProceso->tablaProceso,entrada);
+			list_add(listaTablasProcesos,entradaTablaProceso);
+			pthread_mutex_unlock(&mutexListaTablaArchivos);
+
+			/*TODO: Falta codear esta funcion en FS*/
+			//hacer los sends para que el FS verifique que esa posicion existe dentro del archivo
+			//si recibo 0 siginfica que algo anda mal
+			//si recibo 1 significa que esta todo ok
+
+			send(socket,&resultadoEjecucion,sizeof(int),0);
 }
 
 int crearArchivo(int socket_aceptado, char* direccion ){
@@ -548,8 +551,6 @@ int crearArchivo(int socket_aceptado, char* direccion ){
 	return validado;
 
 }
-
-
 
 int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 	log_info(loggerConPantalla,"Agregando entrada a tabla por proceso");

@@ -135,7 +135,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	char comandoCapaFS = 'F';
 	char comandoLeerArchivo = 'O';
 	int resultadoEjecucion ;
-	char* infoLeida = malloc(tamanio + sizeof(char));
+	void* infoLeida = malloc(tamanio);
 
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoLeerArchivo,sizeof(char),0);
@@ -150,7 +150,6 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 	if(resultadoEjecucion>0){
 		recv(socketKernel,infoLeida,tamanio,0);
-		strcpy(infoLeida + tamanio , "\0");
 		log_info(loggerConPantalla,"La informacion leida es %s",infoLeida); /*TODO: Falta almacenarla en la posicion de memoria dada por la variable "informacion"*/
 	}else{
 		log_error(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
@@ -189,8 +188,8 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			send(socketKernel,&tamanio,sizeof(int),0);
 			printf("Tamano:%d\n",tamanio);
 
-			send(socketKernel,(char*)informacion,tamanio,0); //puntero que apunta a la direccion donde quiero obtener la informacion
-			printf("Data:%s\n",(char*)informacion);
+			send(socketKernel,informacion,tamanio,0); //puntero que apunta a la direccion donde quiero obtener la informacion
+			//printf("Data:%s\n",(char*)informacion);
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 			if(resultadoEjecucion > 0)
 			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);

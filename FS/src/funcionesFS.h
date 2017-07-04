@@ -312,7 +312,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 	recv(socket_cliente,&size,sizeof(int),0);
 	printf("Tamano de la data:%d\n",size);
-	char* buffer = malloc(size);
+	void* buffer = malloc(size);
 
 	recv(socket_cliente,buffer,size,0);
 	printf("Data :%s\n",buffer);
