@@ -835,16 +835,21 @@ void interfaceLeerArchivo(int socket){
 
 void testEscribirArchivo(){
 	char comandoGuardarDatos = 'G';
-	char* nombreArchivo = "cadenas.bin";
-	int tamanoNombre = strlen(nombreArchivo);
-	int cursor=0;
+	char* nombreArchivo = string_new();
+	int cursor;
 	char* informacion=string_new();
+
+	printf("Ingrese el archivo donde escribir\n");
+	scanf("%s",nombreArchivo);
+
+	printf("Ingrese la posicion del cursor\n");
+	scanf("%d",&cursor);
 
 	printf("Ingrese informacion a escribir\n");
 	scanf("%s",informacion);
 
-
-	int size=strlen(informacion)*sizeof(int);
+	int tamanoNombre = strlen(nombreArchivo)*sizeof(char);
+	int size=strlen(informacion)*sizeof(char);
 	send(socketFyleSys,&comandoGuardarDatos,sizeof(char),0);
 	send(socketFyleSys,&tamanoNombre,sizeof(int),0);
 	send(socketFyleSys,nombreArchivo,tamanoNombre,0);
@@ -860,11 +865,22 @@ void testEscribirArchivo(){
 void testLeerArchivo(){
 
 	char comandoObtenerDatos = 'O';
-	char* nombreArchivo = "cadenas.bin";
-	int tamanoNombre = strlen(nombreArchivo);
-	int cursor=0;
+	char* nombreArchivo = string_new();
+	int cursor;
 	char* informacion;
-	int size=16;
+	int size;
+	int validado;
+
+	printf("Ingrese el archivo donde leer\n");
+	scanf("%s",nombreArchivo);
+
+	printf("Ingrese la posicion del cursor\n");
+	scanf("%d",&cursor);
+
+	printf("Ingrese el tamano a leer\n");
+	scanf("%d",&size);
+
+	int tamanoNombre = strlen(nombreArchivo);
 
 		send(socketFyleSys,&comandoObtenerDatos,sizeof(char),0);
 		send(socketFyleSys,&tamanoNombre,sizeof(int),0);
@@ -872,11 +888,11 @@ void testLeerArchivo(){
 		send(socketFyleSys,&cursor,sizeof(int),0);
 		send(socketFyleSys,&size,sizeof(int),0);
 
-		informacion = malloc(size);
+		informacion = string_new();
 
+		recv(socketFyleSys,&validado,sizeof(int),0);
 		recv(socketFyleSys,informacion,size,0);
 		printf("Informacion recibida:%s\n",informacion);
-		sleep(5);
 
 }
 

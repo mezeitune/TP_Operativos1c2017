@@ -58,20 +58,20 @@ int archivoEnModoLectura(char *archivo){
 
 
 /*get:  read n bytes from position pos */
-char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
+void* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
 {
 	 	char aDevolver[size-offset];
 		int caracterALeer;
 		int paraDeLeer=size+offset;
 		char name[2];
 
-		char* informacion = malloc(sizeof(char)*size);
+		void* informacion = malloc(size);
 		fseek(fp,offset,0);
-		fread(informacion,sizeof(char),size,fp);
+		fread(informacion,size,1,fp);
 
-		printf("La informacion leida es:%s\n",informacion);
+		printf("La informacion leida es:%s\n",(char*)informacion);
 		fclose(fp);
-		return informacion;
+		return (char*)informacion;
 /*
 		while((getc(fp)!=EOF))
 	    {
@@ -108,7 +108,6 @@ char *readFile(char *fileName)
 
 void adx_store_data(const char *filepath, const char *data)
 {
-	printf("Almacenando data en bloque :%s\n",filepath);
     FILE *fp = fopen(filepath, "ab");
     if (fp != NULL)
     {
