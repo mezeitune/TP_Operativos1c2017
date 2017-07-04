@@ -28,7 +28,7 @@ t_list* listaHilosProgramas;
 
 time_t now;
 struct tm beg;
-
+t_hiloPrograma* nuevoPrograma;
 
 void crearHiloPrograma();
 void* iniciarPrograma(int* socketHiloKernel);
@@ -39,7 +39,7 @@ void gestionarCierrePrograma(int pidFinalizar);
 void actualizarCantidadImpresiones(int pid);
 
 void crearHiloPrograma(){
-	t_hiloPrograma* nuevoPrograma = malloc(sizeof(t_hiloPrograma));
+	nuevoPrograma = malloc(sizeof(t_hiloPrograma));
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
 
 	nuevoPrograma->tiempoInicio= *localtime(&(time_t){time(NULL)});
@@ -51,7 +51,9 @@ void crearHiloPrograma(){
 
 	pthread_mutex_lock(&mutexListaHilos);
 	list_add(listaHilosProgramas,nuevoPrograma);
+
 	pthread_mutex_unlock(&mutexListaHilos);
+
 }
 
 void* iniciarPrograma(int* socketHiloKernel){
@@ -127,6 +129,7 @@ void gestionarCierrePrograma(int pidFinalizar){
 	printf("\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
 
 	free(programaAFinalizar);
+
 }
 
 

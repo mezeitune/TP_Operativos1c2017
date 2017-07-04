@@ -68,7 +68,7 @@ void CerrarPorSignal(){
 	//close(socketInterrupciones);
 	//close(socketMemoria);
 	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
-	free(pcb_actual);
+	//free(pcb_actual);
 	exit(1);
 }
 void expropiarVoluntariamente(){
