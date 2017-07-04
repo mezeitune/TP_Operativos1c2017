@@ -129,7 +129,7 @@ void cerrarTodo(){
 
 
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
-
+	free(nuevoPrograma);
 	free(mensaje);
 }
 void recibirDatosDelKernel(int socketHiloKernel){
@@ -169,6 +169,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 
 	gestionarCierrePrograma(pid);
 	log_warning(loggerConPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado",pid,socketHiloKernel);
+
 	imprimirInterfaz();
 	pthread_mutex_unlock(&mutexRecibirDatos);
 
