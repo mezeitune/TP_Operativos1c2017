@@ -135,6 +135,9 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	int resultadoEjecucion ;
 	void* infoLeida = malloc(tamanio);
 
+	int num_pagina= informacion / config_paginaSize;
+	int offset = informacion - (num_pagina * config_paginaSize);
+
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoLeerArchivo,sizeof(char),0);
 	int pid= pcb_actual->pid;
@@ -149,6 +152,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	if(resultadoEjecucion>0){
 		recv(socketKernel,infoLeida,tamanio,0);
 		log_info(loggerConPantalla,"La informacion leida es %s",infoLeida); /*TODO: Falta almacenarla en la posicion de memoria dada por la variable "informacion"*/
+		almacenarDatosEnMemoria(infoLeida,tamanio,num_pagina,offset);
 	}else{
 		log_error(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
 		expropiarPorKernel();

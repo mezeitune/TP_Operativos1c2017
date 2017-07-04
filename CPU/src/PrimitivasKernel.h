@@ -86,10 +86,9 @@ t_puntero reservar (t_valor_variable espacio){
 }
 void liberar (t_puntero puntero){
 
-	int num_paginaDelStack = puntero / config_paginaSize;
-	int offsetDelStack = puntero - (num_paginaDelStack * config_paginaSize);
-	int punteroHeap;
-	char* mensajeRecibido;
+	int num_pagina= puntero / config_paginaSize;
+	int offset = puntero - (num_pagina * config_paginaSize);
+
 
 	int pid = pcb_actual->pid;
 	char comandoInterruptHandler = 'X';
@@ -97,17 +96,11 @@ void liberar (t_puntero puntero){
 	int resultadoEjecucion;
 	int tamanio = sizeof(t_puntero);
 
-	//int num_paginaHeap = punteroHeap/ config_paginaSize;
-	//int offsetHeap = punteroHeap - (num_paginaHeap * config_paginaSize);
-
-	//printf("Offset :%d de la pagina :%d\n",offsetHeap,num_paginaHeap);
-
-
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);
-	send(socketKernel,&num_paginaDelStack,sizeof(int),0);
-	send(socketKernel,&offsetDelStack,tamanio,0);
+	send(socketKernel,&num_pagina,sizeof(int),0);
+	send(socketKernel,&offset,tamanio,0);
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
