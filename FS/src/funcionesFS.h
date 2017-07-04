@@ -413,8 +413,6 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 			fwrite(buffer,size,1,bloque);
 			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",nombreArchivo,(char*)buffer);
 			fclose(bloque);
-			actualizarMetadataArchivo(nombreArchivoRecibido,size,nuevosBloques);
-
 			//adx_store_data(direccionBloque,buffer);
 
 		}else{ //Necesito mas bloques
@@ -549,12 +547,14 @@ void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques){
 			int tamanioArchivoViejo=atoi(obtTamanioArchivo(path));
 			char**arrayBloquesViejos=obtArrayDeBloquesDeArchivo(path);
 
+			int tamanioNuevo= tamanioArchivoViejo + size;
+
 			 //actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
 			FILE *fp = fopen(path, "w");//Para que borre todo lo que tenia antes
 			char *metadataFile = string_new();
 
 			string_append(&metadataFile, "TAMANIO=");
-			string_append(&metadataFile, string_itoa(tamanioArchivoViejo+size));
+			string_append(&metadataFile, string_itoa(tamanioNuevo));
 			string_append(&metadataFile,"\n");
 
 			string_append(&metadataFile, "BLOQUES=[");
@@ -562,15 +562,14 @@ void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques){
 			int indiceBloque=0;
 		   while(!(arrayBloquesViejos[indiceBloque] == NULL)){
 			   string_append(&metadataFile,arrayBloquesViejos[indiceBloque]);
-			   string_append(&metadataFile,",");
+			   if(arrayBloquesViejos[indiceBloque+1]!=NULL)string_append(&metadataFile,",");
 			   indiceBloque++;
 		   }
 
 			for(i=0;i<nuevosBloques->elements_count;i++){
+				string_append(&metadataFile,",");
 				char* bloqueString=string_itoa(*(int*)list_get(nuevosBloques,i));//string_itoa(bloqs[z])
 				string_append(&metadataFile,bloqueString);
-				if(i==nuevosBloques->elements_count-1)break;
-				string_append(&metadataFile,",");
 			}
 
 			string_append(&metadataFile,"]");
