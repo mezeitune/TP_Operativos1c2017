@@ -188,13 +188,25 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 
 			send(socketKernel,informacion,tamanio,0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			//printf("Data:%s\n",(char*)informacion);
+
+
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-			if(resultadoEjecucion > 0)log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);
+			printf("Resultado de ejecucion:%d\n",resultadoEjecucion);
+			if(resultadoEjecucion < 0) {
+				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ",pid,descriptor_archivo);
+					expropiarPorKernel();
+					return;
+				}
+			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);
+
+			/*if(resultadoEjecucion > 0)log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);
 			else {
 				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ",pid,descriptor_archivo);
 				expropiarPorKernel();
 			}
+			*/
 	}
+
 }
 //FS
 

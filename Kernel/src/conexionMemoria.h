@@ -28,7 +28,6 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 	int resultadoEjecucion = 0;
 	void* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + size);
 
-	strcpy(contenido + size, "\0");
 	memcpy(mensajeAMemoria,&comandoEscribir,sizeof(char));
 	memcpy(mensajeAMemoria + sizeof(char),&pid,sizeof(int));
 	memcpy(mensajeAMemoria + sizeof(int)+sizeof(char),&pagina,sizeof(int));
@@ -46,7 +45,7 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 void* leerDeMemoria(int pid,int pagina,int offset,int size){
 	log_info(loggerConPantalla,"Leyendo de memoria--->PID:%d",pid);
 	char comandoSolicitud= 'S';
-	void* buffer = malloc(size);
+	void* buffer = malloc(size + sizeof(char));
 	int resultadoEjecucion=0;
 
 		send(socketMemoria,&comandoSolicitud,sizeof(char),0);

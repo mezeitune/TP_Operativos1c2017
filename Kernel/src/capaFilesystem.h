@@ -300,7 +300,8 @@ void escribirArchivo(t_fsEscribir* data){
 			excepcionFileDescriptorNoAbierto(socket,pid);
 			free(informacion);
 			free(data);
-			return;
+			int valor;
+			pthread_exit(&valor);
 		}
 
 		pthread_mutex_lock(&mutexListaTablaArchivos);
@@ -784,7 +785,9 @@ void interfaceAbrirArchivo(int socket){
 
 	data->socket =socket;
 
-	pthread_create(&IOthread,NULL,(void*)abrirArchivo,data);
+	abrirArchivo(data);
+
+	//pthread_create(&IOthread,NULL,(void*)abrirArchivo,data);
 }
 
 void interfaceEscribirArchivo(int socket){
@@ -804,7 +807,12 @@ void interfaceEscribirArchivo(int socket){
 
 		data->socket =socket;
 
-		pthread_create(&IOthread,NULL,(void*)escribirArchivo,data);
+		escribirArchivo(data);
+
+		//pthread_create(&IOthread,NULL,(void*)escribirArchivo,data);
+
+	//	printf("Sali del hilo escribir\n");
+		//sleep(3);
 }
 
 void interfaceLeerArchivo(int socket){
@@ -820,7 +828,9 @@ void interfaceLeerArchivo(int socket){
 
 	data->socket=socket;
 
-	pthread_create(&IOthread,NULL,(void*)leerArchivo,data);
+	leerArchivo(data);
+
+	//pthread_create(&IOthread,NULL,(void*)leerArchivo,data);
 }
 
 void testEscribirArchivo(){
