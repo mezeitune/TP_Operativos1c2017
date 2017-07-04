@@ -400,33 +400,39 @@ void leerArchivo(t_fsLeer* data){
 		}
 
 
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		int fileDescriptorAbierto=verificarFileDescriptorAbierto(pid,fileDescriptor);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
 
-		int encontroFd;
-		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-		if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
-		else encontroFd = 0;
-
-		if(!encontroFd){
-			list_add(listaTablasProcesos,entradaTablaProceso);
+		if(!fileDescriptorAbierto){
 			excepcionFileDescriptorNoAbierto(socket,pid);
 			return;
 		}
 
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
 		t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
+
+		int cursor=entrada->puntero;
 
 		int tiene_permisoLectura=0;
 		char *permiso_lectura = "r";
 		if(string_contains(entrada->flags, permiso_lectura)){
 			tiene_permisoLectura=1;
 		}
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		list_add(entradaTablaProceso->tablaProceso,entrada);
+		list_add(listaTablasProcesos,entradaTablaProceso);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
+
 		if(!tiene_permisoLectura){
-			list_add(entradaTablaProceso->tablaProceso,entrada);
-			list_add(listaTablasProcesos,entradaTablaProceso);
 			excepcionPermisosLectura(socket,pid);
 			return;
 		}
-
+		pthread_mutex_lock(&mutexTablaGlobal);
 		char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
+		pthread_mutex_unlock(&mutexTablaGlobal);
 
 		printf("Direccion:%s\n",direccion);
 
@@ -438,31 +444,30 @@ void leerArchivo(t_fsLeer* data){
 
 		printf("Tamano del nombre del archivo:%d\n",tamanoNombre);
 		printf("Nombre del archivo:%s\n",nombreArchivo);
-		printf("Puntero :%d\n",entrada->puntero);
+		printf("Puntero :%d\n",cursor);
 		printf("Tamano a leer :%d\n",tamanioALeer);
 
 
-
+		pthread_mutex_lock(&mutexFS);
 		send(socketFyleSys,&comandoLeer,sizeof(char),0);
 		send(socketFyleSys,&tamanoNombre,sizeof(int),0);
 		send(socketFyleSys,nombreArchivo,tamanoNombre,0);
-		send(socketFyleSys,&entrada->puntero,sizeof(int),0);
+		send(socketFyleSys,&cursor,sizeof(int),0);
 		send(socketFyleSys,&tamanioALeer,sizeof(int),0);
 
-		list_add(entradaTablaProceso->tablaProceso,entrada);
-		list_add(listaTablasProcesos,entradaTablaProceso);
-
-
 		recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
+
 		printf("Resultado de ejecucion : %d\n",resultadoEjecucion);
 
 		if(resultadoEjecucion<0){
+					pthread_mutex_unlock(&mutexFS);
 					excepcionFileSystem(socket,pid);
 					return;
 					}
-		informacion = malloc(tamanioALeer + sizeof(char));
+		informacion = malloc(tamanioALeer);
 		recv(socketFyleSys,informacion,tamanioALeer,0);
-		strcpy(informacion + tamanioALeer , "\0");
+		pthread_mutex_unlock(&mutexFS);
+
 		printf("Informacion leida :%s\n",informacion);
 
 	send(socket,&resultadoEjecucion,sizeof(int),0);
@@ -493,21 +498,13 @@ void moverCursorArchivo(int socket){
 					}
 
 		//verificar que la tabla de ese pid exista
-		int tablaProcesoExiste;
-		if(list_any_satisfy(listaTablasProcesos,(void*)verificaPid)) tablaProcesoExiste = 1;
-		else tablaProcesoExiste = 0;
 
-
-		if(!tablaProcesoExiste){
-			excepcionSinTablaArchivos(socket,pid);
-			return;
-		}else{
-			int encontroFd;
+			int fileDescriptorAbierto; //seguir desde aca
 			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-					if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
-					else encontroFd = 0;
+					if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) fileDescriptorAbierto = 1;
+					else fileDescriptorAbierto = 0;
 
-			if(!encontroFd){
+			if(!fileDescriptorAbierto){
 						excepcionArchivoInexistente(socket,pid);
 			}else{
 
@@ -524,7 +521,6 @@ void moverCursorArchivo(int socket){
 				resultadoEjecucion=1;
 				send(socket,&resultadoEjecucion,sizeof(int),0);
 			}
-		}
 }
 
 int crearArchivo(int socket_aceptado, char* direccion ){
