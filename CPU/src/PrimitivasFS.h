@@ -78,7 +78,7 @@ void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
 
 	char comandoCapaFS = 'F';
 	char comandoCerrarArchivo = 'P';
-	int resultadoEjecucion ;
+	int resultadoEjecucion=0;
 	send(socketKernel,&comandoCapaFS,sizeof(char),0);
 	send(socketKernel,&comandoCerrarArchivo,sizeof(char),0);
 	int pid= pcb_actual->pid;
@@ -86,8 +86,8 @@ void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
-	if(resultadoEjecucion>0)
-	log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d",pid,descriptor_archivo);
+
+	if(resultadoEjecucion>0)log_info(loggerConPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d",pid,descriptor_archivo);
 	else {
 		log_error(loggerConPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d",pid,descriptor_archivo);
 		expropiarPorKernel();

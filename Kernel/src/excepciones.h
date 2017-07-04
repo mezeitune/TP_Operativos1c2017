@@ -242,7 +242,7 @@ t_pcb* expropiarPorEjecucion(int socket){
 	int resultadoEjecucion=-1;
 	int rafagas;
 	log_info(loggerConPantalla,"Expropiando pcb--->CPU:%d",socket);
-		send(socket,&resultadoEjecucion,sizeof(char),0);
+		send(socket,&resultadoEjecucion,sizeof(int),0);
 		pcb = recibirYDeserializarPcb(socket);
 		recv(socket,&rafagas,sizeof(int),0);
 		actualizarRafagas(pcb->pid,rafagas);

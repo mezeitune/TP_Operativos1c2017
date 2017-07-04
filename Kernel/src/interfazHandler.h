@@ -197,7 +197,7 @@ void imprimirTablaArchivosProceso(int pid){
 		t_entradaTablaProceso* entrada;
 		for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 			entrada = list_get(entradaTablaProceso->tablaProceso,i);
-			printf("\t\t\t\t%d\t%s\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
+			printf("\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
 		}
 		list_add(listaTablasProcesos,entradaTablaProceso);
 }

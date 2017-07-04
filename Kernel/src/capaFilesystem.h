@@ -55,16 +55,7 @@ typedef struct{
 	int size;
 }t_fsLeer;
 
-
-/*
- * Mutex a agregar:
- * mutexTablaArchivosGlobal;
- * mutexListaTablas
- * Habria que pensar si tengo que agregar un mutex cuando accedo a la tabla de un proceso en particular,
- * oooo bien, me conformo con el mutex de la lista de las tablas de todos los procesos
- * */
-
-
+/*Wrappers*/
 void interfaceHandlerFileSystem(int socket);
 void interfaceAbrirArchivo(int socket);
 void interfaceEscribirArchivo(int socket);
@@ -254,34 +245,27 @@ void borrarArchivo(int socket){
 void cerrarArchivo(int socket){
 	int pid;
 	int fileDescriptor;
-	int resultadoEjecucion ;
+	int resultadoEjecucion=1;
 	recv(socket,&pid,sizeof(int),0);
 	recv(socket,&fileDescriptor,sizeof(int),0);
 	log_info(loggerConPantalla,"Cerrando el archivo--->PID:%d--->FD:%d",pid,fileDescriptor);
 
-	_Bool verificaPid(t_indiceTablaProceso* entrada){
-						return entrada->pid == pid;
-					}
-	_Bool verificaFd(t_entradaTablaProceso* entrada){
-					return entrada->fd == fileDescriptor;
-				}
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		int fileDescriptorAbierto=verificarFileDescriptorAbierto(pid,fileDescriptor);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
 
+		if(!fileDescriptorAbierto){
+			excepcionFileDescriptorNoAbierto(socket,pid);
+			return;
+		}
+		pthread_mutex_lock(&mutexListaTablaArchivos);
+		int indiceTablaGlobal=borrarEntradaTablaProceso(pid,fileDescriptor);
+		pthread_mutex_unlock(&mutexListaTablaArchivos);
 
-			int encontroFd;
-			t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
-			if(list_any_satisfy(entradaTablaProceso->tablaProceso,(void*)verificaFd)) encontroFd = 1;
-			else encontroFd = 0;
-			list_add(listaTablasProcesos,entradaTablaProceso);
+		pthread_mutex_lock(&mutexTablaGlobal);
+		disminuirOpenYVerificarExistenciaEntradaGlobal(indiceTablaGlobal);
+		pthread_mutex_unlock(&mutexTablaGlobal);
 
-			if(!encontroFd){
-				excepcionFileDescriptorNoAbierto(socket,pid);
-				return;
-			}else{
-
-				int indiceTablaGlobal=borrarEntradaTablaProceso(pid,fileDescriptor);
-				disminuirOpenYVerificarExistenciaEntradaGlobal(indiceTablaGlobal);
-			}
-		resultadoEjecucion=1;
 		send(socket,&resultadoEjecucion,sizeof(int),0);
 
 }
@@ -471,7 +455,7 @@ void leerArchivo(t_fsLeer* data){
 		recv(socketFyleSys,informacion,tamanioALeer,0);
 		pthread_mutex_unlock(&mutexFS);
 
-		printf("Informacion leida :%s\n",informacion);
+		//printf("Informacion leida :%s\n",informacion);
 
 	send(socket,&resultadoEjecucion,sizeof(int),0);
 	send(socket,informacion,tamanioALeer,0);
@@ -606,7 +590,7 @@ void borrarEntradaEnTablaGlobal(int indiceTablaGlobal){
 	list_remove_and_destroy_element(tablaArchivosGlobal,indiceTablaGlobal,free);
 }
 
-int verificarEntradaEnTablaGlobal(char* direccion){ /*TODO: Mutex tablaGlobal*/
+int verificarEntradaEnTablaGlobal(char* direccion){
 	log_info(loggerConPantalla,"Verificando que exista entrada en tabla global--->Direccion:%s",direccion);
 
 	_Bool verificaDireccion(t_entradaTablaGlobal* entrada){
@@ -621,7 +605,7 @@ int verificarEntradaEnTablaGlobal(char* direccion){ /*TODO: Mutex tablaGlobal*/
 
 }
 
-void aumentarOpenEnTablaGlobal(char* direccion){/*TODO: Mutex tablaGlobal*/
+void aumentarOpenEnTablaGlobal(char* direccion){
 	log_info(loggerConPantalla,"Aumentando open en tabla global--->Direccion:%s",direccion);
 	_Bool verificaDireccion(t_entradaTablaGlobal* entrada){
 			if(!strcmp(entrada->path,direccion)) return 1;
@@ -640,7 +624,7 @@ void disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
 
 	if(entrada->open==0){
 		list_remove(tablaArchivosGlobal,indiceTablaGlobal);
-		if(tablaArchivosGlobal->elements_count > 0)actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal); /*TODO: Esta jodiedno esta*/
+		if(tablaArchivosGlobal->elements_count > 0)actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal);
 		free(entrada);
 	}
 }
@@ -656,7 +640,7 @@ void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal){
 
 		for(j=0;j<indiceTabla->tablaProceso->elements_count;j++){
 			entrada = list_get(indiceTabla->tablaProceso,j);
-			if(entrada->globalFd > indiceTablaGlobal) entrada->globalFd--; /*TODO: No pregunto si es igual porque se supone que no existe mas en esa tabla. Corroborarlo*/
+			if(entrada->globalFd > indiceTablaGlobal) entrada->globalFd--;
 		}
 	}
 }
@@ -760,13 +744,13 @@ void interfaceHandlerFileSystem(int socket){
 			switch(orden){
 					case 'A':	interfaceAbrirArchivo(socket);
 								break;
-					case 'B':	borrarArchivo(socket); /*TODO: Falta eliminar las entradas en TODAS las tablas y en la global. Ademas actualizar las tablas de los procesos y corroborar si alguien lo tiene abierto*/
+					case 'B':	borrarArchivo(socket); //TODO:  Hay que testear la funcion que actualiza los punteros
 								break;
-					case 'O':	interfaceLeerArchivo(socket); /*TODO: Falta saber que mandarle a FS*/
+					case 'O':	interfaceLeerArchivo(socket);
 								break;
-					case 'G': 	interfaceEscribirArchivo(socket); /*TODO: Falta testear*/
+					case 'G': 	interfaceEscribirArchivo(socket);
 								break;
-					case 'P':	cerrarArchivo(socket); /*TODO: Falta testeas*/
+					case 'P':	cerrarArchivo(socket);
 								break;
 					case 'M':	moverCursorArchivo(socket); /*TODO: Falta desarrollar la validacion del tamano del archivo en FS*/
 								break;
