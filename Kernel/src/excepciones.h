@@ -86,7 +86,7 @@ void excepcionPlanificacionDetenida(int socket){
 }
 
 /*
- * Excepeciones de FileSystem. TODO: Escritura.
+ * Excepeciones de FileSystem.
  */
 void excepcionFileSystem(int socket,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepcion de fileSystem");
@@ -96,7 +96,7 @@ void excepcionFileSystem(int socket,int pid){
 	encolarEnListaParaTerminar(proceso);
 }
 
-void excepcionPermisosEscritura(int socketCPU,int pid){ /*TODO*/
+void excepcionPermisosEscritura(int socketCPU,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de escritura");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socketCPU);

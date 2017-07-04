@@ -141,7 +141,7 @@ void administrarFinProcesos(){
 							}
 						}
 						pthread_mutex_unlock(&mutexListaEspera);
-					/*TODO: Ver que terminar de FS*/
+					/*TODO:La tabla del proceso de archivos abiertos no la borro para que qude el registro*/
 					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
 				}
 	}

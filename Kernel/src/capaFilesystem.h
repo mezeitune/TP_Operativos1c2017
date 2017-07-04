@@ -322,7 +322,7 @@ void escribirArchivo(t_fsEscribir* data){
 		pthread_mutex_unlock(&mutexListaTablaArchivos);
 
 		if(!tiene_permisoEscritura){
-			excepcionPermisosEscritura(socket,pid);
+			excepcionPermisosEscritura(socket,pid); //TODO: Rompe
 			free(informacion);
 			free(data);
 			return;
@@ -344,7 +344,7 @@ void escribirArchivo(t_fsEscribir* data){
 			//printf("Informacion a escribir:%s\n",informacion);
 
 
-			pthread_mutex_unlock(&mutexFS);
+			pthread_mutex_lock(&mutexFS);
 			send(socketFyleSys,&comandoGuardarDatos,sizeof(char),0);
 			send(socketFyleSys,&tamanoNombre,sizeof(int),0);
 			send(socketFyleSys,nombreArchivo,tamanoNombre,0);
@@ -359,6 +359,7 @@ void escribirArchivo(t_fsEscribir* data){
 		if(resultadoEjecucion < 0){
 			excepcionFileSystem(socket,pid); /*TODO Esta rompiendo. Expropia, pero despues le llegan datos de mas*/
 			free(informacion);
+			free(data);
 			return;
 		}
 		send(socket,&resultadoEjecucion,sizeof(int),0);

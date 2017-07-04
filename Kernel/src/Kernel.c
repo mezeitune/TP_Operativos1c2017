@@ -678,7 +678,7 @@ void selectorConexiones() {
 									}
 									else {
 											recv(socket, &orden, sizeof(char), 0);
-
+											printf("\nSOCKET:%d\n",socket);
 											connectionHandler(socket, orden);
 									}
 							}

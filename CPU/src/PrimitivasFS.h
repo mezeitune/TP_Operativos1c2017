@@ -58,8 +58,7 @@ void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion==1)
-		log_info(loggerConPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d");
+	if(resultadoEjecucion>0)log_info(loggerConPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d");
 	else {
 		log_error(loggerConPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d");
 		expropiarPorKernel();
@@ -114,8 +113,7 @@ void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_varia
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	send(socketKernel,&posicion,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion==1)
-	log_info(loggerConPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d");
+	if(resultadoEjecucion>0)log_info(loggerConPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d");
 	else {
 		log_error(loggerConPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d");
 		expropiarPorKernel();
@@ -191,8 +189,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			send(socketKernel,informacion,tamanio,0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			//printf("Data:%s\n",(char*)informacion);
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-			if(resultadoEjecucion > 0)
-			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);
+			if(resultadoEjecucion > 0)log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);
 			else {
 				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ",pid,descriptor_archivo);
 				expropiarPorKernel();
