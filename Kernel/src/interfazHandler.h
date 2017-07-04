@@ -76,6 +76,10 @@ void interfazHandler(){
 					break;
 				case 'Z':
 					testLeerArchivo();
+					break;
+				case 'X':
+					testBorrarArchivo();
+					break;
 				default:
 					if(cont!=2)log_error(loggerConPantalla ,"Orden no reconocida");
 					else cont = 0;

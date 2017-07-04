@@ -116,50 +116,50 @@ void crearArchivoFunction(int socket_cliente){
 
 
 void borrarArchivoFunction(int socket_cliente){
-	FILE *fp;
 
 	int tamanoNombreArchivo;
 	int validado;
 
 	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
-	void* nombreArchivo = malloc(tamanoNombreArchivo);
+	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
 	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
+	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
+
+	log_info(loggerConPantalla,"Borrando archivo:%s",nombreArchivo);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
+	printf("Ruta a borrar :%s\n",nombreArchivoRecibido);
+
 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
-
-
-	   fp = fopen(nombreArchivoRecibido, "w");
 	   //poner en un array los bloques de ese archivo para luego liberarlos
 	   char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+	   FILE* fp = fopen(nombreArchivoRecibido, "w"); //Solo para borrarle el contenido
 
-	   if(remove(nombreArchivoRecibido) == 0)
-	   {
-
-
-		   validado=1;
-
+	   if(remove(nombreArchivoRecibido) == 0){
 		   //marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
 		   int d=0;
 		   while(!(arrayBloques[d] == NULL)){
-			   int indice=atoi(arrayBloques[d]);
-			   bitarray_clean_bit(bitarray,indice);
+			  bitarray_clean_bit(bitarray,atoi(arrayBloques[d]));
 		      d++;
 		   }
+		   validado=1;
 		   send(socket_cliente,&validado,sizeof(char),0);
 		   //send diciendo que se elimino correctamente el archivo
+		   log_info(loggerConPantalla,"El archivo ha sido borrar--->Archivo:%s",nombreArchivo);
 	   }
 	   else
 	   {
+		   log_error(loggerConPantalla,"Excepecion de filesystem al borrar archivo--->Archivo:%s",nombreArchivo);
 		   validado=0;
 		   send(socket_cliente,&validado,sizeof(char),0);
 	      //send que no se pudo eliminar el archivo
 	   }
-	} else {
+	}else {
+		log_error(loggerConPantalla,"El archivo no se puede borrar porque no existe--->Archivo:%s",nombreArchivo);
 		validado=0;
 		send(socket_cliente,&validado,sizeof(char),0);
 		//send diciendo que hubo un error y no se pudo eliminar el archivo

@@ -211,7 +211,7 @@ void borrarArchivo(int socket){
 
 		pthread_mutex_lock(&mutexTablaGlobal);
 		borrarEntradaEnTablaGlobal(indiceTablaGlobal); //No se disminuye el open,se borra la entrada, porque solo se puede borrar si es el unico proceso que lo tiene abierto.
-		pthread_mutex_lock(&mutexTablaGlobal);
+		pthread_mutex_unlock(&mutexTablaGlobal);
 
 		pthread_mutex_lock(&mutexListaTablaArchivos);
 		actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal);
@@ -896,6 +896,21 @@ void testLeerArchivo(){
 
 }
 
+void testBorrarArchivo(){
+
+	char* nombreArchivo = string_new();
+	char comandoBorrarArchivo='B';
+	int resultadoEjecucion;
+
+	printf("Ingrese el archivo a borrar\n");
+		scanf("%s",nombreArchivo);
+
+		int tamanoNombre = strlen(nombreArchivo);
+			send(socketFyleSys,&comandoBorrarArchivo,sizeof(char),0);
+			send(socketFyleSys,&tamanoNombre,sizeof(int),0);
+			send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+			recv(socketFyleSys,&resultadoEjecucion,sizeof(char),0);
+}
 
 
 #endif /* CAPAFILESYSTEM_H_ */
