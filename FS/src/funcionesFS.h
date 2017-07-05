@@ -204,38 +204,35 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		   printf("size:%d\n",size);
 		   printf("Tamanio bloque:%d\n",tamanioBloques);
 
-		   int cantidadBloquesQueNecesito; /*TODO: Emprolijar*/
-		   if((size%tamanioBloques) == 0) cantidadBloquesQueNecesito = 1;
-		   if((size%tamanioBloques) < tamanioBloques) cantidadBloquesQueNecesito = 1;
-		   if((size%tamanioBloques) > tamanioBloques){
-			   cantidadBloquesQueNecesito = size / tamanioBloques;
+		   int cantidadBloquesNecesito = ((size+cursor)/tamanioBloques)+1;
 
-		   }
-/*		   if((size%tamanioBloques)!=0){
-				cantidadBloquesQueNecesito++;
-			}
-*/
-		   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesQueNecesito);
 
-		   char* infoTraidaDeLosArchivos = string_new();
+		   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesNecesito);
+
 
 		   int d=0;
-		   while(!(cursor%tamanioBloques)==cursor) d++; //Para saber cual es el primer bloque a leer
+		   int tamanioBloqueAcumulado = tamanioBloques;
+		   while(!(cursor%tamanioBloqueAcumulado)==cursor){ //Para saber cual es el primer bloque a leer
+			   d++;
+			   tamanioBloqueAcumulado += tamanioBloques;
+		   }
 
-		   printf("El primer bloque a leer es :%d\n",d);
 		   FILE *bloque;
 
 		   int sizeRestante=size;
 
-
+		   char* infoTraidaDeLosArchivos = string_new();
 		   int sizeDentroBloque=0;
 		   int cantidadBloquesLeidos=0;
-		   while(cantidadBloquesLeidos < cantidadBloquesQueNecesito){
+		   while(cantidadBloquesLeidos < cantidadBloquesNecesito){
 			   printf("Leyendo data del bloque:%s\n",arrayBloques[d]);
 
 			   if(cantidadBloquesLeidos==0){
-				   if(size>tamanioBloques-cursor) sizeDentroBloque=tamanioBloques-cursor;//Leo todo el bloque
+				   printf("Entre al primer if\n");
+				   if(size>tamanioBloques-cursor) sizeDentroBloque=tamanioBloques-cursor;//Leo la porcion restante del bloque
 				   else sizeDentroBloque = size; //Leo lo suficiente
+				   printf("El tamano a leer del bloque es :%d\n",sizeDentroBloque);
+
 
 				   char *nombreBloque = string_new();
 				   string_append(&nombreBloque, puntoMontaje);
@@ -244,8 +241,11 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 				   string_append(&nombreBloque, ".bin");
 
 				   bloque=fopen(nombreBloque, "rb");
+				   printf("Abri el bloque\n");
+
 				   void* data=obtenerBytesDeUnArchivo(bloque,cursor,sizeDentroBloque); //En el primero bloque, arranca del cursor
-				   string_append(&infoTraidaDeLosArchivos,data);
+
+				   string_append(&infoTraidaDeLosArchivos,(char*)data);
 				   sizeRestante -= sizeDentroBloque;
 			   }
 			   else{
