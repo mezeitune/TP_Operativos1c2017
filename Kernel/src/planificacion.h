@@ -386,7 +386,7 @@ pthread_t threadId;
 
 	 pthread_create(&threadId,NULL, (void*)pcbBloqueadoAReady, NULL);
 
-	 while(1) pcbEjecucionABloqueado();
+	 pcbEjecucionABloqueado();
 
  }
 
@@ -456,28 +456,27 @@ void pcbEjecucionABloqueado(){
 		return (pcb->pid == semYPCB->pcb->pid);
 	}
 
+	while(1){
 
+		sem_wait(&sem_ListaSemYPCB);
+		verificarPausaPlanificacion();
 
-	sem_wait(&sem_ListaSemYPCB);
-	verificarPausaPlanificacion();
+		for (indice = 0; indice < list_size(listaSemYPCB); ++indice) {
 
-	for (indice = 0; indice < list_size(listaSemYPCB); ++indice) {
+			pthread_mutex_lock(&mutexListaSemYPCB);
+			semYPCB = list_get(listaSemYPCB, indice);
+			pthread_mutex_unlock(&mutexListaSemYPCB);
 
-		pthread_mutex_lock(&mutexListaSemYPCB);
-		semYPCB = list_get(listaSemYPCB, indice);
-		pthread_mutex_unlock(&mutexListaSemYPCB);
+			log_info(loggerConPantalla,"Cambiando proceso desde Ejecucion a Bloqueados--->PID:%d",semYPCB->pcb->pid);
 
-		log_info(loggerConPantalla,"Cambiando proceso desde Ejecucion a Bloqueados--->PID:%d",semYPCB->pcb->pid);
+			pthread_mutex_lock(&mutexColaEjecucion);
+			list_remove_by_condition(colaEjecucion, (void*)verificaPCB);
+			pthread_mutex_unlock(&mutexColaEjecucion);
 
-		pthread_mutex_lock(&mutexColaEjecucion);
-		list_remove_by_condition(colaEjecucion, (void*)verificaPCB);
-		pthread_mutex_unlock(&mutexColaEjecucion);
-
-		pthread_mutex_lock(&mutexColaBloqueados);
-		list_add(colaBloqueados, semYPCB->pcb);
-		pthread_mutex_unlock(&mutexColaBloqueados);
-
-
+			pthread_mutex_lock(&mutexColaBloqueados);
+			list_add(colaBloqueados, semYPCB->pcb);
+			pthread_mutex_unlock(&mutexColaBloqueados);
+		}
 	}
 	//free(semYPCB);
 }

@@ -93,6 +93,7 @@ void expropiarPorDireccionInvalida(){
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
 	char interruptHandler= 'X';
 	char caseDireccionInvalida= 'M';
+
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseDireccionInvalida,sizeof(char),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
@@ -124,13 +125,16 @@ void expropiarPorStackOverflow(){
 void expropiarPorRR(){
 
 	char comandoExpropiarCpu = 'R';
-	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
-	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
-	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
-	free(pcb_actual);
-	esperarPCB();
+	if(cpuBloqueadaPorSemANSISOP != 0){
+
+		send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+		send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
+		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+		serializarPcbYEnviar(pcb_actual,socketKernel);
+		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
+		free(pcb_actual);
+		esperarPCB();
+	}
 }
 void expropiarPorRRYCerrar(){
 	char comandoExpropiarCpu = 'R';

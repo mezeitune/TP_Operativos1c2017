@@ -163,8 +163,8 @@ void connectionHandler(int socket, char orden) {
 		case 'Z':	eliminarSocket(socket);
 					break;
 		default:
-					log_error(loggerConPantalla,"Orden %c no definida", orden);
-					break;
+				log_error(loggerConPantalla,"Orden %c no definida", orden);
+				break;
 		}
 	return;
 }
@@ -272,6 +272,7 @@ void gestionarRRFinQuantum(int socket){
 void interruptHandler(int socketAceptado,char orden){
 	log_warning(loggerConPantalla,"Ejecutando interrupt handler");
 
+	printf("\n\nORDEN %c\n\n", orden);
 	switch(orden){
 
 		case 'B':	excepcionPlanificacionDetenida(socketAceptado);
@@ -305,6 +306,7 @@ void interruptHandler(int socketAceptado,char orden){
 			break;
 	}
 	log_warning(loggerConPantalla,"Interrupt Handler finalizado");
+	return;
 }
 
 
@@ -648,6 +650,7 @@ void selectorConexiones() {
 	pthread_mutex_unlock(&mutex_masterSet);
 
 	maximoFD = socketServidor; // keep track of the biggest file descriptor so far, it's this one
+
 
 	while(!flagFinalizarKernel) {
 					pthread_mutex_lock(&mutex_masterSet);

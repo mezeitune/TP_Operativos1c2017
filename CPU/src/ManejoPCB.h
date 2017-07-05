@@ -1,6 +1,9 @@
 //----------------------------------Manejo PCB------------------------------------------
 void esperarPCB(){
 
+
+	cpuBloqueadaPorSemANSISOP = 1;
+
 	while(cpuOcupada==1){
 
 		log_info(loggerConPantalla," CPU Esperando un script");

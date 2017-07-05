@@ -93,8 +93,8 @@ void waitSemaforoAnsisop(int socketCPU){
 
 		actualizarRafagas(semYPCB->pcb->pid,rafagasEjecutadas);
 
-		send(socketCPU, &ok,sizeof(char),0);
 		cpuEjecucionAFQPB(socketCPU);
+		//send(socketCPU, &ok,sizeof(char),0);
 
 		semYPCB->idSemaforo = semaforo;
 

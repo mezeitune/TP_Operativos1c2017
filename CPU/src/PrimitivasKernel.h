@@ -34,7 +34,7 @@ void wait(t_nombre_semaforo identificador_semaforo){
 		serializarPcbYEnviar(pcb_actual, socketKernel);
 
 		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
-		recv(socketKernel, &ok, sizeof(int),0);
+		//recv(socketKernel, &ok, sizeof(int),0);
 
 		if(cpuFinalizadaPorSignal != 0) esperarPCB();
 
@@ -55,6 +55,8 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	int pid = pcb_actual->pid;
 	int i = 0;
 
+	if(!(i > 0)){
+
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
@@ -67,11 +69,14 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
 
+
+
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
 		i++;
 	}
 	free(string_cortado);
+	}
 }
 //SEMAFOROS ANSISOP
 
