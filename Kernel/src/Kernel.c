@@ -314,7 +314,6 @@ void gestionarCierreCpu(int socketCpu){
 		return cpu->socket == socketCpu;
 	}
 t_cpu* cpu;
-	/*TODO: Saque el WAIT porque en el peor de los casos, el planificador se activara, vera que no hay cpus ociosas, y guardara devuelta el pcb en la cola de listos*/
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
@@ -504,7 +503,7 @@ void gestionarAlocar(int socket){
 	data->socket = socket;
 	int err=pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
 	if(err){
-		printf("ERROR; return code from pthread_create() is %d\n", err);
+		log_error(loggerConPantalla,"error al crear el hilo para alocar memoria dinamicais %d\n", err);
 		return;
 	}
 
@@ -678,7 +677,6 @@ void selectorConexiones() {
 									}
 									else {
 											recv(socket, &orden, sizeof(char), 0);
-											printf("\nSOCKET:%d\n",socket);
 											connectionHandler(socket, orden);
 									}
 							}

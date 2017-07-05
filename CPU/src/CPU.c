@@ -68,7 +68,7 @@ void CerrarPorSignal(){
 	//close(socketInterrupciones);
 	//close(socketMemoria);
 	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
-	//free(pcb_actual);
+	free(pcb_actual);
 	exit(1);
 }
 void expropiarVoluntariamente(){
@@ -106,10 +106,12 @@ void expropiarPorDireccionInvalida(){
 void expropiarPorStackOverflow(){
 	char interruptHandler= 'X';
 	char caseStackOverflow = 'K';
+
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseStackOverflow,sizeof(char),0);
+
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	//send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
 
 	free(pcb_actual);

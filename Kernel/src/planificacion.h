@@ -91,9 +91,10 @@ int contadorPid=0;
 
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
+pthread_t administradorFinProcesos;
+pthread_t administradorNuevosProcesos;
+
 void planificarLargoPlazo(){
-	pthread_t administradorFinProcesos;
-	pthread_t administradorNuevosProcesos;
 	pthread_create(&administradorFinProcesos,NULL, (void*)administrarFinProcesos,NULL);
 	pthread_create(&administradorNuevosProcesos,NULL, (void*)administrarNuevosProcesos,NULL);
 
@@ -105,22 +106,25 @@ void planificarLargoPlazo(){
 void administrarNuevosProcesos(){
 	t_pcb* proceso;
 	while(!flagTerminarPlanificadorLargoPlazo){
-			sem_wait(&sem_admitirNuevoProceso);
-			pthread_mutex_lock(&mutexNuevoProceso);
-				if(verificarGradoDeMultiprogramacion()==0 && list_size(colaNuevos)>0 && flagPlanificacion) {
 
-				pthread_mutex_lock(&mutexColaNuevos);
-				proceso = list_remove(colaNuevos,0);
-				pthread_mutex_unlock(&mutexColaNuevos);
+		verificarPausaPlanificacion();
 
-				pthread_mutex_lock(&mutexListaCodigo);
-				t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
-				pthread_mutex_unlock(&mutexListaCodigo);
+		sem_wait(&sem_admitirNuevoProceso);
+		pthread_mutex_lock(&mutexNuevoProceso);
+			if(verificarGradoDeMultiprogramacion()==0 && list_size(colaNuevos)>0 && flagPlanificacion) {
 
-				crearProceso(proceso,codigoPrograma);
-				}
-				pthread_mutex_unlock(&mutexNuevoProceso);
-		}
+			pthread_mutex_lock(&mutexColaNuevos);
+			proceso = list_remove(colaNuevos,0);
+			pthread_mutex_unlock(&mutexColaNuevos);
+
+			pthread_mutex_lock(&mutexListaCodigo);
+			t_codigoPrograma* codigoPrograma = buscarCodigoDeProceso(proceso->pid);
+			pthread_mutex_unlock(&mutexListaCodigo);
+
+			crearProceso(proceso,codigoPrograma);
+			}
+			pthread_mutex_unlock(&mutexNuevoProceso);
+	}
 }
 
 void administrarFinProcesos(){
@@ -128,6 +132,9 @@ void administrarFinProcesos(){
 	t_pcb* proceso;
 
 	while(!flagTerminarPlanificadorLargoPlazo){
+
+
+		if(!flagPlanificacion)sem_wait(&sem_planificacion);
 
 		sem_wait(&sem_administrarFinProceso);
 
@@ -224,29 +231,28 @@ void interfazPausarPlanificacion(){
 		sem_wait(&sem_planificacion);
 		log_info(loggerConPantalla, "Se pauso la planificacion");
 	}
-	printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
 }
 
 void interfazReanudarPlanificacion(){
 
-	int valor;
 
 	if(flagPlanificacion) log_warning(loggerConPantalla, "Planificacion no se encuentra pausada");
 	else{
 		flagPlanificacion = 1;
 
 		sem_post(&sem_planificacion);
-		/*sem_post(&sem_administrarFinProceso); TODO: Esto hace falta? Hace que explote todo*/
+		sem_post(&sem_planificacion);
+		sem_post(&sem_planificacion);
+		sem_post(&sem_planificacion);
 		log_info(loggerConPantalla, "Se reanudo la planificacion");
 	}
-	printf("FLAG PLANIFICACION: %d\n", flagPlanificacion);
-	sem_getvalue(&sem_planificacion, &valor);
-	printf("\n\nSEM PLANIFICACION: %d\n\n", valor);
 }
 
 void verificarPausaPlanificacion(){
-	if(flagPlanificacion) sem_post(&sem_planificacion);
-	sem_wait(&sem_planificacion);
+	if(!flagPlanificacion){
+		log_info(loggerConPantalla,"\nLa planificacion se encuentra pausada\n");
+		sem_wait(&sem_planificacion);
+	}
 }
 
 /*------------------------CORTO PLAZO-----------------------------------------*/
@@ -273,9 +279,6 @@ void planificarCortoPlazo(){
 
 	while(1){
 
-
-
-
 		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaListos);
 
@@ -285,14 +288,12 @@ void planificarCortoPlazo(){
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
 
-		printf("\nSaque un proceso de listos\n");
-
 
 		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
 			pthread_mutex_lock(&mutexListaCPU);
 			cpuEnEjecucion = list_remove_by_condition(listaCPU,(void*) verificarCPU);
-			cpuEnEjecucion->estado = EJECUCTANDO;
+			cpuEnEjecucion->estado = EJECUTANDO;
 			cpuEnEjecucion->pid = pcbListo->pid;
 			list_add(listaCPU, cpuEnEjecucion);
 			pthread_mutex_unlock(&mutexListaCPU);
@@ -303,16 +304,15 @@ void planificarCortoPlazo(){
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 
 			send(cpuEnEjecucion->socket,&quantumSleep,sizeof(int),0);
-			printf("%dNFDFD",quantumSleep);
+
 			flagHuboAlgunProceso = 1;
 			pthread_mutex_lock(&mutexColaEjecucion);
 			list_add(colaEjecucion, pcbListo);
 			pthread_mutex_unlock(&mutexColaEjecucion);
 
-			log_info(loggerConPantalla,"Pcb encolado en Ejecucion--->PID:%d",pcbListo->pid);
+			log_info(loggerConPantalla,"\nPcb encolado en Ejecucion--->PID:%d\n",pcbListo->pid);
 
 		}else{
-			printf("\nLo meti devuelta en listos\n");
 
 			pthread_mutex_lock(&mutexColaListos);
 			list_add(colaListos,pcbListo);
@@ -348,6 +348,8 @@ void finQuantumAReady(){
 				list_add(colaListos,pcbBuffer);
 				pthread_mutex_unlock(&mutexColaListos);
 
+				log_info(loggerConPantalla, "\nPCB encolado en Listos---> PID: %d\n", pcbBuffer->pid);
+
 				sem_post(&sem_colaListos);
 			}
 	}
@@ -364,8 +366,6 @@ void agregarAFinQuantum(t_pcb* pcb){
 	pthread_mutex_unlock(&mutexListaFinQuantum);
 
 	sem_post(&sem_listaFinQuantum);
-	printf("\n\nTAMANIO FIN QUANTUM: %d\n\n", list_size(listaFinQuantum));
-
 
 }
 
@@ -386,22 +386,9 @@ pthread_t threadId;
 
 	 pthread_create(&threadId,NULL, (void*)pcbBloqueadoAReady, NULL);
 
-	 while(1){
+	 while(1) pcbEjecucionABloqueado();
 
-		pcbEjecucionABloqueado();
-
-	}
  }
-
-
- /***************************************
- typedef struct{
- 	t_semaforo* semaforo;
- 	t_list* pids;
- }t_semaforoAsociado;
- ******************************************/
-
-
 
 void pcbBloqueadoAReady(){
 
@@ -412,7 +399,7 @@ void pcbBloqueadoAReady(){
 	t_semaforo *semaforoBuffer = malloc(sizeof(t_semaforo));
 
 	_Bool verificaSemId(t_semYPCB *semYPCBBuffer){
-		return (!strcmp(semYPCBBuffer->idSemaforo, semaforoBuffer/*->semaforo*/->id));
+		return (!strcmp(semYPCBBuffer->idSemaforo, semaforoBuffer->id));
 	}
 
 	_Bool verificaIdPCB(t_pcb *pcbBuffer){
@@ -421,6 +408,7 @@ void pcbBloqueadoAReady(){
 
 	while(1){
 		sem_wait(&sem_semAumentados);
+
 		verificarPausaPlanificacion();
 
 		for(i = 0; i < list_size(listaSemaforosGlobales); ++i) {
@@ -429,7 +417,7 @@ void pcbBloqueadoAReady(){
 			semaforoBuffer = list_get(listaSemaforosGlobales,i);
 			pthread_mutex_unlock(&mutexListaSemaforos);
 
-			if(semaforoBuffer/*->semaforo*/->valor > 0){
+			if(semaforoBuffer->valor > 0){
 
 				if(list_any_satisfy(listaSemYPCB, (void*)verificaSemId)){
 
@@ -438,7 +426,8 @@ void pcbBloqueadoAReady(){
 					pthread_mutex_unlock(&mutexListaSemYPCB);
 
 					if(list_any_satisfy(colaBloqueados, (void*)verificaIdPCB)){
-						log_info(loggerConPantalla,"Cambiando proceso desde Bloqueado a Listo--->PID:%d",semYPCB->pcb->pid);
+
+						log_info(loggerConPantalla,"Cambiando proceso desde Bloqueados a Listos--->PID:%d",semYPCB->pcb->pid);
 
 						pthread_mutex_lock(&mutexColaBloqueados);
 						pcbADesbloquear = list_remove_by_condition(colaBloqueados,(void*)verificaIdPCB);
@@ -449,7 +438,6 @@ void pcbBloqueadoAReady(){
 						pthread_mutex_unlock(&mutexColaListos);
 
 						sem_post(&sem_colaListos);
-						free(semYPCB);
 					}
 				}
 			}
@@ -457,42 +445,6 @@ void pcbBloqueadoAReady(){
 	}
 }
 
-
-/*		 pthread_mutex_lock(&mutexListaSemAumentados);
-		 if(!list_is_empty(listaSemAumentados)){
-			 for(indice = 0; indice < list_size(listaSemAumentados); indice++) {
-
-				 semIdBuffer = list_get(listaSemAumentados, indice);
-				 printf("\n\nSEMIDBUFFER: %s\n\n", semIdBuffer);
-
-				 pthread_mutex_lock(&mutexListaSemYPCB);
-				 if(list_any_satisfy(listaSemYPCB, (void*)verificaSemId)){
-
-					 semYPCB = list_remove_by_condition(listaSemYPCB,(void*)verificaSemId);
-
-					 list_remove(listaSemAumentados, indice);
-
-					 pthread_mutex_lock(&mutexColaBloqueados);
-					 pcbADesbloquear = list_remove_by_condition(colaBloqueados, (void*)verificaIdPCB);
-					 pthread_mutex_unlock(&mutexColaBloqueados);
-
-					 log_info(loggerConPantalla,"Cambiando proceso desde Bloqueados a Listos--->PID:%d",pcbADesbloquear->pid);
-
-					 pthread_mutex_lock(&mutexColaListos);
-					 list_add(colaListos, pcbADesbloquear);
-					 sem_post(&sem_colaReady);
-					 pthread_mutex_unlock(&mutexColaListos);
-				 }
-				 pthread_mutex_unlock(&mutexListaSemYPCB);
-			 }
-		 }
-
-		 pthread_mutex_unlock(&mutexListaSemAumentados);
-	}*/
-	 /*free(semIdBuffer);
-	 free(semYPCB);
-	 free(pcbADesbloquear);
-}*/
 
 void pcbEjecucionABloqueado(){
 
@@ -509,15 +461,13 @@ void pcbEjecucionABloqueado(){
 	sem_wait(&sem_ListaSemYPCB);
 	verificarPausaPlanificacion();
 
-	printf("\nBloqueando Proceso\n");
-
 	for (indice = 0; indice < list_size(listaSemYPCB); ++indice) {
 
 		pthread_mutex_lock(&mutexListaSemYPCB);
 		semYPCB = list_get(listaSemYPCB, indice);
 		pthread_mutex_unlock(&mutexListaSemYPCB);
 
-		log_info(loggerConPantalla,"Cambiando proceso desde Ejecutados a Bloqueados--->PID:%d",semYPCB->pcb->pid);
+		log_info(loggerConPantalla,"Cambiando proceso desde Ejecucion a Bloqueados--->PID:%d",semYPCB->pcb->pid);
 
 		pthread_mutex_lock(&mutexColaEjecucion);
 		list_remove_by_condition(colaEjecucion, (void*)verificaPCB);

@@ -69,14 +69,14 @@ void EjecutarProgramaMedianteAlgoritmo(){
 	cantidadInstruccionesAEjecutarDelPcbActual = pcb_actual->cantidadInstrucciones;
 
 	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
-		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual){
+		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual || cpuBloqueadaPorSemANSISOP != 0){
 
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel++; //para FIFO en si
 			cantidadIntruccionesEjecutadas++;//para contabilidad del kernel
 		}
 	} else{//es RR con quantum = cantidadInstruccionesAEjecutarPorKernel
-		while (cantidadInstruccionesAEjecutarPorKernel > 0){
+		while (cantidadInstruccionesAEjecutarPorKernel > 0 || cpuBloqueadaPorSemANSISOP != 0){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
 			cantidadIntruccionesEjecutadas++;////para contabilidad del kernel

@@ -180,13 +180,22 @@ void excepcionCantidadDePaginas(int socket,int pid){
 }
 
 void excepcionStackOverflow(int socket){
+
+	int cantidadDeRafagas;
+
 	log_error(loggerConPantalla,"Informando a Consola excepcion por StackOverflow");
 	t_pcb* proceso=recibirYDeserializarPcb(socket);
+	recv(socket,&cantidadDeRafagas,sizeof(int),0);
+
+	actualizarRafagas(proceso->pid,cantidadDeRafagas);
+
 	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje));
 	proceso->exitCode =  exitCodeArray[EXIT_MEMORY_EXCEPTION]->value;
 	removerDeColaEjecucion(proceso->pid);
 	encolarEnListaParaTerminar(proceso);
-	cambiarEstadoCpu(socket,0);
+	cambiarEstadoCpu(socket,OCIOSA);
+
+
 	sem_post(&sem_CPU);
 }
 void excepcionDireccionInvalida(int socket){
@@ -197,7 +206,7 @@ void excepcionDireccionInvalida(int socket){
 	proceso->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
 	removerDeColaEjecucion(proceso->pid);
 	encolarEnListaParaTerminar(proceso);
-	cambiarEstadoCpu(socket,0);
+	cambiarEstadoCpu(socket,OCIOSA);
 	sem_post(&sem_CPU);
 }
 

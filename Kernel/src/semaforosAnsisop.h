@@ -56,13 +56,7 @@ void obtenerSemaforosANSISOPDeLasConfigs(){
 		semaforo->id=semId[i];
 		semaforo->valor = strtol(semInit[i], NULL, 10);
 
-		printf("\nSemaforo: %s", semaforo->id);
-		printf("\nValor inicial: %d\n", semaforo->valor);
-
-		/*t_semaforoAsociado* semaforoAsociado = malloc(sizeof(t_semaforo));
-		semaforoAsociado->pids=list_create();
-		semaforoAsociado->semaforo = semaforo;*/
-		list_add(listaSemaforosGlobales,semaforo/*Asociado*/);
+		list_add(listaSemaforosGlobales,semaforo);
 		}
 }
 
@@ -78,23 +72,28 @@ void recibirNombreSemaforo(int socketCpu,char ** semaforo){
 void waitSemaforoAnsisop(int socketCPU){
 	int expropiar,pid;
 	char* semaforo;
+	int rafagasEjecutadas;
+	char ok = 'O';
 	t_semYPCB *semYPCB = malloc(sizeof(t_semYPCB));
 
 	recv(socketCPU,&pid,sizeof(int),0);
 
 	recibirNombreSemaforo(socketCPU,&semaforo);
-	log_info(loggerConPantalla, "Procesando instruccion atomica Wait--/*->semaforo*/: %s", semaforo);
+	log_info(loggerConPantalla, "Procesando instruccion atomica Wait---> %s", semaforo);
 
 
-	//expropiar = consultarSemaforo(semaforo);
-
-	if((expropiar = consultarSemaforo(semaforo)) > 0) disminuirSemaforo(semaforo);//ESTO ESTA BIEN ASI
+	if((expropiar = consultarSemaforo(semaforo)) > 0)disminuirSemaforo(semaforo);
 	send(socketCPU,&expropiar,sizeof(int),0);
 
 	if(expropiar == -1) {
 
+		recv(socketCPU, &rafagasEjecutadas, sizeof(int), 0);
 		semYPCB->pcb = recibirYDeserializarPcb(socketCPU);
 
+
+		actualizarRafagas(semYPCB->pcb->pid,rafagasEjecutadas);
+
+		send(socketCPU, &ok,sizeof(char),0);
 		cpuEjecucionAFQPB(socketCPU);
 
 		semYPCB->idSemaforo = semaforo;
@@ -112,24 +111,23 @@ void signalSemaforoAnsisop(int socketCpu){
 	char* semaforo;
 	int pid;
 	recv(socketCpu,&pid,sizeof(int),0);
+
 	recibirNombreSemaforo(socketCpu,&semaforo);
 	aumentarSemaforo(semaforo);
 
-	log_info(loggerConPantalla, "Procesando instruccion atomica Signal--/*->semaforo*/: %s", semaforo);
-
-
-	sem_post(&sem_semAumentados);
-
+	log_info(loggerConPantalla, "Procesando instruccion atomica Signal--->: %s", semaforo);
 
 	actualizarSysCalls(pid);
+	sem_post(&sem_semAumentados);
+
 	return;
 }
 int consultarSemaforo(char* semaforoId){
 	int expropiar = 1;
-	t_semaforo* semaforoAsociado/* = malloc(sizeof(t_semaforo))*/;
+	t_semaforo* semaforoAsociado = malloc(sizeof(t_semaforo));
 
 	_Bool verificaId(t_semaforo* semaforo){
-				return (!strcmp(semaforo/*->semaforo*/->id,semaforoId));
+				return (!strcmp(semaforo->id,semaforoId));
 	}
 
 	pthread_mutex_lock(&mutexListaSemaforos);
@@ -139,13 +137,10 @@ int consultarSemaforo(char* semaforoId){
 
 	pthread_mutex_unlock(&mutexListaSemaforos);
 
-	log_info(loggerSinPantalla,"\n\nSemaforo id: %s", semaforoAsociado/*->semaforo*/->id);
-	log_info(loggerSinPantalla,"\nSemaforo valor: %d\n", semaforoAsociado/*->semaforo*/->valor);
+	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(loggerConPantalla,"\nSemaforo valor: %d", semaforoAsociado->valor);
 
-	if(semaforoAsociado/*->semaforo*/->valor < 1) expropiar = -1;
-
-	log_info(loggerSinPantalla,"\nexpropiar: %d\n\n", expropiar);
-
+	if(semaforoAsociado->valor < 1) expropiar = -1;
 
 	return expropiar;
 }
@@ -154,15 +149,27 @@ void disminuirSemaforo(char* semaforoId){
 
 
 	_Bool verificaId(t_semaforo* semaforo){
-				return (!strcmp(semaforo/*->semaforo*/->id,semaforoId));
+				return (!strcmp(semaforo->id,semaforoId));
 	}
 
 	t_semaforo *semaforoAsociado;
+
+
+
 	pthread_mutex_lock(&mutexListaSemaforos);
 
 	buscarSemaforo(semaforoId,&semaforoAsociado);
-	semaforoAsociado/*->semaforo*/->valor -= 1;
+
+
+	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(loggerConPantalla,"\nSemaforo valor: %d", semaforoAsociado->valor);
+
+	semaforoAsociado->valor -= 1;
 	list_add(listaSemaforosGlobales,semaforoAsociado);
+
+
+	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(loggerConPantalla,"\nSemaforo valor disminuido: %d", semaforoAsociado->valor);
 
 	pthread_mutex_unlock(&mutexListaSemaforos);
 
@@ -171,18 +178,31 @@ void disminuirSemaforo(char* semaforoId){
 void aumentarSemaforo(char* semaforoId){ /*TODO: Ojo con lo que se haga con el semaforo devuelto. Hay que eliminar la entrada anterior y actualizar por la nueva*/
 
 	_Bool verificaId(t_semaforo* semaforo){
-			return (!strcmp(semaforo/*->semaforo*/->id,semaforoId));
+			return (!strcmp(semaforo->id,semaforoId));
 	}
 
-	t_semaforo *semaforoAsociado = malloc(sizeof(t_semaforo));
+	t_semaforo *semaforoAsociado;
 	pthread_mutex_lock(&mutexListaSemaforos);
 
-	buscarSemaforo(semaforoId,&semaforoAsociado);
-	semaforoAsociado/*->semaforo*/->valor += 1;
 
+
+	buscarSemaforo(semaforoId,&semaforoAsociado);
+
+	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(loggerConPantalla,"\nSemaforo valor: %d", semaforoAsociado->valor);
+
+
+	semaforoAsociado->valor += 1;
 	list_add(listaSemaforosGlobales,semaforoAsociado);
 
+
+
+	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(loggerConPantalla,"\nSemaforo valor aumentado: %d", semaforoAsociado->valor);
+
+
 	pthread_mutex_unlock(&mutexListaSemaforos);
+
 
 
 }
@@ -190,7 +210,7 @@ void aumentarSemaforo(char* semaforoId){ /*TODO: Ojo con lo que se haga con el s
 void buscarSemaforo(char* semaforoId, t_semaforo **semaforoAsociado){
 
 	_Bool verificaId(t_semaforo* semaforo){
-				return (!strcmp(semaforo/*->semaforo*/->id,semaforoId));
+				return (!strcmp(semaforo->id,semaforoId));
 		}
 
 	if(list_any_satisfy(listaSemaforosGlobales, (void*) verificaId)){

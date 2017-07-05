@@ -94,7 +94,7 @@ void interfaceObtenerDatosProceso(){
 	printf("Ingrese el pid del proceso\n");
 	scanf("%d",&pid);
 		if(verificarProcesoExistente(pid)<0){
-			log_error(loggerConPantalla,"Proceso no existente");
+			log_error(loggerConPantalla,"Proceso no existente---> PID: %d", pid);
 			return;
 		}
 	printf("Datos del proceso--->%d\n",pid);
@@ -106,11 +106,11 @@ void interfaceFinalizarProcesoVoluntariamente(){
 	printf("Ingrese el pid del proceso a finalizar\n");
 	scanf("%d",&pid);
 			if(verificarProcesoExistente(pid)<0){
-				log_error(loggerConPantalla,"Proceso no existente");
+				log_error(loggerConPantalla,"Proceso no existente---> PID: %d", pid);
 				return;
 				}
 			if(verificarProcesoNoTerminado(pid)<0){
-				log_error(loggerConPantalla,"Proceso ya finalizado");
+				log_error(loggerConPantalla,"Proceso ya finalizado--->PID: %d", pid);
 				return;
 				}
 	finalizarProcesoVoluntariamente(pid);
@@ -185,7 +185,7 @@ void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
 }
 
 void imprimirDatosContables(t_contable* proceso){
-	printf("%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+	log_info(loggerConPantalla,"%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
 				proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 }
 
@@ -195,15 +195,17 @@ void imprimirTablaArchivosProceso(int pid){
 		return entrada->pid == pid;
 	}
 	int i;
-	printf("\t\t\tTabla de archivos del proceso\n");
-		printf("\t\t\tFile Descriptor\tFlags\tIndice Global\tCursor\n");
-		t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
-		t_entradaTablaProceso* entrada;
-		for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
-			entrada = list_get(entradaTablaProceso->tablaProceso,i);
-			printf("\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
-		}
-		list_add(listaTablasProcesos,entradaTablaProceso);
+	log_info(loggerConPantalla,"\t\t\tTabla de archivos del proceso\n");
+	log_info(loggerConPantalla,"\t\t\tFile Descriptor\tFlags\tIndice Global\tCursor\n");
+
+	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
+	t_entradaTablaProceso* entrada;
+
+	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
+		entrada = list_get(entradaTablaProceso->tablaProceso,i);
+		log_info(loggerConPantalla,"\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
+	}
+	list_add(listaTablasProcesos,entradaTablaProceso);
 }
 
 void interfaceObtenerListadoProcesos(){
@@ -218,7 +220,7 @@ void interfaceObtenerListadoProcesos(){
 		mostrarProcesos(orden);
 		break;
 	default:
-		log_error(loggerConPantalla,"Orden no reconocida\n");
+		log_error(loggerConPantalla,"Orden no reconocida-->ORDEN: %c\n", orden);
 		break;
 	}
 }
@@ -274,8 +276,8 @@ void mostrarProcesos(char orden){
 }
 
 void imprimirListadoDeProcesos(t_list* listaPid){
-	printf("Cantidad de procesos: %d\n", listaPid->elements_count);
-	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
+	log_info(loggerConPantalla,"Cantidad de procesos: %d\n", listaPid->elements_count);
+	printf(loggerConPantalla,"PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
 	int pid;
 	int i;
 	for(i=0 ; i<listaPid->elements_count ; i++){

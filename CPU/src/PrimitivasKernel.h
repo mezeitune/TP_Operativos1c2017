@@ -1,11 +1,16 @@
 //SEMAFOROS ANSISOP
 void wait(t_nombre_semaforo identificador_semaforo){
+
+
 	char interruptHandler = 'X';
 	char comandoWait = 'W';
+	char ok;
+
 	int pid = pcb_actual->pid;
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
 	int bloquearScriptONo;
+
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
 	int tamanio = sizeof(char)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
@@ -21,9 +26,18 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 	if(bloquearScriptONo < 0){
 		cpuBloqueadaPorSemANSISOP = 0;
-		serializarPcbYEnviar(pcb_actual, socketKernel);
+
 		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
-		esperarPCB();
+
+		send(socketKernel, &cantidadIntruccionesEjecutadas, sizeof(int),0);
+
+		serializarPcbYEnviar(pcb_actual, socketKernel);
+
+		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
+		recv(socketKernel, &ok, sizeof(int),0);
+
+		if(cpuFinalizadaPorSignal != 0) esperarPCB();
+
 	}else log_info(loggerConPantalla, "Script ANSISOP pid: %d sigue su ejecucion normal", pcb_actual->pid);
 
 	int i = 0;
@@ -39,6 +53,7 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	char interruptHandler = 'X';
 	char comandoSignal = 'S';
 	int pid = pcb_actual->pid;
+	int i = 0;
 
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
@@ -51,7 +66,7 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
-	int i = 0;
+
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
 		i++;
