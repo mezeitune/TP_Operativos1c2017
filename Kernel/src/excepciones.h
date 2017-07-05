@@ -251,6 +251,7 @@ t_pcb* expropiarPorEjecucion(int socket){
 	int resultadoEjecucion=-1;
 	int rafagas;
 	log_info(loggerConPantalla,"Expropiando pcb--->CPU:%d",socket);
+
 		send(socket,&resultadoEjecucion,sizeof(int),0);
 		printf("Mande la orden de expropiar\n");
 		sleep(3);

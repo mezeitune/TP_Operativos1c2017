@@ -30,6 +30,7 @@
 #include "conexionConsola.h"
 #include "excepciones.h"
 #include "listasAdministrativas.h"
+#include "capaFilesystem.h"
 
 /*---PAUSA PLANIFICACION---*/
 int flagHuboAlgunProceso;
@@ -199,7 +200,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 		pthread_mutex_unlock(&mutexMemoria);
 			encolarProcesoListo(proceso);
 			aumentarGradoMultiprogramacion();
-			inicializarTablaProceso(proceso->pid);
+			inicializarTablaProceso(proceso->pid); /*TODO: Mutex si uso hilos*/
 			sem_post(&sem_colaListos);
 	}
 	free(codigoPrograma);

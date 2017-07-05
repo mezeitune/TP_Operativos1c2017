@@ -145,6 +145,7 @@ void abrirArchivo(t_fsAbrir* data){
 			pthread_mutex_lock(&mutexFS);
 			resultadoEjecucion=crearArchivo(socket,direccion);
 			pthread_mutex_unlock(&mutexFS);
+
 				if(resultadoEjecucion < 0){
 					excepcionFileSystem(socket,pid);
 					free(direccion);
@@ -224,6 +225,7 @@ void borrarArchivo(int socket){
 				excepcionFileSystem(socket,pid);
 				return;
 			}
+
 
 	/*pthread_mutex_lock(&mutexTablaGlobal);TODO: Aparentemente no se hace todo esto. Solo se borra el archivo. Esta gestion se hace en CERRAR ARCHIVO
 	borrarEntradaEnTablaGlobal(indiceTablaGlobal); //No se disminuye el open,se borra la entrada, porque solo se puede borrar si es el unico proceso que lo tiene abierto.
@@ -639,9 +641,6 @@ void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal){
 	t_indiceTablaProceso* indiceTabla;
 	t_entradaTablaProceso* entrada;
 
-	_Bool verificaPid(t_indiceTablaProceso* entrada){
-									return entrada->pid == pid;
-								}
 
 	printf("Cantidad de tablas abiertas:%d\n",listaTablasProcesos->elements_count);
 

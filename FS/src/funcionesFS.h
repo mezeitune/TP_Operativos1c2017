@@ -136,7 +136,8 @@ void borrarArchivoFunction(int socket_cliente){ /*TODO: Tambien se podrian borra
 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 	   //poner en un array los bloques de ese archivo para luego liberarlos
-	   char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+
+		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 	   FILE* fp = fopen(nombreArchivoRecibido, "w"); //Solo para borrarle el contenido
 
 	   if(remove(nombreArchivoRecibido) == 0){
@@ -203,18 +204,37 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		   printf("size:%d\n",size);
 		   printf("Tamanio bloque:%d\n",tamanioBloques);
 
-		   int cantidadBloquesNecesito = ((size+cursor)/tamanioBloques)+1;
-
+		   int cantidadBloquesNecesito;
+		   if(((size+cursor)%tamanioBloques)==0) cantidadBloquesNecesito = ((size+cursor)/tamanioBloques);
+		   else cantidadBloquesNecesito = ((size+cursor)/tamanioBloques)+1;
 
 		   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesNecesito);
 
 
 		   int d=0;
 		   int tamanioBloqueAcumulado = tamanioBloques;
-		   while(!(cursor%tamanioBloqueAcumulado)==cursor){ //Para saber cual es el primer bloque a leer
+		   while(!(cursor<tamanioBloqueAcumulado)){ //Para saber cual es el primer bloque a leer
 			   d++;
 			   tamanioBloqueAcumulado += tamanioBloques;
 		   }
+
+		   /*
+		    * Cursor = 160
+		    * Bloque = 64
+		    * Acumulado = 64
+		    *
+		    * 1. Cursor<Acumulado d++ -> Acumulado +=Bloque
+		    * Acumulado=128
+		    *
+		    * 2. Cursor < Acumulado d++ -> Acumulado +=Bloque
+		    * Acumulado=192
+		    *
+		    * 3. Cursor ya es menos que Acumulador.
+		    */
+
+
+
+
 
 		   FILE *bloque;
 
@@ -224,10 +244,13 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		   char* data;
 		   int sizeDentroBloque=0;
 		   int cantidadBloquesLeidos=0;
+
 		   while(cantidadBloquesLeidos < cantidadBloquesNecesito){
+
 			   printf("Leyendo data del bloque:%s\n",arrayBloques[d]);
 
 			   if(cantidadBloquesLeidos==0){
+
 				   if(size>tamanioBloques-cursor) sizeDentroBloque=tamanioBloques-cursor;//Leo la porcion restante del bloque
 				   else sizeDentroBloque = size; //Leo lo suficiente
 				   printf("El tamano a leer del bloque es :%d\n",sizeDentroBloque);
@@ -247,8 +270,8 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 				   sizeRestante -= sizeDentroBloque;
 			   }
 			   else{
-				   if(sizeRestante < tamanioBloques) sizeDentroBloque = sizeRestante;
-				   else sizeDentroBloque = tamanioBloques;
+				   if(sizeRestante < tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
+				   else sizeDentroBloque = tamanioBloques; //Leo todo el bloque
 
 				   char *nombreBloque = string_new();
 				   string_append(&nombreBloque, puntoMontaje);
@@ -257,7 +280,9 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 				   string_append(&nombreBloque, ".bin");
 
 				   bloque=fopen(nombreBloque, "rb");
+
 				   data=(char*)obtenerBytesDeUnArchivo(bloque,0,sizeDentroBloque); //Siempre arranca del principio
+
 				   string_append(&infoTraidaDeLosArchivos,data);
 				   sizeRestante -= sizeDentroBloque;
 			   }
@@ -337,8 +362,6 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 }
 
 
-
-
 void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo tengo que recibir o que onda
 	FILE* bloque;
 	int tamanoNombreArchivo;
@@ -401,7 +424,9 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		//ver de asignar mas bloques en caso de ser necesario
 		printf("Tamano del archivo : %d\n",atoi(obtTamanioArchivo(nombreArchivoRecibido)));
 		printf("Tamano del bloque: %d\n",tamanioBloques);
+
 		int cantidadRestanteUltimoBloque=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloquesArchivo-1)*tamanioBloques));
+
 		printf("Cantidad restante en el ultimo bloque :%d\n",cantidadRestanteUltimoBloque);
 
 		if(size<cantidadRestanteUltimoBloque){ //Con el primer bloque me alcanza
@@ -417,7 +442,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 			 /*TODO: Emprolijar*/
 		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
-		   if((size%tamanioBloques) < size) cuantosBloquesMasNecesito = 1;
+		   if(size < tamanioBloques) cuantosBloquesMasNecesito = 1;
 		   if((size%tamanioBloques) == size) {
 			   cuantosBloquesMasNecesito = size / tamanioBloques ;
 			   cuantosBloquesMasNecesito += 1;
@@ -435,6 +460,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 			int numeroBloque;
 			int bloquesEncontrados=0;
+
 
 			for(numeroBloque=0;numeroBloque<cantidadBloques;numeroBloque++){
 		        bool bit = bitarray_test_bit(bitarray,numeroBloque);
@@ -460,10 +486,11 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 				//Primero usamos el ultimo bloque - No queremos frag interna
 				bloque = fopen(direccionBloque,"ab");
+
 				int tamanoActual = ftell(bloque);
 				printf("Tamano actual:%d\n",tamanoActual);
 
-				fwrite(buffer,(tamanioBloques-tamanoActual),1,bloque);
+				fwrite(buffer,(tamanioBloques-tamanoActual),1,bloque); //Bloque=64 y el tamanoActual = 40 --> Escribo 24 Bytes
 				fclose(bloque);
 
 				sizeRestante -= (tamanioBloques-tamanoActual);
@@ -478,12 +505,13 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 					string_append(&nombreBloque, ".bin");
 
 					printf("Voy a guardar en el bloque:%s\n",string_itoa(*(int*)list_get(nuevosBloques,s)));
+
 					bloque=fopen(nombreBloque,"ab");
 
 					if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
 						printf("Tengo que cortar el string\n");
 						//cortar el string
-						fwrite(buffer + desplazamiento , tamanioBloques, 1,bloque);
+						fwrite(buffer + desplazamiento , tamanioBloques,1,bloque);
 						//char* recortado=string_substring_until(buffer + desplazamiento, tamanioBloques);
 						//adx_store_data(nombreBloque,recortado);
 						sizeRestante -= tamanioBloques;
@@ -493,7 +521,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 					}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
 						printf("No tuve que cortar el string\n");
 						//mandarlo todo de una
-						fwrite(buffer + desplazamiento , sizeRestante, 1,bloque);
+						fwrite(buffer + desplazamiento,sizeRestante,1,bloque);
 						//adx_store_data(nombreBloque,buffer + desplazamiento);
 
 					}
@@ -513,6 +541,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		}
 
 		actualizarMetadataArchivo(nombreArchivoRecibido,size,nuevosBloques);
+
 		validado=1;
 		send(socket_cliente,&validado,sizeof(int),0);
 	}else{
@@ -582,6 +611,7 @@ void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques){
 				char* bloqueString=string_itoa(*(int*)list_get(nuevosBloques,i));//string_itoa(bloqs[z])
 				string_append(&metadataFile,bloqueString);
 			}
+
 
 			string_append(&metadataFile,"]");
 			fclose(fp); //Lo cierro porque la proxima linea lo volvia a abrir

@@ -146,7 +146,10 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	printf("Descriptor:%d\n",descriptor_archivo);
 	send(socketKernel,&tamanio,sizeof(int),0); //tamanio de la instruccion en bytes que quiero leer
 	printf("Tamano a leer:%d\n",tamanio);
+
+
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
+
 	printf("Resultado de ejecucion:%d\n",resultadoEjecucion);
 
 	if(resultadoEjecucion>0){
