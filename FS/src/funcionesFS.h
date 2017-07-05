@@ -172,7 +172,6 @@ void borrarArchivoFunction(int socket_cliente){ /*TODO: Tambien se podrian borra
 
 
 void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo tenog que recibir o que onda
-	FILE *fp;
 
 	int tamanoNombreArchivo;
 	int validado;
@@ -197,7 +196,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
-		fp = fopen(nombreArchivoRecibido, "rb");
+		//FILE* fp = fopen(nombreArchivoRecibido, "rb"); No hace falta
 
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
@@ -222,13 +221,13 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		   int sizeRestante=size;
 
 		   char* infoTraidaDeLosArchivos = string_new();
+		   char* data;
 		   int sizeDentroBloque=0;
 		   int cantidadBloquesLeidos=0;
 		   while(cantidadBloquesLeidos < cantidadBloquesNecesito){
 			   printf("Leyendo data del bloque:%s\n",arrayBloques[d]);
 
 			   if(cantidadBloquesLeidos==0){
-				   printf("Entre al primer if\n");
 				   if(size>tamanioBloques-cursor) sizeDentroBloque=tamanioBloques-cursor;//Leo la porcion restante del bloque
 				   else sizeDentroBloque = size; //Leo lo suficiente
 				   printf("El tamano a leer del bloque es :%d\n",sizeDentroBloque);
@@ -241,11 +240,10 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 				   string_append(&nombreBloque, ".bin");
 
 				   bloque=fopen(nombreBloque, "rb");
-				   printf("Abri el bloque\n");
 
-				   void* data=obtenerBytesDeUnArchivo(bloque,cursor,sizeDentroBloque); //En el primero bloque, arranca del cursor
+				   data=(char*)obtenerBytesDeUnArchivo(bloque,cursor,sizeDentroBloque); //En el primero bloque, arranca del cursor
 
-				   string_append(&infoTraidaDeLosArchivos,(char*)data);
+				   string_append(&infoTraidaDeLosArchivos,data);
 				   sizeRestante -= sizeDentroBloque;
 			   }
 			   else{
@@ -259,7 +257,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 				   string_append(&nombreBloque, ".bin");
 
 				   bloque=fopen(nombreBloque, "rb");
-				   void* data=obtenerBytesDeUnArchivo(bloque,0,sizeDentroBloque); //Siempre arranca del principio
+				   data=(char*)obtenerBytesDeUnArchivo(bloque,0,sizeDentroBloque); //Siempre arranca del principio
 				   string_append(&infoTraidaDeLosArchivos,data);
 				   sizeRestante -= sizeDentroBloque;
 			   }
@@ -324,7 +322,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		 * */
 
 
-		 printf("La info leida es:%s\n",infoTraidaDeLosArchivos);
+		 printf("La info leida es:%s\n",infoTraidaDeLosArchivos); //Esta trayendo un caracter de mas, si llega al final del bloque
 		//si todod ok
 		validado=1;
 		send(socket_cliente,&validado,sizeof(int),0);

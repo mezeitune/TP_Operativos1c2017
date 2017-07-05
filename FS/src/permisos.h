@@ -70,7 +70,7 @@ void* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
 
 		printf("La informacion leida es:%s\n",(char*)informacion);
 		fclose(fp);
-		return (char*)informacion;
+		return informacion;
 }
 
 char *readFile(char *fileName)
