@@ -37,6 +37,7 @@
 #include "heap.h"
 #include "sockets.h"
 #include "listasAdministrativas.h"
+#include <sys/inotify.h>
 
 #include "capaFilesystem.h"
 #include "excepciones.h"
@@ -76,7 +77,9 @@ void gestionarIO(int socket);
 
 //---------Conexiones---------------//
 void selectorConexiones();
+void actualizarConfiguraciones();
 int flagFinalizarKernel = 0;
+char* ruta_config;
 //---------Conexiones-------------//
 
 
@@ -97,7 +100,9 @@ int main() {
 	flagHuboAlgunProceso = 0;
 	flagCPUSeDesconecto = 0;
 
-	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
+	ruta_config="/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel";
+
+	leerConfiguracion(ruta_config);
 	imprimirConfiguraciones();
 	imprimirInterfazUsuario();
 	inicializarSockets();
@@ -640,6 +645,11 @@ void selectorConexiones() {
 	fd_set readFds;
 	struct sockaddr_storage remoteaddr;// temp file descriptor list for select()
 
+	int descriptor_inotify = inotify_init();
+	inotify_add_watch(descriptor_inotify, ruta_config, IN_MODIFY);
+
+
+
 	if (listen(socketServidor, 15) == -1) {
 	perror("listen");
 	exit(1);
@@ -647,6 +657,7 @@ void selectorConexiones() {
 
 	pthread_mutex_lock(&mutex_masterSet);
 	FD_SET(socketServidor, &master); // add the listener to the master set
+	FD_SET(descriptor_inotify,&master);
 	pthread_mutex_unlock(&mutex_masterSet);
 
 	maximoFD = socketServidor; // keep track of the biggest file descriptor so far, it's this one
@@ -678,6 +689,14 @@ void selectorConexiones() {
 										if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
 										log_info(loggerConPantalla,"Nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 									}
+									else if(socket == descriptor_inotify){
+										char* mensaje = malloc(sizeof(struct inotify_event));
+										read(descriptor_inotify, mensaje, sizeof(struct inotify_event));
+										read(descriptor_inotify, mensaje, sizeof(struct inotify_event));
+										usleep(10000);
+										actualizarConfiguraciones();
+										free(mensaje);
+									}
 									else {
 											recv(socket, &orden, sizeof(char), 0);
 											connectionHandler(socket, orden);
@@ -688,3 +707,14 @@ void selectorConexiones() {
 	log_info(loggerConPantalla,"Finalizando selector de conexiones");
 }
 
+void actualizarConfiguraciones(){
+	log_info(loggerConPantalla, "Leyendo cambios en archivo de config");
+	t_config* configuraciones = config_create(ruta_config);
+	config_quantum = config_get_int_value(configuraciones, "QUANTUM");
+	config_quantumSleep = config_get_int_value(configuraciones, "QUANTUM_SLEEP");
+
+	printf("Nuevo quantum:%d\n",config_quantum);
+	printf("Nuevo quantum sleep:%d\n",config_quantumSleep);
+
+	config_destroy(configuraciones);
+}
