@@ -205,18 +205,6 @@ void borrarArchivo(int socket){
 		}
 		pthread_mutex_unlock(&mutexTablaGlobal);
 
-		pthread_mutex_lock(&mutexListaTablaArchivos);
-		borrarEntradaTablaProceso(pid,fileDescriptor);
-		pthread_mutex_unlock(&mutexListaTablaArchivos);
-
-		pthread_mutex_lock(&mutexTablaGlobal);
-		borrarEntradaEnTablaGlobal(indiceTablaGlobal); //No se disminuye el open,se borra la entrada, porque solo se puede borrar si es el unico proceso que lo tiene abierto.
-		pthread_mutex_unlock(&mutexTablaGlobal);
-
-		pthread_mutex_lock(&mutexListaTablaArchivos);
-		actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal);
-		pthread_mutex_unlock(&mutexListaTablaArchivos);
-
 		//hacer los sends para que el FS borre ese archivo y deje los bloques libres
 		char comandoBorrarArchivo='B';
 		char* direccion = buscarDireccionEnTablaGlobal(indiceTablaGlobal);
@@ -237,9 +225,22 @@ void borrarArchivo(int socket){
 				return;
 			}
 
+	/*pthread_mutex_lock(&mutexTablaGlobal);TODO: Aparentemente no se hace todo esto. Solo se borra el archivo. Esta gestion se hace en CERRAR ARCHIVO
+	borrarEntradaEnTablaGlobal(indiceTablaGlobal); //No se disminuye el open,se borra la entrada, porque solo se puede borrar si es el unico proceso que lo tiene abierto.
+	pthread_mutex_unlock(&mutexTablaGlobal);
 
+	pthread_mutex_lock(&mutexListaTablaArchivos);
+	borrarEntradaTablaProceso(pid,fileDescriptor);
+	pthread_mutex_unlock(&mutexListaTablaArchivos);
+
+
+	pthread_mutex_lock(&mutexListaTablaArchivos);
+	actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal);
+	pthread_mutex_unlock(&mutexListaTablaArchivos);
+*/
 	send(socket,&resultadoEjecucion,sizeof(int),0);
 	log_info(loggerConPantalla,"Archivo borrado--->PID:%d",pid);
+
 }
 
 void cerrarArchivo(int socket){
@@ -637,14 +638,32 @@ void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal){
 	int j;
 	t_indiceTablaProceso* indiceTabla;
 	t_entradaTablaProceso* entrada;
-	for(i=0;listaTablasProcesos->elements_count;i++){
-		indiceTabla = list_get(listaTablasProcesos,i);
+
+	_Bool verificaPid(t_indiceTablaProceso* entrada){
+									return entrada->pid == pid;
+								}
+
+	printf("Cantidad de tablas abiertas:%d\n",listaTablasProcesos->elements_count);
+
+	for(i=0;i<listaTablasProcesos->elements_count;i++){
+		printf("Entre al primer for\n");
+		indiceTabla = list_remove(listaTablasProcesos,i);
+
+		printf("Checkeando tabla PID :%d\n",indiceTabla->pid);
+		printf("Cantidad de archivos abiertos del PID:%d es :%d\n",indiceTabla->pid,indiceTabla->tablaProceso->elements_count);
 
 		for(j=0;j<indiceTabla->tablaProceso->elements_count;j++){
-			entrada = list_get(indiceTabla->tablaProceso,j);
+			entrada = list_remove(indiceTabla->tablaProceso,j);
+			printf("Checkenado FD:%d\n",entrada->fd);
 			if(entrada->globalFd > indiceTablaGlobal) entrada->globalFd--;
+			list_add(indiceTabla->tablaProceso,entrada);
 		}
+
+		list_add(listaTablasProcesos,indiceTabla);
+		printf("Termine de actualizar la tabla del PID:%d\n",indiceTabla->pid);
 	}
+
+	printf("Termine de actualizar todas las tablas\n");
 }
 
 int buscarIndiceEnTablaGlobal(char* direccion){
