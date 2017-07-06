@@ -50,7 +50,7 @@ typedef struct{
 
 t_list* listaHilos;
 
-void signalHandler(int signum);
+void signalHandlerKernel(int sigCode);
 void cerrarTodo();
 //--------ConnectionHandler--------//
 void connectionHandler(int socket, char orden);
@@ -93,7 +93,6 @@ void guardarValorDeSharedVar(int socket);
 //----------shared vars-----------//
 
 
-
 int main() {
 
 	flagPlanificacion = 1;
@@ -120,30 +119,11 @@ int main() {
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
 
-	signal(SIGINT,signalHandler);
+	signal(SIGINT,signalHandlerKernel);
 
 
 	selectorConexiones();
 	return 0;
-}
-
-void signalHandler(int signum){
-	if(signum== SIGINT){
-		log_error(loggerConPantalla,"El proceso Kernel se ha abortado");
-		cerrarTodo();
-	}
-}
-
-void cerrarTodo(){
-	log_error(loggerConPantalla,"Iniciando rutina de cierre");
-	char comandoSalir = 'X';
-	send(socketFyleSys,&comandoSalir,sizeof(char),0);
-
-	/*Limpiar los pcbs*/
-	/*Recibir todos los pcb en ejecucion*/
-	/*Avisar a Memoria que se desconecta*/
-	/*Hacer signal a todos los hilos, y setear los flags para que terminen*/
-	exit(1);
 }
 
 void connectionHandler(int socket, char orden) {
@@ -717,4 +697,50 @@ void actualizarConfiguraciones(){
 	printf("Nuevo quantum sleep:%d\n",config_quantumSleep);
 
 	config_destroy(configuraciones);
+}
+
+
+void signalHandlerKernel(int sigCode){
+	log_error(loggerConPantalla,"Cerrando proceso Kernel");
+	cerrarTodo();
+}
+
+void cerrarTodo(){
+	log_error(loggerConPantalla,"Iniciando rutina de cierre");
+	char comandoDesconexion = 'X';
+	send(socketFyleSys,&comandoDesconexion,sizeof(char),0);
+	send(socketMemoria,&comandoDesconexion,sizeof(char),0);
+
+
+	log_error(loggerConPantalla,"Finalizando hilos planificadores");
+	pthread_kill(planificadorLargoPlazo,SIGUSR1);
+	pthread_kill(planificadorCortoPlazo,SIGUSR1);
+	pthread_kill(planificadorMedianoPlazo,SIGUSR1);
+
+	int i;
+
+	log_error(loggerConPantalla,"Destruyendo procesos");
+	for(i=0;i<colaNuevos->elements_count;i++){
+		list_remove_and_destroy_element(colaNuevos,i,free);
+	}
+
+	for(i=0;i<colaListos->elements_count;i++){
+			list_remove_and_destroy_element(colaListos,i,free);
+		}
+
+	for(i=0;i<colaEjecucion->elements_count;i++){
+			list_remove_and_destroy_element(colaEjecucion,i,free);
+		}
+
+	for(i=0;i<colaBloqueados->elements_count;i++){
+			list_remove_and_destroy_element(colaBloqueados,i,free);
+		}
+
+	for(i=0;i<colaTerminados->elements_count;i++){
+			list_remove_and_destroy_element(colaTerminados,i,free);
+		}
+
+
+	/*Recibir todos los pcb en ejecucion*/
+	exit(1);
 }

@@ -36,6 +36,7 @@
 int flagHuboAlgunProceso;
 int flagCPUSeDesconecto;
 int flagTerminarPlanificadorLargoPlazo = 0;
+int flagTerminarPlanificadorCortoPlazo=0;
 int flagPlanificacion;
 void verificarPausaPlanificacion();
 void interfazReanudarPlanificacion();
@@ -51,8 +52,6 @@ void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
 
-
-
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
 
@@ -61,6 +60,7 @@ pthread_t planificadorLargoPlazo;
 void planificarMedianoPlazo();
 void pcbBloqueadoAReady();
 void pcbEjecucionABloqueado();
+
 pthread_t planificadorMedianoPlazo;
 
 /*----MEDIANO PLAZO--------*/
@@ -73,6 +73,7 @@ void finQuantumAReady();
 void agregarAFinQuantum(t_pcb* pcb);
 
 t_list* listaFinQuantum;
+
 pthread_t planificadorCortoPlazo;
 pthread_t threadFinQuantumAReady;
 
@@ -90,6 +91,7 @@ void gestionarFinalizacionProgramaEnCpu(int socket);
 int contadorPid=0;
 /*---PLANIFICACION GENERAL-------*/
 
+void signalHandler(int sigCode);
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
 pthread_t administradorFinProcesos;
@@ -98,6 +100,8 @@ pthread_t administradorNuevosProcesos;
 void planificarLargoPlazo(){
 	pthread_create(&administradorFinProcesos,NULL, (void*)administrarFinProcesos,NULL);
 	pthread_create(&administradorNuevosProcesos,NULL, (void*)administrarNuevosProcesos,NULL);
+
+	signal(SIGUSR1,signalHandler);
 
 	pthread_join(administradorNuevosProcesos,NULL);
 	pthread_join(administradorFinProcesos,NULL);
@@ -126,6 +130,7 @@ void administrarNuevosProcesos(){
 			}
 			pthread_mutex_unlock(&mutexNuevoProceso);
 	}
+	log_info(loggerConPantalla,"Hilo administrador de nuevos procesos finalizado");
 }
 
 void administrarFinProcesos(){
@@ -153,6 +158,7 @@ void administrarFinProcesos(){
 					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
 				}
 	}
+	log_info(loggerConPantalla,"Hilo administrador de fin de procesos finalizado");
 }
 
 void liberarMemoriaDinamica(int pid){
@@ -176,8 +182,6 @@ void liberarMemoriaDinamica(int pid){
 	}
 
 }
-
-
 
 t_codigoPrograma* buscarCodigoDeProceso(int pid){
 	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
@@ -274,11 +278,13 @@ void planificarCortoPlazo(){
 	}
 	char comandoEnviarPcb = 'S';
 
+	signal(SIGUSR1,signalHandler);
+
 
 	pthread_create(&threadFinQuantumAReady, NULL, (void*)finQuantumAReady, NULL);
 
 
-	while(1){
+	while(!flagTerminarPlanificadorCortoPlazo){
 
 		sem_wait(&sem_CPU);
 		sem_wait(&sem_colaListos);
@@ -384,6 +390,8 @@ void agregarAFinQuantum(t_pcb* pcb){
 pthread_t threadId;
 
  void planificarMedianoPlazo(){
+
+	 signal(SIGUSR1,signalHandler);
 
 	 pthread_create(&threadId,NULL, (void*)pcbBloqueadoAReady, NULL);
 
@@ -589,6 +597,13 @@ int obtenerPaginaSiguiente(int pid){
 
 
 	return pagina;
+}
+
+
+
+void signalHandler(int sigCode){
+	int exitCode;
+	pthread_exit(&exitCode);
 }
 
 #endif /* PLANIFICACION_H_ */

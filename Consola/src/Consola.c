@@ -152,7 +152,9 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		log_warning(loggerConPantalla,"Hilo:%d--->PID:%d",socketHiloKernel,pid);
 
 		mensaje = malloc(size * sizeof(char) + sizeof(char));
+
 		recv(socketHiloKernel,mensaje,size,0);
+
 		strcpy(mensaje+size,"\0");
 
 		if(strcmp(mensaje,"Finalizar")==0) {
