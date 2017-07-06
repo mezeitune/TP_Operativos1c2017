@@ -117,7 +117,7 @@ void cerrarTodo(){
 
 	char* mensaje= malloc(bufferSize);
 
-	t_hiloPrograma* procesoACerrar = malloc(sizeof(t_hiloPrograma));
+	t_hiloPrograma* programaAbortar = malloc(sizeof(t_hiloPrograma));
 
 	memcpy(mensaje + desplazamiento,&comandoInterruptHandler,sizeof(char));
 	desplazamiento += sizeof(char);
@@ -133,9 +133,11 @@ void cerrarTodo(){
 
 
 	for(i=0;i<cantidad;i++){
-		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
-		memcpy(mensaje + desplazamiento,&procesoACerrar->pid,sizeof(int));
+		programaAbortar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
+		memcpy(mensaje + desplazamiento,&programaAbortar->pid,sizeof(int));
 		desplazamiento += sizeof(int);
+
+		informarEstadisticas(programaAbortar);
 	}
 	pthread_mutex_unlock(&mutexListaHilos);
 

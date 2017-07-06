@@ -353,7 +353,7 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 
 	int i = 0;
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
-	t_bloqueMetadata bloque = malloc(sizeof(t_bloqueMetadata));
+	t_bloqueMetadata bloque;
 
 	void *buffer=malloc(sizeof(t_bloqueMetadata));
 

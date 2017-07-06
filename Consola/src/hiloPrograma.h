@@ -37,6 +37,8 @@ void cargarHiloPrograma(int pid, int socket);
 void gestionarCierrePrograma(int pidFinalizar);
 void actualizarCantidadImpresiones(int pid);
 
+void informarEstadisticas(t_hiloPrograma* programaAFinalizar);
+
 void crearHiloPrograma(){
 	t_hiloPrograma* nuevoPrograma = malloc(sizeof(t_hiloPrograma));
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
@@ -118,15 +120,10 @@ void gestionarCierrePrograma(int pidFinalizar){
 	t_hiloPrograma* programaAFinalizar = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
 
 	pthread_mutex_unlock(&mutexListaHilos);
+
 	close(programaAFinalizar->socketHiloKernel);
-	struct tm tiempoFinalizacion = *localtime(&(time_t){time(NULL)});
-	double seconds = difftime(mktime(&(tiempoFinalizacion)), mktime(&(programaAFinalizar->tiempoInicio)));
 
-	log_info(loggerSinPantalla,"\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
-	log_info(loggerSinPantalla,"\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
-	printf("\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
-
-	printf("\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
+	informarEstadisticas(programaAFinalizar);
 
 	free(programaAFinalizar);
 
@@ -190,4 +187,17 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	free(mensaje);
 
 	return 0;
+}
+
+
+void informarEstadisticas(t_hiloPrograma* programaAFinalizar){
+
+	struct tm tiempoFinalizacion = *localtime(&(time_t){time(NULL)});
+	double seconds = difftime(mktime(&(tiempoFinalizacion)), mktime(&(programaAFinalizar->tiempoInicio)));
+
+	log_info(loggerSinPantalla,"\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
+	log_info(loggerSinPantalla,"\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
+	printf("\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
+
+	printf("\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
 }
