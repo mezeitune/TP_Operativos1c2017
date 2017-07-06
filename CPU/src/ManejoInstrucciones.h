@@ -1,5 +1,6 @@
 //----------------------------Manejo Instrucciones-------------------------------------
 char* obtener_instruccion(){
+	log_info(loggerSinPantalla,"Obteniendo una instruccion del PC= %d", pcb_actual->programCounter);
 	int program_counter = pcb_actual->programCounter;
 	int byte_inicio_instruccion = pcb_actual->indiceCodigo[program_counter][0];
 	int bytes_tamanio_instruccion = pcb_actual->indiceCodigo[program_counter][1];
@@ -12,7 +13,8 @@ char* obtener_instruccion(){
 	int bytes_a_leer_primera_pagina;
 
 	if (bytes_tamanio_instruccion > (config_paginaSize * 2)){
-		printf("El tamanio de la instruccion es mayor al tamanio de pagina\n");
+		log_info(loggerConPantalla,"El tamanio de la instruccion es mayor al tamanio de pagina\n");
+		expropiarPorDireccionInvalida();
 	}
 	if ((offset + bytes_tamanio_instruccion) < config_paginaSize){
 		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, bytes_tamanio_instruccion)<0)
@@ -47,7 +49,7 @@ char* obtener_instruccion(){
 			string_append(&instruccion, continuacion_instruccion);
 			free(continuacion_instruccion);
 		}else{
-			log_info(loggerConPantalla, "La continuacion de la instruccion es 0. Ni la leo");
+			log_info(loggerSinPantalla, "La continuacion de la instruccion es 0. Ni la leo");
 		}
 	}
 	char** string_cortado = string_split(instruccion, "\n");
@@ -67,19 +69,23 @@ char* obtener_instruccion(){
 void EjecutarProgramaMedianteAlgoritmo(){
 
 	cantidadInstruccionesAEjecutarDelPcbActual = pcb_actual->cantidadInstrucciones;
-
+	log_info(loggerConPantalla,"La cantidad de instrucciones a ejecutar son %d",cantidadInstruccionesAEjecutarDelPcbActual);
 	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
 		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual || cpuBloqueadaPorSemANSISOP != 0){
 
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel++; //para FIFO en si
 			cantidadIntruccionesEjecutadas++;//para contabilidad del kernel
+			log_info(loggerSinPantalla,"cantidad de instrucciones ejecutadas %d", cantidadIntruccionesEjecutadas);
+
 		}
 	} else{//es RR con quantum = cantidadInstruccionesAEjecutarPorKernel
 		while (cantidadInstruccionesAEjecutarPorKernel > 0 || cpuBloqueadaPorSemANSISOP != 0){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
+			log_info(loggerSinPantalla,"Quedan por ejecutar %d instrucciones", cantidadInstruccionesAEjecutarPorKernel);
 			cantidadIntruccionesEjecutadas++;////para contabilidad del kernel
+			log_info(loggerSinPantalla,"cantidad de instrucciones ejecutadas %d", cantidadIntruccionesEjecutadas);
 		}
 		//Este if va por el RR
 		if(cpuFinalizadaPorSignal == 0) CerrarPorSignal();
@@ -92,13 +98,13 @@ void ejecutarInstruccion(){
 	char orden;
 	orden = '\0';
 	char *instruccion = obtener_instruccion();
-	sleep(retardo_entre_instruccion);
+
+	usleep(retardo_entre_instruccion);
+	log_info(loggerSinPantalla,"El sleep es : %d ms",retardo_entre_instruccion);
 	log_warning(loggerConPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 
 	recv(socketKernel,&orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
-
-	//printf("Orden Recibida Por Kernel : %c \n",orden);
 
 	if(orden == 'F') cpuExpropiadaPorKernel = -1;
 

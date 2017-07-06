@@ -51,7 +51,7 @@ void establecerPCB(){
 	pcb_actual = recibirYDeserializarPcb(socketKernel);
 	recv(socketKernel,&retardo_entre_instruccion,sizeof(int),0);
 	recibiPcb=0;
-	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
+	log_info(loggerConPantalla, "CPU recibe PCB de PID %d correctamente\n",pcb_actual->pid);
 
 	printf("\nPCB:%d\n", pcb_actual->pid);
 	EjecutarProgramaMedianteAlgoritmo();

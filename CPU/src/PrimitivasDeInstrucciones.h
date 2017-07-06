@@ -177,6 +177,7 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	}
 	if(encontre_valor == 1){
 		log_info(loggerConPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
+		expropiarPorDireccionInvalida();
 		return -1;
 	}
 
@@ -234,7 +235,11 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	int num_pagina = puntero / config_paginaSize;
 	int offset = puntero - (num_pagina * config_paginaSize);
 	char *valor_variable = string_itoa(variable);
-	almacenarDatosEnMemoria(valor_variable,sizeof(t_valor_variable),num_pagina, offset);
+	int resultado = almacenarDatosEnMemoria(valor_variable,sizeof(t_valor_variable),num_pagina, offset);
+	if(resultado==-1){
+		log_info(loggerConPantalla, "No se pudo almacenar el contenido %d en %d por excepcion de memoria", valor_variable,puntero);
+		expropiarPorKernel();
+	}
 	log_info(loggerConPantalla, "Valor a Asignar: %s en la posicion %d\n", valor_variable,puntero);
 	free(valor_variable);
 }

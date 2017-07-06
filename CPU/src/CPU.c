@@ -97,7 +97,9 @@ void expropiarPorDireccionInvalida(){
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseDireccionInvalida,sizeof(char),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	log_info(loggerSinPantalla, "La CPU ha enviado las instrucciones ejecutadas al kernel");
 	free(pcb_actual);
 	recibiPcb=1;
 	cpuExpropiadaPorKernel = 1;
@@ -112,7 +114,9 @@ void expropiarPorStackOverflow(){
 	send(socketKernel,&caseStackOverflow,sizeof(char),0);
 
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	log_info(loggerSinPantalla, "La CPU ha enviado las instrucciones ejecutadas al kernel");
 	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
 
 	free(pcb_actual);
@@ -131,6 +135,7 @@ void expropiarPorRR(){
 		send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
 		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 		serializarPcbYEnviar(pcb_actual,socketKernel);
+		log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
 		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
 		free(pcb_actual);
 		esperarPCB();
@@ -146,6 +151,7 @@ void expropiarPorRRYCerrar(){
 	send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
 	return;
 }
 //------------------------------EXPROPIAR PROCESOS--------------------------------------
