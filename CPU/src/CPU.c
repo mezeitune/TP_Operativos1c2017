@@ -140,6 +140,7 @@ void expropiarPorRR(){
 		log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
 		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
 		free(pcb_actual);
+		recibiPcb=1;
 		esperarPCB();
 	}
 }

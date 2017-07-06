@@ -127,9 +127,11 @@ void cerrarTodo(){
 
 	recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
 
+	printf("Hilos procesos abiertos :%d\n ",listaHilosProgramas->elements_count);
+
+	sleep(3);
 
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
-	free(nuevoPrograma);
 	free(mensaje);
 }
 void recibirDatosDelKernel(int socketHiloKernel){

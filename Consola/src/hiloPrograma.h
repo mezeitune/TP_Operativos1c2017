@@ -28,7 +28,6 @@ t_list* listaHilosProgramas;
 
 time_t now;
 struct tm beg;
-t_hiloPrograma* nuevoPrograma;
 
 void crearHiloPrograma();
 void* iniciarPrograma(int* socketHiloKernel);
@@ -39,7 +38,7 @@ void gestionarCierrePrograma(int pidFinalizar);
 void actualizarCantidadImpresiones(int pid);
 
 void crearHiloPrograma(){
-	nuevoPrograma = malloc(sizeof(t_hiloPrograma));
+	t_hiloPrograma* nuevoPrograma = malloc(sizeof(t_hiloPrograma));
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
 
 	nuevoPrograma->tiempoInicio= *localtime(&(time_t){time(NULL)});
