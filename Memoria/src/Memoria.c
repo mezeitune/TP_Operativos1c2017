@@ -130,6 +130,7 @@ int cantPaginasDeProceso(int pid);
 
 void inicializarCache();
 int buscarEntradaDeProcesoEnCache(int pid, int pagina);
+int cantidadEntradasDeProcesoEnCache(int pid);
 void leerContenidoEnCache(int entrada,char** buffer, int size, int offset);
 void iniciarEntradaEnCache(int pid, int pagina);
 void borrarEntradasDeProcesoEnCache(int pid);
@@ -227,24 +228,24 @@ int inicializarPrograma(int pid, int cantPaginas)
 
 void solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffer)
 {
-	printf("Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
+	log_info(loggerConPantalla,"Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
-	printf("El frame es : %d\n",frame);
+	log_info(loggerConPantalla,"El frame es : %d\n",frame);
 
 	memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size);
 
 	strcpy(*buffer + size , "\0");
-	printf("%s\n",*buffer);
+	log_info(loggerConPantalla,"%s\n",*buffer);
 
 }
 
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, void* buffer)
 {
-	printf("Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
+	log_info(loggerConPantalla,"Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 
 	//printf("\nESTOY GUARDANDO :   %s\n",buffer);
-	printf("Frame:%d\n",frame);
+	log_info(loggerConPantalla,"Frame:%d\n",frame);
 	if(frame >= 0)
 	{
 		memcpy(bloque_Memoria + frame*marco_size+offset,buffer,size);
@@ -297,8 +298,8 @@ int recibirConexion(int socket_servidor){
     socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
 
 	contadorConexiones ++;
-	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
-	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
+	log_info(loggerConPantalla,"\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
+	log_info(loggerConPantalla,"----------Handler asignado a (%d) ---------\n",contadorConexiones);
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
@@ -316,7 +317,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 	printf("\n--Esperando una orden del cliente-- \n");
 	read(socketCliente,buffer,sizeof(char));
 	bufferRecibido = *buffer;
-    printf("El cliente ha enviado la orden: %c\n",bufferRecibido);
+	log_info(loggerConPantalla,"El cliente ha enviado la orden: %c\n",bufferRecibido);
 	free(buffer);
 	return bufferRecibido;
 }
@@ -329,8 +330,8 @@ int main_inicializarPrograma(int sock)
 	read(sock,&pid,sizeof(int));
 	read(sock,&cantPaginas,sizeof(int));
 
-	printf("PID:%d\n",pid);
-	printf("CantPaginas:%d\n",cantPaginas);
+	log_info(loggerConPantalla,"PID:%d\n",pid);
+	log_info(loggerConPantalla,"CantPaginas:%d\n",cantPaginas);
 
 	int espacioLibre = verificarEspacioLibre();
 
@@ -353,7 +354,7 @@ int main_inicializarPrograma(int sock)
 	else
 	{
 		sleep(retardo_memoria);
-		printf("No hay espacio suficiente en la memoria\n");
+		log_warning(loggerConPantalla,"No hay espacio suficiente en la memoria\n");
 		return -1;
 	}
 }
@@ -370,7 +371,7 @@ int main_solicitarBytesPagina(int sock)
 	read(sock,&offset,sizeof(int));
 	read(sock,&size,sizeof(int));
 
-	printf("PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
+	log_info(loggerConPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
 
 	bufferAEnviar=malloc(size+sizeof(char));
@@ -379,14 +380,16 @@ int main_solicitarBytesPagina(int sock)
 
 	if(posicionEnCache != -1)
 	{
-		printf("Se encontró la pagina %d del proceso %d en la entrada %d de la cache\n",pagina,pid,posicionEnCache);
+		log_info(loggerConPantalla,"Se encontró la pagina %d del proceso %d en la entrada %d de la cache\n",pagina,pid,posicionEnCache);
 		leerContenidoEnCache(posicionEnCache,&bufferAEnviar, size, offset);
 	}
 	else
 	{
-		printf("No se encontró la pagina %d del proceso %d en la cache\n",pagina,pid);
+		if(cantidadEntradasDeProcesoEnCache(pid) < cache_x_proc){
+			iniciarEntradaEnCache(pid,pagina);
+		}
+		log_info(loggerConPantalla,"No se encontró la pagina %d del proceso %d en la cache\n",pagina,pid);
 		solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
-		iniciarEntradaEnCache(pid,pagina);
 		sleep(retardo_memoria);
 		//enviar_string(sock,bufferAEnviar);
 	}
@@ -410,7 +413,7 @@ int main_almacenarBytesPagina(int sock)
 	bytes=malloc(size);
 	read(sock,bytes,size);
 
-	printf("PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
+	log_info(loggerConPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
 	almacenarBytesPagina(pid,pagina,offset,size,bytes);
 	if(buscarEntradaDeProcesoEnCache(pid,pagina) >= 0){
@@ -428,7 +431,7 @@ int main_asignarPaginasAProceso(int sock)
 	read(sock,&pid,sizeof(int));
 	read(sock,&cantPaginas,sizeof(int));
 
-	printf("PID:%d\tCantidad de Paginas:%d\n",pid,cantPaginas);
+	log_info(loggerConPantalla,"PID:%d\tCantidad de Paginas:%d\n",pid,cantPaginas);
 	//printf("Bitmap:%s\n",bitMap);
 
 	int espacioLibre = verificarEspacioLibre();
@@ -450,7 +453,7 @@ int main_asignarPaginasAProceso(int sock)
 	else
 	{
 		sleep(retardo_memoria);
-		printf("No hay espacio suficiente en la memoria\n");
+		log_warning(loggerConPantalla,"No hay espacio suficiente en la memoria\n");
 		return -1;
 	}
 }
@@ -472,7 +475,7 @@ int main_liberarPaginaProceso(int sock){
 	read(sock,&pid,sizeof(int));
 	read(sock,&pagina,sizeof(int));
 
-	printf("PID:%d\tPagina:%d\n",pid,pagina);
+	log_info(loggerConPantalla,"PID:%d\tPagina:%d\n",pid,pagina);
 
 	resultadoDeEjecucion = liberarPaginaProceso(pid,pagina);
 
@@ -481,7 +484,7 @@ int main_liberarPaginaProceso(int sock){
 }
 
 int liberarPaginaProceso(int pid, int pagina){
-	printf("Liberar Pagina:%d del proceso:%d\n",pagina,pid);
+	log_info(loggerConPantalla,"Liberar Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 
 	int desplazamiento = sizeof(struct_adm_memoria);
@@ -587,7 +590,7 @@ void *connection_handler(void *socket_desc)
 			log_error(loggerConPantalla,"Orden no definida %c",orden);
 			break;
 		}
-		printf("Resultado de ejecucion:%d\n",resultadoDeEjecucion);
+		log_info(loggerConPantalla,"Resultado de ejecucion:%d\n",resultadoDeEjecucion);
 		//imprimirBitMap();
 		//imprimirEstructurasAdministrativas();
 		if(orden != '\0') orden = nuevaOrdenDeAccion(sock);
@@ -691,7 +694,7 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 
 void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
-		printf("CONFIGURACIONES\nIP:%s\nPUERTO:%s\nMARCOS:%d\nTAMAÑO MARCO:%d\nENTRADAS CACHE:%d\nCACHE POR PROCESOS:%d\nRETARDO MEMORIA:%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
+		log_info(loggerConPantalla,"CONFIGURACIONES\nIP:%s\nPUERTO:%s\nMARCOS:%d\nTAMAÑO MARCO:%d\nENTRADAS CACHE:%d\nCACHE POR PROCESOS:%d\nRETARDO MEMORIA:%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
 		printf("---------------------------------------------------\n");
 }
 
@@ -706,27 +709,27 @@ void imprimirEstructurasAdministrativas()
 	struct_adm_memoria auxMemoria;
 	int i = 0;
 	int desplazamiento = sizeof(struct_adm_memoria);
-	printf("---Estructuras Adm De la Memoria---\n");
-	printf("Frame/PID/NumPag\n");
+	log_info(loggerConPantalla,"---Estructuras Adm De la Memoria---\n");
+	log_info(loggerConPantalla,"Frame/PID/NumPag\n");
 	while(i < marcos)
 	{
 		memcpy(&auxMemoria, bloque_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
 		i++;
-		printf("/___%d/__%d/__%d\n",auxMemoria.frame,auxMemoria.pid,auxMemoria.num_pag);
+		log_info(loggerConPantalla,"/___%d/__%d/__%d\n",auxMemoria.frame,auxMemoria.pid,auxMemoria.num_pag);
 	}
 
 	int pidProc;
 	int paginaProc;
 	i = 0;
 	desplazamiento = sizeof(int)*2+marco_size;
-	printf("---Estructuras Adm De la Cache---\n");
-	printf("PID/NumPag\n");
+	log_info(loggerConPantalla,"---Estructuras Adm De la Cache---\n");
+	log_info(loggerConPantalla,"PID/NumPag\n");
 	while(i < entradas_cache)
 	{
 		memcpy(&pidProc, bloque_Cache + i*desplazamiento,sizeof(int));
 		memcpy(&paginaProc, bloque_Cache + i*desplazamiento+sizeof(int),sizeof(int));
 		i++;
-		printf("/__%d/__%d\n",pidProc,paginaProc);
+		log_info(loggerConPantalla,"/__%d/__%d\n",pidProc,paginaProc);
 	}
 	printf("---------------------------------------------------\n");
 }
@@ -819,7 +822,7 @@ void modificarRetardo()
 {
 	printf("Ingrese el nuevo retardo de la memoria\n");
 	scanf("%d",&retardo_memoria);
-	printf("El retardo de la memoria a sido cambiado a: %d\n",retardo_memoria);
+	log_info(loggerConPantalla,"El retardo de la memoria a sido cambiado a: %d\n",retardo_memoria);
 }
 
 void dumpDeMemoria()
@@ -855,12 +858,14 @@ void dumpDeMemoria()
 
 void flush()
 {
-	printf("--Flush--\n");
+	log_info(loggerConPantalla,"--Flush--\n");
 	vaciarCache();
 }
 
 void size()
 {
+	printf("Elija una opcion\n");
+	printf("P-Size Proceso\nM-Size Memoria\n");
 	char orden;
 	scanf(" %c",&orden);
 	switch(orden)
@@ -885,7 +890,7 @@ void size()
 
 void dumpCache()
 {
-
+	log_info(loggerConPantalla,"----Dump Cache ----\n");
 	int i = 0;
 	int desplazamiento = sizeof(int)*2+marco_size;
 	void*contenido = malloc(marco_size);
@@ -899,9 +904,9 @@ void dumpCache()
 		memcpy(&pagina,bloque_Cache + i*desplazamiento + sizeof(int),sizeof(int));
 		memcpy(contenido,bloque_Cache + i*desplazamiento + sizeof(int)*2,marco_size);
 		if(pid != -1){
-			printf("PID:%d\n",pid);
-			printf("Pagina:%d\n",pagina);
-			printf("Contenido:%s\n",(char*) contenido);
+			log_info(loggerConPantalla,"PID:%d\n",pid);
+			log_info(loggerConPantalla,"Pagina:%d\n",pagina);
+			log_info(loggerConPantalla,"Contenido:%s\n",(char*) contenido);
 		}
 
 		i++;
@@ -938,11 +943,11 @@ void contenidoDeMemoria()
 
 void datosAlmacenadosDeProceso()
 {
-	printf("--Datos Almacenados De Proceso--\n");
+	log_info(loggerConPantalla,"--Datos Almacenados De Proceso--\n");
 	printf("Ingrese el PID del proceso:\n");
 	int pid;
 	scanf("%d",&pid);
-	printf("PID:%d\n",pid);
+	log_info(loggerConPantalla,"PID:%d\n",pid);
 	struct_adm_memoria aux;
 	int i = 0;
 	int desplazamientoStruct = sizeof(struct_adm_memoria);
@@ -953,7 +958,7 @@ void datosAlmacenadosDeProceso()
 		if(aux.pid == pid)
 		{
 			memcpy(datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
-			printf("%s\n",datosFrame);
+			log_info(loggerConPantalla,"%s\n",datosFrame);
 		}
 		i++;
 	}
@@ -962,7 +967,7 @@ void datosAlmacenadosDeProceso()
 
 void datosAlmacenadosEnMemoria()
 {
-	printf("--Datos Almacenados En Memoria--\n");
+	log_info(loggerConPantalla,"--Datos Almacenados En Memoria--\n");
 
 	struct_adm_memoria aux;
 	int i = 0;
@@ -973,9 +978,9 @@ void datosAlmacenadosEnMemoria()
 		memcpy(&aux, bloque_Memoria + i*desplazamientoStruct, sizeof(struct_adm_memoria));
 		if(aux.pid != -9 && aux.pid != -1)
 		{
-			printf("PID:%d\nFrame:%d\n",aux.pid,aux.frame);
+			log_info(loggerConPantalla,"PID:%d\nFrame:%d\n",aux.pid,aux.frame);
 			memcpy(datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
-			printf("Datos:%s\n",datosFrame);
+			log_info(loggerConPantalla,"Datos:%s\n",datosFrame);
 		}
 		i++;
 	}
@@ -1005,17 +1010,17 @@ void vaciarCache()
 		memcpy(bloqueBitUsoCache + i*desplazamiento,&bitUso , sizeof(int));
 		i++;
 	}
-	printf("Cache Vaciada\n");
+	log_info(loggerConPantalla,"Cache Vaciada\n");
 
 }
 
 void tamanioProceso()
 {
-	printf("--Tamaño Proceso--\n");
+	log_info(loggerConPantalla,"--Tamaño Proceso--\n");
 	printf("Ingrese el PID del proceso:\n");
 	int pid;
 	scanf("%d",&pid);
-	printf("PID:%d\n",pid);
+	log_info(loggerConPantalla,"PID:%d\n",pid);
 	struct_adm_memoria aux;
 	int i = 0,espacioTotal =0;
 	int desplazamientoStruct = sizeof(struct_adm_memoria);
@@ -1029,19 +1034,19 @@ void tamanioProceso()
 		}
 		i++;
 	}
-	printf("El proceso %d ocupa %d paginas\n",pid,espacioTotal);
+	log_info(loggerConPantalla,"El proceso %d ocupa %d paginas\n",pid,espacioTotal);
 }
 
 void tamanioMemoria()
 {
 	int espacioLibre = verificarEspacioLibre();
 	int espacioOcupado = marcos - espacioLibre;
-	printf("Frames Totales:%d\nEspacios Libres:%d\nEspacios Ocupados:%d\n",marcos,espacioLibre,espacioOcupado);
+	log_info(loggerConPantalla,"Frames Totales:%d\nEspacios Libres:%d\nEspacios Ocupados:%d\n",marcos,espacioLibre,espacioOcupado);
 }
 
 void inicializarCache()
 {
-	printf("-------------Inicializar Cache-------------\n");
+	log_info(loggerConPantalla,"-------------Inicializar Cache-------------\n");
 
 	int i = 0;
 	int desplazamiento = sizeof(int)*2+marco_size;
@@ -1087,21 +1092,39 @@ int buscarEntradaDeProcesoEnCache(int pid, int pagina)
 	return -1;
 }
 
+int cantidadEntradasDeProcesoEnCache(int pid)
+{
+	int i = 0;
+	int desplazamiento = sizeof(int)*2+marco_size;
+	int pidProc;
+	int contador = 0;
+	while(i<entradas_cache)
+	{
+		memcpy(&pidProc, bloque_Cache + i*desplazamiento,sizeof(int));
+		if(pidProc == pid) //Si el PID del programa en mi estructura Administrativa es igual al del programa que quiero buscar
+		{
+			contador++;
+		}
+		i++;
+	}
+	return contador;
+}
+
 void iniciarEntradaEnCache(int pid, int pagina)
 {
 	int entrada = buscarUnaEntradaParaProcesoEnCache();
 
-	printf("Iniciar Entrada en cache\nEntrada:%d\n",entrada);
+	log_info(loggerConPantalla,"Iniciar Entrada en cache\nEntrada:%d\n",entrada);
 	int desplazamiento = sizeof(int)*2+marco_size;
 
 	char *contenidoReal = malloc(marco_size);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 
-	printf("Frame a meter en la cache:%d\n",frame);
+	log_info(loggerConPantalla,"Frame a meter en la cache:%d\n",frame);
 
 	memcpy(contenidoReal,bloque_Memoria + frame*marco_size,marco_size);
 
-	printf("Contenido a meter en la cache:%s\n",contenidoReal);
+	log_info(loggerConPantalla,"Contenido a meter en la cache:%s\n",contenidoReal);
 
 	memcpy(bloque_Cache + entrada*desplazamiento,&pid ,sizeof(int));
 	memcpy(bloque_Cache + entrada*desplazamiento+sizeof(int),&pagina ,sizeof(int));
@@ -1137,7 +1160,7 @@ void leerContenidoEnCache(int entrada,char** buffer,int size,int offset)
 	memcpy(*buffer, bloque_Cache + entrada*desplazamiento+sizeof(int)*2 + offset,size);
 
 	strcpy(*buffer + size , "\0");
-	printf("%s\n",*buffer);
+	log_info(loggerConPantalla,"%s\n",*buffer);
 	memcpy(bloqueBitUsoCache + entrada*sizeof(int),&contadorBitDeUso , sizeof(int));
 	contadorBitDeUso++;
 }
