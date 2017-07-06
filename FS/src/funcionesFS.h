@@ -1,10 +1,13 @@
 #include "sockets.h"
 #include <commons/log.h>
+#include <commons/collections/list.h>
 #include "logger.h"
+ #include <fcntl.h>
+
 void printBitmap(){
 
 	int j;
-	for(j=0;j<32;j++){
+	for(j=0;j<cantidadBloques;j++){
 		/*if(bitarray_test_bit(bitarray, j)==1){
 			printf("ocupado-");
 		}else{
@@ -16,6 +19,9 @@ void printBitmap(){
 	//bitarray_clean_bit(bitarray,3);
 	printf("\n");
 }
+
+int getSizeBloque(FILE* bloque);
+void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques);
 
 void validarArchivoFunction(int socket_cliente){
 	int tamanoArchivo;
@@ -109,51 +115,52 @@ void crearArchivoFunction(int socket_cliente){
 }
 
 
-void borrarArchivoFunction(int socket_cliente){
-	FILE *fp;
+void borrarArchivoFunction(int socket_cliente){ /*TODO: Tambien se podrian borrar los bloques*/
 
-	int tamanoArchivo;
+	int tamanoNombreArchivo;
 	int validado;
 
-	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-	void* nombreArchivo = malloc(tamanoArchivo);
-	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
+	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
+	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
+	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
+	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
+
+	log_info(loggerConPantalla,"Borrando archivo:%s",nombreArchivo);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, nombreArchivo);
+	printf("Ruta a borrar :%s\n",nombreArchivoRecibido);
+
 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
-
-
-	   fp = fopen(nombreArchivoRecibido, "w");
 	   //poner en un array los bloques de ese archivo para luego liberarlos
-	   char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
-	   if(remove(nombreArchivoRecibido) == 0)
-	   {
+		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+	   FILE* fp = fopen(nombreArchivoRecibido, "w"); //Solo para borrarle el contenido
 
-
-		   validado=1;
-
+	   if(remove(nombreArchivoRecibido) == 0){
 		   //marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
 		   int d=0;
 		   while(!(arrayBloques[d] == NULL)){
-			   int indice=atoi(arrayBloques[d]);
-			   bitarray_clean_bit(bitarray,indice);
+			  bitarray_clean_bit(bitarray,atoi(arrayBloques[d]));
 		      d++;
 		   }
+		   validado=1;
 		   send(socket_cliente,&validado,sizeof(char),0);
 		   //send diciendo que se elimino correctamente el archivo
+		   log_info(loggerConPantalla,"El archivo ha sido borrar--->Archivo:%s",nombreArchivo);
 	   }
 	   else
 	   {
+		   log_error(loggerConPantalla,"Excepecion de filesystem al borrar archivo--->Archivo:%s",nombreArchivo);
 		   validado=0;
 		   send(socket_cliente,&validado,sizeof(char),0);
 	      //send que no se pudo eliminar el archivo
 	   }
-	} else {
+	}else {
+		log_error(loggerConPantalla,"El archivo no se puede borrar porque no existe--->Archivo:%s",nombreArchivo);
 		validado=0;
 		send(socket_cliente,&validado,sizeof(char),0);
 		//send diciendo que hubo un error y no se pudo eliminar el archivo
@@ -166,7 +173,6 @@ void borrarArchivoFunction(int socket_cliente){
 
 
 void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo tenog que recibir o que onda
-	FILE *fp;
 
 	int tamanoNombreArchivo;
 	int validado;
@@ -180,7 +186,7 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 	recv(socket_cliente,&cursor,sizeof(int),0);
 	recv(socket_cliente,&size,sizeof(int),0);
 
-	log_info(loggerConPantalla,"Obteniendo datos--->Archivo:%s--->Cursor:%d--->Size:%d",nombreArchivo,cursor,size);
+	log_info(loggerConPantalla,"Obteniendo datos--->Archivo:%s--->Posicion cursor:%d--->Size:%d",nombreArchivo,cursor,size);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
@@ -191,62 +197,136 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
 
 
-		fp = fopen(nombreArchivoRecibido, "r");
-		printf("Abri el archivo\n");
+		//FILE* fp = fopen(nombreArchivoRecibido, "rb"); No hace falta
+
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
-		printf("Obtuve el array de bloques\n");
-		   int d=0;
-		   int u=1;
-		   int offYSize=cursor+size;
+
 		   printf("size:%d\n",size);
 		   printf("Tamanio bloque:%d\n",tamanioBloques);
 
-		   int cantidadBloquesQueNecesito; /*TODO: Emprolijar*/
-		   if((size%tamanioBloques) == 0) cantidadBloquesQueNecesito = 1;
-		   if((size%tamanioBloques) < tamanioBloques) cantidadBloquesQueNecesito = 1;
-		   if((size%tamanioBloques) > tamanioBloques){
-			   cantidadBloquesQueNecesito = size / tamanioBloques;
+		   int cantidadBloquesNecesito;
+		   if(((size+cursor)%tamanioBloques)==0) cantidadBloquesNecesito = ((size+cursor)/tamanioBloques);
+		   else cantidadBloquesNecesito = ((size+cursor)/tamanioBloques)+1;
+
+		   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesNecesito);
+
+
+		   int d=0;
+		   int tamanioBloqueAcumulado = tamanioBloques;
+		   while(!(cursor<tamanioBloqueAcumulado)){ //Para saber cual es el primer bloque a leer
+			   d++;
+			   tamanioBloqueAcumulado += tamanioBloques;
 		   }
-/*		   if((size%tamanioBloques)!=0){
-				cantidadBloquesQueNecesito++;
-			}
-*/
-		   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesQueNecesito);
+
+		   /*
+		    * Cursor = 160
+		    * Bloque = 64
+		    * Acumulado = 64
+		    *
+		    * 1. Cursor<Acumulado d++ -> Acumulado +=Bloque
+		    * Acumulado=128
+		    *
+		    * 2. Cursor < Acumulado d++ -> Acumulado +=Bloque
+		    * Acumulado=192
+		    *
+		    * 3. Cursor ya es menos que Acumulador.
+		    */
+
+
+
+
+
+		   FILE *bloque;
+
+		   int sizeRestante=size;
 
 		   char* infoTraidaDeLosArchivos = string_new();
-		   int hizoLoQueNecesita=0;
-		   while(!(arrayBloques[d] == NULL)){
+		   char* data;
+		   int sizeDentroBloque=0;
+		   int cantidadBloquesLeidos=0;
+
+		   while(cantidadBloquesLeidos < cantidadBloquesNecesito){
+
 			   printf("Leyendo data del bloque:%s\n",arrayBloques[d]);
+
+			   if(cantidadBloquesLeidos==0){
+
+				   if(size>tamanioBloques-cursor) sizeDentroBloque=tamanioBloques-cursor;//Leo la porcion restante del bloque
+				   else sizeDentroBloque = size; //Leo lo suficiente
+				   printf("El tamano a leer del bloque es :%d\n",sizeDentroBloque);
+
+
+				   char *nombreBloque = string_new();
+				   string_append(&nombreBloque, puntoMontaje);
+				   string_append(&nombreBloque, "Bloques/");
+				   string_append(&nombreBloque, arrayBloques[d]);
+				   string_append(&nombreBloque, ".bin");
+
+				   bloque=fopen(nombreBloque, "rb");
+
+				   data=(char*)obtenerBytesDeUnArchivo(bloque,cursor,sizeDentroBloque); //En el primero bloque, arranca del cursor
+
+				   string_append(&infoTraidaDeLosArchivos,data);
+				   sizeRestante -= sizeDentroBloque;
+			   }
+			   else{
+				   if(sizeRestante < tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
+				   else sizeDentroBloque = tamanioBloques; //Leo todo el bloque
+
+				   char *nombreBloque = string_new();
+				   string_append(&nombreBloque, puntoMontaje);
+				   string_append(&nombreBloque, "Bloques/");
+				   string_append(&nombreBloque, arrayBloques[d]);
+				   string_append(&nombreBloque, ".bin");
+
+				   bloque=fopen(nombreBloque, "rb");
+
+				   data=(char*)obtenerBytesDeUnArchivo(bloque,0,sizeDentroBloque); //Siempre arranca del principio
+
+				   string_append(&infoTraidaDeLosArchivos,data);
+				   sizeRestante -= sizeDentroBloque;
+			   }
+			   d++; //Avanzo de bloque
+			   cantidadBloquesLeidos++;
+		   }
+
+
+/*			int hizoLoQueNecesita=0;
+  			 int u=1;
+
+		   while((arrayBloques[d]!=NULL)){
+		   printf("Leyendo data del bloque:%s\n",arrayBloques[d]);
 			   if(cursor<=(tamanioBloques*u)){
-				   printf("Entre al if\n");
+
 				   int t;
 				   int inicial=d;
 				   for(t=inicial;t<((inicial+cantidadBloquesQueNecesito));t++){ /*TODO:t<((inicial+cantidadBloquesQueNecesito)+1) Estaba asi, pero rompia mati*/
-					   printf("Entre al for\n");
-					   hizoLoQueNecesita=1;
+					/*   hizoLoQueNecesita=1;
 					   int indice=atoi(arrayBloques[t]);
+
 						char *nombreBloque = string_new();
 						string_append(&nombreBloque, puntoMontaje);
 						string_append(&nombreBloque, "Bloques/");
 						string_append(&nombreBloque, arrayBloques[t]);
 						string_append(&nombreBloque, ".bin");
 
-						FILE *bloque=fopen(nombreBloque, "r");
-						printf("Abri el bloque\n");
+						FILE *bloque=fopen(nombreBloque, "rb");
+
 						if(t==(d+cantidadBloquesQueNecesito)){
-							printf("Entre al primer if\n");
+
 							int sizeQuePido=size-cursor;
 							int offsetQuePido=0;
-							char* data=obtenerBytesDeUnArchivo(bloque,offsetQuePido,sizeQuePido); /*TODO: Te cambio para que leea el bloque, y no el archivo en si*/
-							string_append(&infoTraidaDeLosArchivos,data);
+							void* data=obtenerBytesDeUnArchivo(bloque,offsetQuePido,sizeQuePido); /*TODO: Te cambio para que leea el bloque, y no el archivo en si*/
+						/*	string_append(&infoTraidaDeLosArchivos,data);
+
 						}else if(t==inicial){
-							printf("Entre al segundo if\n");
+
 							int offsetQuePido=cursor-(tamanioBloques*u);
 							int sizeQuePido=tamanioBloques-offsetQuePido;
 							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(bloque,offsetQuePido , sizeQuePido));
 
 						}else{
-							printf("Entre al tercer if\n");
+
 							int sizeQuePido=tamanioBloques;
 							int offsetQuePido=0;
 							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(bloque,offsetQuePido , sizeQuePido));
@@ -264,13 +344,16 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		      u++;
 		   }
 		//printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
+		 * */
 
-		   printf("La info leida es:%s\n",infoTraidaDeLosArchivos);
+
+		 printf("La info leida es:%s\n",infoTraidaDeLosArchivos); //Esta trayendo un caracter de mas, si llega al final del bloque
 		//si todod ok
 		validado=1;
 		send(socket_cliente,&validado,sizeof(int),0);
 		send(socket_cliente,infoTraidaDeLosArchivos,size,0);
 	} else {
+		log_error(loggerConPantalla,"No se puede leer porque el archivo no existe");
 		validado=-1;
 		send(socket_cliente,&validado,sizeof(int),0); //El archivo no existe
 	}
@@ -279,37 +362,35 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 }
 
 
-
-
 void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo tengo que recibir o que onda
-	FILE *fp;
-
+	FILE* bloque;
 	int tamanoNombreArchivo;
 	int validado;
-	int puntero;
-	int tamanoBuffer;
+	int cursor;
+	int size;
 
+	int cuantosBloquesMasNecesito;
+	t_list* nuevosBloques = list_create();
 
 	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
 	printf("Tamano nombre archivo:%d\n",tamanoNombreArchivo);
-	char* nombreArchivo = malloc(tamanoNombreArchivo);
+	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
 
 	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
 	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
 	printf("Nombre archivo:%s\n",nombreArchivo);
 
-	recv(socket_cliente,&puntero,sizeof(int),0);
-	printf("Puntero:%d\n",puntero);
+	recv(socket_cliente,&cursor,sizeof(int),0);
+	printf("Puntero:%d\n",cursor);
 
-	recv(socket_cliente,&tamanoBuffer,sizeof(int),0);
-	printf("Tamano de la data:%d\n",tamanoBuffer);
-	char* buffer = malloc(tamanoBuffer + sizeof(char));
+	recv(socket_cliente,&size,sizeof(int),0);
+	printf("Tamano de la data:%d\n",size);
+	void* buffer = malloc(size);
 
-	recv(socket_cliente,buffer,tamanoBuffer,0);
-	strcpy(buffer + tamanoBuffer,"\0");
-	printf("Data :%s\n",buffer);
+	recv(socket_cliente,buffer,size,0);
+	printf("Data :%s\n",(char*)buffer);
 
-	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",nombreArchivo,buffer);
+	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",nombreArchivo,(char*)buffer);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
@@ -318,154 +399,221 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 
 	printf("Toda la ruta :%s\n",nombreArchivoRecibido);
 
-
 	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
-
 
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
-
-		int d=0;
-		int cantidadBloques = 0;
-		while(!(arrayBloques[d] == NULL)){
-			printf("%s \n",arrayBloques[d]);
-			d++;
-			cantidadBloques ++;
+		int indiceBloque=0;
+		int cantidadBloquesArchivo = 0;
+		while(!(arrayBloques[indiceBloque] == NULL)){
+			indiceBloque++;
+			cantidadBloquesArchivo ++;
 		}
-		d--;
+		indiceBloque--; //Quiero el indice al ultimo bloque
 
-		printf("Cantidad de bloques :%d\n",cantidadBloques);
+		printf("Cantidad de bloques :%d\n",cantidadBloquesArchivo);
+
+		char *direccionBloque = string_new();
+		string_append(&direccionBloque, puntoMontaje);
+		string_append(&direccionBloque, "Bloques/");
+		string_append(&direccionBloque, arrayBloques[indiceBloque]);
+		string_append(&direccionBloque, ".bin");
 
 
-		char *nombreBloque = string_new();
-		string_append(&nombreBloque, puntoMontaje);
-		string_append(&nombreBloque, "Bloques/");
-		string_append(&nombreBloque, arrayBloques[d]);
-		string_append(&nombreBloque, ".bin");
-		printf("Nombre del ultimo bloque: %s\n",nombreBloque);
+		printf("Direccion del ultimo bloque: %s\n",direccionBloque);
 		//ver de asignar mas bloques en caso de ser necesario
 		printf("Tamano del archivo : %d\n",atoi(obtTamanioArchivo(nombreArchivoRecibido)));
 		printf("Tamano del bloque: %d\n",tamanioBloques);
-		int cantRestante=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloques-1)*tamanioBloques));
-		printf("Cantidad restante :%d\n",cantRestante);
-		if(tamanoBuffer<cantRestante){
-			adx_store_data(nombreBloque,buffer);
-			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",nombreArchivo,buffer);
-			//send diciendo que todo esta bien
-		}else{
-			int cuantosBloquesMasNecesito=tamanoBuffer/tamanioBloques;
-			if((tamanoBuffer%tamanioBloques)>0){
+
+		int cantidadRestanteUltimoBloque=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloquesArchivo-1)*tamanioBloques));
+
+		printf("Cantidad restante en el ultimo bloque :%d\n",cantidadRestanteUltimoBloque);
+
+		if(size<cantidadRestanteUltimoBloque){ //Con el primer bloque me alcanza
+
+			bloque = fopen(direccionBloque,"ab");
+			fseek(bloque,cursor,SEEK_SET);
+			fwrite(buffer,size,1,bloque);
+			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",nombreArchivo,(char*)buffer);
+			fclose(bloque);
+			//adx_store_data(direccionBloque,buffer);
+
+		}else{ //Necesito mas bloques
+
+			 /*TODO: Emprolijar*/
+		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
+		   if(size < tamanioBloques) cuantosBloquesMasNecesito = 1;
+		   if((size%tamanioBloques) == size) {
+			   cuantosBloquesMasNecesito = size / tamanioBloques ;
+			   cuantosBloquesMasNecesito += 1;
+		   }
+
+/*
+			int cuantosBloquesMasNecesito=size/tamanioBloques;
+
+			if((size%tamanioBloques)>0){
 				cuantosBloquesMasNecesito++;
 			}
-			//si no hay mas bloques de los que se requieren hay que hacer un send tirando error
-			int j;
-			int r=0;
+			*/
+
+			printf("Bloques de mas que necesito:%d\n",cuantosBloquesMasNecesito);
+
+			int numeroBloque;
 			int bloquesEncontrados=0;
-			int bloqs[cuantosBloquesMasNecesito];
-			for(j=0;j<cantidadBloques;j++){
-		        bool bit = bitarray_test_bit(bitarray,j);
+
+
+			for(numeroBloque=0;numeroBloque<cantidadBloques;numeroBloque++){
+		        bool bit = bitarray_test_bit(bitarray,numeroBloque);
 		        if(bit==0){
-		        	//guardar en array bloqs los bloques que voy encontrando
-		        	if(r==cuantosBloquesMasNecesito){
-		        		break;
-		        	}else{
-		            	bloqs[r]=j;
-		            	r++;
-		        	}
 		        	bloquesEncontrados++;
+		        	list_add(nuevosBloques,&numeroBloque);
 		        }
-		        printf("PASO POR ACAAAAAAAAAA3 \n");
+		        if(bloquesEncontrados==cuantosBloquesMasNecesito) break;
 			}
 
+			printf("Bloques encontrados :%d\n",bloquesEncontrados); /*TODO: Cuando crea el archivo en el mismo proceso, y despues solicita esciribr, no encuentra bloques*/
+
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
+				log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
 				//guardamos en los bloques deseados
 
 				int s;
-				char* loQueVaQuedandoDeBuffer=(char*)buffer;
-				for(s=0;s<cuantosBloquesMasNecesito;s++){
 
+				int sizeRestante = size;
+				int desplazamiento = 0;//Para el buffer
+
+				//char* loQueVaQuedandoDeBuffer=(char*)buffer;/*TODO: OJO ACA, el size es 0. Deberias preguntar sobre el size a escribir, e ir actualizando eso*/
+
+				//Primero usamos el ultimo bloque - No queremos frag interna
+				bloque = fopen(direccionBloque,"ab");
+
+				int tamanoActual = ftell(bloque);
+				printf("Tamano actual:%d\n",tamanoActual);
+
+				fwrite(buffer,(tamanioBloques-tamanoActual),1,bloque); //Bloque=64 y el tamanoActual = 40 --> Escribo 24 Bytes
+				fclose(bloque);
+
+				sizeRestante -= (tamanioBloques-tamanoActual);
+				desplazamiento += (tamanioBloques-tamanoActual);
+
+				//Despues empezamos a usar el resto que necesito
+				for(s=0;s<cuantosBloquesMasNecesito;s++){
 					char *nombreBloque = string_new();
 					string_append(&nombreBloque, puntoMontaje);
 					string_append(&nombreBloque, "Bloques/");
-					char* numerito=string_itoa(bloqs[s]);
-					string_append(&nombreBloque, numerito);
+					string_append(&nombreBloque, string_itoa(*(int*)list_get(nuevosBloques,s)));
 					string_append(&nombreBloque, ".bin");
 
+					printf("Voy a guardar en el bloque:%s\n",string_itoa(*(int*)list_get(nuevosBloques,s)));
 
-					if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques){
+					bloque=fopen(nombreBloque,"ab");
+
+					if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
+						printf("Tengo que cortar el string\n");
 						//cortar el string
-						char* recortado=string_substring_until(loQueVaQuedandoDeBuffer, tamanioBloques);
-						adx_store_data(nombreBloque,recortado);
-						loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
+						fwrite(buffer + desplazamiento , tamanioBloques,1,bloque);
+						//char* recortado=string_substring_until(buffer + desplazamiento, tamanioBloques);
+						//adx_store_data(nombreBloque,recortado);
+						sizeRestante -= tamanioBloques;
+						desplazamiento += tamanioBloques;
+						//loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
 
-					}else{
+					}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
+						printf("No tuve que cortar el string\n");
 						//mandarlo todo de una
-						adx_store_data(nombreBloque,loQueVaQuedandoDeBuffer);
+						fwrite(buffer + desplazamiento,sizeRestante,1,bloque);
+						//adx_store_data(nombreBloque,buffer + desplazamiento);
+
 					}
-
-
+					fclose(bloque);
 
 					//actualizamos el bitmap
-					bitarray_set_bit(bitarray,bloqs[s]);
-
+					bitarray_set_bit(bitarray,*(int*)list_get(nuevosBloques,s));
 				}
 
-
-
-
-				//actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
-				FILE *fp = fopen(nombreArchivoRecibido, "w");//Para que borre todo lo que tenia antes
-				char *dataAPonerEnFile = string_new();
-				string_append(&dataAPonerEnFile, "TAMANIO=");
-				char* tamanioArchivoViejo=obtTamanioArchivo(nombreArchivoRecibido);
-				int tamanioArchivoViejoInt=atoi(tamanioArchivoViejo);
-				int tamanioNuevo=tamanioArchivoViejoInt+(cuantosBloquesMasNecesito*tamanioBloques);
-				char* tamanioNuevoChar=string_itoa(tamanioNuevo);
-				string_append(&dataAPonerEnFile, tamanioNuevoChar);
-				string_append(&dataAPonerEnFile,"\n");
-				string_append(&dataAPonerEnFile, "BLOQUES=[");
-				int z;
-
-				   char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
-				   int d=0;
-					   while(!(arrayBloques[d] == NULL)){
-						   string_append(&dataAPonerEnFile,arrayBloques[d]);
-						   string_append(&dataAPonerEnFile,",");
-					      d++;
-					   }
-				for(z=0;z<cuantosBloquesMasNecesito;z++){
-					char* bloqueString=string_itoa(bloqs[z]);
-					string_append(&dataAPonerEnFile,bloqueString);
-					if(!(z==(cuantosBloquesMasNecesito-1))){
-						string_append(&dataAPonerEnFile,",");
-					}
-				}
-
-				string_append(&dataAPonerEnFile,"]");
-
-				adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
-
-				validado=1;
-				send(socket_cliente,&validado,sizeof(int),0);
-				return;
-				//y enviamos un buen send
 
 			}else{
+				log_error(loggerConPantalla,"No existen suficientes bloques para escribir la informacion solicitada");
 				validado=0;
 				send(socket_cliente,&validado,sizeof(int),0);
 				return;
-				//send con error
 			}
-
-
-
 		}
-	validado=1;
-	send(socket_cliente,&validado,sizeof(int),0);
+
+		actualizarMetadataArchivo(nombreArchivoRecibido,size,nuevosBloques);
+
+		validado=1;
+		send(socket_cliente,&validado,sizeof(int),0);
 	}else{
+		log_error(loggerConPantalla,"El archivo no fue creado--->Archivo:%s",nombreArchivo);
 		validado=0;
 		send(socket_cliente,&validado,sizeof(int),0); //El archivo no existe
 	}
 
 }
 
+void actualizarInformacionEnBloque(char* direccionBloque,char* buffer,int size){
+
+	FILE* bloque=fopen(direccionBloque,"ab");
+	fclose(bloque);
+
+	bloque = fopen(direccionBloque,"rb");
+	int sizeAntiguo;
+	char* bufferAntiguo;
+	char* bufferTotal;
+
+	fseek(bloque,0,SEEK_END);
+	sizeAntiguo = ftell(bloque);
+	bufferAntiguo = malloc(sizeAntiguo);
+	fseek(bloque,0,SEEK_SET);
+	fread(bufferAntiguo,sizeof(char),sizeAntiguo,bloque);
+	fclose(bloque);
+
+	bloque = fopen(direccionBloque,"wb");
+
+	bufferTotal = malloc(sizeAntiguo + size);
+	strcat(bufferTotal,bufferAntiguo);
+	strcat(bufferTotal,buffer);
+
+	fwrite(bufferTotal,sizeof(char),sizeAntiguo+size,bloque);
+	fclose(bloque);
+
+}
+
+void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques){
+	log_info(loggerConPantalla,"Actualizando metadata de archivo:%s",path);
+	int i;
+			//Obtenemos los datos viejos
+			int tamanioArchivoViejo=atoi(obtTamanioArchivo(path));
+			char**arrayBloquesViejos=obtArrayDeBloquesDeArchivo(path);
+
+			int tamanioNuevo= tamanioArchivoViejo + size;
+
+			 //actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
+			FILE *fp = fopen(path, "w");//Para que borre todo lo que tenia antes
+			char *metadataFile = string_new();
+
+			string_append(&metadataFile, "TAMANIO=");
+			string_append(&metadataFile, string_itoa(tamanioNuevo));
+			string_append(&metadataFile,"\n");
+
+			string_append(&metadataFile, "BLOQUES=[");
+
+			int indiceBloque=0;
+		   while(!(arrayBloquesViejos[indiceBloque] == NULL)){
+			   string_append(&metadataFile,arrayBloquesViejos[indiceBloque]);
+			   if(arrayBloquesViejos[indiceBloque+1]!=NULL)string_append(&metadataFile,",");
+			   indiceBloque++;
+		   }
+
+			for(i=0;i<nuevosBloques->elements_count;i++){
+				string_append(&metadataFile,",");
+				char* bloqueString=string_itoa(*(int*)list_get(nuevosBloques,i));//string_itoa(bloqs[z])
+				string_append(&metadataFile,bloqueString);
+			}
+
+
+			string_append(&metadataFile,"]");
+			fclose(fp); //Lo cierro porque la proxima linea lo volvia a abrir
+			adx_store_data(path,metadataFile);
+}

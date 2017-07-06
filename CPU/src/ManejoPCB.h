@@ -1,8 +1,12 @@
 //----------------------------------Manejo PCB------------------------------------------
 void esperarPCB(){
 
-	while(cpuOcupada==1 ){
-		printf("%d",cpuFinalizada);
+
+	cpuBloqueadaPorSemANSISOP = 1;
+	cpuFinalizadaPorSignal = 1;
+
+	while(cpuOcupada==1){
+
 		log_info(loggerConPantalla," CPU Esperando un script");
 		cantidadInstruccionesAEjecutarPorKernel = quantum;
 		recibirPCB();
@@ -27,7 +31,7 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 	switch (orden) {
 		case 'S':
 			log_info(loggerConPantalla, "Se esta por asignar un PCB");
-			//recv(socketKernel,&retardo_entre_instruccion,sizeof(int),0);
+
 			establecerPCB(socketAceptado);
 					break;
 		default:
@@ -46,8 +50,9 @@ void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
 void establecerPCB(){
 
 	pcb_actual = recibirYDeserializarPcb(socketKernel);
+	recv(socketKernel,&retardo_entre_instruccion,sizeof(int),0);
 	recibiPcb=0;
-	log_info(loggerConPantalla, "CPU recibe PCB correctamente\n");
+	log_info(loggerConPantalla, "CPU recibe PCB de PID %d correctamente\n",pcb_actual->pid);
 
 	printf("\nPCB:%d\n", pcb_actual->pid);
 	EjecutarProgramaMedianteAlgoritmo();

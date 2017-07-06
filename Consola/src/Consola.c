@@ -11,11 +11,9 @@
 #include "hiloPrograma.h"
 
 
-void signalSigIntHandler(int signum);
+void signalHandler(int signum);
 
 int main(void) {
-
-
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
@@ -23,38 +21,46 @@ int main(void) {
 	inicializarListas();
 	inicializarSemaforos();
 	flagCerrarConsola = 1;
-	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 
+	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
+	log_info(loggerSinPantalla,"LCreando hilo interfaz usuario");
 	int err = pthread_create(&hiloInterfazUsuario, NULL, (void*)connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
-	signal(SIGINT, signalSigIntHandler);
+	signal(SIGINT, signalHandler);
 
 	pthread_join(hiloInterfazUsuario, NULL);
-	log_info(loggerConPantalla,"La Consola ha finalizado");
+	log_warning(loggerConPantalla,"La Consola ha finalizado");
 	return 0;
 
 }
 
-void signalSigIntHandler(int signum)
+void signalHandler(int signum)
 {
     if (signum == SIGINT)
     {
-    	log_warning(loggerConPantalla,"Finalizando consola \n");
+    	log_warning(loggerConPantalla,"Finalizando consola");
     	cerrarTodo();
-    	pthread_kill(hiloInterfazUsuario,0);
-    	exit(1);
-
+    	pthread_kill(hiloInterfazUsuario,SIGUSR1);
+    }
+    if(signum==SIGUSR1){
+    	log_warning(loggerConPantalla,"Finalizando hilo de Interfaz de Usuario");
+    	int exitCode;
+    	pthread_exit(&exitCode);
     }
 }
 
 void connectionHandler() {
+
+	signal(SIGUSR1,signalHandler);
 	char orden;
 	int cont=0;
 	imprimirInterfaz();
+
 	while (flagCerrarConsola) {
 		pthread_mutex_lock(&mutex_crearHilo);
 		scanf("%c", &orden);
+		log_info(loggerSinPantalla,"Orden definida %d",orden);
 		cont++;
 		imprimirInterfaz();
 
@@ -83,6 +89,7 @@ void connectionHandler() {
 
 void limpiarPantalla(){
 	system("clear");
+	log_info(loggerSinPantalla,"Limpiando pantalla");
 	pthread_mutex_unlock(&mutex_crearHilo);
 }
 
@@ -93,9 +100,11 @@ void cerrarTodo(){
 	char comandoCierreConsola = 'E';
 	int i;
 	int desplazamiento = 0;
+
 	pthread_mutex_lock(&mutexListaHilos);
 	int cantidad= listaHilosProgramas->elements_count;
 	flagCerrarConsola = 0;
+	log_info(loggerSinPantalla,"Enviando al kernel el aviso de que la consola se cierra");
 	if(cantidad == 0) {
 		char comandoCerrarSocket= 'Z';
 		send(socketKernel,&comandoCerrarSocket,sizeof(char),0);
@@ -103,33 +112,36 @@ void cerrarTodo(){
 		return;
 	}
 
-	int mensajeSize = sizeof(int) + sizeof(int)* cantidad;
-	char* mensaje= malloc(mensajeSize);
+	int bufferSize = sizeof(char)*2 +sizeof(int)*2 + sizeof(int)* cantidad;
+	int bufferProcesosSize = sizeof(int) + sizeof(int)*cantidad;
+
+	char* mensaje= malloc(bufferSize);
+
 	t_hiloPrograma* procesoACerrar = malloc(sizeof(t_hiloPrograma));
+
+	memcpy(mensaje + desplazamiento,&comandoInterruptHandler,sizeof(char));
+	desplazamiento += sizeof(char);
+
+	memcpy(mensaje + desplazamiento,&comandoCierreConsola,sizeof(char));
+	desplazamiento+=sizeof(char);
+
+	memcpy(mensaje + desplazamiento,&bufferProcesosSize,sizeof(int));
+	desplazamiento +=sizeof(int);
+
 	memcpy(mensaje+desplazamiento,&cantidad,sizeof(int));
 	desplazamiento += sizeof(int);
 
 
 	for(i=0;i<cantidad;i++){
 		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
-		memcpy(mensaje+desplazamiento,&procesoACerrar->pid,sizeof(int));
+		memcpy(mensaje + desplazamiento,&procesoACerrar->pid,sizeof(int));
 		desplazamiento += sizeof(int);
 	}
 	pthread_mutex_unlock(&mutexListaHilos);
 
-	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
-	send(socketKernel,&comandoCierreConsola,sizeof(char),0);
-
-
-	send(socketKernel,&mensajeSize,sizeof(int),0);
-	send(socketKernel,mensaje,mensajeSize,0);
-
-
-	recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
-
+	send(socketKernel,mensaje,bufferSize,0);
 
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
-
 	free(mensaje);
 }
 void recibirDatosDelKernel(int socketHiloKernel){
@@ -152,7 +164,9 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		log_warning(loggerConPantalla,"Hilo:%d--->PID:%d",socketHiloKernel,pid);
 
 		mensaje = malloc(size * sizeof(char) + sizeof(char));
+
 		recv(socketHiloKernel,mensaje,size,0);
+
 		strcpy(mensaje+size,"\0");
 
 		if(strcmp(mensaje,"Finalizar")==0) {
@@ -169,6 +183,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 
 	gestionarCierrePrograma(pid);
 	log_warning(loggerConPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado",pid,socketHiloKernel);
+
 	imprimirInterfaz();
 	pthread_mutex_unlock(&mutexRecibirDatos);
 

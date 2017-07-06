@@ -86,17 +86,17 @@ void excepcionPlanificacionDetenida(int socket){
 }
 
 /*
- * Excepeciones de FileSystem. TODO: Escritura.
+ * Excepeciones de FileSystem.
  */
 void excepcionFileSystem(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de lectura");
+	log_error(loggerConPantalla,"Informando a Consola excepcion de fileSystem");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value;
 	encolarEnListaParaTerminar(proceso);
 }
 
-void excepcionPermisosEscritura(int socketCPU,int pid){ /*TODO*/
+void excepcionPermisosEscritura(int socketCPU,int pid){
 	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de escritura");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socketCPU);
@@ -180,24 +180,37 @@ void excepcionCantidadDePaginas(int socket,int pid){
 }
 
 void excepcionStackOverflow(int socket){
+
+	int cantidadDeRafagas;
+
 	log_error(loggerConPantalla,"Informando a Consola excepcion por StackOverflow");
 	t_pcb* proceso=recibirYDeserializarPcb(socket);
+	recv(socket,&cantidadDeRafagas,sizeof(int),0);
+
+	actualizarRafagas(proceso->pid,cantidadDeRafagas);
+
 	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje));
 	proceso->exitCode =  exitCodeArray[EXIT_MEMORY_EXCEPTION]->value;
 	removerDeColaEjecucion(proceso->pid);
 	encolarEnListaParaTerminar(proceso);
-	cambiarEstadoCpu(socket,0);
+	cambiarEstadoCpu(socket,OCIOSA);
+
+
 	sem_post(&sem_CPU);
 }
 void excepcionDireccionInvalida(int socket){
+	int cantidadDeRafagas;
 	log_error(loggerConPantalla,"Informando a Consola excepcion por Direccion Invalida de Memoria pedido por un proceso ANSISOP");
 	t_pcb* proceso=recibirYDeserializarPcb(socket);
-	//recv(socket,);
+	recv(socket,&cantidadDeRafagas,sizeof(int),0);
+
+	actualizarRafagas(proceso->pid,cantidadDeRafagas);
+
 	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_STACKOVERFLOW]->mensaje,strlen(exitCodeArray[EXIT_STACKOVERFLOW]->mensaje));
 	proceso->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
 	removerDeColaEjecucion(proceso->pid);
 	encolarEnListaParaTerminar(proceso);
-	cambiarEstadoCpu(socket,0);
+	cambiarEstadoCpu(socket,OCIOSA);
 	sem_post(&sem_CPU);
 }
 
@@ -242,7 +255,10 @@ t_pcb* expropiarPorEjecucion(int socket){
 	int resultadoEjecucion=-1;
 	int rafagas;
 	log_info(loggerConPantalla,"Expropiando pcb--->CPU:%d",socket);
-		send(socket,&resultadoEjecucion,sizeof(char),0);
+
+		send(socket,&resultadoEjecucion,sizeof(int),0);
+		printf("Mande la orden de expropiar\n");
+		sleep(3);
 		pcb = recibirYDeserializarPcb(socket);
 		recv(socket,&rafagas,sizeof(int),0);
 		actualizarRafagas(pcb->pid,rafagas);

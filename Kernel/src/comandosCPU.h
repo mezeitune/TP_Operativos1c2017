@@ -12,7 +12,7 @@
 
 t_list* listaCPU;
 
-enum {	EJECUCTANDO,
+enum {	EJECUTANDO,
 		OCIOSA,
 		FQPB
 };

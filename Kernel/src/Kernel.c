@@ -37,6 +37,7 @@
 #include "heap.h"
 #include "sockets.h"
 #include "listasAdministrativas.h"
+#include <sys/inotify.h>
 
 #include "capaFilesystem.h"
 #include "excepciones.h"
@@ -49,14 +50,14 @@ typedef struct{
 
 t_list* listaHilos;
 
-void signalHandler(int signum);
+void signalHandlerKernel(int sigCode);
 void cerrarTodo();
 //--------ConnectionHandler--------//
 void connectionHandler(int socket, char orden);
 void inicializarListas();
 int atenderNuevoPrograma(int socketAceptado);
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola);
-void gestionarNuevaCPU(int socketCPU,int quantum);
+void gestionarNuevaCPU(int socketCPU/*,int quantum*/);
 void gestionarRRFinQuantum(int socket);
 void handShakeCPU(int socketCPU);
 //---------ConnectionHandler-------//
@@ -70,12 +71,15 @@ void gestionarCierreConsola(int socket);
 void gestionarCierreCpu(int socketCpu);
 void gestionarAlocar(int socket);
 void gestionarLiberar(int socket);
+void gestionarIO(int socket);
 //------InterruptHandler-----//
 
 
 //---------Conexiones---------------//
 void selectorConexiones();
+void actualizarConfiguraciones();
 int flagFinalizarKernel = 0;
+char* ruta_config;
 //---------Conexiones-------------//
 
 
@@ -89,14 +93,15 @@ void guardarValorDeSharedVar(int socket);
 //----------shared vars-----------//
 
 
-
 int main() {
 
 	flagPlanificacion = 1;
 	flagHuboAlgunProceso = 0;
 	flagCPUSeDesconecto = 0;
 
-	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel");
+	ruta_config="/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel";
+
+	leerConfiguracion(ruta_config);
 	imprimirConfiguraciones();
 	imprimirInterfazUsuario();
 	inicializarSockets();
@@ -114,44 +119,23 @@ int main() {
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
 
-	signal(SIGINT,signalHandler);
+	signal(SIGINT,signalHandlerKernel);
 
 
 	selectorConexiones();
 	return 0;
 }
 
-void signalHandler(int signum){
-	if(signum== SIGINT){
-		log_error(loggerConPantalla,"El proceso Kernel se ha abortado");
-		cerrarTodo();
-	}
-}
-
-void cerrarTodo(){
-	log_error(loggerConPantalla,"Iniciando rutina de cierre");
-	char comandoSalir = 'X';
-	send(socketFyleSys,&comandoSalir,sizeof(char),0);
-	/*Limpiar los pcbs*/
-	/*Recibir todos los pcb en ejecucion*/
-	/*Avisar a Memoria que se desconecta*/
-	/*Hacer signal a todos los hilos, y setear los flags para que terminen*/
-	exit(1);
-}
-
+int quantum = 0; //FIFO--->0 ; RR != 0
 void connectionHandler(int socket, char orden) {
-	int valor;
-	int quantum = 0; //FIFO--->0 ; RR != 0
 	switch (orden) {
 		case 'A':	atenderNuevoPrograma(socket);
 					break;
-		case 'N':	gestionarNuevaCPU(socket,quantum);
+		case 'N':	gestionarNuevaCPU(socket/*,quantum*/);
 					break;
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
-		case 'F':	/*TODO: Crear un hilo para cada servicio de FS*/
-					//printf("Yendo a FS\n");
-					interfaceHandlerFileSystem(socket);//En vez de la V , poner el recv de la orden que quieras hacer con FS
+		case 'F':	gestionarIO(socket);
 					break;
 		case 'P':	handShakeCPU(socket);
 					break;
@@ -164,8 +148,8 @@ void connectionHandler(int socket, char orden) {
 		case 'Z':	eliminarSocket(socket);
 					break;
 		default:
-					log_error(loggerConPantalla,"Orden %c no definida", orden);
-					break;
+				log_error(loggerConPantalla,"Orden %c no definida", orden);
+				break;
 		}
 	return;
 }
@@ -216,12 +200,12 @@ t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
 
 void handShakeCPU(int socketCPU){
 	send(socketCPU,&config_paginaSize,sizeof(int),0);
-	send(socketCPU,&stackSize,sizeof(int),0);
+	send(socketCPU,&config_stackSize,sizeof(int),0);
 }
 
 
 
-void gestionarNuevaCPU(int socketCPU,int quantum){
+void gestionarNuevaCPU(int socketCPU/*,int quantum*/){
 
 	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
 	send(socketCPU,&quantum,sizeof(int),0);
@@ -273,6 +257,7 @@ void gestionarRRFinQuantum(int socket){
 void interruptHandler(int socketAceptado,char orden){
 	log_warning(loggerConPantalla,"Ejecutando interrupt handler");
 
+	printf("\n\nORDEN %c\n\n", orden);
 	switch(orden){
 
 		case 'B':	excepcionPlanificacionDetenida(socketAceptado);
@@ -306,6 +291,7 @@ void interruptHandler(int socketAceptado,char orden){
 			break;
 	}
 	log_warning(loggerConPantalla,"Interrupt Handler finalizado");
+	return;
 }
 
 
@@ -315,7 +301,6 @@ void gestionarCierreCpu(int socketCpu){
 		return cpu->socket == socketCpu;
 	}
 t_cpu* cpu;
-	/*TODO: Saque el WAIT porque en el peor de los casos, el planificador se activara, vera que no hay cpus ociosas, y guardara devuelta el pcb en la cola de listos*/
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
@@ -358,7 +343,7 @@ void gestionarCierreConsola(int socket){
 						desplazamiento ++;
 			}
 
-			send(socket,&i,sizeof(int),0); // a modo de ok
+			//send(socket,&i,sizeof(int),0); // a modo de ok
 			log_warning(loggerConPantalla,"Consola %d cerrada",socket);
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
@@ -404,8 +389,10 @@ int buscarProcesoYTerminarlo(int pid){
 
 	if(!encontro){
 		pthread_mutex_lock(&mutexColaEjecucion);
-		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
-			pthread_mutex_unlock(&mutexColaEjecucion);
+		bool estaEjecutando= list_any_satisfy(colaEjecucion,(void*)verificarPid);
+		pthread_mutex_unlock(&mutexColaEjecucion);
+
+		if(estaEjecutando){
 
 			pthread_mutex_lock(&mutexListaCPU);
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
@@ -424,6 +411,7 @@ int buscarProcesoYTerminarlo(int pid){
 
 			procesoATerminar = expropiarVoluntariamente(cpuAFinalizar->socket);
 		}
+
 	}
 
 	if(!encontro){
@@ -440,7 +428,6 @@ int buscarProcesoYTerminarlo(int pid){
 
 		if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
-			liberarRecursosEnMemoria(procesoATerminar);
 			sem_wait(&sem_colaListos);
 			encontro = 1;
 		}
@@ -451,7 +438,6 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_lock(&mutexColaBloqueados);
 		if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
-			liberarRecursosEnMemoria(procesoATerminar);
 			encontro = 1;
 		}
 		pthread_mutex_unlock(&mutexColaBloqueados);
@@ -462,8 +448,6 @@ int buscarProcesoYTerminarlo(int pid){
 		if(list_any_satisfy(listaSemYPCB,(void*)verificarPidSemYPCB)){
 			semYPCBAEliminar = list_remove_by_condition(listaSemYPCB,(void*)verificarPidSemYPCB);
 			procesoATerminar = semYPCBAEliminar->pcb;
-
-			liberarRecursosEnMemoria(procesoATerminar);
 			encontro = 1;
 		}
 		pthread_mutex_unlock(&mutexListaSemYPCB);
@@ -474,7 +458,6 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_lock(&mutexListaFinQuantum);
 		if(list_any_satisfy(listaFinQuantum,(void*)verificarPid)){
 			procesoATerminar = list_remove_by_condition(listaFinQuantum,(void*)verificarPid);
-			liberarRecursosEnMemoria(procesoATerminar);
 			encontro = 1;
 		}
 		pthread_mutex_unlock(&mutexListaFinQuantum);
@@ -486,6 +469,15 @@ int buscarProcesoYTerminarlo(int pid){
 
 	return 0;
 }
+
+
+
+
+
+
+
+
+
 
 void gestionarAlocar(int socket){
 	int size,pid;
@@ -505,7 +497,7 @@ void gestionarAlocar(int socket){
 	data->socket = socket;
 	int err=pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
 	if(err){
-		printf("ERROR; return code from pthread_create() is %d\n", err);
+		log_error(loggerConPantalla,"error al crear el hilo para alocar memoria dinamicais %d\n", err);
 		return;
 	}
 
@@ -519,12 +511,18 @@ void gestionarAlocar(int socket){
 	actualizarAlocar(pid,size);
 }
 
+
+void gestionarIO(int socket){
+	interfaceHandlerFileSystem(socket);
+}
+
 void gestionarLiberar(int socket){
 	int pid,pagina,offset;
 	recv(socket,&pid,sizeof(int),0);
-	log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d",pid);
 	recv(socket,&pagina,sizeof(int),0);
 	recv(socket,&offset,sizeof(int),0);
+	log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d--->Pagina:%d--->Offset:%d",pid,pagina,offset);
+
 
 	liberarBloqueHeap(pid,pagina,offset);
 	actualizarSysCalls(pid);
@@ -634,6 +632,11 @@ void selectorConexiones() {
 	fd_set readFds;
 	struct sockaddr_storage remoteaddr;// temp file descriptor list for select()
 
+	int descriptor_inotify = inotify_init();
+	inotify_add_watch(descriptor_inotify, ruta_config, IN_MODIFY);
+
+
+
 	if (listen(socketServidor, 15) == -1) {
 	perror("listen");
 	exit(1);
@@ -641,9 +644,11 @@ void selectorConexiones() {
 
 	pthread_mutex_lock(&mutex_masterSet);
 	FD_SET(socketServidor, &master); // add the listener to the master set
+	FD_SET(descriptor_inotify,&master);
 	pthread_mutex_unlock(&mutex_masterSet);
 
 	maximoFD = socketServidor; // keep track of the biggest file descriptor so far, it's this one
+
 
 	while(!flagFinalizarKernel) {
 					pthread_mutex_lock(&mutex_masterSet);
@@ -671,9 +676,16 @@ void selectorConexiones() {
 										if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
 										log_info(loggerConPantalla,"Nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 									}
+									else if(socket == descriptor_inotify){
+										char* mensaje = malloc(sizeof(struct inotify_event));
+										read(descriptor_inotify, mensaje, sizeof(struct inotify_event));
+										read(descriptor_inotify, mensaje, sizeof(struct inotify_event));
+										usleep(10000);
+										actualizarConfiguraciones();
+										free(mensaje);
+									}
 									else {
 											recv(socket, &orden, sizeof(char), 0);
-
 											connectionHandler(socket, orden);
 									}
 							}
@@ -682,3 +694,60 @@ void selectorConexiones() {
 	log_info(loggerConPantalla,"Finalizando selector de conexiones");
 }
 
+void actualizarConfiguraciones(){
+	log_info(loggerConPantalla, "Leyendo cambios en archivo de config");
+	t_config* configuraciones = config_create(ruta_config);
+	config_quantum = config_get_int_value(configuraciones, "QUANTUM");
+	config_quantumSleep = config_get_int_value(configuraciones, "QUANTUM_SLEEP");
+
+	printf("Nuevo quantum:%d\n",config_quantum);
+	printf("Nuevo quantum sleep:%d\n",config_quantumSleep);
+
+	config_destroy(configuraciones);
+}
+
+
+void signalHandlerKernel(int sigCode){
+	log_error(loggerConPantalla,"Cerrando proceso Kernel");
+	cerrarTodo();
+}
+
+void cerrarTodo(){
+	log_error(loggerConPantalla,"Iniciando rutina de cierre");
+	char comandoDesconexion = 'X';
+	send(socketFyleSys,&comandoDesconexion,sizeof(char),0);
+	send(socketMemoria,&comandoDesconexion,sizeof(char),0);
+
+
+	log_error(loggerConPantalla,"Finalizando hilos planificadores");
+	pthread_kill(planificadorLargoPlazo,SIGUSR1);
+	pthread_kill(planificadorCortoPlazo,SIGUSR1);
+	pthread_kill(planificadorMedianoPlazo,SIGUSR1);
+
+	int i;
+
+	log_error(loggerConPantalla,"Destruyendo procesos");
+	for(i=0;i<colaNuevos->elements_count;i++){
+		list_remove_and_destroy_element(colaNuevos,i,free);
+	}
+
+	for(i=0;i<colaListos->elements_count;i++){
+			list_remove_and_destroy_element(colaListos,i,free);
+		}
+
+	for(i=0;i<colaEjecucion->elements_count;i++){
+			list_remove_and_destroy_element(colaEjecucion,i,free);
+		}
+
+	for(i=0;i<colaBloqueados->elements_count;i++){
+			list_remove_and_destroy_element(colaBloqueados,i,free);
+		}
+
+	for(i=0;i<colaTerminados->elements_count;i++){
+			list_remove_and_destroy_element(colaTerminados,i,free);
+		}
+
+
+	/*Recibir todos los pcb en ejecucion*/
+	exit(1);
+}

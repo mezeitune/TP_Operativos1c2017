@@ -30,7 +30,10 @@ void signalHandler(int signum)
     {
     	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso y cerrando CPU ...");
     	//cerrarTodo();
-    	if(recibiPcb == 0) cpuFinalizada = 0;
+
+    	printf("Recibir pcb:%d\n",recibiPcb);
+
+    	if(recibiPcb == 0) cpuFinalizadaPorSignal = 0;
     	else CerrarPorSignal();
     }
 }

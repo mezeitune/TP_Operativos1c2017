@@ -79,7 +79,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								printf("Tamaño de pagina menor a 4 bytes\n");
 							} else {
 
-								nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - stackSize);
+								nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - config_stackSize);
 								nueva_posicion_memoria->offset = 0;
 								nueva_posicion_memoria->size = 4;
 								if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
@@ -124,7 +124,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								if(config_paginaSize < 4){
 									printf("Tamaño de pagina menor a 4 bytes\n");
 									} else {
-										nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - stackSize);//ACA MUESTRA -1 PORQUE HAY UNA PAGINA DE CODIGO Y 2 DE STACK
+										nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - config_stackSize);//ACA MUESTRA -1 PORQUE HAY UNA PAGINA DE CODIGO Y 2 DE STACK
 										nueva_posicion_memoria->offset = 0;
 										nueva_posicion_memoria->size = 4;
 										nueva_variable->idVar = variable;
@@ -177,6 +177,7 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	}
 	if(encontre_valor == 1){
 		log_info(loggerConPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
+		expropiarPorDireccionInvalida();
 		return -1;
 	}
 
@@ -193,15 +194,16 @@ void finalizar (){
 		serializarPcbYEnviar(pcb_actual,socketKernel);
 		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
-		free(pcb_actual);
-		printf("\n\nCPU FINALIZADA: %d\n\n", cpuFinalizada);
-		if(cpuFinalizada == 0){
+
+
+		if(cpuFinalizadaPorSignal == 0){
 			CerrarPorSignal();
 		}
 		else{
-			cpuExpropiada = 1;
+			cpuExpropiadaPorKernel = 1;
 			cpuOcupada=1;
 			recibiPcb=1;
+			free(pcb_actual);
 			esperarPCB();
 		}
 }
@@ -233,7 +235,11 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	int num_pagina = puntero / config_paginaSize;
 	int offset = puntero - (num_pagina * config_paginaSize);
 	char *valor_variable = string_itoa(variable);
-	almacenarDatosEnMemoria(valor_variable,sizeof(t_valor_variable),num_pagina, offset);
+	int resultado = almacenarDatosEnMemoria(valor_variable,sizeof(t_valor_variable),num_pagina, offset);
+	if(resultado==-1){
+		log_info(loggerConPantalla, "No se pudo almacenar el contenido %d en %d por excepcion de memoria", valor_variable,puntero);
+		expropiarPorKernel();
+	}
 	log_info(loggerConPantalla, "Valor a Asignar: %s en la posicion %d\n", valor_variable,puntero);
 	free(valor_variable);
 }
@@ -298,7 +304,7 @@ int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->in
 		expropiarPorDireccionInvalida();
 	} else {
 		pcb_actual->programCounter = (program_counter - 1);
-		cantidadInstruccionesAEjecutarPcb_Actual = cantidadInstruccionesAEjecutarPcb_Actual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
+		cantidadInstruccionesAEjecutarDelPcbActual = cantidadInstruccionesAEjecutarDelPcbActual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
 	}
 int i = 0;
 	while(string_cortado[i] != NULL){
@@ -324,7 +330,7 @@ int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->in
 	} else {
 		pcb_actual->programCounter = (program_counter-1);
 		log_info(loggerConPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter+1,etiqueta);
-		cantidadInstruccionesAEjecutarPcb_Actual = cantidadInstruccionesAEjecutarPcb_Actual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
+		cantidadInstruccionesAEjecutarDelPcbActual = cantidadInstruccionesAEjecutarDelPcbActual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
 	}
 int i = 0;
 	while(string_cortado[i] != NULL){

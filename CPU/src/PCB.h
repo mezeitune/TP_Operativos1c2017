@@ -1,7 +1,7 @@
 #include <commons/log.h>
 
 int config_paginaSize;
-int stackSize;
+int config_stackSize;
 
 typedef struct{
 	int pagina;
@@ -209,9 +209,8 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 
 		memcpy(&pcb->indiceEtiquetasSize,pcbSerializado, sizeof(t_size));
 		pcbSerializado += sizeof(t_size);
-		pcb->indiceEtiquetas = malloc(pcb->indiceEtiquetasSize*sizeof(char) + sizeof(char));
+		pcb->indiceEtiquetas = malloc(pcb->indiceEtiquetasSize*sizeof(char));
 		memcpy(pcb->indiceEtiquetas, pcbSerializado, pcb->indiceEtiquetasSize*sizeof(char));
-		strcpy(pcb->indiceEtiquetas + pcb->indiceEtiquetasSize*sizeof(char),"\0");
 		pcbSerializado += pcb->indiceEtiquetasSize*sizeof(char);
 
 	pcb->indiceStack=list_create();
@@ -272,7 +271,7 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 
 			//imprimirPcb(pcb);
 
-		free(pcbADeserializar); //TODO: Sacar este buffer afuera para poder liberarlo despues.
+		free(pcbADeserializar);
 	return pcb;
 }
 
@@ -346,13 +345,16 @@ void recibirTamanioPagina(int socketKernel){
 	char comandoGetPaginaSize= 'P';
 	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
 	recv(socketKernel,&config_paginaSize,sizeof(int),0);
-	recv(socketKernel,&stackSize,sizeof(int),0);
+	recv(socketKernel,&config_stackSize,sizeof(int),0);
+	log_info(loggerConPantalla, "El tamanio de la pagina es %d y el stack tiene %d paginas",config_paginaSize,config_stackSize);
 }
 
 int cantidadPaginasCodigoProceso(int programSize){
 	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
 	int mod = programSize % config_paginaSize;
+	log_info(loggerConPantalla, "Pagina de codigo requeridas: %d",mod);
 	return mod==0? (programSize / config_paginaSize):(programSize / config_paginaSize)+ 1;
+
 }
 
 

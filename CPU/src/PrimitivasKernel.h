@@ -1,11 +1,16 @@
 //SEMAFOROS ANSISOP
 void wait(t_nombre_semaforo identificador_semaforo){
+
+
 	char interruptHandler = 'X';
 	char comandoWait = 'W';
+	char ok;
+
 	int pid = pcb_actual->pid;
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
 	int bloquearScriptONo;
+
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
 	int tamanio = sizeof(char)*strlen(identificadorSemAEnviar);
 	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
@@ -15,15 +20,24 @@ void wait(t_nombre_semaforo identificador_semaforo){
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
-
+	log_info(loggerSinPantalla, "Enviando datos a la capa memoria del kernel para saber si el script debe bloquearse o no");
 	recv(socketKernel,&bloquearScriptONo,sizeof(int),MSG_WAITALL);
 
 
 	if(bloquearScriptONo < 0){
-		cpuBloqueada = 0;
-		serializarPcbYEnviar(pcb_actual, socketKernel);
+		cpuBloqueadaPorSemANSISOP = 0;
+
 		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
-		esperarPCB();
+
+		send(socketKernel, &cantidadIntruccionesEjecutadas, sizeof(int),0);
+
+		serializarPcbYEnviar(pcb_actual, socketKernel);
+
+		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
+		//recv(socketKernel, &ok, sizeof(int),0);
+
+		if(cpuFinalizadaPorSignal != 0) esperarPCB();
+
 	}else log_info(loggerConPantalla, "Script ANSISOP pid: %d sigue su ejecucion normal", pcb_actual->pid);
 
 	int i = 0;
@@ -39,6 +53,9 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	char interruptHandler = 'X';
 	char comandoSignal = 'S';
 	int pid = pcb_actual->pid;
+	int i = 0;
+
+	if(!(i > 0)){
 
 	char** string_cortado = string_split(identificador_semaforo, "\n");
 	char* identificadorSemAEnviar = string_new();
@@ -51,12 +68,15 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
-	int i = 0;
+
+	log_info(loggerSinPantalla, "Enviando datos a la capa memoria del kernel para subir el semaforo %s",string_cortado[0]);
+
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
 		i++;
 	}
 	free(string_cortado);
+	}
 }
 //SEMAFOROS ANSISOP
 
@@ -71,9 +91,10 @@ t_puntero reservar (t_valor_variable espacio){
 	send(socketKernel,&comandoReservarMemoria,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&espacio,sizeof(int),0);
-
+	log_info(loggerConPantalla, "Enviando datos a la capa memoria de proceso pid:%d para reservar memoria dinamica de %d bytes",pid,espacio);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion < 0) {
+		log_info(loggerConPantalla, "No se pudo reservar memoria, expropiando proceso pid:%d",pid);
 		expropiarPorKernel();
 		return 0;
 	}
@@ -81,43 +102,33 @@ t_puntero reservar (t_valor_variable espacio){
 	recv(socketKernel,&offset,sizeof(int),0);
 
 	t_puntero puntero = pagina * config_paginaSize + offset;
-	printf("El puntero es %d",puntero);
+	log_info(loggerConPantalla, "La direccion logica es: %d",puntero);
 	return puntero;
 }
 void liberar (t_puntero puntero){
 
-	int num_paginaDelStack = puntero / config_paginaSize;
-	int offsetDelStack = puntero - (num_paginaDelStack * config_paginaSize);
-	int punteroHeap;
-	char* mensajeRecibido;
-	if ( conseguirDatosMemoria(&mensajeRecibido, num_paginaDelStack,offsetDelStack, sizeof(int))<0)
-		{
-		log_info(loggerConPantalla,"No se pudo solicitar el contenido\n");
-		expropiarPorDireccionInvalida();
-		}
-		else{
-			punteroHeap=atoi(mensajeRecibido);
-		}
+	int num_pagina= puntero / config_paginaSize;
+	int offset = puntero - (num_pagina * config_paginaSize);
+
+
 	int pid = pcb_actual->pid;
 	char comandoInterruptHandler = 'X';
 	char comandoLiberarMemoria = 'L';
 	int resultadoEjecucion;
 	int tamanio = sizeof(t_puntero);
 
-	int num_paginaHeap = punteroHeap/ config_paginaSize;
-	int offsetHeap = punteroHeap - (num_paginaHeap * config_paginaSize);
-
 	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoLiberarMemoria,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);
-	send(socketKernel,&num_paginaHeap,sizeof(int),0);
-	send(socketKernel,&offsetHeap,tamanio,0);
-
+	send(socketKernel,&num_pagina,sizeof(int),0);
+	send(socketKernel,&offset,tamanio,0);
+	log_info(loggerConPantalla, "Enviando datos a la capa memoria del kernel para liberar de la pagina:%d offset:%d del proceso pid:%d",num_pagina,offset,pid);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
-		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",punteroHeap);
-	else
-		log_info(loggerConPantalla,"No se ha podido liberar el heap apuntada por",punteroHeap);
+		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
+	else{
+		log_info(loggerConPantalla,"No se ha podido liberar el heap apuntada por",puntero);
+	}
 }
 //HEAP
 
@@ -143,6 +154,7 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,variable_string,tamanio,0);
+	log_info(loggerConPantalla, "Enviando datos a la capa memoria del kernel para obtener la variable %s del proceso pid:%d",variable,pid);
 	free(variable_string);
 
 	int valor_variable_int;
@@ -170,7 +182,7 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 	string_append(&variable_string, string_cortado[0]);
 	int tamanio = sizeof(int)*strlen(variable_string);
 
-	log_info(loggerConPantalla, "Asignando el valor %d: de id: %s", valor,variable);
+	log_info(loggerConPantalla, "Enviando datos a la capa memoria para asignar el valor %d: de id: %s del proceso pid:%d", valor,variable,pid);
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoAsignarCompartida,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);

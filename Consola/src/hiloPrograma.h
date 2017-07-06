@@ -29,7 +29,6 @@ t_list* listaHilosProgramas;
 time_t now;
 struct tm beg;
 
-
 void crearHiloPrograma();
 void* iniciarPrograma(int* socketHiloKernel);
 void recibirDatosDelKernel(int socketHiloKernel);
@@ -44,14 +43,16 @@ void crearHiloPrograma(){
 
 	nuevoPrograma->tiempoInicio= *localtime(&(time_t){time(NULL)});
 	nuevoPrograma->cantImpresiones = 0;
-
+	log_info(loggerConPantalla,"Creando hilo programa");
 	int err = pthread_create(&nuevoPrograma->idHilo , NULL ,(void*)iniciarPrograma ,&nuevoPrograma->socketHiloKernel);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
 
 	pthread_mutex_lock(&mutexListaHilos);
 	list_add(listaHilosProgramas,nuevoPrograma);
+
 	pthread_mutex_unlock(&mutexListaHilos);
+
 }
 
 void* iniciarPrograma(int* socketHiloKernel){
@@ -62,7 +63,7 @@ void* iniciarPrograma(int* socketHiloKernel){
 		return programa->socketHiloKernel == *socketHiloKernel;
 	}
 
-	printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
+	log_info(loggerConPantalla,"Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
 	scanf("%s", ruta);
 
 	if ((enviarLecturaArchivo(ruta,*socketHiloKernel)) < 0) {
@@ -94,7 +95,7 @@ void finalizarPrograma(){
 		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
 
 			proceso = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
-
+			log_info(loggerSinPantalla,"Avisando al kernel que un programa finalizo");
 
 				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
 				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
@@ -121,12 +122,14 @@ void gestionarCierrePrograma(int pidFinalizar){
 	struct tm tiempoFinalizacion = *localtime(&(time_t){time(NULL)});
 	double seconds = difftime(mktime(&(tiempoFinalizacion)), mktime(&(programaAFinalizar->tiempoInicio)));
 
-
+	log_info(loggerSinPantalla,"\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
+	log_info(loggerSinPantalla,"\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
 	printf("\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
 
 	printf("\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
 
 	free(programaAFinalizar);
+
 }
 
 
@@ -140,6 +143,7 @@ void cargarHiloPrograma(int pid, int socket){
 	t_hiloPrograma* hiloPrograma= list_remove_by_condition(listaHilosProgramas,(void*)verificarSocket);
 	hiloPrograma->pid = pid;
 	list_add(listaHilosProgramas,hiloPrograma);
+	log_info(loggerSinPantalla,"Programa de pid %d cargado a la lista de programas ejecutando",pid);
 	pthread_mutex_unlock(&mutexListaHilos);
 }
 
@@ -157,6 +161,7 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	fseek(f, 0, SEEK_END);
 	tamanioArchivo = ftell(f);
 	rewind(f);
+	log_info(loggerSinPantalla,"Leyendo el contenido del script del archivo");
 
 	bufferArchivo = malloc(tamanioArchivo);
 
@@ -175,7 +180,7 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 		free(bufferArchivo);
 		exit(2);
 	}
-
+	log_info(loggerSinPantalla,"Enviando al kernel la peticion de un nuevo programa con el contenido del script ANSISOP");
 	memcpy(mensaje, &comandoIniciarPrograma,sizeof(char));
 	memcpy(mensaje + sizeof(char), &tamanioArchivo, sizeof(int));
 	memcpy(mensaje + sizeof(char) + sizeof(int), bufferArchivo, tamanioArchivo);

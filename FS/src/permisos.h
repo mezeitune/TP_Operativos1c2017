@@ -58,38 +58,19 @@ int archivoEnModoLectura(char *archivo){
 
 
 /*get:  read n bytes from position pos */
-char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
+void* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size)
 {
-	 	char aDevolver[size-offset];
-		int caracterALeer;
-		int paraDeLeer=size+offset;
-		char name[2];
+	printf("Leyendo datos\n");
+	printf("Offset:%d\n",offset);
+	printf("Size:%d\n",size);
 
-		char* informacion = malloc(sizeof(char)*size);
-		fseek(fp,offset,0);
-		fread(informacion,size,sizeof(char),fp);
+		void* informacion = malloc(size);
+		fseek(fp,offset,SEEK_SET);
+		fread(informacion,size,1,fp);
 
-		printf("La informacion leida es:%s\n",informacion);
+		printf("La informacion leida es:%s\n",(char*)informacion);
 		fclose(fp);
 		return informacion;
-/*
-		while((getc(fp)!=EOF))
-	    {
-	    	caracterALeer = fgetc(fp);
-	        fseek(fp,offset,0);
-
-	        char carALeerToChar=caracterALeer;
-	        fgets(name,1,fp);
-	        strcat(aDevolver, &carALeerToChar); /* copy name into the new var */
-	       /* offset++ ;
-	        if(offset==paraDeLeer) break;
-	    }
-	   fclose(fp);
-
-	   printf("Los bytes a devolver son:%s\n",aDevolver);
-
-	   return aDevolver;
-	   */
 }
 
 char *readFile(char *fileName)
@@ -108,7 +89,6 @@ char *readFile(char *fileName)
 
 void adx_store_data(const char *filepath, const char *data)
 {
-	printf("Almacenando data en bloque :%s\n",filepath);
     FILE *fp = fopen(filepath, "ab");
     if (fp != NULL)
     {

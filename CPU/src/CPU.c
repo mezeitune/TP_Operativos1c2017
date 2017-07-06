@@ -7,7 +7,7 @@
 #include "LogsConfigsSignals.h"
 //void* atenderInterrupciones();
 
-pthread_t lineaInterrupciones;
+
 int main(void) {
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
@@ -46,10 +46,6 @@ int main(void) {
 }*/
 
 
-
-
-
-
 //------------------------------EXPROPIAR PROCESOS-------------------------------------
 void CerrarPorSignal(){
 
@@ -57,15 +53,16 @@ void CerrarPorSignal(){
 	char comandoCierreCpu='C';
 	char comandoCerrarMemoria = 'X';
 
-	if(quantum > 0 && &pcb_actual->pid != NULL){
-		printf("\n\nENTRE!!!!!!!\n\n");
+	if(quantum > 0 && recibiPcb == 0){
 		expropiarPorRRYCerrar();
 	}
-	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
-	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
-	if(&pcb_actual->pid != NULL) serializarPcbYEnviar(pcb_actual, socketKernel);
-	send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
+		send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
+		send(socketKernel,&comandoCierreCpu,sizeof(char),0);
+		send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
 
+	if(recibiPcb == 0){
+		serializarPcbYEnviar(pcb_actual, socketKernel);
+	}
 
 	//shutdown(socketKernel,1);
 	///shutdown(socketInterrupciones,1);
@@ -78,49 +75,55 @@ void CerrarPorSignal(){
 }
 void expropiarVoluntariamente(){
 
-	if(cpuExpropiada == -1) expropiarPorKernel();
-	if(cpuFinalizada == 0) CerrarPorSignal();
-	if(cpuBloqueada == 0) log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
+	if(cpuExpropiadaPorKernel == -1) expropiarPorKernel();
+	if(cpuBloqueadaPorSemANSISOP == 0) log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
 	else expropiarPorRR();
 
 
 }
 void expropiarPorKernel(){
-	log_error(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
+	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	free(pcb_actual);
 	recibiPcb=1;
-	cpuExpropiada = 1;
+	cpuExpropiadaPorKernel = 1;
 	cpuOcupada=1;
 	esperarPCB();
 }
 void expropiarPorDireccionInvalida(){
-	log_error(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
+	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
 	char interruptHandler= 'X';
 	char caseDireccionInvalida= 'M';
+
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseDireccionInvalida,sizeof(char),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	log_info(loggerSinPantalla, "La CPU ha enviado las instrucciones ejecutadas al kernel");
 	free(pcb_actual);
 	recibiPcb=1;
-	cpuExpropiada = 1;
+	cpuExpropiadaPorKernel = 1;
 	cpuOcupada=1;
 	esperarPCB();
 }
 void expropiarPorStackOverflow(){
 	char interruptHandler= 'X';
 	char caseStackOverflow = 'K';
+
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseStackOverflow,sizeof(char),0);
+
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	//send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
-	log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
+	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
+	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+	log_info(loggerSinPantalla, "La CPU ha enviado las instrucciones ejecutadas al kernel");
+	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
 
 	free(pcb_actual);
 	recibiPcb=1;
-	cpuExpropiada = 1;
+	cpuExpropiadaPorKernel = 1;
 	cpuOcupada=1;
 	esperarPCB();
 }
@@ -128,25 +131,30 @@ void expropiarPorStackOverflow(){
 void expropiarPorRR(){
 
 	char comandoExpropiarCpu = 'R';
-	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	send(socketKernel, &cpuFinalizada, sizeof(int),0);
-	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
-	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
-	free(pcb_actual);
-	esperarPCB();
+	if(cpuBloqueadaPorSemANSISOP != 0){
+
+		send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+		send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
+		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
+		serializarPcbYEnviar(pcb_actual,socketKernel);
+		log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
+		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
+		free(pcb_actual);
+		recibiPcb=1;
+		esperarPCB();
+	}
 }
 void expropiarPorRRYCerrar(){
 	char comandoExpropiarCpu = 'R';
 
-	if(pcb_actual->programCounter == pcb_actual->cantidadInstrucciones){
-		printf("\n\nQKHE ONDA AMEWO????\n\n");
+	if(pcb_actual->programCounter == pcb_actual->cantidadInstrucciones){//Por si justo el quantum toca en el end
 		return;
 	}
 	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	send(socketKernel, &cpuFinalizada, sizeof(int),0);
+	send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
 	return;
 }
 //------------------------------EXPROPIAR PROCESOS--------------------------------------
@@ -172,7 +180,7 @@ void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 
 
 int cantidadPaginasTotales(){
-	int paginasTotales= (stackSize + pcb_actual->cantidadPaginasCodigo);
+	int paginasTotales= (config_stackSize + pcb_actual->cantidadPaginasCodigo);
 	return paginasTotales;
 }
 
@@ -187,15 +195,12 @@ void stackOverflow(){
 char* devolverStringFlags(t_banderas flags){
 	char *flagsAConcatenar = string_new();
 	if(flags.creacion==true){
-		printf("Tiene permiso de creacion\n");
 		string_append(&flagsAConcatenar, "c");
 	}
 	if(flags.lectura==true){
-		printf("Tiene permiso de lectura\n");
 		string_append(&flagsAConcatenar, "r");
 	}
 	if(flags.escritura==true){
-		printf("Tiene permiso de escritura\n");
 		string_append(&flagsAConcatenar, "w");
 	}
 

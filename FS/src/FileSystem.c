@@ -81,8 +81,12 @@ int main(void){
 	cantidadBloques=atoi(cantidadBloquesEnChar);
 
 	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), LSB_FIRST);
+	int i;
+	//for(i=0;i<cantidadBloques;i++){
+	//	bitarray_clean_bit(bitarray,i);
+	//}
 
-	printf("El tamano del bitarray es de : %d\n\n\n",bitarray_get_max_bit(bitarray));
+	printf("El tamano del bitarray es de : %d\n",bitarray_get_max_bit(bitarray));
 
 
 	printBitmap();
@@ -119,20 +123,15 @@ void connectionHandler(int socket_cliente)
     	switch(orden){
 		case 'V'://validar archivo
 			validarArchivoFunction(socket_cliente);
-
 			break;
 		case 'C'://crear archivo
 			crearArchivoFunction(socket_cliente);
-
 			break;
 		case 'B'://borrar archivo
 			borrarArchivoFunction(socket_cliente);
-
 			break;
 		case 'O'://obtener datos
 			obtenerDatosArchivoFunction(socket_cliente);
-
-
 			break;
 		case 'G'://guardar archivo
 			guardarDatosArchivoFunction(socket_cliente);
