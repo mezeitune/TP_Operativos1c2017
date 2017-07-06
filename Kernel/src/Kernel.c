@@ -57,7 +57,7 @@ void connectionHandler(int socket, char orden);
 void inicializarListas();
 int atenderNuevoPrograma(int socketAceptado);
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola);
-void gestionarNuevaCPU(int socketCPU,int quantum);
+void gestionarNuevaCPU(int socketCPU/*,int quantum*/);
 void gestionarRRFinQuantum(int socket);
 void handShakeCPU(int socketCPU);
 //---------ConnectionHandler-------//
@@ -126,12 +126,12 @@ int main() {
 	return 0;
 }
 
+int quantum = 0; //FIFO--->0 ; RR != 0
 void connectionHandler(int socket, char orden) {
-	int quantum = 0; //FIFO--->0 ; RR != 0
 	switch (orden) {
 		case 'A':	atenderNuevoPrograma(socket);
 					break;
-		case 'N':	gestionarNuevaCPU(socket,quantum);
+		case 'N':	gestionarNuevaCPU(socket/*,quantum*/);
 					break;
 		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
 					break;
@@ -205,7 +205,7 @@ void handShakeCPU(int socketCPU){
 
 
 
-void gestionarNuevaCPU(int socketCPU,int quantum){
+void gestionarNuevaCPU(int socketCPU/*,int quantum*/){
 
 	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
 	send(socketCPU,&quantum,sizeof(int),0);

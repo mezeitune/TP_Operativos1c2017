@@ -3,6 +3,7 @@ void esperarPCB(){
 
 
 	cpuBloqueadaPorSemANSISOP = 1;
+	cpuFinalizadaPorSignal = 1;
 
 	while(cpuOcupada==1){
 

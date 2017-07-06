@@ -193,6 +193,12 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			send(socketKernel,&tamanio,sizeof(int),0);
 			printf("Tamano:%d\n",tamanio);
 
+			printf("Informacion void*:%s\n",informacion);
+			printf("Informacion char*:%s\n",(char*)informacion);
+			printf("Informacion int:%d\n",*(int*)informacion);
+			printf("Informacion atoi:%d",atoi((char*)informacion));
+
+
 			send(socketKernel,informacion,tamanio,0); //puntero que apunta a la direccion donde quiero obtener la informacion
 			//printf("Data:%s\n",(char*)informacion);
 

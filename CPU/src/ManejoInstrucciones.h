@@ -76,7 +76,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			cantidadIntruccionesEjecutadas++;//para contabilidad del kernel
 		}
 	} else{//es RR con quantum = cantidadInstruccionesAEjecutarPorKernel
-		while (cantidadInstruccionesAEjecutarPorKernel > 0 || cpuBloqueadaPorSemANSISOP != 0){
+		while (cantidadInstruccionesAEjecutarPorKernel > 0 && cpuBloqueadaPorSemANSISOP != 0){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
 			cantidadIntruccionesEjecutadas++;////para contabilidad del kernel

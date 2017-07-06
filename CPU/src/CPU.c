@@ -53,14 +53,16 @@ void CerrarPorSignal(){
 	char comandoCierreCpu='C';
 	char comandoCerrarMemoria = 'X';
 
-	if(quantum > 0 && &pcb_actual->pid != NULL){
+	if(quantum > 0 && recibiPcb == 0){
 		expropiarPorRRYCerrar();
 	}
-	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
-	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
-	if(&pcb_actual->pid != NULL) serializarPcbYEnviar(pcb_actual, socketKernel);
-	send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
+		send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
+		send(socketKernel,&comandoCierreCpu,sizeof(char),0);
+		send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
 
+	if(recibiPcb == 0){
+		serializarPcbYEnviar(pcb_actual, socketKernel);
+	}
 
 	//shutdown(socketKernel,1);
 	///shutdown(socketInterrupciones,1);

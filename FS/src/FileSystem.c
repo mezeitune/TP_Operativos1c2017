@@ -136,8 +136,6 @@ void connectionHandler(int socket_cliente)
 		case 'G'://guardar archivo
 			guardarDatosArchivoFunction(socket_cliente);
 			break;
-		case 'X': close(socket_cliente);
-			break;
 		default:
 			log_error(loggerConPantalla,"Orden no definida:%c",orden);
 			break;

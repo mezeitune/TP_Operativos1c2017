@@ -177,6 +177,7 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	}
 	if(encontre_valor == 1){
 		log_info(loggerConPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
+		expropiarPorDireccionInvalida();
 		return -1;
 	}
 

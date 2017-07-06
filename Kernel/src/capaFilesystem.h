@@ -279,7 +279,7 @@ void escribirArchivo(t_fsEscribir* data){
 	int pid=data->pid;
 	int fileDescriptor=data->fd;
 	int size = data->size;
-	void* informacion = malloc(data->size);
+	void* informacion = malloc(data->size);////////////////////////
 	informacion = data->informacion;
 
 	int resultadoEjecucion;
@@ -819,9 +819,12 @@ void interfaceEscribirArchivo(int socket){
 		recv(socket,&data->fd,sizeof(int),0);
 
 		recv(socket,&data->size,sizeof(int),0);
+
+
 		data->informacion=malloc(data->size);
 
 		recv(socket,data->informacion,data->size,0);
+		printf("\n\nDATA %s \n\n", (char*)data->informacion);
 
 		data->socket =socket;
 

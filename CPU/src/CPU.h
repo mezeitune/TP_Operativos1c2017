@@ -89,7 +89,7 @@ int cantidadInstruccionesAEjecutarPorKernel=0;
 int cpuExpropiadaPorKernel=1;
 int cpuBloqueadaPorSemANSISOP=1;
 int cantidadIntruccionesEjecutadas=0;
-int quantum = 0;
+int quantum;
 int cantidadInstruccionesAEjecutarDelPcbActual;
 int recibiPcb=1;
 int retardo_entre_instruccion;

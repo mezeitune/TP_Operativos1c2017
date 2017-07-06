@@ -199,9 +199,13 @@ void excepcionStackOverflow(int socket){
 	sem_post(&sem_CPU);
 }
 void excepcionDireccionInvalida(int socket){
+	int cantidadDeRafagas;
 	log_error(loggerConPantalla,"Informando a Consola excepcion por Direccion Invalida de Memoria pedido por un proceso ANSISOP");
 	t_pcb* proceso=recibirYDeserializarPcb(socket);
-	//recv(socket,);
+	recv(socket,&cantidadDeRafagas,sizeof(int),0);
+
+	actualizarRafagas(proceso->pid,cantidadDeRafagas);
+
 	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_STACKOVERFLOW]->mensaje,strlen(exitCodeArray[EXIT_STACKOVERFLOW]->mensaje));
 	proceso->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
 	removerDeColaEjecucion(proceso->pid);

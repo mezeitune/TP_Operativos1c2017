@@ -52,7 +52,8 @@ void interfazHandler(){
 		scanf("%c",&orden);
 		cont++;
 		switch(orden){
-				case 'L': 	interfaceObtenerListadoProcesos();
+				case 'L': 	pthread_mutex_lock(&mutexKernelUI); //TODO: No puedo hacer bien un menu
+							interfaceObtenerListadoProcesos();
 							break;
 				case 'O': 	interfaceObtenerDatosProceso();
 							break;
@@ -223,6 +224,7 @@ void interfaceObtenerListadoProcesos(){
 		log_error(loggerConPantalla,"Orden no reconocida-->ORDEN: %c\n", orden);
 		break;
 	}
+	pthread_mutex_unlock(&mutexKernelUI);
 }
 
 void mostrarTodosLosProcesos(){
@@ -277,11 +279,11 @@ void mostrarProcesos(char orden){
 
 void imprimirListadoDeProcesos(t_list* listaPid){
 	log_info(loggerConPantalla,"Cantidad de procesos: %d\n", listaPid->elements_count);
-	printf(loggerConPantalla,"PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
+	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
 	int pid;
 	int i;
 	for(i=0 ; i<listaPid->elements_count ; i++){
-		pid = list_get(listaPid,i);
+		pid =*(int*) list_get(listaPid,i);
 		obtenerDatosProceso(pid);
 	}
 	list_destroy(listaPid);
