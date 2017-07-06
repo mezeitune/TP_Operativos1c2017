@@ -23,7 +23,7 @@ int main(void) {
 	flagCerrarConsola = 1;
 
 	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
-
+	log_info(loggerSinPantalla,"LCreando hilo interfaz usuario");
 	int err = pthread_create(&hiloInterfazUsuario, NULL, (void*)connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
@@ -60,6 +60,7 @@ void connectionHandler() {
 	while (flagCerrarConsola) {
 		pthread_mutex_lock(&mutex_crearHilo);
 		scanf("%c", &orden);
+		log_info(loggerSinPantalla,"Orden definida %d",orden);
 		cont++;
 		imprimirInterfaz();
 
@@ -88,6 +89,7 @@ void connectionHandler() {
 
 void limpiarPantalla(){
 	system("clear");
+	log_info(loggerSinPantalla,"Limpiando pantalla");
 	pthread_mutex_unlock(&mutex_crearHilo);
 }
 
@@ -102,7 +104,7 @@ void cerrarTodo(){
 	pthread_mutex_lock(&mutexListaHilos);
 	int cantidad= listaHilosProgramas->elements_count;
 	flagCerrarConsola = 0;
-
+	log_info(loggerSinPantalla,"Enviando al kernel el aviso de que la consola se cierra");
 	if(cantidad == 0) {
 		char comandoCerrarSocket= 'Z';
 		send(socketKernel,&comandoCerrarSocket,sizeof(char),0);
@@ -138,10 +140,6 @@ void cerrarTodo(){
 	pthread_mutex_unlock(&mutexListaHilos);
 
 	send(socketKernel,mensaje,bufferSize,0);
-
-	//recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
-
-
 
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
 	free(mensaje);
