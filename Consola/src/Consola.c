@@ -11,11 +11,9 @@
 #include "hiloPrograma.h"
 
 
-void signalSigIntHandler(int signum);
+void signalHandler(int signum);
 
 int main(void) {
-
-
 
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Consola/config_Consola");
 	imprimirConfiguraciones();
@@ -23,35 +21,42 @@ int main(void) {
 	inicializarListas();
 	inicializarSemaforos();
 	flagCerrarConsola = 1;
+
 	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
 
 	int err = pthread_create(&hiloInterfazUsuario, NULL, (void*)connectionHandler,NULL);
 	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
 
-	signal(SIGINT, signalSigIntHandler);
+	signal(SIGINT, signalHandler);
 
 	pthread_join(hiloInterfazUsuario, NULL);
-	log_info(loggerConPantalla,"La Consola ha finalizado");
+	log_warning(loggerConPantalla,"La Consola ha finalizado");
 	return 0;
 
 }
 
-void signalSigIntHandler(int signum)
+void signalHandler(int signum)
 {
     if (signum == SIGINT)
     {
-    	log_warning(loggerConPantalla,"Finalizando consola \n");
+    	log_warning(loggerConPantalla,"Finalizando consola");
     	cerrarTodo();
-    	pthread_kill(hiloInterfazUsuario,0);
-    	exit(1);
-
+    	pthread_kill(hiloInterfazUsuario,SIGUSR1);
+    }
+    if(signum==SIGUSR1){
+    	log_warning(loggerConPantalla,"Finalizando hilo de Interfaz de Usuario");
+    	int exitCode;
+    	pthread_exit(&exitCode);
     }
 }
 
 void connectionHandler() {
+
+	signal(SIGUSR1,signalHandler);
 	char orden;
 	int cont=0;
 	imprimirInterfaz();
+
 	while (flagCerrarConsola) {
 		pthread_mutex_lock(&mutex_crearHilo);
 		scanf("%c", &orden);
@@ -93,9 +98,11 @@ void cerrarTodo(){
 	char comandoCierreConsola = 'E';
 	int i;
 	int desplazamiento = 0;
+
 	pthread_mutex_lock(&mutexListaHilos);
 	int cantidad= listaHilosProgramas->elements_count;
 	flagCerrarConsola = 0;
+
 	if(cantidad == 0) {
 		char comandoCerrarSocket= 'Z';
 		send(socketKernel,&comandoCerrarSocket,sizeof(char),0);
@@ -103,33 +110,38 @@ void cerrarTodo(){
 		return;
 	}
 
-	int mensajeSize = sizeof(int) + sizeof(int)* cantidad;
-	char* mensaje= malloc(mensajeSize);
+	int bufferSize = sizeof(char)*2 +sizeof(int)*2 + sizeof(int)* cantidad;
+	int bufferProcesosSize = sizeof(int) + sizeof(int)*cantidad;
+
+	char* mensaje= malloc(bufferSize);
+
 	t_hiloPrograma* procesoACerrar = malloc(sizeof(t_hiloPrograma));
+
+	memcpy(mensaje + desplazamiento,&comandoInterruptHandler,sizeof(char));
+	desplazamiento += sizeof(char);
+
+	memcpy(mensaje + desplazamiento,&comandoCierreConsola,sizeof(char));
+	desplazamiento+=sizeof(char);
+
+	memcpy(mensaje + desplazamiento,&bufferProcesosSize,sizeof(int));
+	desplazamiento +=sizeof(int);
+
 	memcpy(mensaje+desplazamiento,&cantidad,sizeof(int));
 	desplazamiento += sizeof(int);
 
 
 	for(i=0;i<cantidad;i++){
 		procesoACerrar = (t_hiloPrograma*) list_get(listaHilosProgramas,i);
-		memcpy(mensaje+desplazamiento,&procesoACerrar->pid,sizeof(int));
+		memcpy(mensaje + desplazamiento,&procesoACerrar->pid,sizeof(int));
 		desplazamiento += sizeof(int);
 	}
 	pthread_mutex_unlock(&mutexListaHilos);
 
-	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
-	send(socketKernel,&comandoCierreConsola,sizeof(char),0);
+	send(socketKernel,mensaje,bufferSize,0);
+
+	//recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
 
 
-	send(socketKernel,&mensajeSize,sizeof(int),0);
-	send(socketKernel,mensaje,mensajeSize,0);
-
-
-	recv(socketKernel,&desplazamiento,sizeof(int),0); /*A modo de OK del Kernel*/
-
-	printf("Hilos procesos abiertos :%d\n ",listaHilosProgramas->elements_count);
-
-	sleep(3);
 
 	list_destroy_and_destroy_elements(listaHilosProgramas,free);
 	free(mensaje);

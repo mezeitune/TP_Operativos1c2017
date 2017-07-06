@@ -343,7 +343,7 @@ void gestionarCierreConsola(int socket){
 						desplazamiento ++;
 			}
 
-			send(socket,&i,sizeof(int),0); // a modo de ok
+			//send(socket,&i,sizeof(int),0); // a modo de ok
 			log_warning(loggerConPantalla,"Consola %d cerrada",socket);
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
@@ -389,8 +389,10 @@ int buscarProcesoYTerminarlo(int pid){
 
 	if(!encontro){
 		pthread_mutex_lock(&mutexColaEjecucion);
-		if(list_any_satisfy(colaEjecucion,(void*)verificarPid)){
-			pthread_mutex_unlock(&mutexColaEjecucion);
+		bool estaEjecutando= list_any_satisfy(colaEjecucion,(void*)verificarPid);
+		pthread_mutex_unlock(&mutexColaEjecucion);
+
+		if(estaEjecutando){
 
 			pthread_mutex_lock(&mutexListaCPU);
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
@@ -409,6 +411,7 @@ int buscarProcesoYTerminarlo(int pid){
 
 			procesoATerminar = expropiarVoluntariamente(cpuAFinalizar->socket);
 		}
+
 	}
 
 	if(!encontro){
@@ -425,7 +428,6 @@ int buscarProcesoYTerminarlo(int pid){
 
 		if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
-			liberarRecursosEnMemoria(procesoATerminar);
 			sem_wait(&sem_colaListos);
 			encontro = 1;
 		}
@@ -436,7 +438,6 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_lock(&mutexColaBloqueados);
 		if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
-			liberarRecursosEnMemoria(procesoATerminar);
 			encontro = 1;
 		}
 		pthread_mutex_unlock(&mutexColaBloqueados);
@@ -447,8 +448,6 @@ int buscarProcesoYTerminarlo(int pid){
 		if(list_any_satisfy(listaSemYPCB,(void*)verificarPidSemYPCB)){
 			semYPCBAEliminar = list_remove_by_condition(listaSemYPCB,(void*)verificarPidSemYPCB);
 			procesoATerminar = semYPCBAEliminar->pcb;
-
-			liberarRecursosEnMemoria(procesoATerminar);
 			encontro = 1;
 		}
 		pthread_mutex_unlock(&mutexListaSemYPCB);
@@ -459,7 +458,6 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_lock(&mutexListaFinQuantum);
 		if(list_any_satisfy(listaFinQuantum,(void*)verificarPid)){
 			procesoATerminar = list_remove_by_condition(listaFinQuantum,(void*)verificarPid);
-			liberarRecursosEnMemoria(procesoATerminar);
 			encontro = 1;
 		}
 		pthread_mutex_unlock(&mutexListaFinQuantum);
@@ -471,6 +469,15 @@ int buscarProcesoYTerminarlo(int pid){
 
 	return 0;
 }
+
+
+
+
+
+
+
+
+
 
 void gestionarAlocar(int socket){
 	int size,pid;
