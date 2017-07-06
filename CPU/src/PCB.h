@@ -1,7 +1,7 @@
 #include <commons/log.h>
 
 int config_paginaSize;
-int stackSize;
+int config_stackSize;
 
 typedef struct{
 	int pagina;
@@ -345,7 +345,7 @@ void recibirTamanioPagina(int socketKernel){
 	char comandoGetPaginaSize= 'P';
 	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
 	recv(socketKernel,&config_paginaSize,sizeof(int),0);
-	recv(socketKernel,&stackSize,sizeof(int),0);
+	recv(socketKernel,&config_stackSize,sizeof(int),0);
 }
 
 int cantidadPaginasCodigoProceso(int programSize){

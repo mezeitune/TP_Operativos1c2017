@@ -220,7 +220,7 @@ t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
 
 void handShakeCPU(int socketCPU){
 	send(socketCPU,&config_paginaSize,sizeof(int),0);
-	send(socketCPU,&stackSize,sizeof(int),0);
+	send(socketCPU,&config_stackSize,sizeof(int),0);
 }
 
 

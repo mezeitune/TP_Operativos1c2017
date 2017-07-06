@@ -93,7 +93,7 @@ void handshakeMemoria(){
 int pedirMemoria(t_pcb* procesoListo){
 		log_info(loggerConPantalla, "Solicitando Memoria--->PID: %d", procesoListo->pid);
 		void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
-		int paginasTotalesRequeridas = procesoListo->cantidadPaginasCodigo + stackSize;
+		int paginasTotalesRequeridas = procesoListo->cantidadPaginasCodigo + config_stackSize;
 		int resultadoEjecucion=1;
 		char comandoInicializacion = 'A';
 

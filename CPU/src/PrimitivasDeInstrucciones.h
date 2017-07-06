@@ -79,7 +79,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								printf("Tamaño de pagina menor a 4 bytes\n");
 							} else {
 
-								nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - stackSize);
+								nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - config_stackSize);
 								nueva_posicion_memoria->offset = 0;
 								nueva_posicion_memoria->size = 4;
 								if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
@@ -124,7 +124,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								if(config_paginaSize < 4){
 									printf("Tamaño de pagina menor a 4 bytes\n");
 									} else {
-										nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - stackSize);//ACA MUESTRA -1 PORQUE HAY UNA PAGINA DE CODIGO Y 2 DE STACK
+										nueva_posicion_memoria->pagina = (cantidadPaginasTotales(pcb_actual) - config_stackSize);//ACA MUESTRA -1 PORQUE HAY UNA PAGINA DE CODIGO Y 2 DE STACK
 										nueva_posicion_memoria->offset = 0;
 										nueva_posicion_memoria->size = 4;
 										nueva_variable->idVar = variable;

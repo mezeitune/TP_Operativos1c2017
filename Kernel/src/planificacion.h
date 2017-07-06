@@ -580,7 +580,7 @@ int obtenerPaginaSiguiente(int pid){
 
 	pthread_mutex_lock(&mutexColaEjecucion);
 	t_pcb* pcb = list_remove_by_condition(colaEjecucion,(void*)verificaPid);
-	pagina = pcb->cantidadPaginasCodigo + stackSize + proceso->cantPaginasHeap ;
+	pagina = pcb->cantidadPaginasCodigo + config_stackSize + proceso->cantPaginasHeap ;
 	list_add(colaEjecucion,pcb);
 	pthread_mutex_unlock(&mutexColaEjecucion);
 

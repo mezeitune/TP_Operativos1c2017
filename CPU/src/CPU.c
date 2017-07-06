@@ -171,7 +171,7 @@ void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 
 
 int cantidadPaginasTotales(){
-	int paginasTotales= (stackSize + pcb_actual->cantidadPaginasCodigo);
+	int paginasTotales= (config_stackSize + pcb_actual->cantidadPaginasCodigo);
 	return paginasTotales;
 }
 
