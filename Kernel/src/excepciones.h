@@ -121,7 +121,7 @@ void excepcionFileDescriptorNoAbierto(int socket,int pid){
 	encolarEnListaParaTerminar(proceso);
 }
 
-void  excepcionSinTablaArchivos(int socket,int pid){
+void excepcionSinTablaArchivos(int socket,int pid){
 	log_error(logKernel,"Informando a Consola excepcion porque el proceso nunca inicializo la tabla de archivos");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->mensaje,strlen(exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
@@ -180,6 +180,7 @@ void excepcionCantidadDePaginas(int socket,int pid){
 	encolarEnListaParaTerminar(proceso);
 }
 
+/*TODO: Dos excepeciones iguales?*/
 void excepcionStackOverflow(int socket){
 
 	int cantidadDeRafagas;
@@ -190,8 +191,8 @@ void excepcionStackOverflow(int socket){
 
 	actualizarRafagas(proceso->pid,cantidadDeRafagas);
 
-	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje));
-	proceso->exitCode =  exitCodeArray[EXIT_MEMORY_EXCEPTION]->value;
+	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_STACKOVERFLOW]->mensaje,strlen(exitCodeArray[EXIT_STACKOVERFLOW]->mensaje));
+	proceso->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
 	removerDeColaEjecucion(proceso->pid);
 	encolarEnListaParaTerminar(proceso);
 	cambiarEstadoCpu(socket,OCIOSA);
@@ -199,6 +200,7 @@ void excepcionStackOverflow(int socket){
 
 	sem_post(&sem_CPU);
 }
+
 void excepcionDireccionInvalida(int socket){
 	int cantidadDeRafagas;
 	log_error(logKernel,"Informando a Consola excepcion por Direccion Invalida de Memoria pedido por un proceso ANSISOP");
@@ -223,7 +225,6 @@ void terminarProceso(t_pcb* proceso){
 
 	finalizarHiloPrograma(proceso->pid);
 
-
 	pthread_mutex_lock(&mutexMemoria);
 	liberarRecursosEnMemoria(proceso);
 	pthread_mutex_unlock(&mutexMemoria);
@@ -237,7 +238,7 @@ void terminarProceso(t_pcb* proceso){
 
 t_pcb* expropiarVoluntariamente(int socket){
 	t_pcb* pcb;
-	log_info(logKernel,"Expropiando pcb--->CPU:%d",socket);
+	log_info(logKernel,"Expropiando proceso--->CPU:%d",socket);
 	char comandoExpropiar='F';
 	int rafagas;
 
@@ -256,11 +257,10 @@ t_pcb* expropiarPorEjecucion(int socket){
 	t_pcb* pcb;
 	int resultadoEjecucion=-1;
 	int rafagas;
-	log_info(logKernel,"Expropiando pcb--->CPU:%d",socket);
+	log_info(logKernel,"Expropiando proceso--->CPU:%d",socket);
 
 		send(socket,&resultadoEjecucion,sizeof(int),0);
-		printf("Mande la orden de expropiar\n");
-		sleep(3);
+
 		pcb = recibirYDeserializarPcb(socket);
 		recv(socket,&rafagas,sizeof(int),0);
 		actualizarRafagas(pcb->pid,rafagas);
@@ -269,6 +269,7 @@ t_pcb* expropiarPorEjecucion(int socket){
 		sem_post(&sem_CPU);
 		return pcb;
 }
+
 void cambiarEstadoATerminado(t_pcb* procesoTerminar){
 	log_info(logKernel,"Almacenando en Terminados--->PID:%d",procesoTerminar->pid);
 	_Bool verificaPid(t_pcb* pcb){
@@ -279,6 +280,7 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar){
 	list_add(colaTerminados,procesoTerminar);
 	pthread_mutex_unlock(&mutexColaTerminados);
 }
+
 void finalizarHiloPrograma(int pid){
 	int hiloNoFinalizado;
 	int size=sizeof(char)* strlen("Finalizar");
@@ -303,7 +305,6 @@ void finalizarHiloPrograma(int pid){
 
 	//free(mensaje);TODO: Ver este free
 }
-
 
 void cambiarEstadoCpu(int socket,int estado){
 	_Bool verificaSocket(t_cpu* cpu){
@@ -335,7 +336,6 @@ void encolarEnListaParaTerminar(t_pcb* proceso){
 	sem_post(&sem_administrarFinProceso);
 }
 
-
 void inicializarExitCodeArray(){
 	int i;
 	for(i = 0 ; i< CANTIDADEXCEPCIONES ; i++){
@@ -346,7 +346,7 @@ void inicializarExitCodeArray(){
 	exitCodeArray[EXIT_OK]->mensaje= "Programa finalizado exitosamente";
 
 	exitCodeArray[EXIT_RESOURCE]->value = -1;
-	exitCodeArray[EXIT_RESOURCE]->mensaje= "No se puedieron reservar recursos para ejecutar el programa";
+	exitCodeArray[EXIT_RESOURCE]->mensaje= "No se pudieron reservar recursos para ejecutar el programa";
 
 	exitCodeArray[EXIT_FILE_NOT_FOUND]->value = -2;
 	exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje= "El programa intento acceder a un archivo que no existe";
