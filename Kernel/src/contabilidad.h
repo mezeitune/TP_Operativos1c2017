@@ -1,4 +1,3 @@
-/*
  /*
  * contabilidad.h
  *
@@ -29,6 +28,7 @@ void crearInformacionContable(int pid);
 void actualizarAlocar(int pid,int size);
 void actualizarLiberar(int pid,int size);
 void actualizarRafagas(int pid, int rafagas);
+void actualizarSysCalls(int pid);
 void completarRafagas(int pid, int rafagas);
 t_contable* buscarInformacionContable(int pid);
 
@@ -53,7 +53,6 @@ void actualizarSysCalls(int pid){
 
 	t_contable* contabilidad = malloc(sizeof(t_contable));
 
-	printf("\n\nPID: %d\n\n", pid);
 	pthread_mutex_lock(&mutexListaContable);
 	contabilidad = buscarInformacionContable(pid);
 	contabilidad->cantSysCalls += 1;
@@ -61,15 +60,13 @@ void actualizarSysCalls(int pid){
 	pthread_mutex_unlock(&mutexListaContable);
 }
 
-
-void aumentarPaginasHeap(int pid){
+void actualizarPaginasHeap(int pid){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* contabilidad = buscarInformacionContable(pid);
 	contabilidad->cantPaginasHeap+=1;
 	list_add(listaContable,contabilidad);
 	pthread_mutex_unlock(&mutexListaContable);
 }
-
 
 void actualizarRafagas(int pid, int rafagas){
 	pthread_mutex_lock(&mutexListaContable);
@@ -88,6 +85,7 @@ void completarRafagas(int pid, int rafagas){
 	list_add(listaContable,contabilidad);
 	pthread_mutex_unlock(&mutexListaContable);
 }
+
 void actualizarAlocar(int pid,int size){
 	pthread_mutex_lock(&mutexListaContable);
 	t_contable* contabilidad = buscarInformacionContable(pid);
@@ -105,7 +103,6 @@ void actualizarLiberar(int pid,int size){
 	list_add(listaContable,contabilidad);
 	pthread_mutex_unlock(&mutexListaContable);
 }
-
 
 t_contable* buscarInformacionContable(int pid){
 	_Bool verificaPid(t_contable* contabilidad){

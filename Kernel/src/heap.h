@@ -84,7 +84,7 @@ void reservarEspacioHeap(t_alocar* data){
 							return;
 					}
 
-		aumentarPaginasHeap(data->pid);
+		actualizarPaginasHeap(data->pid);
 		}
 
 	pthread_mutex_lock(&mutexMemoria);

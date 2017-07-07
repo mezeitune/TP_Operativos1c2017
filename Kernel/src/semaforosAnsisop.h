@@ -79,7 +79,7 @@ void waitSemaforoAnsisop(int socketCPU){
 	recv(socketCPU,&pid,sizeof(int),0);
 
 	recibirNombreSemaforo(socketCPU,&semaforo);
-	log_info(loggerConPantalla, "Procesando instruccion atomica Wait---> %s", semaforo);
+	log_info(logKernel, "Procesando instruccion atomica Wait---> %s", semaforo);
 
 
 	if((expropiar = consultarSemaforo(semaforo)) > 0)disminuirSemaforo(semaforo);
@@ -115,7 +115,7 @@ void signalSemaforoAnsisop(int socketCpu){
 	recibirNombreSemaforo(socketCpu,&semaforo);
 	aumentarSemaforo(semaforo);
 
-	log_info(loggerConPantalla, "Procesando instruccion atomica Signal--->: %s", semaforo);
+	log_info(logKernel, "Procesando instruccion atomica Signal--->: %s", semaforo);
 
 	actualizarSysCalls(pid);
 	sem_post(&sem_semAumentados);
@@ -137,8 +137,8 @@ int consultarSemaforo(char* semaforoId){
 
 	pthread_mutex_unlock(&mutexListaSemaforos);
 
-	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
-	log_info(loggerConPantalla,"\nSemaforo valor: %d", semaforoAsociado->valor);
+	log_info(logKernel,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(logKernel,"\nSemaforo valor: %d", semaforoAsociado->valor);
 
 	if(semaforoAsociado->valor < 1) expropiar = -1;
 
@@ -161,15 +161,15 @@ void disminuirSemaforo(char* semaforoId){
 	buscarSemaforo(semaforoId,&semaforoAsociado);
 
 
-	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
-	log_info(loggerConPantalla,"\nSemaforo valor: %d", semaforoAsociado->valor);
+	log_info(logKernel,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(logKernel,"\nSemaforo valor: %d", semaforoAsociado->valor);
 
 	semaforoAsociado->valor -= 1;
 	list_add(listaSemaforosGlobales,semaforoAsociado);
 
 
-	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
-	log_info(loggerConPantalla,"\nSemaforo valor disminuido: %d", semaforoAsociado->valor);
+	log_info(logKernel,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(logKernel,"\nSemaforo valor disminuido: %d", semaforoAsociado->valor);
 
 	pthread_mutex_unlock(&mutexListaSemaforos);
 
@@ -188,8 +188,8 @@ void aumentarSemaforo(char* semaforoId){ /*TODO: Ojo con lo que se haga con el s
 
 	buscarSemaforo(semaforoId,&semaforoAsociado);
 
-	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
-	log_info(loggerConPantalla,"\nSemaforo valor: %d", semaforoAsociado->valor);
+	log_info(logKernel,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(logKernel,"\nSemaforo valor: %d", semaforoAsociado->valor);
 
 
 	semaforoAsociado->valor += 1;
@@ -197,8 +197,8 @@ void aumentarSemaforo(char* semaforoId){ /*TODO: Ojo con lo que se haga con el s
 
 
 
-	log_info(loggerConPantalla,"Semaforo id: %s", semaforoAsociado->id);
-	log_info(loggerConPantalla,"\nSemaforo valor aumentado: %d", semaforoAsociado->valor);
+	log_info(logKernel,"Semaforo id: %s", semaforoAsociado->id);
+	log_info(logKernel,"\nSemaforo valor aumentado: %d", semaforoAsociado->valor);
 
 
 	pthread_mutex_unlock(&mutexListaSemaforos);

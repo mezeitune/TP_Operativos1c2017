@@ -26,7 +26,6 @@ t_list* listaConsolas;
 int buscarSocketHiloPrograma(int pid);
 void informarConsola(int socketHiloPrograma,char* mensaje, int size);
 
-
 int buscarSocketHiloPrograma(int pid){
 	int socketConsola;
 	_Bool verificaPid(t_consola* consola){
@@ -41,8 +40,6 @@ int buscarSocketHiloPrograma(int pid){
 
 	return socketConsola;
 }
-
-
 
 void informarConsola(int socketHiloPrograma,char* mensaje, int size){
 	send(socketHiloPrograma,&size,sizeof(int),0);

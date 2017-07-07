@@ -44,6 +44,7 @@ void inicializarExitCodeArray();
 /*Rutinas para finalizar un proceso*/
 t_pcb* expropiarVoluntariamente(int socket);
 t_pcb* expropiarPorEjecucion(int socket);
+
 void cambiarEstadoCpu(int socket,int estado);
 void removerDeColaEjecucion(int pid);
 
@@ -81,8 +82,8 @@ void excepcionPlanificacionDetenida(int socket){
 	char* mensaje = "Finalizar";
 	int size=strlen(mensaje);
 	informarConsola(socket,mensaje,size);
-	recv(socket,&size,sizeof(int),0); // A modo de ok
 	eliminarSocket(socket);
+
 }
 
 /*

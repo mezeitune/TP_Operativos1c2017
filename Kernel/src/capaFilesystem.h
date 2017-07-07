@@ -651,7 +651,7 @@ void interfaceHandlerFileSystem(int socket){
 			switch(orden){
 					case 'A':	interfaceAbrirArchivo(socket);
 								break;
-					case 'B':	borrarArchivo(socket); //TODO:  Hay que testear la funcion que actualiza los punteros
+					case 'B':	borrarArchivo(socket);
 								break;
 					case 'O':	interfaceLeerArchivo(socket);
 								break;
