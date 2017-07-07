@@ -59,6 +59,16 @@ void validarArchivoFunction(char* path){
 
 }
 
+bool esArchivo(char* archivo){
+	int i=0;
+
+	while(archivo[i]!='\0'){
+		if(archivo[i] == '.') return true;
+		i++;
+	}
+	return false;
+}
+
 
 void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 	FILE *fp;
@@ -78,16 +88,18 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 
 
 	char* carpetaSiguiente = strtok(path,"/");
+	//char *bufferCarpeta =
 	string_append(&montajeCarpeta,carpetaSiguiente);
-	string_append(&montajeCarpeta,"/");
 	printf("\n\nCARPETA %s\n\n", montajeCarpeta);
 	mkdir(montajeCarpeta,0755);
+	string_append(&montajeCarpeta,"/");
 
 	while((carpetaSiguiente=strtok(NULL,"/")) != NULL){
 		string_append(&montajeCarpeta,carpetaSiguiente);
+		if(!esArchivo(carpetaSiguiente))mkdir(montajeCarpeta, 0755);
+		printf("\n\nCARPETA %s\n\n", carpetaSiguiente);
 		string_append(&montajeCarpeta,"/");
-		printf("\n\nCARPETA %s\n\n", montajeCarpeta);
-		mkdir(carpetaSiguiente, 0755);
+
 	}
 
 
