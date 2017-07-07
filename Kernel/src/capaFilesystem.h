@@ -209,14 +209,13 @@ void borrarArchivo(int socket){
 		//hacer los sends para que el FS borre ese archivo y deje los bloques libres
 		char comandoBorrarArchivo='B';
 		char* direccion = buscarDireccionEnTablaGlobal(indiceTablaGlobal);
-		char** array_dir=string_n_split(direccion, 12, "/");
-		char* nombreArchivo=array_dir[0];
-		int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+
+		int tamanoDireccion=sizeof(char)*strlen(direccion);
 
 		pthread_mutex_lock(&mutexFS);
 		send(socketFyleSys,&comandoBorrarArchivo,sizeof(char),0);
-		send(socketFyleSys,&tamanoNombre,sizeof(int),0);
-		send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+		send(socketFyleSys,&tamanoDireccion,sizeof(int),0);
+		send(socketFyleSys,direccion,tamanoDireccion,0);
 		recv(socketFyleSys,&resultadoEjecucion,sizeof(char),0);
 		pthread_mutex_unlock(&mutexFS);
 
@@ -279,7 +278,7 @@ void escribirArchivo(t_fsEscribir* data){
 	int pid=data->pid;
 	int fileDescriptor=data->fd;
 	int size = data->size;
-	void* informacion = malloc(data->size);////////////////////////
+	void* informacion = malloc(data->size);
 	informacion = data->informacion;
 
 	int resultadoEjecucion;
@@ -337,12 +336,10 @@ void escribirArchivo(t_fsEscribir* data){
 			pthread_mutex_unlock(&mutexTablaGlobal);
 
 
-			char** array_dir=string_n_split(direccion, 12, "/");
-			char* nombreArchivo=array_dir[0];
-			int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+			int tamanoDireccion=sizeof(char)*strlen(direccion);
 
-			printf("Tamano del nombre :%d\n",tamanoNombre);
-			printf("Nombre del archivo: %s\n",nombreArchivo);
+			printf("Tamano del nombre :%d\n",tamanoDireccion);
+			printf("Nombre del archivo: %s\n",direccion);
 			printf("Puntero:%d\n",cursor);
 			printf("Tamano a escribir :%d\n",size);
 			//printf("Informacion a escribir:%s\n",informacion);
@@ -350,8 +347,8 @@ void escribirArchivo(t_fsEscribir* data){
 
 			pthread_mutex_lock(&mutexFS);
 			send(socketFyleSys,&comandoGuardarDatos,sizeof(char),0);
-			send(socketFyleSys,&tamanoNombre,sizeof(int),0);
-			send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+			send(socketFyleSys,&tamanoDireccion,sizeof(int),0);
+			send(socketFyleSys,direccion,tamanoDireccion,0);
 			send(socketFyleSys,&cursor,sizeof(int),0);
 			send(socketFyleSys,&size,sizeof(int),0);
 			send(socketFyleSys,informacion,size,0);
@@ -428,22 +425,20 @@ void leerArchivo(t_fsLeer* data){
 
 		printf("Direccion:%s\n",direccion);
 
-		char** array_dir=string_n_split(direccion, 12, "/");
-		char* nombreArchivo=array_dir[0];
-		int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+		int tamanoDireccion=sizeof(char)*strlen(direccion);
 
 
 
-		printf("Tamano del nombre del archivo:%d\n",tamanoNombre);
-		printf("Nombre del archivo:%s\n",nombreArchivo);
+		printf("Tamano del nombre del archivo:%d\n",tamanoDireccion);
+		printf("Nombre del archivo:%s\n",direccion);
 		printf("Puntero :%d\n",cursor);
 		printf("Tamano a leer :%d\n",tamanioALeer);
 
 
 		pthread_mutex_lock(&mutexFS);
 		send(socketFyleSys,&comandoLeer,sizeof(char),0);
-		send(socketFyleSys,&tamanoNombre,sizeof(int),0);
-		send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+		send(socketFyleSys,&tamanoDireccion,sizeof(int),0);
+		send(socketFyleSys,direccion,tamanoDireccion,0);
 		send(socketFyleSys,&cursor,sizeof(int),0);
 		send(socketFyleSys,&tamanioALeer,sizeof(int),0);
 
@@ -507,11 +502,6 @@ void moverCursorArchivo(int socket){
 			list_add(listaTablasProcesos,entradaTablaProceso);
 			pthread_mutex_unlock(&mutexListaTablaArchivos);
 
-			/*TODO: Falta codear esta funcion en FS*/
-			//hacer los sends para que el FS verifique que esa posicion existe dentro del archivo
-			//si recibo 0 siginfica que algo anda mal
-			//si recibo 1 significa que esta todo ok
-
 			send(socket,&resultadoEjecucion,sizeof(int),0);
 }
 
@@ -520,18 +510,11 @@ int crearArchivo(int socket_aceptado, char* direccion ){
 
 	int validado;
 
-	char** array_dir=string_n_split(direccion, 12, "/"); /*TODO: HArcodeado*/
-	/*   int d=0;
-	   while(!(array_dir[d] == NULL)){
-	      d++;
-	   }
-	   */
-	char* nombreArchivo=array_dir[0];
-	int tamanoNombre=sizeof(char)*strlen(nombreArchivo);
+	int pathSize=sizeof(char)*strlen(direccion);
 	char ordenCrearArchivo = 'C';
 	send(socketFyleSys,&ordenCrearArchivo,sizeof(char),0);
-	send(socketFyleSys,&tamanoNombre,sizeof(int),0);
-	send(socketFyleSys,nombreArchivo,tamanoNombre,0);
+	send(socketFyleSys,&pathSize,sizeof(int),0);
+	send(socketFyleSys,direccion,pathSize,0);
 
 	recv(socketFyleSys,&validado,sizeof(int),0);
 
