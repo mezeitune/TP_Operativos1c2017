@@ -140,11 +140,9 @@ int funcionHash(int pid, int pagina);
 int main(void)
 {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/Memoria/config_Memoria");
+	inicializarLog("/home/utnso/Log/logMemoria.txt");
 	imprimirConfiguraciones();
 
-	inicializarLog("/home/utnso/Log/logMemoria.txt");
-
-	//bitMap = string_repeat('0',marcos);
 	sem_init(&sem,0,0);
 
 	bloque_Memoria= malloc(marco_size*marcos);
@@ -153,9 +151,6 @@ int main(void)
 
 	inicializarMemoriaAdm();
 	inicializarCache();
-
-	//imprimirBitMap();
-	//imprimirEstructurasAdministrativas();
 
 	socket_servidor = crear_socket_servidor(ipMemoria,puertoMemoria);
 
@@ -694,7 +689,7 @@ int buscarFrameDePaginaDeProceso(int pid, int pagina)
 
 void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
-		log_info(loggerConPantalla,"CONFIGURACIONES\nIP:%s\nPUERTO:%s\nMARCOS:%d\nTAMAÑO MARCO:%d\nENTRADAS CACHE:%d\nCACHE POR PROCESOS:%d\nRETARDO MEMORIA:%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
+		printf("CONFIGURACIONES\nIP:%s\nPUERTO:%s\nMARCOS:%d\nTAMAÑO MARCO:%d\nENTRADAS CACHE:%d\nCACHE POR PROCESOS:%d\nRETARDO MEMORIA:%d\n",ipMemoria,puertoMemoria,marcos,marco_size,entradas_cache,cache_x_proc,retardo_memoria);
 		printf("---------------------------------------------------\n");
 }
 
