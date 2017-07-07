@@ -43,6 +43,8 @@ void validarArchivoFunction(char* path){
 	string_append(&nombreArchivoRecibido, "Archivos/");
 	string_append(&nombreArchivoRecibido, path);
     printf("%s\n", nombreArchivoRecibido);
+
+
 	if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 	    // file exists
 		log_info(loggerConPantalla,"El archivo existe");
@@ -58,16 +60,36 @@ void validarArchivoFunction(char* path){
 }
 
 
-void crearArchivoFunction(char* path){
+void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 	FILE *fp;
 
 	int validado;
 
+	char* montajeCarpeta = string_new();
+
 	log_info(loggerConPantalla,"Creando archivo--->Direccion:%s",path);
-	char *nombreArchivoRecibido = string_new();
-	string_append(&nombreArchivoRecibido, puntoMontaje);
-	string_append(&nombreArchivoRecibido, "Archivos/");
-	string_append(&nombreArchivoRecibido, path);
+	char *rutaAbsoluta = string_new();
+	string_append(&rutaAbsoluta, puntoMontaje);
+	string_append(&rutaAbsoluta, "Archivos/");
+	string_append(&rutaAbsoluta, path);
+
+	string_append(&montajeCarpeta,puntoMontaje);
+	string_append(&montajeCarpeta,"Archivos/");
+
+
+	char* carpetaSiguiente = strtok(path,"/");
+	string_append(&montajeCarpeta,carpetaSiguiente);
+	string_append(&montajeCarpeta,"/");
+	printf("\n\nCARPETA %s\n\n", montajeCarpeta);
+	mkdir(montajeCarpeta,0755);
+
+	while((carpetaSiguiente=strtok(NULL,"/")) != NULL){
+		string_append(&montajeCarpeta,carpetaSiguiente);
+		string_append(&montajeCarpeta,"/");
+		printf("\n\nCARPETA %s\n\n", montajeCarpeta);
+		mkdir(carpetaSiguiente, 0755);
+	}
+
 
 	//Recorro bitmap y veo si hay algun bloque para asignarle
 	//por default se le asigna un bloque al archivo recien creado
@@ -85,7 +107,7 @@ void crearArchivoFunction(char* path){
 	}
 
 	if(encontroUnBloque==1){
-		fp = fopen(nombreArchivoRecibido, "ab+");
+		fp = fopen(rutaAbsoluta, "ab+");
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
 
@@ -100,7 +122,7 @@ void crearArchivoFunction(char* path){
 		string_append(&dataAPonerEnFile,numerito);
 		string_append(&dataAPonerEnFile,"]");
 
-		adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
+		adx_store_data(rutaAbsoluta,dataAPonerEnFile);
 
 		validado=1;
 		send(socketKernel,&validado,sizeof(int),0);
