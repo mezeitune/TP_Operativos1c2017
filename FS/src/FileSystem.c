@@ -64,7 +64,6 @@ char nuevaOrdenDeAccion(int puertoCliente);
 int socketServidor;
 
 int main(void){
-	//TODO:
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/FS/config_FileSys");
 	leerConfiguracionMetadata("/home/utnso/workspace/tp-2017-1c-servomotor/FS/Metadata/Metadata.bin");
 	imprimirConfiguraciones();

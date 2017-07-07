@@ -755,7 +755,7 @@ void interfaceHandlerFileSystem(int socket){
 								break;
 					case 'P':	cerrarArchivo(socket);
 								break;
-					case 'M':	moverCursorArchivo(socket); /*TODO: Falta desarrollar la validacion del tamano del archivo en FS*/
+					case 'M':	moverCursorArchivo(socket);
 								break;
 					default:
 					log_error(loggerConPantalla ,"Orden no reconocida: %c",orden);
@@ -765,7 +765,7 @@ void interfaceHandlerFileSystem(int socket){
 }
 
 void interfaceAbrirArchivo(int socket){
-	pthread_t IOthread;
+	//pthread_t IOthread;
 
 	t_fsAbrir* data = malloc(sizeof(t_fsAbrir));
 
@@ -793,7 +793,7 @@ void interfaceAbrirArchivo(int socket){
 
 void interfaceEscribirArchivo(int socket){
 
-	pthread_t IOthread;
+	//pthread_t IOthread;
 
 		t_fsEscribir* data = malloc(sizeof(t_fsEscribir));
 
@@ -820,7 +820,7 @@ void interfaceEscribirArchivo(int socket){
 }
 
 void interfaceLeerArchivo(int socket){
-	pthread_t IOthread;
+	//pthread_t IOthread;
 
 	t_fsLeer* data = malloc(sizeof(t_fsLeer));
 

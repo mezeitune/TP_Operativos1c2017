@@ -93,7 +93,7 @@ void guardarValorDeSharedVar(int socket);
 //----------shared vars-----------//
 
 
-int main() {
+int main(int argc, char* argv[]) { /*TODO Agregar argv*/
 
 	flagPlanificacion = 1;
 	flagHuboAlgunProceso = 0;

@@ -17,11 +17,6 @@ void printBitmap(){
 
 	int j;
 	for(j=0;j<cantidadBloques;j++){
-		/*if(bitarray_test_bit(bitarray, j)==1){
-			printf("ocupado-");
-		}else{
-			printf("liberado-");
-		}*/
         bool a = bitarray_test_bit(bitarray,j);
         printf("%i", a);
 	}
@@ -71,7 +66,6 @@ bool esArchivo(char* archivo){
 
 
 void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
-	FILE *fp;
 
 	int validado;
 
@@ -88,16 +82,16 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 
 
 	char* carpetaSiguiente = strtok(path,"/");
-	//char *bufferCarpeta =
 	string_append(&montajeCarpeta,carpetaSiguiente);
-	printf("\n\nCARPETA %s\n\n", montajeCarpeta);
-	mkdir(montajeCarpeta,0755);
+
+	mkdir(montajeCarpeta,0777);
 	string_append(&montajeCarpeta,"/");
 
-	while((carpetaSiguiente=strtok(NULL,"/")) != NULL){
+	while((carpetaSiguiente = strtok(NULL,"/")) != NULL){
 		string_append(&montajeCarpeta,carpetaSiguiente);
-		if(!esArchivo(carpetaSiguiente))mkdir(montajeCarpeta, 0755);
-		printf("\n\nCARPETA %s\n\n", carpetaSiguiente);
+
+		if(!esArchivo(carpetaSiguiente)) mkdir(montajeCarpeta, 0777);
+
 		string_append(&montajeCarpeta,"/");
 
 	}
@@ -119,7 +113,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 	}
 
 	if(encontroUnBloque==1){
-		fp = fopen(rutaAbsoluta, "ab+");
+		FILE* fp = fopen(rutaAbsoluta, "ab+");
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
 
@@ -148,7 +142,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 }
 
 
-void borrarArchivoFunction(char* path){ /*TODO: Tambien se podrian borrar los bloques*/
+void borrarArchivoFunction(char* path){
 
 	int validado;
 
@@ -166,7 +160,6 @@ void borrarArchivoFunction(char* path){ /*TODO: Tambien se podrian borrar los bl
 	   //poner en un array los bloques de ese archivo para luego liberarlos
 
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
-	   FILE* fp = fopen(nombreArchivoRecibido, "w"); //Solo para borrarle el contenido
 
 	   if(remove(nombreArchivoRecibido) == 0){
 		   //marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
@@ -294,7 +287,7 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 			   }
 			   else{
 				   if(sizeRestante < tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
-				   else sizeDentroBloque = tamanioBloques; //Leo todo el bloque
+				   else sizeDentroBloque = tamanioBloques; //Leo to-do el bloque
 
 				   char *nombreBloque = string_new();
 				   string_append(&nombreBloque, puntoMontaje);
@@ -313,61 +306,6 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 			   cantidadBloquesLeidos++;
 		   }
 
-
-/*			int hizoLoQueNecesita=0;
-  			 int u=1;
-
-		   while((arrayBloques[d]!=NULL)){
-		   printf("Leyendo data del bloque:%s\n",arrayBloques[d]);
-			   if(cursor<=(tamanioBloques*u)){
-
-				   int t;
-				   int inicial=d;
-				   for(t=inicial;t<((inicial+cantidadBloquesQueNecesito));t++){ /*TODO:t<((inicial+cantidadBloquesQueNecesito)+1) Estaba asi, pero rompia mati*/
-					/*   hizoLoQueNecesita=1;
-					   int indice=atoi(arrayBloques[t]);
-
-						char *nombreBloque = string_new();
-						string_append(&nombreBloque, puntoMontaje);
-						string_append(&nombreBloque, "Bloques/");
-						string_append(&nombreBloque, arrayBloques[t]);
-						string_append(&nombreBloque, ".bin");
-
-						FILE *bloque=fopen(nombreBloque, "rb");
-
-						if(t==(d+cantidadBloquesQueNecesito)){
-
-							int sizeQuePido=size-cursor;
-							int offsetQuePido=0;
-							void* data=obtenerBytesDeUnArchivo(bloque,offsetQuePido,sizeQuePido); /*TODO: Te cambio para que leea el bloque, y no el archivo en si*/
-						/*	string_append(&infoTraidaDeLosArchivos,data);
-
-						}else if(t==inicial){
-
-							int offsetQuePido=cursor-(tamanioBloques*u);
-							int sizeQuePido=tamanioBloques-offsetQuePido;
-							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(bloque,offsetQuePido , sizeQuePido));
-
-						}else{
-
-							int sizeQuePido=tamanioBloques;
-							int offsetQuePido=0;
-							string_append(&infoTraidaDeLosArchivos,obtenerBytesDeUnArchivo(bloque,offsetQuePido , sizeQuePido));
-
-						}
-
-
-				   }
-
-			   }
-			   if(hizoLoQueNecesita==1){
-				   break;
-			   }
-		      d++;
-		      u++;
-		   }
-		//printf("\n %s",obtenerBytesDeUnArchivo(fp, 5, 9));
-		 * */
 
 
 		 printf("La info leida es:%s\n",infoTraidaDeLosArchivos); //Esta trayendo un caracter de mas, si llega al final del bloque
@@ -455,21 +393,12 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 		}else{ //Necesito mas bloques
 
-			 /*TODO: Emprolijar*/
 		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
 		   if(size < tamanioBloques) cuantosBloquesMasNecesito = 1;
 		   if((size%tamanioBloques) == size) {
 			   cuantosBloquesMasNecesito = size / tamanioBloques ;
 			   cuantosBloquesMasNecesito += 1;
 		   }
-
-/*
-			int cuantosBloquesMasNecesito=size/tamanioBloques;
-
-			if((size%tamanioBloques)>0){
-				cuantosBloquesMasNecesito++;
-			}
-			*/
 
 			printf("Bloques de mas que necesito:%d\n",cuantosBloquesMasNecesito);
 
@@ -486,7 +415,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 		        if(bloquesEncontrados==cuantosBloquesMasNecesito) break;
 			}
 
-			printf("Bloques encontrados :%d\n",bloquesEncontrados); /*TODO: Cuando crea el archivo en el mismo proceso, y despues solicita esciribr, no encuentra bloques*/
+			printf("Bloques encontrados :%d\n",bloquesEncontrados);
 
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
 				log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
@@ -497,7 +426,6 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 				int sizeRestante = size;
 				int desplazamiento = 0;//Para el buffer
 
-				//char* loQueVaQuedandoDeBuffer=(char*)buffer;/*TODO: OJO ACA, el size es 0. Deberias preguntar sobre el size a escribir, e ir actualizando eso*/
 
 				//Primero usamos el ultimo bloque - No queremos frag interna
 				bloque = fopen(direccionBloque,"ab");
@@ -535,7 +463,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 					}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
 						printf("No tuve que cortar el string\n");
-						//mandarlo todo de una
+						//mandarlo to-do de una
 						fwrite(buffer + desplazamiento,sizeRestante,1,bloque);
 						//adx_store_data(nombreBloque,buffer + desplazamiento);
 
@@ -605,7 +533,7 @@ void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques){
 			int tamanioNuevo= tamanioArchivoViejo + size;
 
 			 //actualizamos el metadata del archivo con los nuevos bloques y el nuevo tamano del archivo
-			FILE *fp = fopen(path, "w");//Para que borre todo lo que tenia antes
+			FILE *fp = fopen(path, "w");//Para que borre to-do lo que tenia antes
 			char *metadataFile = string_new();
 
 			string_append(&metadataFile, "TAMANIO=");

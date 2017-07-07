@@ -311,11 +311,11 @@ void interfaceTablaGlobalArchivos(){ /*TODO: Mutex tabla global*/
 void interfaceModificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a uno menor*/
 	int nuevoGrado;
 	pthread_mutex_lock(&mutexNuevoProceso);
-	log_info(loggerConPantalla,"Ingresar nuevo grado de multiprogramacion\n");
+	printf("Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
 	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	if(nuevoGrado < gradoMultiProgramacion) {
-		log_error(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
+		log_warning(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
 		pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 		return;
 	}
