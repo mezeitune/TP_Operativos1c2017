@@ -44,6 +44,7 @@ void validarArchivoFunction(char* path){
 	    // file exists
 		log_info(loggerConPantalla,"El archivo existe");
 		validado=1;
+		log_info(loggerConPantalla,"Archivo %s existente en FS",path);
 		send(socketKernel,&validado,sizeof(int),0);
 	} else {
 	    // file doesn't exist
@@ -90,7 +91,11 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 	while((carpetaSiguiente = strtok(NULL,"/")) != NULL){
 		string_append(&montajeCarpeta,carpetaSiguiente);
 
-		if(!esArchivo(carpetaSiguiente)) mkdir(montajeCarpeta, 0777);
+		if(!esArchivo(carpetaSiguiente))
+			{
+				log_info(loggerConPantalla,"Creando nuevo directorio");
+				mkdir(montajeCarpeta, 0777);
+			}
 
 		string_append(&montajeCarpeta,"/");
 
@@ -117,6 +122,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
 
+		log_info(loggerConPantalla,"Asignando nuevo bloque del FS");
 		bitarray_set_bit(bitarray,bloqueEncontrado);
 
 		char *dataAPonerEnFile = string_new();
@@ -128,6 +134,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 		string_append(&dataAPonerEnFile,numerito);
 		string_append(&dataAPonerEnFile,"]");
 
+		log_info(loggerConPantalla,"Guardando info de metadata en %s",rutaAbsoluta);
 		adx_store_data(rutaAbsoluta,dataAPonerEnFile);
 
 		validado=1;
@@ -135,6 +142,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 		printf("Se creo el archivo\n");
 	}else{
 		validado=0;
+		log_info(loggerConPantalla,"No se encontraron bloques disponibles");
 		send(socketKernel,&validado,sizeof(int),0);
 		printf("No se creo el archivo\n");
 	}
@@ -164,6 +172,7 @@ void borrarArchivoFunction(char* path){
 	   if(remove(nombreArchivoRecibido) == 0){
 		   //marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
 		   int d=0;
+		   log_info(loggerConPantalla,"Marcando bloques del archivo como disponibles en el bitmap");
 		   while(!(arrayBloques[d] == NULL)){
 			  bitarray_clean_bit(bitarray,atoi(arrayBloques[d]));
 		      d++;
@@ -492,34 +501,6 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 		validado=0;
 		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
 	}
-
-}
-
-void actualizarInformacionEnBloque(char* direccionBloque,char* buffer,int size){
-
-	FILE* bloque=fopen(direccionBloque,"ab");
-	fclose(bloque);
-
-	bloque = fopen(direccionBloque,"rb");
-	int sizeAntiguo;
-	char* bufferAntiguo;
-	char* bufferTotal;
-
-	fseek(bloque,0,SEEK_END);
-	sizeAntiguo = ftell(bloque);
-	bufferAntiguo = malloc(sizeAntiguo);
-	fseek(bloque,0,SEEK_SET);
-	fread(bufferAntiguo,sizeof(char),sizeAntiguo,bloque);
-	fclose(bloque);
-
-	bloque = fopen(direccionBloque,"wb");
-
-	bufferTotal = malloc(sizeAntiguo + size);
-	strcat(bufferTotal,bufferAntiguo);
-	strcat(bufferTotal,buffer);
-
-	fwrite(bufferTotal,sizeof(char),sizeAntiguo+size,bloque);
-	fclose(bloque);
 
 }
 
