@@ -25,7 +25,6 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	send(socketKernel,&tamanoFlags,sizeof(int),0);
 	send(socketKernel,flagsMapeados,tamanoFlags,0);
 
-	sleep(5);
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor,flagsMapeados);

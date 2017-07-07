@@ -247,6 +247,8 @@ void borrarArchivo(int socket){
 	send(socket,&resultadoEjecucion,sizeof(int),0);
 	log_info(loggerConPantalla,"Archivo borrado--->PID:%d",pid);
 
+
+
 }
 
 void cerrarArchivo(int socket){
