@@ -41,8 +41,8 @@ pthread_t interfaz;
 int flagTerminarUI=0;
 /*-------------LOG-----------------*/
 void inicializarLog(char *rutaDeLog);
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
+t_log *logKernel;
+t_log *logKernel;
 
 
 void interfazHandler(){
@@ -52,8 +52,7 @@ void interfazHandler(){
 		scanf("%c",&orden);
 		cont++;
 		switch(orden){
-				case 'L': 	 //TODO: No puedo hacer bien un menu
-							interfaceObtenerListadoProcesos();
+				case 'L': 	interfaceObtenerListadoProcesos();
 							break;
 				case 'O': 	interfaceObtenerDatosProceso();
 							break;
@@ -72,17 +71,17 @@ void interfazHandler(){
 				case 'I':	imprimirInterfazUsuario();
 							break;
 				case 'F':
-					testEscribirArchivo();
+						testEscribirArchivo();
 					//interfazHandlerParaFileSystem('A',1);
 					break;
 				case 'Z':
-					testLeerArchivo();
+						testLeerArchivo();
 					break;
 				case 'X':
-					testBorrarArchivo();
+						testBorrarArchivo();
 					break;
 				default:
-					if(cont!=2)log_error(loggerConPantalla ,"Orden no reconocida");
+					if(cont!=2)log_error(logKernel ,"Orden no reconocida");
 					else cont = 0;
 					break;
 		}
@@ -95,7 +94,7 @@ void interfaceObtenerDatosProceso(){
 	printf("Ingrese el pid del proceso\n");
 	scanf("%d",&pid);
 		if(verificarProcesoExistente(pid)<0){
-			log_error(loggerConPantalla,"Proceso no existente---> PID: %d", pid);
+			log_error(logKernel,"Proceso no existente---> PID: %d", pid);
 			return;
 		}
 	printf("Datos del proceso--->%d\n",pid);
@@ -107,11 +106,11 @@ void interfaceFinalizarProcesoVoluntariamente(){
 	printf("Ingrese el pid del proceso a finalizar\n");
 	scanf("%d",&pid);
 			if(verificarProcesoExistente(pid)<0){
-				log_error(loggerConPantalla,"Proceso no existente---> PID: %d", pid);
+				log_error(logKernel,"Proceso no existente---> PID: %d", pid);
 				return;
 				}
 			if(verificarProcesoNoTerminado(pid)<0){
-				log_error(loggerConPantalla,"Proceso ya finalizado--->PID: %d", pid);
+				log_error(logKernel,"Proceso ya finalizado--->PID: %d", pid);
 				return;
 				}
 	finalizarProcesoVoluntariamente(pid);
@@ -186,7 +185,7 @@ void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
 }
 
 void imprimirDatosContables(t_contable* proceso){
-	log_info(loggerConPantalla,"%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+	log_info(logKernel,"%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
 				proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 }
 
@@ -196,15 +195,15 @@ void imprimirTablaArchivosProceso(int pid){
 		return entrada->pid == pid;
 	}
 	int i;
-	log_info(loggerConPantalla,"\t\t\tTabla de archivos del proceso\n");
-	log_info(loggerConPantalla,"\t\t\tFile Descriptor\tFlags\tIndice Global\tCursor\n");
+	log_info(logKernel,"\t\t\tTabla de archivos del proceso\n");
+	log_info(logKernel,"\t\t\tFile Descriptor\tFlags\tIndice Global\tCursor\n");
 
 	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
 	t_entradaTablaProceso* entrada;
 
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		log_info(loggerConPantalla,"\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
+		log_info(logKernel,"\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }
@@ -221,7 +220,7 @@ void interfaceObtenerListadoProcesos(){
 		mostrarProcesos(orden);
 		break;
 	default:
-		log_error(loggerConPantalla,"Orden no reconocida-->ORDEN: %c\n", orden);
+		log_error(logKernel,"Orden no reconocida-->ORDEN: %c\n", orden);
 		break;
 	}
 }
@@ -248,25 +247,25 @@ void mostrarProcesos(char orden){ /*TODO: Cambiar logs a prints*/
 		pthread_mutex_unlock(&mutexColaNuevos);
 		break;
 	case 'R':
-		log_info(loggerConPantalla,"Procesos en estado ---> READY\n");
+		log_info(logKernel,"Procesos en estado ---> READY\n");
 		pthread_mutex_lock(&mutexColaListos);
 		imprimirListadoDeProcesos(colaListos);
 		pthread_mutex_unlock(&mutexColaListos);
 		break;
 	case 'E':
-		log_info(loggerConPantalla,"Procesos en estado ---> EXEC\n");
+		log_info(logKernel,"Procesos en estado ---> EXEC\n");
 		pthread_mutex_lock(&mutexColaEjecucion);
 		imprimirListadoDeProcesos(colaEjecucion);
 		pthread_mutex_unlock(&mutexColaEjecucion);
 		break;
 	case 'F':
-		log_info(loggerConPantalla,"Procesos en estado ---> FINISHED\n");
+		log_info(logKernel,"Procesos en estado ---> FINISHED\n");
 		pthread_mutex_lock(&mutexColaTerminados);
 		imprimirListadoDeProcesos(colaTerminados);
 		pthread_mutex_unlock(&mutexColaTerminados);
 		break;
 	case 'B':
-		log_info(loggerConPantalla,"Procesos en estado ---> BLOCKED\n");
+		log_info(logKernel,"Procesos en estado ---> BLOCKED\n");
 		pthread_mutex_lock(&mutexColaBloqueados);
 		imprimirListadoDeProcesos(colaBloqueados);
 		pthread_mutex_unlock(&mutexColaBloqueados);
@@ -277,7 +276,7 @@ void mostrarProcesos(char orden){ /*TODO: Cambiar logs a prints*/
 }
 
 void imprimirListadoDeProcesos(t_list* procesos){
-	log_info(loggerConPantalla,"Cantidad de procesos: %d\n", procesos->elements_count);
+	log_info(logKernel,"Cantidad de procesos: %d\n", procesos->elements_count);
 	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
 	int i;
 	for(i=0 ; i<procesos->elements_count ; i++){
@@ -292,7 +291,7 @@ void finalizarProcesoVoluntariamente(int pid){
 	pthread_mutex_lock(&mutexNuevoProceso);
 	buscarProcesoYTerminarlo(pid);
 	pthread_mutex_unlock(&mutexNuevoProceso);
-	log_info(loggerConPantalla,"Proceso finalizado voluntariamente--->PID: %d",pid);
+	log_info(logKernel,"Proceso finalizado voluntariamente--->PID: %d",pid);
 }
 
 
@@ -315,7 +314,7 @@ void interfaceModificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a 
 	scanf("%d",&nuevoGrado);
 	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	if(nuevoGrado < gradoMultiProgramacion) {
-		log_warning(loggerConPantalla,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
+		log_warning(logKernel,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
 		pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 		return;
 	}
@@ -327,15 +326,15 @@ void interfaceModificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a 
 
 	sem_post(&sem_admitirNuevoProceso);
 	pthread_mutex_unlock(&mutexNuevoProceso);
-	log_info(loggerConPantalla,"Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
+	log_info(logKernel,"Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
 }
 
 void inicializarLog(char *rutaDeLog){
 
 		mkdir("/home/utnso/Log",0755);
 
-		loggerSinPantalla = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
+		logKernel = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
+		logKernel = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
 }
 
 void imprimirInterfazUsuario(){

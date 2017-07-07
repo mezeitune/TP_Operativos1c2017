@@ -59,7 +59,7 @@ void liberarBloqueHeap(int pid, int pagina, int offset);
 void imprimirListaAdministrativaHeap();
 
 void reservarEspacioHeap(t_alocar* data){
-	log_info(loggerConPantalla,"Reservando espacio de memoria dinamica--->PID:%d",data->pid);
+	log_info(logKernel,"Reservando espacio de memoria dinamica--->PID:%d",data->pid);
 	int resultadoEjecucion;
 
 	signal(SIGUSR1,handlerExpropiado);
@@ -105,7 +105,7 @@ void reservarEspacioHeap(t_alocar* data){
 void handlerExpropiado(int signal){
 
 	if(signal==SIGUSR1){
-	log_error(loggerConPantalla,"Un servicio de Alocar se ha abortado porque el proceso debio ser expropiado");
+	log_error(logKernel,"Un servicio de Alocar se ha abortado porque el proceso debio ser expropiado");
 	int valor;
 	pthread_exit(&valor);
 	}
@@ -114,7 +114,7 @@ void handlerExpropiado(int signal){
 
 
 t_punteroCPU *verificarEspacioLibreHeap(int size, int pid){
-	log_info(loggerConPantalla,"Verificando espacio libre en Heap--->PID:%d",pid);
+	log_info(logKernel,"Verificando espacio libre en Heap--->PID:%d",pid);
 	int i = 0;
 	t_punteroCPU* puntero = malloc(sizeof(t_punteroCPU));
 	t_adminBloqueHeap* aux;
@@ -147,7 +147,7 @@ t_punteroCPU *verificarEspacioLibreHeap(int size, int pid){
 
 
 int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva para el proceso
-	log_info(loggerConPantalla,"Reservando pagina de heap--->PID:%d",pid);
+	log_info(logKernel,"Reservando pagina de heap--->PID:%d",pid);
 	int resultadoEjecucion;
 	t_bloqueMetadata aux ;
 
@@ -172,13 +172,13 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	*/
 	list_add(listaAdmHeap, bloqueAdmin);
 	free(buffer);
-	log_info(loggerConPantalla,"Pagina de heap %d reservada--->PID:%d",pagina,pid);
+	log_info(logKernel,"Pagina de heap %d reservada--->PID:%d",pagina,pid);
 	return resultadoEjecucion;
 }
 
 
 void compactarPaginaHeap(int pagina, int pid){
-	log_info(loggerConPantalla,"Compactando pagina de heap %d--->PID :%d",pagina,pid);
+	log_info(logKernel,"Compactando pagina de heap %d--->PID :%d",pagina,pid);
 	int offset = 0;
 	t_bloqueMetadata actual;
 	t_bloqueMetadata siguiente;
@@ -222,7 +222,7 @@ void compactarPaginaHeap(int pagina, int pid){
 		}
 	}
 	free(buffer);
-	log_info(loggerConPantalla,"Pagina de heap %d compactada--->PID :%d",pagina,pid);
+	log_info(logKernel,"Pagina de heap %d compactada--->PID :%d",pagina,pid);
 }
 
 void escribirContenidoPaginaHeap(int pagina, int pid, int offset, int size, void *contenido){
@@ -234,7 +234,7 @@ void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **c
 }
 
 int reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
-	log_info(loggerConPantalla,"Reservando bloque en pagina heap:%d --->PID:%d",puntero->pagina,pid);
+	log_info(logKernel,"Reservando bloque en pagina heap:%d --->PID:%d",puntero->pagina,pid);
 	t_bloqueMetadata auxBloque;
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 	int i = 0;
@@ -279,7 +279,7 @@ int reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
 	escribirEnMemoria(pid,puntero->pagina,puntero->offset+sizeof(t_bloqueMetadata)+size,sizeof(t_bloqueMetadata),buffer); //Anuncio cuanto espacio libre queda en el heap en el siguiente metadata
 
 	free(buffer);
-	log_info(loggerConPantalla,"Bloque de pagina heap %d reservado --->PID:%d",puntero->pagina,pid);
+	log_info(logKernel,"Bloque de pagina heap %d reservado --->PID:%d",puntero->pagina,pid);
 	return 1;
 }
 
@@ -348,7 +348,7 @@ int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int si
 }
 
 void liberarBloqueHeap(int pid, int pagina, int offset){
-	log_info(loggerConPantalla,"Liberando bloque de memoria dinamica--->PID:%d",pid);
+	log_info(logKernel,"Liberando bloque de memoria dinamica--->PID:%d",pid);
 
 
 	int i = 0;
@@ -394,7 +394,7 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 }
 
 void imprimirListaAdministrativaHeap(){
-		log_info(loggerConPantalla,"Imprimir Lista Administrativas Heap\n");
+		log_info(logKernel,"Imprimir Lista Administrativas Heap\n");
 		t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 		int i = 0;
 
