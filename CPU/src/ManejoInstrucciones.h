@@ -35,7 +35,7 @@ char* obtener_instruccion(){
 		else{
 				instruccion=mensajeRecibido;
 			}
-		//free(mensajeRecibido);
+
 		log_info(loggerConPantalla, "Primer parte de instruccion: %s", instruccion);
 		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
 			if ( conseguirDatosMemoria(&mensajeRecibido2,(num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)

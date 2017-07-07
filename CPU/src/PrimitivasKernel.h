@@ -4,7 +4,6 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 	char interruptHandler = 'X';
 	char comandoWait = 'W';
-	char ok;
 
 	int pid = pcb_actual->pid;
 	char** string_cortado = string_split(identificador_semaforo, "\n");
@@ -34,7 +33,6 @@ void wait(t_nombre_semaforo identificador_semaforo){
 		serializarPcbYEnviar(pcb_actual, socketKernel);
 
 		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
-		//recv(socketKernel, &ok, sizeof(int),0);
 
 		if(cpuFinalizadaPorSignal != 0) esperarPCB();
 

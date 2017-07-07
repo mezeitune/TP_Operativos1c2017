@@ -5,7 +5,6 @@
 #include "ManejoPCB.h"
 #include "PrimitivasFS.h"
 #include "LogsConfigsSignals.h"
-//void* atenderInterrupciones();
 
 
 int main(void) {
@@ -15,7 +14,6 @@ int main(void) {
 	inicializarLog("/home/utnso/Log/logCPU.txt");
 
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
-	//socketInterrupciones = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
 	log_info(loggerConPantalla, "Inicia proceso CPU");
@@ -26,26 +24,10 @@ int main(void) {
 	enviarAlKernelPedidoDeNuevoProceso(socketKernel);
 	recibirYMostrarAlgortimoDePlanificacion(socketKernel);
 
-	//pthread_create(&lineaInterrupciones,NULL,atenderInterrupciones,NULL);
 	esperarPCB();
 
 	return 0;
 }
-
-
-
-
-
-/*void* atenderInterrupciones(){
-	char interrupcion;
-
-	while(1){
-	recv(socketInterrupciones,&interrupcion,sizeof(char),0);
-
-	//if(interrupcion == 'F') ;
-
-	}
-}*/
 
 
 //------------------------------EXPROPIAR PROCESOS-------------------------------------

@@ -26,10 +26,10 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	send(socketKernel,flagsMapeados,tamanoFlags,0);
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	//log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor);
+	log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor);
 
-	if(resultadoEjecucion < 0){ /*TODO: No se porque recibe uno positivo aunque haya excepcion*/
-	//	log_error(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s",pid,descriptor);
+	if(resultadoEjecucion < 0){
+		log_error(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s",pid,descriptor);
 		expropiarPorKernel();
 		return 0;
 	}
@@ -200,7 +200,6 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 
 
 			send(socketKernel,informacion,tamanio,0); //puntero que apunta a la direccion donde quiero obtener la informacion
-			//printf("Data:%s\n",(char*)informacion);
 
 
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
@@ -211,13 +210,6 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 					return;
 				}
 			log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);
-
-			/*if(resultadoEjecucion > 0)log_info(loggerConPantalla,"La informacion ha sido escrita con exito en el archivo de descriptor %d PID %d",descriptor_archivo,pid);
-			else {
-				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ",pid,descriptor_archivo);
-				expropiarPorKernel();
-			}
-			*/
 	}
 
 }
