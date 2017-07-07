@@ -34,6 +34,8 @@ int main(void) {
 
 
 
+
+
 /*void* atenderInterrupciones(){
 	char interrupcion;
 

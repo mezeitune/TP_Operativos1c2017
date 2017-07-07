@@ -52,7 +52,7 @@ void selectorConexiones();
 void leerConfiguracion(char* ruta);
 void leerConfiguracionMetadata(char* ruta);
 void imprimirConfiguraciones();
-void connectionHandler(int socket_cliente);
+void connectionHandler();
 
 /*
 void printFilePermissions(char* archivo);
@@ -94,9 +94,9 @@ int main(void){
 
 	//*********************************************************************
 	socketServidor = crear_socket_servidor(ipFS,puertoFS);
-	int socket_cliente=recibirConexion(socketServidor);
+	socketKernel=recibirConexion(socketServidor);
 	while(1){
-		connectionHandler(socket_cliente);
+		connectionHandler();
 	}
 
 	//selectorConexiones();
@@ -115,26 +115,33 @@ void inicializarLog(char *rutaDeLog){
 
 
 
-void connectionHandler(int socket_cliente)
+void connectionHandler()
 {
 	char orden;
-	read(socket_cliente,&orden,sizeof(char));
+	char* path;
+	int pathSize;
+	recv(socketKernel,&orden,sizeof(char),0);
+	recv(socketKernel,&pathSize,sizeof(int),0);
+	path = malloc(pathSize + sizeof(char));
+	recv(socketKernel,path,pathSize,0);
+	strcpy(path + pathSize , "\0");
+
 	log_info(loggerConPantalla,"Iniciando rutina de atencion");
     	switch(orden){
 		case 'V'://validar archivo
-			validarArchivoFunction(socket_cliente);
+			validarArchivoFunction(path);
 			break;
 		case 'C'://crear archivo
-			crearArchivoFunction(socket_cliente);
+			crearArchivoFunction(path);
 			break;
 		case 'B'://borrar archivo
-			borrarArchivoFunction(socket_cliente);
+			borrarArchivoFunction(path);
 			break;
 		case 'O'://obtener datos
-			obtenerDatosArchivoFunction(socket_cliente);
+			obtenerDatosArchivoFunction(path);
 			break;
 		case 'G'://guardar archivo
-			guardarDatosArchivoFunction(socket_cliente);
+			guardarDatosArchivoFunction(path);
 			break;
 		default:
 			log_error(loggerConPantalla,"Orden no definida:%c",orden);

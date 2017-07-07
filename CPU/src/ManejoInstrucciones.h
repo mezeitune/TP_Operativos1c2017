@@ -108,6 +108,7 @@ void ejecutarInstruccion(){
 
 	if(orden == 'F') cpuExpropiadaPorKernel = -1;
 
+
 	free(instruccion);
 
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;

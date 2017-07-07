@@ -4,6 +4,15 @@
 #include "logger.h"
  #include <fcntl.h>
 
+int socketKernel;
+
+void validarArchivoFunction(char* path);
+void crearArchivoFunction(char* path);
+void borrarArchivoFunction(char* path);
+void obtenerDatosArchivoFunction(char* path);
+void guardarDatosArchivoFunction(char* path);
+
+
 void printBitmap(){
 
 	int j;
@@ -23,52 +32,42 @@ void printBitmap(){
 int getSizeBloque(FILE* bloque);
 void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques);
 
-void validarArchivoFunction(int socket_cliente){
-	int tamanoArchivo;
+void validarArchivoFunction(char* path){
 	int validado;
 
-	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-    char* nombreArchivo = malloc(tamanoArchivo*sizeof(char) + sizeof(char));
-    recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
-    strcpy(nombreArchivo + tamanoArchivo,"\0");
-    log_info(loggerConPantalla,"Validando existencia de archivo--->Nombre:%s",nombreArchivo);
+    log_info(loggerConPantalla,"Validando existencia de archivo--->Direccion:%s",path);
 
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
-	string_append(&nombreArchivoRecibido, nombreArchivo);
+	string_append(&nombreArchivoRecibido, path);
     printf("%s\n", nombreArchivoRecibido);
 	if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 	    // file exists
 		log_info(loggerConPantalla,"El archivo existe");
 		validado=1;
-		send(socket_cliente,&validado,sizeof(int),0);
+		send(socketKernel,&validado,sizeof(int),0);
 	} else {
 	    // file doesn't exist
 	  log_warning(loggerConPantalla,"El archivo no existe");
 	   validado=0;
-	   send(socket_cliente,&validado,sizeof(int),0);
+	   send(socketKernel,&validado,sizeof(int),0);
 	}
 
 }
 
 
-void crearArchivoFunction(int socket_cliente){
+void crearArchivoFunction(char* path){
 	FILE *fp;
 
-	int tamanoArchivo;
 	int validado;
 
-	recv(socket_cliente,&tamanoArchivo,sizeof(int),0);
-	void* nombreArchivo = malloc(tamanoArchivo);
-	recv(socket_cliente,nombreArchivo,tamanoArchivo,0);
-	strcpy(nombreArchivo + tamanoArchivo, "\0");
-	log_info(loggerConPantalla,"Creando archivo--->Nombre:%s",nombreArchivo);
+	log_info(loggerConPantalla,"Creando archivo--->Direccion:%s",path);
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
-	string_append(&nombreArchivoRecibido, nombreArchivo);
+	string_append(&nombreArchivoRecibido, path);
 
 	//Recorro bitmap y veo si hay algun bloque para asignarle
 	//por default se le asigna un bloque al archivo recien creado
@@ -104,33 +103,28 @@ void crearArchivoFunction(int socket_cliente){
 		adx_store_data(nombreArchivoRecibido,dataAPonerEnFile);
 
 		validado=1;
-		send(socket_cliente,&validado,sizeof(int),0);
+		send(socketKernel,&validado,sizeof(int),0);
 		printf("Se creo el archivo\n");
 	}else{
 		validado=0;
-		send(socket_cliente,&validado,sizeof(int),0);
+		send(socketKernel,&validado,sizeof(int),0);
 		printf("No se creo el archivo\n");
 	}
 
 }
 
 
-void borrarArchivoFunction(int socket_cliente){ /*TODO: Tambien se podrian borrar los bloques*/
+void borrarArchivoFunction(char* path){ /*TODO: Tambien se podrian borrar los bloques*/
 
-	int tamanoNombreArchivo;
 	int validado;
 
-	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
-	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
-	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
-	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
 
-	log_info(loggerConPantalla,"Borrando archivo:%s",nombreArchivo);
+	log_info(loggerConPantalla,"Borrando archivo:%s",path);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
-	string_append(&nombreArchivoRecibido, nombreArchivo);
+	string_append(&nombreArchivoRecibido, path);
 	printf("Ruta a borrar :%s\n",nombreArchivoRecibido);
 
 
@@ -148,21 +142,21 @@ void borrarArchivoFunction(int socket_cliente){ /*TODO: Tambien se podrian borra
 		      d++;
 		   }
 		   validado=1;
-		   send(socket_cliente,&validado,sizeof(char),0);
+		   send(socketKernel,&validado,sizeof(char),0);
 		   //send diciendo que se elimino correctamente el archivo
-		   log_info(loggerConPantalla,"El archivo ha sido borrar--->Archivo:%s",nombreArchivo);
+		   log_info(loggerConPantalla,"El archivo ha sido borrar--->Archivo:%s",path);
 	   }
 	   else
 	   {
-		   log_error(loggerConPantalla,"Excepecion de filesystem al borrar archivo--->Archivo:%s",nombreArchivo);
+		   log_error(loggerConPantalla,"Excepecion de filesystem al borrar archivo--->Archivo:%s",path);
 		   validado=0;
-		   send(socket_cliente,&validado,sizeof(char),0);
+		   send(socketKernel,&validado,sizeof(char),0);
 	      //send que no se pudo eliminar el archivo
 	   }
 	}else {
-		log_error(loggerConPantalla,"El archivo no se puede borrar porque no existe--->Archivo:%s",nombreArchivo);
+		log_error(loggerConPantalla,"El archivo no se puede borrar porque no existe--->Archivo:%s",path);
 		validado=0;
-		send(socket_cliente,&validado,sizeof(char),0);
+		send(socketKernel,&validado,sizeof(char),0);
 		//send diciendo que hubo un error y no se pudo eliminar el archivo
 	}
 
@@ -172,26 +166,21 @@ void borrarArchivoFunction(int socket_cliente){ /*TODO: Tambien se podrian borra
 }
 
 
-void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo tenog que recibir o que onda
+void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog que recibir o que onda
 
-	int tamanoNombreArchivo;
 	int validado;
 	int cursor;
 	int size;
 
-	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
-	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
-	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
-	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
-	recv(socket_cliente,&cursor,sizeof(int),0);
-	recv(socket_cliente,&size,sizeof(int),0);
+	recv(socketKernel,&cursor,sizeof(int),0);
+	recv(socketKernel,&size,sizeof(int),0);
 
-	log_info(loggerConPantalla,"Obteniendo datos--->Archivo:%s--->Posicion cursor:%d--->Size:%d",nombreArchivo,cursor,size);
+	log_info(loggerConPantalla,"Obteniendo datos--->Archivo:%s--->Posicion cursor:%d--->Size:%d",path,cursor,size);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
-	string_append(&nombreArchivoRecibido, nombreArchivo);
+	string_append(&nombreArchivoRecibido, path);
 
 
 	if( access(nombreArchivoRecibido, F_OK ) != -1 ) {
@@ -350,21 +339,20 @@ void obtenerDatosArchivoFunction(int socket_cliente){//ver tema puntero , si lo 
 		 printf("La info leida es:%s\n",infoTraidaDeLosArchivos); //Esta trayendo un caracter de mas, si llega al final del bloque
 		//si todod ok
 		validado=1;
-		send(socket_cliente,&validado,sizeof(int),0);
-		send(socket_cliente,infoTraidaDeLosArchivos,size,0);
+		send(socketKernel,&validado,sizeof(int),0);
+		send(socketKernel,infoTraidaDeLosArchivos,size,0);
 	} else {
 		log_error(loggerConPantalla,"No se puede leer porque el archivo no existe");
 		validado=-1;
-		send(socket_cliente,&validado,sizeof(int),0); //El archivo no existe
+		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
 	}
 
 
 }
 
 
-void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo tengo que recibir o que onda
+void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que recibir o que onda
 	FILE* bloque;
-	int tamanoNombreArchivo;
 	int validado;
 	int cursor;
 	int size;
@@ -372,30 +360,23 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 	int cuantosBloquesMasNecesito;
 	t_list* nuevosBloques = list_create();
 
-	recv(socket_cliente,&tamanoNombreArchivo,sizeof(int),0);
-	printf("Tamano nombre archivo:%d\n",tamanoNombreArchivo);
-	char* nombreArchivo = malloc(tamanoNombreArchivo + sizeof(char));
 
-	recv(socket_cliente,nombreArchivo,tamanoNombreArchivo,0);
-	strcpy(nombreArchivo + tamanoNombreArchivo, "\0");
-	printf("Nombre archivo:%s\n",nombreArchivo);
-
-	recv(socket_cliente,&cursor,sizeof(int),0);
+	recv(socketKernel,&cursor,sizeof(int),0);
 	printf("Puntero:%d\n",cursor);
 
-	recv(socket_cliente,&size,sizeof(int),0);
+	recv(socketKernel,&size,sizeof(int),0);
 	printf("Tamano de la data:%d\n",size);
 	void* buffer = malloc(size);
 
-	recv(socket_cliente,buffer,size,0);
+	recv(socketKernel,buffer,size,0);
 	printf("Data :%s\n",(char*)buffer);
 
-	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",nombreArchivo,(char*)buffer);
+	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
 	string_append(&nombreArchivoRecibido, "Archivos/");
-	string_append(&nombreArchivoRecibido, nombreArchivo);
+	string_append(&nombreArchivoRecibido, path);
 
 	printf("Toda la ruta :%s\n",nombreArchivoRecibido);
 
@@ -434,7 +415,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 			bloque = fopen(direccionBloque,"ab");
 			fseek(bloque,cursor,SEEK_SET);
 			fwrite(buffer,size,1,bloque);
-			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",nombreArchivo,(char*)buffer);
+			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
 			fclose(bloque);
 			//adx_store_data(direccionBloque,buffer);
 
@@ -535,7 +516,7 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 			}else{
 				log_error(loggerConPantalla,"No existen suficientes bloques para escribir la informacion solicitada");
 				validado=0;
-				send(socket_cliente,&validado,sizeof(int),0);
+				send(socketKernel,&validado,sizeof(int),0);
 				return;
 			}
 		}
@@ -543,11 +524,11 @@ void guardarDatosArchivoFunction(int socket_cliente){//ver tema puntero, si lo t
 		actualizarMetadataArchivo(nombreArchivoRecibido,size,nuevosBloques);
 
 		validado=1;
-		send(socket_cliente,&validado,sizeof(int),0);
+		send(socketKernel,&validado,sizeof(int),0);
 	}else{
-		log_error(loggerConPantalla,"El archivo no fue creado--->Archivo:%s",nombreArchivo);
+		log_error(loggerConPantalla,"El archivo no fue creado--->Archivo:%s",path);
 		validado=0;
-		send(socket_cliente,&validado,sizeof(int),0); //El archivo no existe
+		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
 	}
 
 }
