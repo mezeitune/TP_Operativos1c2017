@@ -23,7 +23,7 @@ void interfaceSolicitarContenidoMemoria();
 void interfaceModificarGradoMultiprogramacion();
 
 void finalizarProcesoVoluntariamente(int pid);
-void imprimirListadoDeProcesos(t_list* listaPid);
+void imprimirListadoDeProcesos(t_list* procesos);
 void filtrarPorPidYMostrar(t_list* cola);
 void interfazHandlerParaFileSystem(char orden,int socket_aceptado);
 int verificarProcesoExistente(int pid);
@@ -52,7 +52,7 @@ void interfazHandler(){
 		scanf("%c",&orden);
 		cont++;
 		switch(orden){
-				case 'L': 	pthread_mutex_lock(&mutexKernelUI); //TODO: No puedo hacer bien un menu
+				case 'L': 	 //TODO: No puedo hacer bien un menu
 							interfaceObtenerListadoProcesos();
 							break;
 				case 'O': 	interfaceObtenerDatosProceso();
@@ -224,7 +224,6 @@ void interfaceObtenerListadoProcesos(){
 		log_error(loggerConPantalla,"Orden no reconocida-->ORDEN: %c\n", orden);
 		break;
 	}
-	pthread_mutex_unlock(&mutexKernelUI);
 }
 
 void mostrarTodosLosProcesos(){
@@ -235,7 +234,7 @@ void mostrarTodosLosProcesos(){
 	mostrarProcesos('F');
 }
 
-void mostrarProcesos(char orden){
+void mostrarProcesos(char orden){ /*TODO: Cambiar logs a prints*/
 
 	int transformarPid(t_pcb* pcb){
 				return pcb->pid;
@@ -243,33 +242,33 @@ void mostrarProcesos(char orden){
 
 	switch(orden){
 	case 'N':
-		log_info(loggerConPantalla,"Procesos en estado ---> NEW");
+		printf("Procesos en estado ---> NEW\n");
 		pthread_mutex_lock(&mutexColaNuevos);
-		imprimirListadoDeProcesos(list_map(colaNuevos,(void*)transformarPid));
+		imprimirListadoDeProcesos(colaNuevos);
 		pthread_mutex_unlock(&mutexColaNuevos);
 		break;
 	case 'R':
-		log_info(loggerConPantalla,"Procesos en estado ---> READY");
+		log_info(loggerConPantalla,"Procesos en estado ---> READY\n");
 		pthread_mutex_lock(&mutexColaListos);
-		imprimirListadoDeProcesos(list_map(colaListos,(void*)transformarPid));
+		imprimirListadoDeProcesos(colaListos);
 		pthread_mutex_unlock(&mutexColaListos);
 		break;
 	case 'E':
-		log_info(loggerConPantalla,"Procesos en estado ---> EXEC");
+		log_info(loggerConPantalla,"Procesos en estado ---> EXEC\n");
 		pthread_mutex_lock(&mutexColaEjecucion);
-		imprimirListadoDeProcesos(list_map(colaEjecucion,(void*)transformarPid));
+		imprimirListadoDeProcesos(colaEjecucion);
 		pthread_mutex_unlock(&mutexColaEjecucion);
 		break;
 	case 'F':
-		log_info(loggerConPantalla,"Procesos en estado ---> FINISHED");
+		log_info(loggerConPantalla,"Procesos en estado ---> FINISHED\n");
 		pthread_mutex_lock(&mutexColaTerminados);
-		imprimirListadoDeProcesos(list_map(colaTerminados,(void*)transformarPid));
+		imprimirListadoDeProcesos(colaTerminados);
 		pthread_mutex_unlock(&mutexColaTerminados);
 		break;
 	case 'B':
-		log_info(loggerConPantalla,"Procesos en estado ---> BLOCKED");
+		log_info(loggerConPantalla,"Procesos en estado ---> BLOCKED\n");
 		pthread_mutex_lock(&mutexColaBloqueados);
-		imprimirListadoDeProcesos(list_map(colaBloqueados,(void*)transformarPid));
+		imprimirListadoDeProcesos(colaBloqueados);
 		pthread_mutex_unlock(&mutexColaBloqueados);
 		break;
 	default:
@@ -277,16 +276,14 @@ void mostrarProcesos(char orden){
 	}
 }
 
-void imprimirListadoDeProcesos(t_list* listaPid){
-	log_info(loggerConPantalla,"Cantidad de procesos: %d\n", listaPid->elements_count);
+void imprimirListadoDeProcesos(t_list* procesos){
+	log_info(loggerConPantalla,"Cantidad de procesos: %d\n", procesos->elements_count);
 	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
-	int pid;
 	int i;
-	for(i=0 ; i<listaPid->elements_count ; i++){
-		pid =*(int*) list_get(listaPid,i);
-		obtenerDatosProceso(pid);
+	for(i=0 ; i<procesos->elements_count ; i++){
+		t_pcb* proceso= list_get(procesos,i);
+		obtenerDatosProceso(proceso->pid);
 	}
-	list_destroy(listaPid);
 }
 
 

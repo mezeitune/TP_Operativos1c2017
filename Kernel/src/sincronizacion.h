@@ -50,7 +50,6 @@ pthread_mutex_t mutexTablaGlobal;
 pthread_mutex_t mutexListaTablaArchivos;
 pthread_mutex_t mutexFS;
 
-pthread_mutex_t mutexKernelUI;
 
 
 sem_t sem_admitirNuevoProceso;
@@ -99,7 +98,6 @@ void inicializarSemaforos(){
 		pthread_mutex_init(&mutexListaTablaArchivos,NULL);
 		pthread_mutex_init(&mutexFS,NULL);
 
-		pthread_mutex_init(&mutexKernelUI,NULL);
 
 
 
