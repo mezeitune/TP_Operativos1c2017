@@ -116,6 +116,7 @@ void abrirArchivo(t_fsAbrir* data){
 
 
 		if(!archivoExistente && !tienePermisoCreacion){//El archivo no eexiste en FS y no tiene permisos para crear entonces no hace nada
+			log_info(loggerConPantalla,"Archivo inexistente en tabla y sin permisos de creacion , expropiando");
 					excepcionPermisosCrear(socket,pid);
 					free(direccion);
 					free(flags);
@@ -124,7 +125,7 @@ void abrirArchivo(t_fsAbrir* data){
 
 
 		if(archivoExistente){
-
+			log_info(loggerConPantalla,"Archivo existente en FS");
 			pthread_mutex_lock(&mutexTablaGlobal);
 			int entradaGlobalExistente=verificarEntradaEnTablaGlobal(direccion);
 			pthread_mutex_unlock(&mutexTablaGlobal);
@@ -135,6 +136,7 @@ void abrirArchivo(t_fsAbrir* data){
 				pthread_mutex_unlock(&mutexTablaGlobal);
 				}
 			else{
+				log_info(loggerConPantalla,"Archivo existente en tabla %s",direccion);
 				pthread_mutex_lock(&mutexTablaGlobal);
 				indiceEnTablaGlobal = buscarIndiceEnTablaGlobal(direccion);
 				pthread_mutex_unlock(&mutexTablaGlobal);
@@ -142,6 +144,7 @@ void abrirArchivo(t_fsAbrir* data){
 		}
 
 		if(!archivoExistente && tienePermisoCreacion){
+			log_info(loggerConPantalla,"Archivo inexistente , pero con permisos de creacion para crearlo en FS");
 			pthread_mutex_lock(&mutexFS);
 			resultadoEjecucion=crearArchivo(socket,direccion);
 			pthread_mutex_unlock(&mutexFS);
@@ -156,11 +159,13 @@ void abrirArchivo(t_fsAbrir* data){
 			indiceEnTablaGlobal=agregarEntradaEnTablaGlobal(direccion,tamanoDireccion);
 			pthread_mutex_unlock(&mutexTablaGlobal);
 		}
+		log_info(loggerConPantalla,"Aumentando open de archivo en tabla global");
 		pthread_mutex_lock(&mutexTablaGlobal);
 		aumentarOpenEnTablaGlobal(direccion);
 		pthread_mutex_unlock(&mutexTablaGlobal);
 
 		pthread_mutex_lock(&mutexListaTablaArchivos);
+		log_info(loggerConPantalla,"Actualizando tablas por proceso para agregar nueva entrada");
 		fileDescriptor = actualizarTablaDelProceso(pid,flags,indiceEnTablaGlobal);
 		pthread_mutex_unlock(&mutexListaTablaArchivos);
 

@@ -305,7 +305,7 @@ t_cpu* cpu;
 }
 
 void imprimirPorConsola(socketAceptado){
-	char* mensaje;
+	void* mensaje;
 	int size;
 	recv(socketAceptado,&size,sizeof(int),0);
 	mensaje=malloc(size);

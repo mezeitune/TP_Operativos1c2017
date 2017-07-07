@@ -87,7 +87,7 @@ int main(void){
 
 	printf("El tamano del bitarray es de : %d\n",bitarray_get_max_bit(bitarray));
 
-
+	log_info(loggerConPantalla,"Imprimiendo Bitmap en FS");
 	printBitmap();
 
 
