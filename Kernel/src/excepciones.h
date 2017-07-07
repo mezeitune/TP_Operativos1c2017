@@ -222,6 +222,7 @@ void terminarProceso(t_pcb* proceso){
 
 	finalizarHiloPrograma(proceso->pid);
 
+
 	pthread_mutex_lock(&mutexMemoria);
 	liberarRecursosEnMemoria(proceso);
 	pthread_mutex_unlock(&mutexMemoria);
@@ -278,7 +279,7 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar){
 	pthread_mutex_unlock(&mutexColaTerminados);
 }
 void finalizarHiloPrograma(int pid){
-
+	int hiloNoFinalizado;
 	int size=sizeof(char)* strlen("Finalizar");
 	char* mensaje = malloc(size * sizeof(char));
 	t_consola* consola = malloc(sizeof(t_consola));
@@ -287,14 +288,19 @@ void finalizarHiloPrograma(int pid){
 			return (consolathread->pid == pid);
 	}
 		pthread_mutex_lock(&mutexListaConsolas);
+		hiloNoFinalizado = list_any_satisfy(listaConsolas,(void*)verificaPid);
+
+		if(hiloNoFinalizado){
+
 		consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
-		pthread_mutex_unlock(&mutexListaConsolas);
 
 		informarConsola(consola->socketHiloPrograma,mensaje,size);
 		eliminarSocket(consola->socketHiloPrograma);
+		free(consola);
+		}
+		pthread_mutex_unlock(&mutexListaConsolas);
 
 	//free(mensaje);TODO: Ver este free
-	free(consola);
 }
 
 

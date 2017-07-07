@@ -322,6 +322,12 @@ void gestionarCierreConsola(int socket){
 	char* procesosAFinalizar;
 	int desplazamiento=0;
 	int i;
+	t_consola* consola;
+
+	_Bool verificaPid(t_consola* consolathread){
+				return (consolathread->pid == pid);
+		}
+
 
 		recv(socket,&size,sizeof(int),0);
 		procesosAFinalizar = malloc(size);
@@ -329,15 +335,19 @@ void gestionarCierreConsola(int socket){
 		cantidad = *((int*)procesosAFinalizar+desplazamiento);
 		desplazamiento++;
 
-		pthread_mutex_lock(&mutexNuevoProceso);
 			for(i=0;i<cantidad;i++){
 				pid = *((int*)procesosAFinalizar+desplazamiento);
-						buscarProcesoYTerminarlo(pid);
+						pthread_mutex_lock(&mutexListaConsolas);
+						consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
+						eliminarSocket(consola->socketHiloPrograma);
+						free(consola);
+						pthread_mutex_unlock(&mutexListaConsolas);
+
+
+						finalizarProcesoVoluntariamente(pid);
 						desplazamiento ++;
 			}
-		pthread_mutex_unlock(&mutexNuevoProceso);
 
-			//send(socket,&i,sizeof(int),0); // a modo de ok
 			log_warning(loggerConPantalla,"Consola %d cerrada",socket);
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
@@ -392,6 +402,7 @@ int buscarProcesoYTerminarlo(int pid){
 			pthread_mutex_unlock(&mutexListaCPU);
 
 			pthread_mutex_lock(&mutexListaHilos);
+
 			if(list_any_satisfy(listaHilos,(void*)verificarPidHilo)){
 					t_hilo* hilo=list_remove_by_condition(listaHilos,(void*)verificarPidHilo);
 

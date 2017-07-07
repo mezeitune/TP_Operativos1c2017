@@ -14,7 +14,6 @@
 
 void inicializarSemaforos();
 
-
 pthread_mutex_t mutexColaNuevos;
 pthread_mutex_t mutexColaListos;
 pthread_mutex_t mutexColaTerminados;
