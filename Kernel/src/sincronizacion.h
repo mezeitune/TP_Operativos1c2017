@@ -28,7 +28,6 @@ pthread_mutex_t mutexListaFinQuantum;
 pthread_mutex_t mutexListaConsolas;
 pthread_mutex_t mutexListaCPU;
 
-pthread_mutex_t mutexRecibirPCB;
 
 pthread_mutex_t mutex_config_gradoMultiProgramacion;
 pthread_mutex_t mutex_gradoMultiProgramacion;

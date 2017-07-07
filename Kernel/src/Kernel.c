@@ -139,8 +139,7 @@ void connectionHandler(int socket, char orden) {
 					break;
 		case 'P':	handShakeCPU(socket);
 					break;
-		case 'X':
-					recv(socket,&orden,sizeof(char),0);
+		case 'X':	recv(socket,&orden,sizeof(char),0);
 					interruptHandler(socket,orden);
 					break;
 		case 'R':	gestionarRRFinQuantum(socket);
@@ -168,7 +167,7 @@ int atenderNuevoPrograma(int socketAceptado){
 					contadorPid--;
 					free(proceso);
 					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
-					interruptHandler(codigoPrograma->socketHiloConsola,'B'); // Informa a consola error por planificacion detenida
+					excepcionPlanificacionDetenida(codigoPrograma->socketHiloConsola);
 					free(codigoPrograma);
 					return -1;
 						}
@@ -235,15 +234,13 @@ void gestionarRRFinQuantum(int socket){
 
 	cpu = list_find(listaCPU, (void*)verificaSocket);
 
-
+	log_info(loggerConPantalla,"Expropiand por fin de quantum");
 	if(cpu->estado != FQPB){
 
 		recv(socket,&cpuFinalizada, sizeof(int),0);
 		recv(socket,&cantidadDeRafagas,sizeof(int),0);
 
-		pthread_mutex_lock(&mutexRecibirPCB);
 		pcb = recibirYDeserializarPcb(socket);
-		pthread_mutex_unlock(&mutexRecibirPCB);
 
 		cambiarEstadoCpu(socket,OCIOSA);
 		actualizarRafagas(pcb->pid,cantidadDeRafagas);
@@ -257,11 +254,8 @@ void gestionarRRFinQuantum(int socket){
 void interruptHandler(int socketAceptado,char orden){
 	log_warning(loggerConPantalla,"Ejecutando interrupt handler");
 
-	printf("\n\nORDEN %c\n\n", orden);
 	switch(orden){
 
-		case 'B':	excepcionPlanificacionDetenida(socketAceptado);
-					break;
 		case 'C':	gestionarCierreCpu(socketAceptado);
 					break;
 		case 'E':	gestionarCierreConsola(socketAceptado);
@@ -276,8 +270,7 @@ void interruptHandler(int socketAceptado,char orden){
 					break;
 		case 'K':	excepcionStackOverflow(socketAceptado);
 					break;
-		case 'M':
-					excepcionDireccionInvalida(socketAceptado);
+		case 'M':	excepcionDireccionInvalida(socketAceptado);
 					break;
 		case 'O':	obtenerValorDeSharedVar(socketAceptado);
 					break;
@@ -325,7 +318,6 @@ void imprimirPorConsola(socketAceptado){
 
 void gestionarCierreConsola(int socket){
 	log_warning(loggerConPantalla,"Gestionando cierre de consola %d",socket);
-	pthread_mutex_lock(&mutexNuevoProceso);
 	int size, cantidad,pid;
 	char* procesosAFinalizar;
 	int desplazamiento=0;
@@ -337,17 +329,18 @@ void gestionarCierreConsola(int socket){
 		cantidad = *((int*)procesosAFinalizar+desplazamiento);
 		desplazamiento++;
 
+		pthread_mutex_lock(&mutexNuevoProceso);
 			for(i=0;i<cantidad;i++){
 				pid = *((int*)procesosAFinalizar+desplazamiento);
 						buscarProcesoYTerminarlo(pid);
 						desplazamiento ++;
 			}
+		pthread_mutex_unlock(&mutexNuevoProceso);
 
 			//send(socket,&i,sizeof(int),0); // a modo de ok
 			log_warning(loggerConPantalla,"Consola %d cerrada",socket);
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
-			pthread_mutex_unlock(&mutexNuevoProceso);
 }
 
 void gestionarFinalizarProgramaConsola(int socket){
@@ -553,7 +546,6 @@ void inicializarListas(){
 	listaCPU = list_create();
 
 	listaCodigosProgramas = list_create();
-	//listaTablasArchivosPorProceso = list_create();
 
 	listaFinQuantum = list_create();
 	listaEspera = list_create();

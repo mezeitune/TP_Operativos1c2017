@@ -151,7 +151,6 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	int tamanioArchivo;
 	char comandoIniciarPrograma='A';
 
-	/* TODO Validar el nombre del archivo */
 
 	if ((f = fopen(ruta, "r+")) == NULL)return -1;
 

@@ -140,7 +140,8 @@ void administrarFinProcesos(){
 	while(!flagTerminarPlanificadorLargoPlazo){
 
 
-		if(!flagPlanificacion)sem_wait(&sem_planificacion);
+		//if(!flagPlanificacion)sem_wait(&sem_planificacion);
+		//verificarPausaPlanificacion();
 
 		sem_wait(&sem_administrarFinProceso);
 
@@ -245,8 +246,6 @@ void interfazReanudarPlanificacion(){
 	else{
 		flagPlanificacion = 1;
 
-		sem_post(&sem_planificacion);
-		sem_post(&sem_planificacion);
 		sem_post(&sem_planificacion);
 		sem_post(&sem_planificacion);
 		log_info(loggerConPantalla, "Se reanudo la planificacion");
