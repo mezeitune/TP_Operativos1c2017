@@ -97,7 +97,7 @@ void finalizarPrograma(){
 		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
 
 			proceso = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
-			log_info(loggerSinPantalla,"Avisando al kernel que un programa finalizo");
+			log_info(loggerConPantalla,"Avisando al kernel que un programa finalizo");
 
 				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
 				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
@@ -140,7 +140,7 @@ void cargarHiloPrograma(int pid, int socket){
 	t_hiloPrograma* hiloPrograma= list_remove_by_condition(listaHilosProgramas,(void*)verificarSocket);
 	hiloPrograma->pid = pid;
 	list_add(listaHilosProgramas,hiloPrograma);
-	log_info(loggerSinPantalla,"Programa de pid %d cargado a la lista de programas ejecutando",pid);
+	log_info(loggerConPantalla,"Programa de pid %d cargado a la lista de programas ejecutando",pid);
 	pthread_mutex_unlock(&mutexListaHilos);
 }
 
@@ -158,7 +158,7 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	fseek(f, 0, SEEK_END);
 	tamanioArchivo = ftell(f);
 	rewind(f);
-	log_info(loggerSinPantalla,"Leyendo el contenido del script del archivo");
+	log_info(loggerConPantalla,"Leyendo el contenido del script del archivo");
 
 	bufferArchivo = malloc(tamanioArchivo);
 
@@ -177,7 +177,7 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 		free(bufferArchivo);
 		exit(2);
 	}
-	log_info(loggerSinPantalla,"Enviando al kernel la peticion de un nuevo programa con el contenido del script ANSISOP");
+	log_info(loggerConPantalla,"Enviando al kernel la peticion de un nuevo programa con el contenido del script ANSISOP");
 	memcpy(mensaje, &comandoIniciarPrograma,sizeof(char));
 	memcpy(mensaje + sizeof(char), &tamanioArchivo, sizeof(int));
 	memcpy(mensaje + sizeof(char) + sizeof(int), bufferArchivo, tamanioArchivo);
@@ -191,7 +191,7 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 
 
 void informarEstadisticas(t_hiloPrograma* programaAFinalizar){
-
+	log_info(loggerConPantalla,"Informando estadisticas programa: %d",programaAFinalizar->pid);
 	struct tm tiempoFinalizacion = *localtime(&(time_t){time(NULL)});
 	double seconds = difftime(mktime(&(tiempoFinalizacion)), mktime(&(programaAFinalizar->tiempoInicio)));
 
