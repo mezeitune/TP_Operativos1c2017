@@ -468,13 +468,21 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 		char* todaLaInfoTraida=leerParaGuardar(path,atoi(obtTamanioArchivo(nombreArchivoRecibido)),0);
 		//modificar al string
+		char *stringComoSeQuiere = string_new();
+		string_append(&stringComoSeQuiere, string_substring_until(todaLaInfoTraida, cursor));
+		string_append(&stringComoSeQuiere, (char*)buffer);
+
+		char* loQueQuedoDespuesDePisarLosBytes=string_substring_from(todaLaInfoTraida, cursor+size);
+		if(string_length(loQueQuedoDespuesDePisarLosBytes)>0){
+			string_append(&stringComoSeQuiere, loQueQuedoDespuesDePisarLosBytes);
+		}
 
 
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
 		int indiceBloque=0;
 		while(!(arrayBloques[indiceBloque] == NULL)){
-			indiceBloque++;
+
 
 			//Vuelvo a poner todo en mis bloques con el string modificado
 			char *direccionBloque = string_new();
@@ -485,18 +493,21 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 
 			bloque = fopen(direccionBloque,"w");
-			//fwrite(algoAEscribir,tamanioBloques,1,bloque); //guardo hasta el size que me permite el bloque
+			fwrite(stringComoSeQuiere,tamanioBloques,1,bloque); //guardo hasta el size que me permite el bloque
 			fclose(bloque);
 
-			//cortar el string
+			//Nose si esta bien que me permita escribir hasta tamanioBloques por que quiza escribe basura si es que es el ultimo bloque
 
+			//cortar el string
+			stringComoSeQuiere=string_substring_from(stringComoSeQuiere, tamanioBloques);
+			indiceBloque++;
 
 
 		}
 
 		//detectar si lo que quedo de string cortado le queda algo , en ese caso empiezo a pedir mas bloques.
-		/*if(string_length(loQueQuedoDeStringCortado)>0){
-
+		if(string_length(stringComoSeQuiere)>0){
+	       size=string_length(stringComoSeQuiere);
 		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
 		   if(size < tamanioBloques) cuantosBloquesMasNecesito = 1;
 		   if((size%tamanioBloques) == size) {
