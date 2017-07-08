@@ -466,7 +466,38 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
 
-		char* todaLaInfoTraida=leerParaGuardar(path,atoi(obtTamanioArchivo(nombreArchivoRecibido)),cursor);
+		char* todaLaInfoTraida=leerParaGuardar(path,atoi(obtTamanioArchivo(nombreArchivoRecibido)),0);
+
+		//modificar al string
+		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+
+		int indiceBloque=0;
+		int cantidadBloquesArchivo = 0;
+		while(!(arrayBloques[indiceBloque] == NULL)){
+			indiceBloque++;
+
+			//Vuelvo a poner todo en mis bloques con el string modificado
+			char *direccionBloque = string_new();
+			string_append(&direccionBloque, puntoMontaje);
+			string_append(&direccionBloque, "Bloques/");
+			string_append(&direccionBloque, arrayBloques[indiceBloque]);
+			string_append(&direccionBloque, ".bin");
+
+
+			bloque = fopen(direccionBloque,"w");
+			//fwrite(algoAEscribir,tamanioBloques,1,bloque); //guardo hasta el size que me permite el bloque
+			fclose(bloque);
+
+			//cortar el string
+
+
+
+		}
+
+		//detectar si lo que quedo de string cortado le queda algo , en ese caso empiezo a pedir mas bloques.
+
+
+
 
 
 
