@@ -27,7 +27,6 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor,flagsMapeados);
 
 	if(resultadoEjecucion < 0){
 		log_error(loggerConPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s",pid,descriptor,flagsMapeados);
@@ -35,8 +34,8 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 		return 0;
 	}
 	recv(socketKernel,&descriptor,sizeof(int),0);
+	log_info(loggerConPantalla,"El proceso de PID %d ha abierto un archivo de descriptor %d en modo %s",pid,descriptor,flagsMapeados);
 	descriptorArchivoAbierto = (t_descriptor_archivo) descriptor;
-	printf("Descriptor :%d\n",descriptorArchivoAbierto);
 	return descriptorArchivoAbierto;
 }
 
@@ -144,14 +143,11 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 	int pid= pcb_actual->pid;
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
-	printf("Descriptor:%d\n",descriptor_archivo);
 	send(socketKernel,&tamanio,sizeof(int),0); //tamanio de la instruccion en bytes que quiero leer
-	printf("Tamano a leer:%d\n",tamanio);
 
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
-	printf("Resultado de ejecucion:%d\n",resultadoEjecucion);
 
 	if(resultadoEjecucion>0){
 		recv(socketKernel,infoLeida,tamanio,0);
@@ -190,21 +186,18 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 			int pid= pcb_actual->pid;
 			send(socketKernel,&pid,sizeof(int),0);
 			send(socketKernel,&descriptor_archivo,sizeof(int),0);
-			printf("Descriptor:%d\n",descriptor_archivo);
 			send(socketKernel,&tamanio,sizeof(int),0);
-			printf("Tamano:%d\n",tamanio);
 
-			printf("Informacion void*:%s\n",informacion);
+			/*printf("Informacion void*:%s\n",informacion);
 			printf("Informacion char*:%s\n",(char*)informacion);
 			printf("Informacion int:%d\n",*(int*)informacion);
-			printf("Informacion atoi:%d",atoi((char*)informacion));
-
+			printf("Informacion atoi:%d\n",atoi((char*)informacion));
+*/
 
 			send(socketKernel,informacion,tamanio,0); //puntero que apunta a la direccion donde quiero obtener la informacion
 
 
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-			printf("Resultado de ejecucion:%d\n",resultadoEjecucion);
 			if(resultadoEjecucion < 0) {
 				log_error(loggerConPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ",pid,descriptor_archivo);
 					expropiarPorKernel();

@@ -27,8 +27,8 @@ void testeommap(){
 	unsigned char *f;
     int size;
     struct stat s;
-    const char * file_name = "../metadata/Bitmap.bin";
-    int fd = open ("../metadata/Bitmap.bin", O_RDONLY);
+    const char * file_name = puntoMontaje;
+    int fd = open (file_name, O_RDONLY);
 
     /* Get the size of the file. */
     int status = fstat (fd, & s);
@@ -121,7 +121,12 @@ void inicializarMmap(){
 
     int size;
     struct stat s;
-    int fd = open ("../Metadata/Bitmap.bin", O_RDWR);
+
+    char* puntoMontajeBitmap = string_new();
+    string_append(&puntoMontajeBitmap,puntoMontaje);
+    string_append(&puntoMontajeBitmap,"Metadata/Bitmap.bin");
+
+    int fd = open (puntoMontajeBitmap, O_RDWR);
 
     /* Get the size of the file. */
     int status = fstat (fd, & s);

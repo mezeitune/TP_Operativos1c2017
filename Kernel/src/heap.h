@@ -325,7 +325,7 @@ void destruirTodasLasPaginasHeapDeProceso(int pidProc){ //Elimino todas las estr
 }
 
 int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int size){
-	//printf("Pagina Heap Bloque Suficiente\n");
+	//printf("Pagina Heap Bloque Suficiente\n");DATA G__
 	int i = 0;
 
 

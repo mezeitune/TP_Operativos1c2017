@@ -108,7 +108,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 	}
 
 
-
+	printf("Hola\n");
 	//Recorro bitmap y veo si hay algun bloque para asignarle
 	//por default se le asigna un bloque al archivo recien creado
 	int j;
@@ -123,6 +123,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
         	break;
         }
 	}
+	printf("sali del bit map\n");
 
 	if(encontroUnBloque==1){
 		FILE* fp = fopen(rutaAbsoluta, "ab");
@@ -671,7 +672,6 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 		int bloquesExistentes = 0;
 		int i=0;
-
 		while(arrayBloques[i]!=NULL){
 			bloquesExistentes ++;
 			i++;
@@ -679,9 +679,8 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 		printf("Cantidad de bloques del archivo:%d\n",bloquesExistentes);
 
-
-		  int indiceBloque=0;
-		  int tamanioBloqueAcumulado = tamanioBloques;
+		 int indiceBloque=0;
+		 int tamanioBloqueAcumulado = tamanioBloques;
 	   while(!(cursor<tamanioBloqueAcumulado)){ //Para saber cual es el primer bloque a escribir
 					   indiceBloque++;
 					   tamanioBloqueAcumulado += tamanioBloques;
@@ -692,18 +691,6 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 	   printf("Tamano bloque acumulador :%d\n",tamanioBloqueAcumulado);
 
-/*
-		int indiceBloque=0;
-		int cantidadBloquesArchivo = 0;
-		while(!(arrayBloques[indiceBloque] == NULL)){
-			indiceBloque++;
-			cantidadBloquesArchivo ++;
-		}
-
-		indiceBloque--; //Quiero el indice al ultimo bloque
-
-		printf("Cantidad de bloques :%d\n",cantidadBloquesArchivo);
-*/
 
 		char *direccionBloque = string_new();
 		string_append(&direccionBloque, puntoMontaje);
@@ -713,19 +700,16 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 
 		printf("Direccion del primer bloque a escribir: %s\n",direccionBloque);
-		//ver de asignar mas bloques en caso de ser necesario
+
 		printf("Tamano del archivo : %d\n",atoi(obtTamanioArchivo(nombreArchivoRecibido)));
-		printf("Tamano del bloque: %d\n",tamanioBloques);
 
-		//int cantidadRestanteUltimoBloque=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloquesArchivo-1)*tamanioBloques));
-
-		//printf("Cantidad restante en el ultimo bloque :%d\n",cantidadRestanteUltimoBloque);
-
-		if(size + cursor < tamanioBloqueAcumulado){ //Con el primer bloque me alcanza
+		if(size + cursor < tamanioBloqueAcumulado){ //Me alcanza con el bloque donde estoy parado?
 
 			bloque = fopen(direccionBloque,"r+b");
 			fseek(bloque,0,SEEK_SET);
+
 			fseek(bloque,tamanioBloques-(tamanioBloqueAcumulado - cursor),SEEK_SET);
+
 			fwrite(buffer,1,size,bloque);
 			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
 			fclose(bloque);

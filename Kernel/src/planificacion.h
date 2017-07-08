@@ -158,14 +158,14 @@ void administrarFinProcesos(){
 						}
 						pthread_mutex_unlock(&mutexListaEspera);
 					/*TODO:La tabla del proceso de archivos abiertos no la borro para que qude el registro*/
-					log_info(logKernelPantalla, "Proceso terminado--->PID:%d", proceso->pid);
+					log_info(logKernelPantalla, "Proceso terminado--->PID:%d--->Exit Code:%d", proceso->pid,proceso->exitCode);
 				}
 	}
 	log_info(logKernel,"Hilo administrador de fin de procesos finalizado");
 }
 
 void liberarMemoriaDinamica(int pid){
-	log_info(logKernel,"Liberando Memoria Dinamica ");
+	log_info(logKernelPantalla,"Liberando Memoria Dinamica ");
 	int bloquesSinLiberar;
 	int sizeSinLiberar;
 	_Bool verificaPid(t_contable* proceso){
@@ -179,10 +179,9 @@ void liberarMemoriaDinamica(int pid){
 	list_add(listaContable,proceso);
 	pthread_mutex_unlock(&mutexListaContable);
 
-	if(bloquesSinLiberar > 0){
-		log_warning(logKernel,"El proceso no libero %d bloques de Heap, acumulando %d bytes--->PID:%d",bloquesSinLiberar,sizeSinLiberar,pid);
+	if(bloquesSinLiberar > 0) log_warning(logKernelPantalla,"El proceso no libero %d bloques de Heap, acumulando %d bytes--->PID:%d",bloquesSinLiberar,sizeSinLiberar,pid);
+
 		destruirTodasLasPaginasHeapDeProceso(pid);
-	}
 
 }
 

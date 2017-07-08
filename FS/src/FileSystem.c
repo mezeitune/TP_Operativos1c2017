@@ -65,31 +65,26 @@ int socketServidor;
 
 int main(void){
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/FS/config_FileSys");
-	leerConfiguracionMetadata("/home/utnso/workspace/tp-2017-1c-servomotor/FS/Metadata/Metadata.bin");
+
+	char* puntoMontajeMetadata = string_new();
+	string_append(&puntoMontajeMetadata,puntoMontaje);
+	string_append(&puntoMontajeMetadata,"Metadata/Metadata.bin");
+
+	leerConfiguracionMetadata(puntoMontajeMetadata);
+
 	imprimirConfiguraciones();
 
 	inicializarLog("/home/utnso/Log/logFS.txt");
 
 	//*********************************************************************
-		//Bitmap
-
-	//inicializarBitMap();//Solo para testeo
 	inicializarMmap();
 
 	tamanioBloques=atoi(tamanioBloquesEnChar);
 	cantidadBloques=atoi(cantidadBloquesEnChar);
 
 	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), LSB_FIRST);
-	int i;
-	//for(i=0;i<cantidadBloques;i++){
-	//	bitarray_clean_bit(bitarray,i);
-	//}
 
 	printf("El tamano del bitarray es de : %d\n",bitarray_get_max_bit(bitarray));
-
-	//log_info(loggerConPantalla,"Imprimiendo Bitmap en FS");
-	//printBitmap();
-
 
 	//*********************************************************************
 	socketServidor = crear_socket_servidor(ipFS,puertoFS);
@@ -97,8 +92,6 @@ int main(void){
 	while(1){
 		connectionHandler();
 	}
-
-	//selectorConexiones();
 
 	return 0;
 }
