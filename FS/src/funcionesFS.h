@@ -506,7 +506,12 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 		}
 
 		//detectar si lo que quedo de string cortado le queda algo , en ese caso empiezo a pedir mas bloques.
+		int seNecesecitaronMasBloques=0;
 		if(string_length(stringComoSeQuiere)>0){
+			seNecesecitaronMasBloques==1;
+		}
+
+		if(seNecesecitaronMasBloques){
 	       size=string_length(stringComoSeQuiere);
 		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
 		   if(size < tamanioBloques) cuantosBloquesMasNecesito = 1;
@@ -533,98 +538,48 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 			printf("Bloques encontrados :%d\n",bloquesEncontrados);
 
 
-		}		if(size<cantidadRestanteUltimoBloque){ //Con el primer bloque me alcanza
-
-			bloque = fopen(direccionBloque,"ab");
-			fseek(bloque,cursor,SEEK_SET);
-			fwrite(buffer,size,1,bloque);
-			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
-			fclose(bloque);
-			//adx_store_data(direccionBloque,buffer);
-
-		}else{ //Necesito mas bloques
-
-		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
-		   if(size < tamanioBloques) cuantosBloquesMasNecesito = 1;
-		   if((size%tamanioBloques) == size) {
-			   cuantosBloquesMasNecesito = size / tamanioBloques ;
-			   cuantosBloquesMasNecesito += 1;
-		   }
-
-			printf("Bloques de mas que necesito:%d\n",cuantosBloquesMasNecesito);
-
-			int numeroBloque;
-			int bloquesEncontrados=0;
-
-
-			for(numeroBloque=0;numeroBloque<cantidadBloques;numeroBloque++){
-		        bool bit = bitarray_test_bit(bitarray,numeroBloque);
-		        if(bit==0){
-		        	bloquesEncontrados++;
-		        	list_add(nuevosBloques,&numeroBloque);
-		        }
-		        if(bloquesEncontrados==cuantosBloquesMasNecesito) break;
-			}
-
-			printf("Bloques encontrados :%d\n",bloquesEncontrados);
-
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
-				log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
-				//guardamos en los bloques deseados
+							log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
+							//guardamos en los bloques deseados
 
-				int s;
+							int s;
 
-				int sizeRestante = size;
-				int desplazamiento = 0;//Para el buffer
+							int sizeRestante = size;
+							int desplazamiento = 0;//Para el buffer
 
+							for(s=0;s<cuantosBloquesMasNecesito;s++){
+								char *nombreBloque = string_new();
+								string_append(&nombreBloque, puntoMontaje);
+								string_append(&nombreBloque, "Bloques/");
+								string_append(&nombreBloque, string_itoa(*(int*)list_get(nuevosBloques,s)));
+								string_append(&nombreBloque, ".bin");
 
-				//Primero usamos el ultimo bloque - No queremos frag interna
-				bloque = fopen(direccionBloque,"ab");
+								printf("Voy a guardar en el bloque:%s\n",string_itoa(*(int*)list_get(nuevosBloques,s)));
 
-				int tamanoActual = ftell(bloque);
-				printf("Tamano actual:%d\n",tamanoActual);
+								bloque=fopen(nombreBloque,"w");
 
-				fwrite(buffer,(tamanioBloques-tamanoActual),1,bloque); //Bloque=64 y el tamanoActual = 40 --> Escribo 24 Bytes
-				fclose(bloque);
+								if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
+									printf("Tengo que cortar el string\n");
+									//cortar el string
+									fwrite(stringComoSeQuiere + desplazamiento , tamanioBloques,1,bloque);
+									//char* recortado=string_substring_until(buffer + desplazamiento, tamanioBloques);
+									//adx_store_data(nombreBloque,recortado);
+									sizeRestante -= tamanioBloques;
+									desplazamiento += tamanioBloques;
+									//loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
 
-				sizeRestante -= (tamanioBloques-tamanoActual);
-				desplazamiento += (tamanioBloques-tamanoActual);
+								}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
+									printf("No tuve que cortar el string\n");
+									//mandarlo to-do de una
+									fwrite(buffer + desplazamiento,sizeRestante,1,bloque);
+									//adx_store_data(nombreBloque,buffer + desplazamiento);
 
-				//Despues empezamos a usar el resto que necesito
-				for(s=0;s<cuantosBloquesMasNecesito;s++){
-					char *nombreBloque = string_new();
-					string_append(&nombreBloque, puntoMontaje);
-					string_append(&nombreBloque, "Bloques/");
-					string_append(&nombreBloque, string_itoa(*(int*)list_get(nuevosBloques,s)));
-					string_append(&nombreBloque, ".bin");
+								}
+								fclose(bloque);
 
-					printf("Voy a guardar en el bloque:%s\n",string_itoa(*(int*)list_get(nuevosBloques,s)));
-
-					bloque=fopen(nombreBloque,"ab");
-
-					if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
-						printf("Tengo que cortar el string\n");
-						//cortar el string
-						fwrite(buffer + desplazamiento , tamanioBloques,1,bloque);
-						//char* recortado=string_substring_until(buffer + desplazamiento, tamanioBloques);
-						//adx_store_data(nombreBloque,recortado);
-						sizeRestante -= tamanioBloques;
-						desplazamiento += tamanioBloques;
-						//loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
-
-					}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
-						printf("No tuve que cortar el string\n");
-						//mandarlo to-do de una
-						fwrite(buffer + desplazamiento,sizeRestante,1,bloque);
-						//adx_store_data(nombreBloque,buffer + desplazamiento);
-
-					}
-					fclose(bloque);
-
-					//actualizamos el bitmap
-					bitarray_set_bit(bitarray,*(int*)list_get(nuevosBloques,s));
-				}
-
+								//actualizamos el bitmap
+								bitarray_set_bit(bitarray,*(int*)list_get(nuevosBloques,s));
+							}
 
 			}else{
 				log_error(loggerConPantalla,"No existen suficientes bloques para escribir la informacion solicitada");
@@ -634,7 +589,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 			}
 		}
 
-		if(string_length(loQueQuedoDeStringCortado)>0){
+		if(seNecesecitaronMasBloques==1){
 			actualizarMetadataArchivo(nombreArchivoRecibido,size,nuevosBloques);
 		}
 
@@ -642,7 +597,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 		send(socketKernel,&validado,sizeof(int),0);
 
 
-		*/
+
 
 
 	}else{
