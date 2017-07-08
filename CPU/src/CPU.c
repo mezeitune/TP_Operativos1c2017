@@ -61,7 +61,7 @@ void expropiarVoluntariamente(){
 
 	if(cpuExpropiadaPorKernel == -1) expropiarPorKernel();
 	if(cpuBloqueadaPorSemANSISOP == 0) log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
-	else expropiarPorRR();
+	else if(cpuBloqueadaPorSemANSISOP !=0) expropiarPorRR();
 
 
 }

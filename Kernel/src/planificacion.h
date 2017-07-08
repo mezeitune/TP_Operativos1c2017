@@ -165,7 +165,7 @@ void administrarFinProcesos(){
 }
 
 void liberarMemoriaDinamica(int pid){
-	log_info(logKernelPantalla,"Liberando Memoria Dinamica ");
+	log_info(logKernel,"Liberando Memoria Dinamica ");
 	int bloquesSinLiberar;
 	int sizeSinLiberar;
 	_Bool verificaPid(t_contable* proceso){
