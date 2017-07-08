@@ -87,8 +87,8 @@ int main(void){
 
 	printf("El tamano del bitarray es de : %d\n",bitarray_get_max_bit(bitarray));
 
-	log_info(loggerConPantalla,"Imprimiendo Bitmap en FS");
-	printBitmap();
+	//log_info(loggerConPantalla,"Imprimiendo Bitmap en FS");
+	//printBitmap();
 
 
 	//*********************************************************************
@@ -140,7 +140,7 @@ void connectionHandler()
 			obtenerDatosArchivoFunction(path);
 			break;
 		case 'G'://guardar archivo
-			guardarDatosArchivoFunction2(path);
+			guardarDatosArchivoFunction(path);
 			break;
 		default:
 			log_error(loggerConPantalla,"Orden no definida:%c",orden);

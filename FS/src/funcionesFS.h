@@ -12,6 +12,9 @@ void borrarArchivoFunction(char* path);
 void obtenerDatosArchivoFunction(char* path);
 void guardarDatosArchivoFunction(char* path);
 
+void guardarDatosArchivoFunction2(char* path);
+void* leerParaGuardar(char* nombreArchivoRecibido,int size,int cursor);
+
 
 void printBitmap(){
 
@@ -336,7 +339,7 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 
 }
 
-char* leerParaGuardar(char* nombreArchivoRecibido,int size,int cursor)
+void* leerParaGuardar(char* nombreArchivoRecibido,int size,int cursor)
 {
 	char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
@@ -464,21 +467,40 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 	printf("Toda la ruta :%s\n",nombreArchivoRecibido);
 
-	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
+	if(access(nombreArchivoRecibido, F_OK ) != -1 ) {
+		printf("Toda la ruta jejeje");
+		void* todaLaInfoTraida=leerParaGuardar(path,atoi(obtTamanioArchivo(nombreArchivoRecibido)),0);
 
-		char* todaLaInfoTraida=leerParaGuardar(path,atoi(obtTamanioArchivo(nombreArchivoRecibido)),0);
+		printf("Data leida de los bloques:%s\n",todaLaInfoTraida);
+
 		//modificar al string
+
+
 		char *stringComoSeQuiere = string_new();
 		string_append(&stringComoSeQuiere, string_substring_until(todaLaInfoTraida, cursor));
+
+		printf("Archivo hasta el cursor :%s\n",stringComoSeQuiere);
+		printf("Buffer a escribir:%s\n",buffer);
 		string_append(&stringComoSeQuiere, (char*)buffer);
 
-		char* loQueQuedoDespuesDePisarLosBytes=string_substring_from(todaLaInfoTraida, cursor+size);
+		printf("Archivo sobreescrito:%s\n",stringComoSeQuiere);
+
+
+
+		char* loQueQuedoDespuesDePisarLosBytes=string_new();
+		loQueQuedoDespuesDePisarLosBytes=string_substring_from(todaLaInfoTraida, size + cursor);
+
+		printf("Lo que queda por concatenar:%s",loQueQuedoDespuesDePisarLosBytes);
+
 		if(string_length(loQueQuedoDespuesDePisarLosBytes)>0){
 			string_append(&stringComoSeQuiere, loQueQuedoDespuesDePisarLosBytes);
 		}
 
+		printf("Archivo actualizado :%s\n",stringComoSeQuiere);
+
 
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+
 
 		int indiceBloque=0;
 		while(!(arrayBloques[indiceBloque] == NULL)){
@@ -502,8 +524,13 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 			stringComoSeQuiere=string_substring_from(stringComoSeQuiere, tamanioBloques);
 			indiceBloque++;
 
-
+			//if((arrayBloques[indiceBloque+1] == NULL)) break;
 		}
+
+
+
+
+
 
 		//detectar si lo que quedo de string cortado le queda algo , en ese caso empiezo a pedir mas bloques.
 		int seNecesecitaronMasBloques=0;
@@ -537,7 +564,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 			printf("Bloques encontrados :%d\n",bloquesEncontrados);
 
-			void* stringComoSeQuiere=(void* stringComoSeQuiere);
+			//void* stringComoSeQuiere=(void* stringComoSeQuiere);
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
 							log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
 							//guardamos en los bloques deseados
@@ -642,15 +669,41 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
+		int bloquesExistentes = 0;
+		int i=0;
+
+		while(arrayBloques[i]!=NULL){
+			bloquesExistentes ++;
+			i++;
+		}
+
+		printf("Cantidad de bloques del archivo:%d\n",bloquesExistentes);
+
+
+		  int indiceBloque=0;
+		  int tamanioBloqueAcumulado = tamanioBloques;
+	   while(!(cursor<tamanioBloqueAcumulado)){ //Para saber cual es el primer bloque a escribir
+					   indiceBloque++;
+					   tamanioBloqueAcumulado += tamanioBloques;
+				   }
+
+	   bool elArchivoTieneBloquesSuficientes = bloquesExistentes*tamanioBloques > size+cursor;
+	   printf("%s\n",elArchivoTieneBloquesSuficientes? "True":"False");
+
+	   printf("Tamano bloque acumulador :%d\n",tamanioBloqueAcumulado);
+
+/*
 		int indiceBloque=0;
 		int cantidadBloquesArchivo = 0;
 		while(!(arrayBloques[indiceBloque] == NULL)){
 			indiceBloque++;
 			cantidadBloquesArchivo ++;
 		}
+
 		indiceBloque--; //Quiero el indice al ultimo bloque
 
 		printf("Cantidad de bloques :%d\n",cantidadBloquesArchivo);
+*/
 
 		char *direccionBloque = string_new();
 		string_append(&direccionBloque, puntoMontaje);
@@ -659,47 +712,59 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 		string_append(&direccionBloque, ".bin");
 
 
-		printf("Direccion del ultimo bloque: %s\n",direccionBloque);
+		printf("Direccion del primer bloque a escribir: %s\n",direccionBloque);
 		//ver de asignar mas bloques en caso de ser necesario
 		printf("Tamano del archivo : %d\n",atoi(obtTamanioArchivo(nombreArchivoRecibido)));
 		printf("Tamano del bloque: %d\n",tamanioBloques);
 
-		int cantidadRestanteUltimoBloque=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloquesArchivo-1)*tamanioBloques));
+		//int cantidadRestanteUltimoBloque=tamanioBloques-(atoi(obtTamanioArchivo(nombreArchivoRecibido))-((cantidadBloquesArchivo-1)*tamanioBloques));
 
-		printf("Cantidad restante en el ultimo bloque :%d\n",cantidadRestanteUltimoBloque);
+		//printf("Cantidad restante en el ultimo bloque :%d\n",cantidadRestanteUltimoBloque);
 
-		if(size<cantidadRestanteUltimoBloque){ //Con el primer bloque me alcanza
+		if(size + cursor < tamanioBloqueAcumulado){ //Con el primer bloque me alcanza
 
-			bloque = fopen(direccionBloque,"ab");
-			fseek(bloque,cursor,SEEK_SET);
-			fwrite(buffer,size,1,bloque);
+			bloque = fopen(direccionBloque,"r+b");
+			fseek(bloque,0,SEEK_SET);
+			fseek(bloque,tamanioBloques-(tamanioBloqueAcumulado - cursor),SEEK_SET);
+			fwrite(buffer,1,size,bloque);
 			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
 			fclose(bloque);
-			//adx_store_data(direccionBloque,buffer);
+		}
 
-		}else{ //Necesito mas bloques
+		else{ //Necesito mas bloques. Nuevos o existentes
 
-		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
-		   if(size < tamanioBloques) cuantosBloquesMasNecesito = 1;
-		   if((size%tamanioBloques) == size) {
-			   cuantosBloquesMasNecesito = size / tamanioBloques ;
+			int bytesNecesarios = size+cursor-tamanioBloqueAcumulado;
+
+
+		   if((bytesNecesarios%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
+
+		   if(bytesNecesarios < tamanioBloques) cuantosBloquesMasNecesito = 1;
+
+		   if(bytesNecesarios > tamanioBloques) {
+			   cuantosBloquesMasNecesito = bytesNecesarios / tamanioBloques ;
 			   cuantosBloquesMasNecesito += 1;
 		   }
 
 			printf("Bloques de mas que necesito:%d\n",cuantosBloquesMasNecesito);
 
 			int numeroBloque;
-			int bloquesEncontrados=0;
+			int bloquesEncontrados;
 
 
+		bloquesEncontrados = cuantosBloquesMasNecesito;
+
+		if(!elArchivoTieneBloquesSuficientes){
+			bloquesEncontrados = 0;
 			for(numeroBloque=0;numeroBloque<cantidadBloques;numeroBloque++){
-		        bool bit = bitarray_test_bit(bitarray,numeroBloque);
+		        int bit = bitarray_test_bit(bitarray,numeroBloque);
 		        if(bit==0){
 		        	bloquesEncontrados++;
 		        	list_add(nuevosBloques,&numeroBloque);
 		        }
 		        if(bloquesEncontrados==cuantosBloquesMasNecesito) break;
 			}
+		}
+
 
 			printf("Bloques encontrados :%d\n",bloquesEncontrados);
 
@@ -707,25 +772,57 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 				log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
 				//guardamos en los bloques deseados
 
-				int s;
 
 				int sizeRestante = size;
 				int desplazamiento = 0;//Para el buffer
 
 
-				//Primero usamos el ultimo bloque - No queremos frag interna
-				bloque = fopen(direccionBloque,"ab");
+				//Primero usamos el bloque correspondiente al cursor - No queremos frag interna
+				bloque = fopen(direccionBloque,"r+b");
+				fseek(bloque,0,SEEK_SET);
 
-				int tamanoActual = ftell(bloque);
-				printf("Tamano actual:%d\n",tamanoActual);
-
-				fwrite(buffer,(tamanioBloques-tamanoActual),1,bloque); //Bloque=64 y el tamanoActual = 40 --> Escribo 24 Bytes
+				fseek(bloque,tamanioBloques-(tamanioBloqueAcumulado-cursor),SEEK_SET);
+				fwrite(buffer,1,(tamanioBloqueAcumulado-cursor),bloque); //Bloque=64 y el tamanoActual = 40 --> Escribo 24 Bytes
 				fclose(bloque);
 
-				sizeRestante -= (tamanioBloques-tamanoActual);
-				desplazamiento += (tamanioBloques-tamanoActual);
+				sizeRestante -= (tamanioBloqueAcumulado-cursor);
+				desplazamiento += (tamanioBloqueAcumulado-cursor);
+				indiceBloque++;
 
-				//Despues empezamos a usar el resto que necesito
+				printf("Escribi en el primer bloque %s\n",direccionBloque);
+
+				//Despues empezamos a usar los bloques disponibles
+				int s=indiceBloque;
+				while(arrayBloques[s]!= NULL){
+					printf("El archivo tiene bloques disponibles\n");
+					char *nombreBloque=string_new();
+					string_append(&nombreBloque, puntoMontaje);
+					string_append(&nombreBloque, "Bloques/");
+					string_append(&nombreBloque, arrayBloques[s]);
+					string_append(&nombreBloque, ".bin");
+
+					bloque=fopen(nombreBloque,"r+b");
+					fseek(bloque,0,SEEK_SET);
+
+
+					if(sizeRestante < tamanioBloques){
+						fwrite(buffer + desplazamiento,1,sizeRestante,bloque);
+						sizeRestante -= sizeRestante;
+						desplazamiento += sizeRestante;
+						printf("Le alcanzo con los bloques disponbiles\n");
+						break;
+					}
+					else fwrite(buffer + desplazamiento,1,tamanioBloques,bloque);
+
+					sizeRestante -=tamanioBloques;
+					desplazamiento += tamanioBloques;
+					s++;
+				}
+
+
+				if(!elArchivoTieneBloquesSuficientes){
+					printf("Pidiendo nuevos bloques\n");
+				//Ahora pedimos nuevos.
 				for(s=0;s<cuantosBloquesMasNecesito;s++){
 					char *nombreBloque = string_new();
 					string_append(&nombreBloque, puntoMontaje);
@@ -735,31 +832,28 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 					printf("Voy a guardar en el bloque:%s\n",string_itoa(*(int*)list_get(nuevosBloques,s)));
 
-					bloque=fopen(nombreBloque,"ab");
+					bloque=fopen(nombreBloque,"wb");
 
-					if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
+					if(sizeRestante>tamanioBloques){
+
 						printf("Tengo que cortar el string\n");
-						//cortar el string
-						fwrite(buffer + desplazamiento , tamanioBloques,1,bloque);
-						//char* recortado=string_substring_until(buffer + desplazamiento, tamanioBloques);
-						//adx_store_data(nombreBloque,recortado);
+
+						fwrite(buffer + desplazamiento,1,tamanioBloques,bloque);
 						sizeRestante -= tamanioBloques;
 						desplazamiento += tamanioBloques;
-						//loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
 
 					}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
+
 						printf("No tuve que cortar el string\n");
 						//mandarlo to-do de una
-						fwrite(buffer + desplazamiento,sizeRestante,1,bloque);
-						//adx_store_data(nombreBloque,buffer + desplazamiento);
-
+						fwrite(buffer + desplazamiento,1,sizeRestante,bloque);
 					}
 					fclose(bloque);
 
 					//actualizamos el bitmap
 					bitarray_set_bit(bitarray,*(int*)list_get(nuevosBloques,s));
 				}
-
+				}
 
 			}else{
 				log_error(loggerConPantalla,"No existen suficientes bloques para escribir la informacion solicitada");
