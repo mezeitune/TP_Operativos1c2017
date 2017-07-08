@@ -310,7 +310,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 	char* buffer=malloc(sizeof(char));
 	char bufferRecibido;
 	printf("\n--Esperando una orden del cliente-- \n");
-	read(socketCliente,buffer,sizeof(char));
+	recv(socketCliente,buffer,sizeof(char),0);
 	bufferRecibido = *buffer;
 	log_info(loggerConPantalla,"El cliente ha enviado la orden: %c\n",bufferRecibido);
 	free(buffer);
@@ -322,8 +322,8 @@ int main_inicializarPrograma(int sock)
 	int pid;
 	int cantPaginas;
 
-	read(sock,&pid,sizeof(int));
-	read(sock,&cantPaginas,sizeof(int));
+	recv(sock,&pid,sizeof(int),0);
+	recv(sock,&cantPaginas,sizeof(int),0);
 
 	log_info(loggerConPantalla,"PID:%d\n",pid);
 	log_info(loggerConPantalla,"CantPaginas:%d\n",cantPaginas);
@@ -362,10 +362,10 @@ int main_solicitarBytesPagina(int sock)
 	char*bufferAEnviar;
 	int resultadoEjecucion = 0;
 
-	read(sock,&pid,sizeof(int));
-	read(sock,&pagina,sizeof(int));
-	read(sock,&offset,sizeof(int));
-	read(sock,&size,sizeof(int));
+	recv(sock,&pid,sizeof(int),0);
+	recv(sock,&pagina,sizeof(int),0);
+	recv(sock,&offset,sizeof(int),0);
+	recv(sock,&size,sizeof(int),0);
 
 	log_info(loggerConPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
@@ -404,12 +404,12 @@ int main_almacenarBytesPagina(int sock)
 
 	int resultadoEjecucion = 0;
 
-	read(sock,&pid,sizeof(int));
-	read(sock,&pagina,sizeof(int));
-	read(sock,&offset,sizeof(int));
-	read(sock,&size,sizeof(int));
+	recv(sock,&pid,sizeof(int),0);
+	recv(sock,&pagina,sizeof(int),0);
+	recv(sock,&offset,sizeof(int),0);
+	recv(sock,&size,sizeof(int),0);
 	bytes=malloc(size);
-	read(sock,bytes,size);
+	recv(sock,bytes,size,0);
 
 	log_info(loggerConPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
@@ -426,8 +426,8 @@ int main_asignarPaginasAProceso(int sock)
 	int pid;
 	int cantPaginas;
 
-	read(sock,&pid,sizeof(int));
-	read(sock,&cantPaginas,sizeof(int));
+	recv(sock,&pid,sizeof(int),0);
+	recv(sock,&cantPaginas,sizeof(int),0);
 
 	log_info(loggerConPantalla,"PID:%d\tCantidad de Paginas:%d\n",pid,cantPaginas);
 	//printf("Bitmap:%s\n",bitMap);
@@ -459,7 +459,7 @@ int main_finalizarPrograma(int sock)
 {
 	int pid;
 
-	read(sock,&pid,sizeof(int));
+	recv(sock,&pid,sizeof(int),0);
 
 	finalizarPrograma(pid);
 	sleep(retardo_memoria);
@@ -470,8 +470,8 @@ int main_liberarPaginaProceso(int sock){
 	int pagina;
 	int resultadoDeEjecucion;
 
-	read(sock,&pid,sizeof(int));
-	read(sock,&pagina,sizeof(int));
+	recv(sock,&pid,sizeof(int),0);
+	recv(sock,&pagina,sizeof(int),0);
 
 	log_info(loggerConPantalla,"PID:%d\tPagina:%d\n",pid,pagina);
 
