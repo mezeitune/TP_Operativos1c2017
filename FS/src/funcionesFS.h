@@ -336,6 +336,149 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 
 }
 
+char* leerParaGuardar(char* nombreArchivoRecibido,int size,int cursor)
+{
+	char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
+
+	   printf("size:%d\n",size);
+	   printf("Tamanio bloque:%d\n",tamanioBloques);
+
+	   int cantidadBloquesNecesito;
+	   if(((size+cursor)%tamanioBloques)==0) cantidadBloquesNecesito = ((size+cursor)/tamanioBloques);
+	   else cantidadBloquesNecesito = ((size+cursor)/tamanioBloques)+1;
+
+	   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesNecesito);
+
+
+	   int d=0;
+	   int tamanioBloqueAcumulado = tamanioBloques;
+	   while(!(cursor<tamanioBloqueAcumulado)){ //Para saber cual es el primer bloque a leer
+		   d++;
+		   tamanioBloqueAcumulado += tamanioBloques;
+	   }
+
+	   /*
+	    * Cursor = 160
+	    * Bloque = 64
+	    * Acumulado = 64
+	    *
+	    * 1. Cursor<Acumulado d++ -> Acumulado +=Bloque
+	    * Acumulado=128
+	    *
+	    * 2. Cursor < Acumulado d++ -> Acumulado +=Bloque
+	    * Acumulado=192
+	    *
+	    * 3. Cursor ya es menos que Acumulador.
+	    */
+
+
+
+
+
+	   FILE *bloque;
+
+	   int sizeRestante=size;
+
+	   char* infoTraidaDeLosArchivos = string_new();
+	   char* data;
+	   int sizeDentroBloque=0;
+	   int cantidadBloquesLeidos=0;
+
+	   while(cantidadBloquesLeidos < cantidadBloquesNecesito){
+
+		   printf("Leyendo data del bloque:%s\n",arrayBloques[d]);
+
+		   if(cantidadBloquesLeidos==0){
+
+			   if(size>tamanioBloques-cursor) sizeDentroBloque=tamanioBloques-cursor;//Leo la porcion restante del bloque
+			   else sizeDentroBloque = size; //Leo lo suficiente
+			   printf("El tamano a leer del bloque es :%d\n",sizeDentroBloque);
+
+
+			   char *nombreBloque = string_new();
+			   string_append(&nombreBloque, puntoMontaje);
+			   string_append(&nombreBloque, "Bloques/");
+			   string_append(&nombreBloque, arrayBloques[d]);
+			   string_append(&nombreBloque, ".bin");
+
+			   bloque=fopen(nombreBloque, "rb");
+
+			   data=(char*)obtenerBytesDeUnArchivo(bloque,cursor,sizeDentroBloque); //En el primero bloque, arranca del cursor
+
+			   string_append(&infoTraidaDeLosArchivos,data);
+			   sizeRestante -= sizeDentroBloque;
+		   }
+		   else{
+			   if(sizeRestante < tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
+			   else sizeDentroBloque = tamanioBloques; //Leo to-do el bloque
+
+			   char *nombreBloque = string_new();
+			   string_append(&nombreBloque, puntoMontaje);
+			   string_append(&nombreBloque, "Bloques/");
+			   string_append(&nombreBloque, arrayBloques[d]);
+			   string_append(&nombreBloque, ".bin");
+
+			   bloque=fopen(nombreBloque, "rb");
+
+			   data=(char*)obtenerBytesDeUnArchivo(bloque,0,sizeDentroBloque); //Siempre arranca del principio
+
+			   string_append(&infoTraidaDeLosArchivos,data);
+			   sizeRestante -= sizeDentroBloque;
+		   }
+		   d++; //Avanzo de bloque
+		   cantidadBloquesLeidos++;
+	   }
+
+
+
+	 return infoTraidaDeLosArchivos;
+
+}
+
+void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo que recibir o que onda
+	FILE* bloque;
+	int validado;
+	int cursor;
+	int size;
+
+	int cuantosBloquesMasNecesito;
+	t_list* nuevosBloques = list_create();
+
+
+	recv(socketKernel,&cursor,sizeof(int),0);
+	printf("Puntero:%d\n",cursor);
+
+	recv(socketKernel,&size,sizeof(int),0);
+	printf("Tamano de la data:%d\n",size);
+	void* buffer = malloc(size);
+
+	recv(socketKernel,buffer,size,0);
+	printf("Data :%s\n",(char*)buffer);
+
+	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
+
+	char *nombreArchivoRecibido = string_new();
+	string_append(&nombreArchivoRecibido, puntoMontaje);
+	string_append(&nombreArchivoRecibido, "Archivos/");
+	string_append(&nombreArchivoRecibido, path);
+
+	printf("Toda la ruta :%s\n",nombreArchivoRecibido);
+
+	if( access( nombreArchivoRecibido, F_OK ) != -1 ) {
+
+		char* todaLaInfoTraida=leerParaGuardar(path,atoi(obtTamanioArchivo(nombreArchivoRecibido)),cursor);
+
+
+
+
+	}else{
+		log_error(loggerConPantalla,"El archivo no fue creado--->Archivo:%s",path);
+		validado=0;
+		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
+	}
+
+}
+
 
 void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que recibir o que onda
 	FILE* bloque;
@@ -506,6 +649,8 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 		validado=0;
 		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
 	}
+
+
 
 }
 
