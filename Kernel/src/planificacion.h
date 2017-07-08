@@ -231,24 +231,24 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 
 void interfazPausarPlanificacion(){
 
-	if(!flagPlanificacion)log_warning(logKernel, "Planificacion ya pausada");
+	if(!flagPlanificacion)printf("Planificacion ya pausada\n");
 	else{
 		flagPlanificacion = 0;
 		sem_wait(&sem_planificacion);
-		log_info(logKernel, "Se pauso la planificacion");
+		printf("Se pauso la planificacion");
 	}
 }
 
 void interfazReanudarPlanificacion(){
 
 
-	if(flagPlanificacion) log_warning(logKernel, "Planificacion no se encuentra pausada");
+	if(flagPlanificacion) printf("Planificacion no se encuentra pausada");
 	else{
 		flagPlanificacion = 1;
 
 		sem_post(&sem_planificacion);
 		sem_post(&sem_planificacion);
-		log_info(logKernel, "Se reanudo la planificacion");
+		printf("Se reanudo la planificacion");
 	}
 }
 

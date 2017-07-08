@@ -467,7 +467,6 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_unlock(&mutexListaFinQuantum);
 	}
 
-
 	procesoATerminar->exitCode = exitCodeArray[EXIT_END_OF_PROCESS]->value;
 	terminarProceso(procesoATerminar);
 

@@ -76,7 +76,7 @@ int crearArchivo(int socket_aceptado, char* direccion );
 void aumentarOpenEnTablaGlobal(char* direccion);
 int agregarEntradaEnTablaGlobal(char* direccion,int tamanioDireccion);
 int verificarEntradaEnTablaGlobal(char* direccion);
-void disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal);
+int disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal);
 int buscarIndiceEnTablaGlobal(char* direccion);
 char* buscarDireccionEnTablaGlobal(int indice);
 int verificarArchivoAbiertoEnTablaGlobal(int indiceTablaGlobal);
@@ -521,7 +521,7 @@ void aumentarOpenEnTablaGlobal(char* direccion){
 	list_add(tablaArchivosGlobal,entrada);
 }
 
-void disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
+int disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
 	log_info(logKernel,"Verificando apertura en tabla global--->Indice:%d",indiceTablaGlobal);
 	t_entradaTablaGlobal* entrada = list_get(tablaArchivosGlobal,indiceTablaGlobal);
 	entrada->open --;
@@ -530,6 +530,7 @@ void disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
 		list_remove(tablaArchivosGlobal,indiceTablaGlobal);
 		if(tablaArchivosGlobal->elements_count > 0)actualizarIndicesGlobalesEnTablasProcesos(indiceTablaGlobal);
 		free(entrada);
+		return 1;
 	}
 }
 
@@ -745,6 +746,7 @@ void testEscribirArchivo(){
 	char* nombreArchivo = string_new();
 	int cursor;
 	char* informacion=string_new();
+	int resultadoEjecucion;
 
 	printf("Ingrese el archivo donde escribir\n");
 	scanf("%s",nombreArchivo);

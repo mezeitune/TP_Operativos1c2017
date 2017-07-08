@@ -12,6 +12,7 @@
 #include "sockets.h"
 #include "listasAdministrativas.h"
 #include "sincronizacion.h"
+#include "capaFilesystem.h"
 
 typedef struct{
 	int value;
@@ -36,6 +37,7 @@ enum {
 	EXIT_DIDNOT_OPEN_TABLE,
 	EXIT_FILESYSTEM_EXCEPTION
 };
+
 int resultadoEjecucion=-1;
 
 t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
@@ -53,6 +55,7 @@ void finalizarHiloPrograma(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 void liberarMemoriaDinamica(int pid);
 void cambiarEstadoATerminado(t_pcb* procesoTerminar);
+void verificarArchivosAbiertos(int pid);
 
 void encolarEnListaParaTerminar(t_pcb* proceso);
 
@@ -232,6 +235,8 @@ void terminarProceso(t_pcb* proceso){
 	liberarMemoriaDinamica(proceso->pid);
 	cambiarEstadoATerminado(proceso);
 
+	//verificarArchivosAbiertos(proceso->pid);
+
 	disminuirGradoMultiprogramacion();
 	sem_post(&sem_admitirNuevoProceso);
 }
@@ -335,6 +340,25 @@ void encolarEnListaParaTerminar(t_pcb* proceso){
 
 	sem_post(&sem_administrarFinProceso);
 }
+
+/*
+void verificarArchivosAbiertos(int pid){
+	printf("Verificando archivos abiertos\n");
+	int i;
+	_Bool verificaPid(t_indiceTablaProceso* indice){
+		return indice->pid == pid;
+	}
+
+	t_indiceTablaProceso* indice = list_find(listaTablasProcesos,(void*)verificaPid);
+
+
+	for(i=0;i<indice->tablaProceso->elements_count;i++){
+		t_entradaTablaProceso* entrada= list_get(indice->tablaProceso,i);
+		disminuirOpenYVerificarExistenciaEntradaGlobal(entrada->globalFd);
+	}
+	printf("Termine de verificar archivos abiertos\n");
+}
+*/
 
 void inicializarExitCodeArray(){
 	int i;

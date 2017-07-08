@@ -15,11 +15,8 @@ void imprimirInterfazUsuario();
 void interfaceObtenerListadoProcesos();
 void interfaceObtenerDatosProceso();
 void interfaceFinalizarProcesoVoluntariamente();
-
 void interfaceTablaGlobalArchivos();
-
 void interfaceSolicitarContenidoMemoria();
-
 void interfaceModificarGradoMultiprogramacion();
 
 void finalizarProcesoVoluntariamente(int pid);
@@ -41,7 +38,6 @@ pthread_t interfaz;
 int flagTerminarUI=0;
 /*-------------LOG-----------------*/
 void inicializarLog(char *rutaDeLog);
-t_log *logKernel;
 t_log *logKernel;
 
 
@@ -81,7 +77,7 @@ void interfazHandler(){
 						testBorrarArchivo();
 					break;
 				default:
-					if(cont!=2)log_error(logKernel ,"Orden no reconocida");
+					if(cont!=2)printf("Orden no reconocida");
 					else cont = 0;
 					break;
 		}
@@ -94,7 +90,7 @@ void interfaceObtenerDatosProceso(){
 	printf("Ingrese el pid del proceso\n");
 	scanf("%d",&pid);
 		if(verificarProcesoExistente(pid)<0){
-			log_error(logKernel,"Proceso no existente---> PID: %d", pid);
+			printf("Proceso no existente---> PID: %d", pid);
 			return;
 		}
 	printf("Datos del proceso--->%d\n",pid);
@@ -106,16 +102,15 @@ void interfaceFinalizarProcesoVoluntariamente(){
 	printf("Ingrese el pid del proceso a finalizar\n");
 	scanf("%d",&pid);
 			if(verificarProcesoExistente(pid)<0){
-				log_error(logKernel,"Proceso no existente---> PID: %d", pid);
+				printf("El proceso no existe--->PID:%d\n",pid);
 				return;
 				}
 			if(verificarProcesoNoTerminado(pid)<0){
-				log_error(logKernel,"Proceso ya finalizado--->PID: %d", pid);
+				printf("El proceso ya ha finalizado--->PID:%d\n",pid);
 				return;
 				}
 	finalizarProcesoVoluntariamente(pid);
 }
-
 
 void interfaceSolicitarContenidoMemoria(){
 	char* mensaje;
@@ -125,7 +120,6 @@ void interfaceSolicitarContenidoMemoria(){
 		}
 	printf("El mensaje recibido de la Memoria es : %s\n" , mensaje);
 }
-
 
 int verificarProcesoNoTerminado(int pid){
 	int resultado;
@@ -141,7 +135,7 @@ int verificarProcesoNoTerminado(int pid){
 }
 
 int verificarProcesoExistente(int pid){
-	int existe;
+	int existe=-1;
 	_Bool verificaPid(t_pcb* proceso){
 			return proceso->pid == pid;
 		}
@@ -165,7 +159,6 @@ int verificarProcesoExistente(int pid){
 	if(list_any_satisfy(colaTerminados,(void*)verificaPid)) existe= 1;
 	pthread_mutex_unlock(&mutexColaTerminados);
 
-
 	return existe;
 }
 
@@ -185,7 +178,7 @@ void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
 }
 
 void imprimirDatosContables(t_contable* proceso){
-	log_info(logKernel,"%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+	printf("%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
 				proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 }
 
@@ -195,15 +188,15 @@ void imprimirTablaArchivosProceso(int pid){
 		return entrada->pid == pid;
 	}
 	int i;
-	log_info(logKernel,"\t\t\tTabla de archivos del proceso\n");
-	log_info(logKernel,"\t\t\tFile Descriptor\tFlags\tIndice Global\tCursor\n");
+	printf("\t\t\tTabla de archivos del proceso\n");
+	printf("\t\t\tFile Descriptor\tFlags\tIndice Global\tCursor\n");
 
 	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
 	t_entradaTablaProceso* entrada;
 
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		log_info(logKernel,"\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
+		printf("\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }
@@ -291,18 +284,19 @@ void finalizarProcesoVoluntariamente(int pid){
 	pthread_mutex_lock(&mutexNuevoProceso);
 	buscarProcesoYTerminarlo(pid);
 	pthread_mutex_unlock(&mutexNuevoProceso);
-	log_info(logKernel,"Proceso finalizado voluntariamente--->PID: %d",pid);
+	printf("Proceso finalizado exitosamente--->PID:%d\n",pid);
 }
 
 
 
-void interfaceTablaGlobalArchivos(){ /*TODO: Mutex tabla global*/
+void interfaceTablaGlobalArchivos(){
 	int i;
 	t_entradaTablaGlobal* entrada;
-	printf("Direccion\tOpen\n");
+	printf("\t\tTabla Global de Archivos\n");
+	printf("\tDireccion\tAperturas\n");
 	for(i=0;i<tablaArchivosGlobal->elements_count;i++){
 		entrada = list_get(tablaArchivosGlobal,i);
-		printf("%s\t%d\n",entrada->path,entrada->open);
+		printf("\t%s\t%d\n",entrada->path,entrada->open);
 	}
 }
 
@@ -310,23 +304,22 @@ void interfaceTablaGlobalArchivos(){ /*TODO: Mutex tabla global*/
 void interfaceModificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a uno menor*/
 	int nuevoGrado;
 	pthread_mutex_lock(&mutexNuevoProceso);
+
 	printf("Ingresar nuevo grado de multiprogramacion\n");
 	scanf("%d",&nuevoGrado);
-	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
-	if(nuevoGrado < gradoMultiProgramacion) {
+
+	/*if(nuevoGrado < gradoMultiProgramacion) {
 		log_warning(logKernel,"El valor ingresado es menor a la cantidad de procesos en el sistema actualmente");
-		pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
-		return;
 	}
-	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
+	*/
 
 	pthread_mutex_lock(&mutex_config_gradoMultiProgramacion);
 	config_gradoMultiProgramacion= nuevoGrado;
 	pthread_mutex_unlock(&mutex_config_gradoMultiProgramacion);
 
-	sem_post(&sem_admitirNuevoProceso);
+	if(nuevoGrado > gradoMultiProgramacion)sem_post(&sem_admitirNuevoProceso);
 	pthread_mutex_unlock(&mutexNuevoProceso);
-	log_info(logKernel,"Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
+	printf("Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
 }
 
 void inicializarLog(char *rutaDeLog){
@@ -334,7 +327,7 @@ void inicializarLog(char *rutaDeLog){
 		mkdir("/home/utnso/Log",0755);
 
 		logKernel = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-		logKernel = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
+		//logKernel = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
 }
 
 void imprimirInterfazUsuario(){
