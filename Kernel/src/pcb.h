@@ -8,12 +8,11 @@
 #ifndef PCB_H_
 #define PCB_H_
 
-#include <commons/log.h>
 #include "configuraciones.h"
 #include <parser/metadata_program.h>
 #include <parser/parser.h>
-
 typedef struct{
+
 	int pagina;
 	int offset;
 	int size;

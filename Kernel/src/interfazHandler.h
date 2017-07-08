@@ -37,8 +37,10 @@ void imprimirTablaArchivosProceso(int pid);
 pthread_t interfaz;
 int flagTerminarUI=0;
 /*-------------LOG-----------------*/
+
 void inicializarLog(char *rutaDeLog);
 t_log *logKernel;
+t_log *logKernelPantalla;
 
 
 void interfazHandler(){
@@ -70,15 +72,18 @@ void interfazHandler(){
 						testEscribirArchivo();
 					//interfazHandlerParaFileSystem('A',1);
 					break;
+				case 'H': imprimirListaAdministrativaHeap();
+						  break;
 				case 'Z':
 						testLeerArchivo();
 					break;
 				case 'X':
 						testBorrarArchivo();
 					break;
+				case 'D': sem_post(&sem_planificacion);
+						  break;
 				default:
-					if(cont!=2)printf("Orden no reconocida");
-					else cont = 0;
+					if(cont!=2){} else cont = 0;
 					break;
 		}
 	}
@@ -90,11 +95,11 @@ void interfaceObtenerDatosProceso(){
 	printf("Ingrese el pid del proceso\n");
 	scanf("%d",&pid);
 		if(verificarProcesoExistente(pid)<0){
-			printf("Proceso no existente---> PID: %d", pid);
+			log_warning(logKernelPantalla,"Proceso no existente---> PID: %d", pid);
 			return;
 		}
-	printf("Datos del proceso--->%d\n",pid);
-	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
+		log_info(logKernelPantalla,"Datos del proceso--->%d\n",pid);
+		log_info(logKernelPantalla,"PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
 	obtenerDatosProceso(pid);
 }
 
@@ -102,11 +107,11 @@ void interfaceFinalizarProcesoVoluntariamente(){
 	printf("Ingrese el pid del proceso a finalizar\n");
 	scanf("%d",&pid);
 			if(verificarProcesoExistente(pid)<0){
-				printf("El proceso no existe--->PID:%d\n",pid);
+				log_warning(logKernelPantalla,"El proceso no existe--->PID:%d\n",pid);
 				return;
 				}
 			if(verificarProcesoNoTerminado(pid)<0){
-				printf("El proceso ya ha finalizado--->PID:%d\n",pid);
+				log_info(logKernel,"El proceso ya ha finalizado--->PID:%d\n",pid);
 				return;
 				}
 	finalizarProcesoVoluntariamente(pid);
@@ -115,10 +120,9 @@ void interfaceFinalizarProcesoVoluntariamente(){
 void interfaceSolicitarContenidoMemoria(){
 	char* mensaje;
 	if((solicitarContenidoAMemoria(&mensaje))<0){
-			printf("No se pudo solicitar el contenido\n");
+		log_error(logKernelPantalla,"No se pudo solicitar el contenido\n");
 			return;
 		}
-	printf("El mensaje recibido de la Memoria es : %s\n" , mensaje);
 }
 
 int verificarProcesoNoTerminado(int pid){
@@ -178,7 +182,7 @@ void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
 }
 
 void imprimirDatosContables(t_contable* proceso){
-	printf("%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+	log_info(logKernelPantalla,"%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
 				proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 }
 
@@ -196,7 +200,7 @@ void imprimirTablaArchivosProceso(int pid){
 
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		printf("\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
+		log_info(logKernelPantalla,"\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }
@@ -284,7 +288,7 @@ void finalizarProcesoVoluntariamente(int pid){
 	pthread_mutex_lock(&mutexNuevoProceso);
 	buscarProcesoYTerminarlo(pid);
 	pthread_mutex_unlock(&mutexNuevoProceso);
-	printf("Proceso finalizado exitosamente--->PID:%d\n",pid);
+	log_info(logKernel,"Proceso finalizado exitosamente--->PID:%d\n",pid);
 }
 
 
@@ -296,7 +300,7 @@ void interfaceTablaGlobalArchivos(){
 	printf("\tDireccion\tAperturas\n");
 	for(i=0;i<tablaArchivosGlobal->elements_count;i++){
 		entrada = list_get(tablaArchivosGlobal,i);
-		printf("\t%s\t%d\n",entrada->path,entrada->open);
+		log_info(logKernelPantalla,"\t%s\t%d\n",entrada->path,entrada->open);
 	}
 }
 
@@ -319,7 +323,7 @@ void interfaceModificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a 
 
 	if(nuevoGrado > gradoMultiProgramacion)sem_post(&sem_admitirNuevoProceso);
 	pthread_mutex_unlock(&mutexNuevoProceso);
-	printf("Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
+	log_info(logKernel,"Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
 }
 
 void inicializarLog(char *rutaDeLog){
@@ -327,7 +331,7 @@ void inicializarLog(char *rutaDeLog){
 		mkdir("/home/utnso/Log",0755);
 
 		logKernel = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-		//logKernel = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
+		logKernelPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
 }
 
 void imprimirInterfazUsuario(){
@@ -335,7 +339,7 @@ void imprimirInterfazUsuario(){
 	/**************************************Printea interfaz Usuario Kernel*******************************************************/
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener datos de proceso\nL - Obtener listado programas\n\tT - Obtener todos los procesos\n\tC - Obtener procesos de un estado\n\t\tN - New\n\t\tR - Ready\n\t\tE - Exec\n\t\tB - Blocked\n\t\tF - Finished\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\n");
+	printf("\nIngresar orden de accion:\nO - Obtener datos de proceso\nL - Obtener listado programas\n\tT - Obtener todos los procesos\n\tC - Obtener procesos de un estado\n\t\tN - New\n\t\tR - Ready\n\t\tE - Exec\n\t\tB - Blocked\n\t\tF - Finished\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nH - Mostrar estructura Heap");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
 }
