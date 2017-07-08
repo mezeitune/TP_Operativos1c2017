@@ -101,6 +101,7 @@ t_puntero reservar (t_valor_variable espacio){
 
 	t_puntero puntero = pagina * config_paginaSize + offset;
 	log_info(loggerConPantalla, "La direccion logica es: %d",puntero);
+
 	return puntero;
 }
 void liberar (t_puntero puntero){

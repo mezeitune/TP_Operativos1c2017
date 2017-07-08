@@ -98,8 +98,8 @@ void ejecutarInstruccion(){
 	char orden;
 	orden = '\0';
 	char *instruccion = obtener_instruccion();
-
-	usleep(retardo_entre_instruccion);
+	retardo_entre_instruccion=retardo_entre_instruccion/1000;
+	sleep(retardo_entre_instruccion);
 	log_info(loggerSinPantalla,"El sleep es : %d ms",retardo_entre_instruccion);
 	log_warning(loggerConPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);

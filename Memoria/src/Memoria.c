@@ -94,7 +94,7 @@ int main_liberarPaginaProceso(int sock);
 
 //-----------------------FUNCIONES MEMORIA--------------------------//
 int inicializarPrograma(int pid, int cantPaginas);
-void solicitarBytesPagina(int pid,int pagina, int offset, int size,char** buffer);
+int solicitarBytesPagina(int pid,int pagina, int offset, int size,char** buffer);
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, void* buffer);
 int asignarPaginasAProceso(int pid, int cantPaginas, int frame);
 int finalizarPrograma(int pid);
@@ -221,17 +221,17 @@ int inicializarPrograma(int pid, int cantPaginas)
 	return posicionFrame;
 }
 
-void solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffer)
+int solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffer)
 {
 	log_info(loggerConPantalla,"Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 	log_info(loggerConPantalla,"El frame es : %d\n",frame);
-
-	memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size);
-
-	strcpy(*buffer + size , "\0");
-	log_info(loggerConPantalla,"%s\n",*buffer);
-
+	if(frame != -1){
+		memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size);
+		strcpy(*buffer + size , "\0");
+		log_info(loggerConPantalla,"%s\0\n",*buffer);
+	}
+	return frame;
 }
 
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, void* buffer)
@@ -249,7 +249,7 @@ int almacenarBytesPagina(int pid,int pagina, int offset,int size, void* buffer)
 	{
 		log_warning(loggerConPantalla,"No se encontró el PID/Pagina del programa\n");
 	}
-	return EXIT_SUCCESS;
+	return frame;
 }
 
 int asignarPaginasAProceso(int pid, int cantPaginas, int posicionFrame)
@@ -343,12 +343,12 @@ int main_inicializarPrograma(int sock)
 			asignarPaginasAProceso(pid,1,posicionFrame);
 			i++;
 		}
-		usleep(retardo_memoria);
+		sleep(retardo_memoria);
 		return 0;
 	}
 	else
 	{
-		usleep(retardo_memoria);
+		sleep(retardo_memoria);
 		log_warning(loggerConPantalla,"No hay espacio suficiente en la memoria\n");
 		return -1;
 	}
@@ -360,6 +360,7 @@ int main_solicitarBytesPagina(int sock)
 	int offset;
 	int size;
 	char*bufferAEnviar;
+	int resultadoEjecucion = 0;
 
 	read(sock,&pid,sizeof(int));
 	read(sock,&pagina,sizeof(int));
@@ -383,15 +384,15 @@ int main_solicitarBytesPagina(int sock)
 		if(cantidadEntradasDeProcesoEnCache(pid) < cache_x_proc){
 			iniciarEntradaEnCache(pid,pagina);
 		}
-		log_info(loggerConPantalla,"No se encontró la pagina %d del proceso %d en la cache\n",pagina,pid);
-		solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
-		usleep(retardo_memoria);
+		log_info(loggerConPantalla,"No se encontro la pagina %d del proceso %d en la cache\n",pagina,pid);
+		resultadoEjecucion = solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
+		sleep(retardo_memoria);
 		//enviar_string(sock,bufferAEnviar);
 	}
 	send(sock,bufferAEnviar,size,0);
 	free(bufferAEnviar);
 
-	return 0;
+	return resultadoEjecucion;
 }
 int main_almacenarBytesPagina(int sock)
 {
@@ -400,6 +401,8 @@ int main_almacenarBytesPagina(int sock)
 	int offset;
 	int size;
 	void *bytes;
+
+	int resultadoEjecucion = 0;
 
 	read(sock,&pid,sizeof(int));
 	read(sock,&pagina,sizeof(int));
@@ -410,13 +413,13 @@ int main_almacenarBytesPagina(int sock)
 
 	log_info(loggerConPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
-	almacenarBytesPagina(pid,pagina,offset,size,bytes);
+	resultadoEjecucion = almacenarBytesPagina(pid,pagina,offset,size,bytes);
 	if(buscarEntradaDeProcesoEnCache(pid,pagina) >= 0){
 		actualizarEntradaEnCache(pid,pagina);
 	}
 	free(bytes);
-	usleep(retardo_memoria);
-	return 0;
+	sleep(retardo_memoria);
+	return resultadoEjecucion;
 }
 int main_asignarPaginasAProceso(int sock)
 {
@@ -442,12 +445,12 @@ int main_asignarPaginasAProceso(int sock)
 			asignarPaginasAProceso(pid,1,posicionFrame);
 			i++;
 		}
-		usleep(retardo_memoria);
+		sleep(retardo_memoria);
 		return 0;
 	}
 	else
 	{
-		usleep(retardo_memoria);
+		sleep(retardo_memoria);
 		log_warning(loggerConPantalla,"No hay espacio suficiente en la memoria\n");
 		return -1;
 	}
@@ -459,7 +462,7 @@ int main_finalizarPrograma(int sock)
 	read(sock,&pid,sizeof(int));
 
 	finalizarPrograma(pid);
-	usleep(retardo_memoria);
+	sleep(retardo_memoria);
 	return 0;
 }
 int main_liberarPaginaProceso(int sock){
@@ -474,7 +477,7 @@ int main_liberarPaginaProceso(int sock){
 
 	resultadoDeEjecucion = liberarPaginaProceso(pid,pagina);
 
-	usleep(retardo_memoria);
+	sleep(retardo_memoria);
 	return resultadoDeEjecucion;
 }
 
