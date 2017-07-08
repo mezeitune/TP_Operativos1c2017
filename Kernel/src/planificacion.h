@@ -32,6 +32,8 @@
 #include "listasAdministrativas.h"
 #include "capaFilesystem.h"
 
+t_log *logKernelPantalla;
+t_log *logKernel;
 /*---PAUSA PLANIFICACION---*/
 int flagHuboAlgunProceso;
 int flagCPUSeDesconecto;
@@ -156,7 +158,7 @@ void administrarFinProcesos(){
 						}
 						pthread_mutex_unlock(&mutexListaEspera);
 					/*TODO:La tabla del proceso de archivos abiertos no la borro para que qude el registro*/
-					log_info(logKernel, "Proceso terminado--->PID:%d", proceso->pid);
+					log_info(logKernelPantalla, "Proceso terminado--->PID:%d", proceso->pid);
 				}
 	}
 	log_info(logKernel,"Hilo administrador de fin de procesos finalizado");
@@ -194,7 +196,7 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 }
 
 void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
-	log_info(logKernel,"Cambiando nuevo proceso desde Nuevos a Listos--->PID: %d",proceso->pid);
+	log_info(logKernelPantalla,"Cambiando nuevo proceso desde Nuevos a Listos--->PID: %d",proceso->pid);
 	pthread_mutex_lock(&mutexMemoria);
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
 		pthread_mutex_unlock(&mutexMemoria);
@@ -231,24 +233,24 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 
 void interfazPausarPlanificacion(){
 
-	if(!flagPlanificacion)printf("Planificacion ya pausada\n");
+	if(!flagPlanificacion)log_info(logKernelPantalla,"Planificacion ya pausada\n");
 	else{
 		flagPlanificacion = 0;
 		sem_wait(&sem_planificacion);
-		printf("Se pauso la planificacion");
+		log_info(logKernelPantalla,"Se pauso la planificacion");
 	}
 }
 
 void interfazReanudarPlanificacion(){
 
 
-	if(flagPlanificacion) printf("Planificacion no se encuentra pausada");
+	if(flagPlanificacion) log_info(logKernelPantalla,"Planificacion no se encuentra pausada");
 	else{
 		flagPlanificacion = 1;
 
 		sem_post(&sem_planificacion);
 		sem_post(&sem_planificacion);
-		printf("Se reanudo la planificacion");
+		log_info(logKernelPantalla,"Se reanudo la planificacion");
 	}
 }
 
@@ -316,7 +318,7 @@ void planificarCortoPlazo(){
 			list_add(colaEjecucion, pcbListo);
 			pthread_mutex_unlock(&mutexColaEjecucion);
 
-			log_info(logKernel,"\nPcb encolado en Ejecucion--->PID:%d\n",pcbListo->pid);
+			log_info(logKernelPantalla,"\nPcb encolado en Ejecucion--->PID:%d\n",pcbListo->pid);
 
 		}else{
 
@@ -354,7 +356,7 @@ void finQuantumAReady(){
 				list_add(colaListos,pcbBuffer);
 				pthread_mutex_unlock(&mutexColaListos);
 
-				log_info(logKernel, "\nPCB encolado en Listos---> PID: %d\n", pcbBuffer->pid);
+				log_info(logKernelPantalla, "\nPCB encolado en Listos---> PID: %d\n", pcbBuffer->pid);
 
 				sem_post(&sem_colaListos);
 			}
@@ -435,7 +437,7 @@ void pcbBloqueadoAReady(){
 
 					if(list_any_satisfy(colaBloqueados, (void*)verificaIdPCB)){
 
-						log_info(logKernel,"Cambiando proceso desde Bloqueados a Listos--->PID:%d",semYPCB->pcb->pid);
+						log_info(logKernelPantalla,"Cambiando proceso desde Bloqueados a Listos--->PID:%d",semYPCB->pcb->pid);
 
 						pthread_mutex_lock(&mutexColaBloqueados);
 						pcbADesbloquear = list_remove_by_condition(colaBloqueados,(void*)verificaIdPCB);
@@ -475,7 +477,7 @@ void pcbEjecucionABloqueado(){
 			semYPCB = list_get(listaSemYPCB, indice);
 			pthread_mutex_unlock(&mutexListaSemYPCB);
 
-			log_info(logKernel,"Cambiando proceso desde Ejecucion a Bloqueados--->PID:%d",semYPCB->pcb->pid);
+			log_info(logKernelPantalla,"Cambiando proceso desde Ejecucion a Bloqueados--->PID:%d",semYPCB->pcb->pid);
 
 			pthread_mutex_lock(&mutexColaEjecucion);
 			list_remove_by_condition(colaEjecucion, (void*)verificaPCB);
@@ -525,7 +527,7 @@ void encolarProcesoListo(t_pcb *procesoListo){
 	pthread_mutex_lock(&mutexColaListos);
 	list_add(colaListos,procesoListo);
 	pthread_mutex_unlock(&mutexColaListos);
-	log_info(logKernel, "Pcb encolado en Listos--->PID: %d", procesoListo->pid);
+	log_info(logKernelPantalla, "Pcb encolado en Listos--->PID: %d", procesoListo->pid);
 }
 
 

@@ -640,7 +640,7 @@ void escribirEstructuraAdmAMemoria(int pid, int frame, int cantPaginas, int cant
 
 void borrarProgramDeStructAdms(int pid)
 {
-	int i = 0;
+	int i = sizeStructsAdmMemoria;
 	int desplazamiento = sizeof(struct_adm_memoria);
 	struct_adm_memoria aux;
 	while(i<marcos)

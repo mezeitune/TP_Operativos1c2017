@@ -38,10 +38,8 @@
 #include "sockets.h"
 #include "listasAdministrativas.h"
 #include <sys/inotify.h>
-
 #include "capaFilesystem.h"
 #include "excepciones.h"
-
 
 typedef struct{
 	pthread_t hilo;
@@ -166,7 +164,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		if(!flagPlanificacion) {
 					contadorPid--;
 					free(proceso);
-					log_warning(logKernel,"La planificacion del sistema esta detenida");
+					log_warning(logKernelPantalla,"La planificacion del sistema esta detenida");
 					excepcionPlanificacionDetenida(codigoPrograma->socketHiloConsola);
 					free(codigoPrograma);
 					return -1;
@@ -177,7 +175,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		pthread_mutex_lock(&mutexColaNuevos);
 		list_add(colaNuevos,proceso);
 		pthread_mutex_unlock(&mutexColaNuevos);
-		log_info(logKernel,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
+		log_info(logKernelPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 		pthread_mutex_lock(&mutexListaCodigo);
 		list_add(listaCodigosProgramas,codigoPrograma);
 		pthread_mutex_unlock(&mutexListaCodigo);
@@ -234,7 +232,7 @@ void gestionarRRFinQuantum(int socket){
 
 	cpu = list_find(listaCPU, (void*)verificaSocket);
 
-	log_info(logKernel,"Expropiand por fin de quantum");
+	log_info(logKernelPantalla,"Expropiando por fin de quantum");
 	if(cpu->estado != FQPB){
 
 		recv(socket,&cpuFinalizada, sizeof(int),0);
@@ -360,7 +358,7 @@ void gestionarFinalizarProgramaConsola(int socket){
 }
 
 int buscarProcesoYTerminarlo(int pid){
-	log_info(logKernel,"Finalizando proceso--->PID: %d ",pid);
+	log_info(logKernelPantalla,"Finalizando proceso--->PID: %d ",pid);
 	int encontro=0;
 	t_pcb *procesoATerminar;
 	t_cpu *cpuAFinalizar = malloc(sizeof(t_cpu));
@@ -486,7 +484,7 @@ void gestionarAlocar(int socket){
 	int size,pid;
     pthread_t heapThread;
 	recv(socket,&pid,sizeof(int),0);
-	log_info(logKernel,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
+	log_info(logKernelPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
 	recv(socket,&size,sizeof(int),0);
 
 	if(size > config_paginaSize - sizeof(t_bloqueMetadata)*2) {
@@ -500,7 +498,7 @@ void gestionarAlocar(int socket){
 	data->socket = socket;
 	int err=pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
 	if(err){
-		log_error(logKernel,"error al crear el hilo para alocar memoria dinamicais %d\n", err);
+		log_error(logKernelPantalla,"error al crear el hilo para alocar memoria dinamicais %d\n", err);
 		return;
 	}
 
@@ -524,7 +522,7 @@ void gestionarLiberar(int socket){
 	recv(socket,&pid,sizeof(int),0);
 	recv(socket,&pagina,sizeof(int),0);
 	recv(socket,&offset,sizeof(int),0);
-	log_info(logKernel,"Gestionando liberacion de memoria dinamica--->PID:%d--->Pagina:%d--->Offset:%d",pid,pagina,offset);
+	log_info(logKernelPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d--->Pagina:%d--->Offset:%d",pid,pagina,offset);
 
 
 	liberarBloqueHeap(pid,pagina,offset);
@@ -676,7 +674,7 @@ void selectorConexiones() {
 										pthread_mutex_unlock(&mutex_masterSet);
 
 										if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
-										log_info(logKernel,"Nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
+										log_info(logKernelPantalla,"Nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 									}
 									else if(socket == descriptor_inotify){
 										char* mensaje = malloc(sizeof(struct inotify_event));
