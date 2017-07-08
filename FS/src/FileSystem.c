@@ -140,7 +140,7 @@ void connectionHandler()
 			obtenerDatosArchivoFunction(path);
 			break;
 		case 'G'://guardar archivo
-			guardarDatosArchivoFunction(path);
+			guardarDatosArchivoFunction2(path);
 			break;
 		default:
 			log_error(loggerConPantalla,"Orden no definida:%c",orden);

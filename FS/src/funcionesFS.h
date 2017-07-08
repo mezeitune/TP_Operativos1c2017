@@ -537,7 +537,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 			printf("Bloques encontrados :%d\n",bloquesEncontrados);
 
-
+			void* stringComoSeQuiere=(void* stringComoSeQuiere);
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
 							log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
 							//guardamos en los bloques deseados
@@ -571,7 +571,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 								}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
 									printf("No tuve que cortar el string\n");
 									//mandarlo to-do de una
-									fwrite(buffer + desplazamiento,sizeRestante,1,bloque);
+									fwrite(stringComoSeQuiere + desplazamiento,sizeRestante,1,bloque);
 									//adx_store_data(nombreBloque,buffer + desplazamiento);
 
 								}
