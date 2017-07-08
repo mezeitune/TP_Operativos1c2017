@@ -72,7 +72,8 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 
 	char* montajeCarpeta = string_new();
 
-	log_info(loggerConPantalla,"Creando archivo--->Direccion:%s",path);
+	log_info(loggerConPantalla,"Creando archivo--->Path relativo:%s",path);
+
 	char *rutaAbsoluta = string_new();
 	string_append(&rutaAbsoluta, puntoMontaje);
 	string_append(&rutaAbsoluta, "Archivos/");
@@ -85,21 +86,24 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 	char* carpetaSiguiente = strtok(path,"/");
 	string_append(&montajeCarpeta,carpetaSiguiente);
 
-	mkdir(montajeCarpeta,0777);
-	string_append(&montajeCarpeta,"/");
+	if(!esArchivo(carpetaSiguiente)){
+		mkdir(montajeCarpeta,0777);
+		string_append(&montajeCarpeta,"/");
 
-	while((carpetaSiguiente = strtok(NULL,"/")) != NULL){
-		string_append(&montajeCarpeta,carpetaSiguiente);
+		while((carpetaSiguiente = strtok(NULL,"/")) != NULL){
+				string_append(&montajeCarpeta,carpetaSiguiente);
 
+				if(!esArchivo(carpetaSiguiente)) mkdir(montajeCarpeta, 0777);
 		if(!esArchivo(carpetaSiguiente))
 			{
 				log_info(loggerConPantalla,"Creando nuevo directorio");
 				mkdir(montajeCarpeta, 0777);
 			}
+				string_append(&montajeCarpeta,"/");
 
-		string_append(&montajeCarpeta,"/");
-
+			}
 	}
+
 
 
 	//Recorro bitmap y veo si hay algun bloque para asignarle
@@ -118,7 +122,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 	}
 
 	if(encontroUnBloque==1){
-		FILE* fp = fopen(rutaAbsoluta, "ab+");
+		FILE* fp = fopen(rutaAbsoluta, "ab");
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
 
@@ -140,6 +144,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 		validado=1;
 		send(socketKernel,&validado,sizeof(int),0);
 		printf("Se creo el archivo\n");
+		fclose(fp);
 	}else{
 		validado=0;
 		log_info(loggerConPantalla,"No se encontraron bloques disponibles");

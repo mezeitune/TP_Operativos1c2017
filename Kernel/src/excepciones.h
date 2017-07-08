@@ -44,6 +44,7 @@ void inicializarExitCodeArray();
 /*Rutinas para finalizar un proceso*/
 t_pcb* expropiarVoluntariamente(int socket);
 t_pcb* expropiarPorEjecucion(int socket);
+
 void cambiarEstadoCpu(int socket,int estado);
 void removerDeColaEjecucion(int pid);
 
@@ -76,20 +77,20 @@ void excepcionStackOverflow(int socket);
 
 
 void excepcionPlanificacionDetenida(int socket){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por planificacion detenido");
+	log_error(logKernel,"Informando a Consola excepcion por planificacion detenido");
 	informarConsola(socket,exitCodeArray[EXIT_RESOURCE]->mensaje,strlen(exitCodeArray[EXIT_RESOURCE]->mensaje));
 	char* mensaje = "Finalizar";
 	int size=strlen(mensaje);
 	informarConsola(socket,mensaje,size);
-	recv(socket,&size,sizeof(int),0); // A modo de ok
 	eliminarSocket(socket);
+
 }
 
 /*
  * Excepeciones de FileSystem.
  */
 void excepcionFileSystem(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion de fileSystem");
+	log_error(logKernel,"Informando a Consola excepcion de fileSystem");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value;
@@ -97,7 +98,7 @@ void excepcionFileSystem(int socket,int pid){
 }
 
 void excepcionPermisosEscritura(int socketCPU,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de escritura");
+	log_error(logKernel,"Informando a Consola excepcion por permisos de escritura");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_WRITE_PERMISSIONS]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socketCPU);
 	proceso->exitCode = exitCodeArray[EXIT_WRITE_PERMISSIONS]->value;
@@ -105,7 +106,7 @@ void excepcionPermisosEscritura(int socketCPU,int pid){
 }
 
 void excepcionNoPudoBorrarArchivo(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por no poder borrar archivo");
+	log_error(logKernel,"Informando a Consola excepcion por no poder borrar archivo");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILE_CANNOT_BE_DELETE]->mensaje,strlen(exitCodeArray[EXIT_FILE_CANNOT_BE_DELETE]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_FILE_CANNOT_BE_DELETE]->value;
@@ -113,15 +114,15 @@ void excepcionNoPudoBorrarArchivo(int socket,int pid){
 }
 
 void excepcionFileDescriptorNoAbierto(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por no existir el fd indicado");
+	log_error(logKernel,"Informando a Consola excepcion por no existir el fd indicado");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILE_DESCRIPTOR_NOT_OPEN]->mensaje,strlen(exitCodeArray[EXIT_FILE_DESCRIPTOR_NOT_OPEN]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_FILE_DESCRIPTOR_NOT_OPEN]->value;
 	encolarEnListaParaTerminar(proceso);
 }
 
-void  excepcionSinTablaArchivos(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion porque el proceso nunca inicializo la tabla de archivos");
+void excepcionSinTablaArchivos(int socket,int pid){
+	log_error(logKernel,"Informando a Consola excepcion porque el proceso nunca inicializo la tabla de archivos");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->mensaje,strlen(exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_DIDNOT_OPEN_TABLE]->value;
@@ -129,7 +130,7 @@ void  excepcionSinTablaArchivos(int socket,int pid){
 }
 
 void excepcionPermisosLectura(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de lectura");
+	log_error(logKernel,"Informando a Consola excepcion por permisos de lectura");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_READ_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_READ_PERMISSIONS]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_READ_PERMISSIONS]->value;
@@ -137,7 +138,7 @@ void excepcionPermisosLectura(int socket,int pid){
 }
 
 void excepcionPermisosCrear(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por permisos de creacion");
+	log_error(logKernel,"Informando a Consola excepcion por permisos de creacion");
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje,strlen(exitCodeArray[EXIT_CREATE_PERMISSIONS]->mensaje));
 	proceso->exitCode = exitCodeArray[EXIT_CREATE_PERMISSIONS]->value;
@@ -145,7 +146,7 @@ void excepcionPermisosCrear(int socket,int pid){
 }
 
 void excepcionArchivoInexistente(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por archivo inexistente");
+	log_error(logKernel,"Informando a Consola excepcion por archivo inexistente");
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje,strlen(exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje));
 	proceso->exitCode = exitCodeArray[EXIT_FILE_NOT_FOUND]->value;
@@ -157,14 +158,14 @@ void excepcionArchivoInexistente(int socket,int pid){
  * Excepeciones Memoria
  */
 void excepcionReservaRecursos(int socket,t_pcb* proceso){
-	log_error(loggerConPantalla,"Informando a Consola excepcion por problemas al reservar recursos");
+	log_error(logKernel,"Informando a Consola excepcion por problemas al reservar recursos");
 	informarConsola(socket,exitCodeArray[EXIT_RESOURCE]->mensaje,strlen(exitCodeArray[EXIT_RESOURCE]->mensaje));
 	proceso->exitCode = exitCodeArray[EXIT_RESOURCE]->value;
 	encolarEnListaParaTerminar(proceso);
 }
 
 void excepcionPageSizeLimit(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepecion de exceso de memoria dinamica");
+	log_error(logKernel,"Informando a Consola excepecion de exceso de memoria dinamica");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje,strlen(exitCodeArray[EXIT_PAGE_OVERSIZE]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_PAGE_OVERSIZE]->value;
@@ -172,25 +173,26 @@ void excepcionPageSizeLimit(int socket,int pid){
 }
 
 void excepcionCantidadDePaginas(int socket,int pid){
-	log_error(loggerConPantalla,"Informando a Consola excepecion de exceso de paginas");
+	log_error(logKernel,"Informando a Consola excepecion de exceso de paginas");
 	informarConsola(buscarSocketHiloPrograma(pid),exitCodeArray[EXIT_PAGE_LIMIT]->mensaje,strlen(exitCodeArray[EXIT_PAGE_LIMIT]->mensaje));
 	t_pcb* proceso = expropiarPorEjecucion(socket);
 	proceso->exitCode = exitCodeArray[EXIT_PAGE_LIMIT]->value;
 	encolarEnListaParaTerminar(proceso);
 }
 
+/*TODO: Dos excepeciones iguales?*/
 void excepcionStackOverflow(int socket){
 
 	int cantidadDeRafagas;
 
-	log_error(loggerConPantalla,"Informando a Consola excepcion por StackOverflow");
+	log_error(logKernel,"Informando a Consola excepcion por StackOverflow");
 	t_pcb* proceso=recibirYDeserializarPcb(socket);
 	recv(socket,&cantidadDeRafagas,sizeof(int),0);
 
 	actualizarRafagas(proceso->pid,cantidadDeRafagas);
 
-	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje,strlen(exitCodeArray[EXIT_MEMORY_EXCEPTION]->mensaje));
-	proceso->exitCode =  exitCodeArray[EXIT_MEMORY_EXCEPTION]->value;
+	informarConsola(buscarSocketHiloPrograma(proceso->pid),exitCodeArray[EXIT_STACKOVERFLOW]->mensaje,strlen(exitCodeArray[EXIT_STACKOVERFLOW]->mensaje));
+	proceso->exitCode =  exitCodeArray[EXIT_STACKOVERFLOW]->value;
 	removerDeColaEjecucion(proceso->pid);
 	encolarEnListaParaTerminar(proceso);
 	cambiarEstadoCpu(socket,OCIOSA);
@@ -198,9 +200,10 @@ void excepcionStackOverflow(int socket){
 
 	sem_post(&sem_CPU);
 }
+
 void excepcionDireccionInvalida(int socket){
 	int cantidadDeRafagas;
-	log_error(loggerConPantalla,"Informando a Consola excepcion por Direccion Invalida de Memoria pedido por un proceso ANSISOP");
+	log_error(logKernel,"Informando a Consola excepcion por Direccion Invalida de Memoria pedido por un proceso ANSISOP");
 	t_pcb* proceso=recibirYDeserializarPcb(socket);
 	recv(socket,&cantidadDeRafagas,sizeof(int),0);
 
@@ -218,10 +221,9 @@ void excepcionDireccionInvalida(int socket){
  * Rutinas para finalizar un proceso
  */
 void terminarProceso(t_pcb* proceso){
-	log_info(loggerConPantalla,"Liberando recursos--->PID:%d",proceso->pid);
+	log_info(logKernel,"Liberando recursos--->PID:%d",proceso->pid);
 
 	finalizarHiloPrograma(proceso->pid);
-
 
 	pthread_mutex_lock(&mutexMemoria);
 	liberarRecursosEnMemoria(proceso);
@@ -236,7 +238,7 @@ void terminarProceso(t_pcb* proceso){
 
 t_pcb* expropiarVoluntariamente(int socket){
 	t_pcb* pcb;
-	log_info(loggerConPantalla,"Expropiando pcb--->CPU:%d",socket);
+	log_info(logKernel,"Expropiando proceso--->CPU:%d",socket);
 	char comandoExpropiar='F';
 	int rafagas;
 
@@ -255,11 +257,10 @@ t_pcb* expropiarPorEjecucion(int socket){
 	t_pcb* pcb;
 	int resultadoEjecucion=-1;
 	int rafagas;
-	log_info(loggerConPantalla,"Expropiando pcb--->CPU:%d",socket);
+	log_info(logKernel,"Expropiando proceso--->CPU:%d",socket);
 
 		send(socket,&resultadoEjecucion,sizeof(int),0);
-		printf("Mande la orden de expropiar\n");
-		sleep(3);
+
 		pcb = recibirYDeserializarPcb(socket);
 		recv(socket,&rafagas,sizeof(int),0);
 		actualizarRafagas(pcb->pid,rafagas);
@@ -268,8 +269,9 @@ t_pcb* expropiarPorEjecucion(int socket){
 		sem_post(&sem_CPU);
 		return pcb;
 }
+
 void cambiarEstadoATerminado(t_pcb* procesoTerminar){
-	log_info(loggerConPantalla,"Almacenando en Terminados--->PID:%d",procesoTerminar->pid);
+	log_info(logKernel,"Almacenando en Terminados--->PID:%d",procesoTerminar->pid);
 	_Bool verificaPid(t_pcb* pcb){
 			return (pcb->pid == procesoTerminar->pid);
 		}
@@ -278,6 +280,7 @@ void cambiarEstadoATerminado(t_pcb* procesoTerminar){
 	list_add(colaTerminados,procesoTerminar);
 	pthread_mutex_unlock(&mutexColaTerminados);
 }
+
 void finalizarHiloPrograma(int pid){
 	int hiloNoFinalizado;
 	int size=sizeof(char)* strlen("Finalizar");
@@ -303,7 +306,6 @@ void finalizarHiloPrograma(int pid){
 	//free(mensaje);TODO: Ver este free
 }
 
-
 void cambiarEstadoCpu(int socket,int estado){
 	_Bool verificaSocket(t_cpu* cpu){
 		return cpu->socket == socket;
@@ -317,7 +319,7 @@ void cambiarEstadoCpu(int socket,int estado){
 }
 
 void removerDeColaEjecucion(int pid){
-	log_info(loggerConPantalla,"Removiendo y destruyendo proceso de cola de ejecucion--->PID:%d",pid);
+	log_info(logKernel,"Removiendo y destruyendo proceso de cola de ejecucion--->PID:%d",pid);
 	_Bool verificaPid(t_pcb* proceso){
 			return (proceso->pid == pid);
 		}
@@ -334,7 +336,6 @@ void encolarEnListaParaTerminar(t_pcb* proceso){
 	sem_post(&sem_administrarFinProceso);
 }
 
-
 void inicializarExitCodeArray(){
 	int i;
 	for(i = 0 ; i< CANTIDADEXCEPCIONES ; i++){
@@ -345,7 +346,7 @@ void inicializarExitCodeArray(){
 	exitCodeArray[EXIT_OK]->mensaje= "Programa finalizado exitosamente";
 
 	exitCodeArray[EXIT_RESOURCE]->value = -1;
-	exitCodeArray[EXIT_RESOURCE]->mensaje= "No se puedieron reservar recursos para ejecutar el programa";
+	exitCodeArray[EXIT_RESOURCE]->mensaje= "No se pudieron reservar recursos para ejecutar el programa";
 
 	exitCodeArray[EXIT_FILE_NOT_FOUND]->value = -2;
 	exitCodeArray[EXIT_FILE_NOT_FOUND]->mensaje= "El programa intento acceder a un archivo que no existe";

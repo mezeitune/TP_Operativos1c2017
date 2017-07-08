@@ -21,9 +21,7 @@ void* leerDeMemoria(int pid,int pagina,int offset,int size);
 void handshakeMemoria();
 
 
-
 int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
-	log_info(loggerConPantalla,"Escribiendo en memoria--->PID:%d",pid);
 	char comandoEscribir= 'C';
 	int resultadoEjecucion = 0;
 	void* mensajeAMemoria = malloc(sizeof(char) + sizeof(int)* 4 + size);
@@ -38,12 +36,10 @@ int escribirEnMemoria(int pid,int pagina,int offset, int size,char*contenido){
 	send(socketMemoria,mensajeAMemoria,sizeof(char) + sizeof(int)* 4 + size,0);
 
 	recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
-	log_info(loggerConPantalla,"Servicio de escritura finalizado--->PID:%d",pid);
 	return resultadoEjecucion;
 }
 
 void* leerDeMemoria(int pid,int pagina,int offset,int size){
-	log_info(loggerConPantalla,"Leyendo de memoria--->PID:%d",pid);
 	char comandoSolicitud= 'S';
 	void* buffer = malloc(size + sizeof(char));
 	int resultadoEjecucion=0;
@@ -57,18 +53,15 @@ void* leerDeMemoria(int pid,int pagina,int offset,int size){
 		strcpy(buffer+size,"\0");
 		recv(socketMemoria,&resultadoEjecucion,sizeof(int),0);
 
-		log_info(loggerConPantalla,"Servicio de lectura finalizado--->PID:%d",pid);
-		/*TODO: Deberia devolver el resultado de ejecucion. Que el buffer lo cambie por referencia*/
 		return buffer;
 
 }
 
 int reservarPaginaEnMemoria(int pid){
-	log_info(loggerConPantalla,"Solicitando nueva pagina a memoria--->PID:%d",pid);
+	log_info(logKernel,"Solicitando nueva pagina a memoria--->PID:%d",pid);
 	char comandoReservarPagina = 'G';
 	int cantidadPaginas = 1;
 	int resultadoEjecucion=0;
-
 
 	send(socketMemoria,&comandoReservarPagina,sizeof(char),0);
 	send(socketMemoria,&pid,sizeof(int),0);
@@ -77,21 +70,15 @@ int reservarPaginaEnMemoria(int pid){
 	return resultadoEjecucion;
 }
 
-
-
-
-
-
-
 void handshakeMemoria(){
+	log_info(logKernel,"Obteniendo tamano de pagina");
 	char comandoTamanioPagina = 'P';
 	send(socketMemoria,&comandoTamanioPagina,sizeof(char),0);
 	recv(socketMemoria,&config_paginaSize,sizeof(int),0);
 }
 
-
 int pedirMemoria(t_pcb* procesoListo){
-		log_info(loggerConPantalla, "Solicitando Memoria--->PID: %d", procesoListo->pid);
+		log_info(logKernel, "Solicitando Memoria--->PID: %d", procesoListo->pid);
 		void* mensajeAMemoria = malloc(sizeof(int)*2 + sizeof(char));
 		int paginasTotalesRequeridas = procesoListo->cantidadPaginasCodigo + config_stackSize;
 		int resultadoEjecucion=1;
@@ -108,7 +95,7 @@ int pedirMemoria(t_pcb* procesoListo){
 }
 
 int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int programSize){
-	log_info(loggerConPantalla, "Almacenando programa en memoria--->PID: %d", procesoListoAutorizado->pid);
+	log_info(logKernel, "Almacenando programa en memoria--->PID: %d", procesoListoAutorizado->pid);
 		char* particionCodigo = malloc(config_paginaSize + sizeof(char));
 		int particionSize;
 		int programSizeRestante = programSize;
@@ -118,16 +105,15 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int p
 
 		for(nroPagina=0; nroPagina<procesoListoAutorizado->cantidadPaginasCodigo && resultadoEjecucion==0;nroPagina++){
 				particionSize=calcularTamanioParticion(&programSizeRestante);
-			//	log_info(loggerConPantalla, "Tamano de la particion de codigo a almacenar:\n %d\n", particionSize);
 				strncpy(particionCodigo,programa,particionSize);
 				programa += particionSize;
 				resultadoEjecucion = escribirEnMemoria(procesoListoAutorizado->pid,nroPagina,offset,particionSize,(void*)particionCodigo);
 		}
-		//log_info(loggerConPantalla, "Programa almacenado en Memoria---- PID: %d", procesoListoAutorizado->pid);
 		free(particionCodigo);
 		return resultadoEjecucion;
 
 }
+
 int calcularTamanioParticion(int *programSizeRestante){
 		int mod=*programSizeRestante % config_paginaSize;
 				 if(mod == *programSizeRestante){
@@ -140,7 +126,6 @@ int calcularTamanioParticion(int *programSizeRestante){
 }
 
 int solicitarContenidoAMemoria(char ** mensajeRecibido){
-	log_info(loggerConPantalla, "Solicitando contenido a Memoria");
 	char comandoSolicitud= 'S';
 	int pid;
 	int paginaSolicitada;

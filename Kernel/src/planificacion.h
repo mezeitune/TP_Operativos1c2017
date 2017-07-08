@@ -105,7 +105,7 @@ void planificarLargoPlazo(){
 
 	pthread_join(administradorNuevosProcesos,NULL);
 	pthread_join(administradorFinProcesos,NULL);
-	log_info(loggerConPantalla,"Planificador largo plazo finalizado");
+	log_info(logKernel,"Planificador largo plazo finalizado");
 }
 
 void administrarNuevosProcesos(){
@@ -130,7 +130,7 @@ void administrarNuevosProcesos(){
 			}
 			pthread_mutex_unlock(&mutexNuevoProceso);
 	}
-	log_info(loggerConPantalla,"Hilo administrador de nuevos procesos finalizado");
+	log_info(logKernel,"Hilo administrador de nuevos procesos finalizado");
 }
 
 void administrarFinProcesos(){
@@ -156,14 +156,14 @@ void administrarFinProcesos(){
 						}
 						pthread_mutex_unlock(&mutexListaEspera);
 					/*TODO:La tabla del proceso de archivos abiertos no la borro para que qude el registro*/
-					log_info(loggerConPantalla, "Proceso terminado--->PID:%d", proceso->pid);
+					log_info(logKernel, "Proceso terminado--->PID:%d", proceso->pid);
 				}
 	}
-	log_info(loggerConPantalla,"Hilo administrador de fin de procesos finalizado");
+	log_info(logKernel,"Hilo administrador de fin de procesos finalizado");
 }
 
 void liberarMemoriaDinamica(int pid){
-	log_info(loggerConPantalla,"Liberando Memoria Dinamica ");
+	log_info(logKernel,"Liberando Memoria Dinamica ");
 	int bloquesSinLiberar;
 	int sizeSinLiberar;
 	_Bool verificaPid(t_contable* proceso){
@@ -178,7 +178,7 @@ void liberarMemoriaDinamica(int pid){
 	pthread_mutex_unlock(&mutexListaContable);
 
 	if(bloquesSinLiberar > 0){
-		log_warning(loggerConPantalla,"El proceso no libero %d bloques de Heap, acumulando %d bytes--->PID:%d",bloquesSinLiberar,sizeSinLiberar,pid);
+		log_warning(logKernel,"El proceso no libero %d bloques de Heap, acumulando %d bytes--->PID:%d",bloquesSinLiberar,sizeSinLiberar,pid);
 		destruirTodasLasPaginasHeapDeProceso(pid);
 	}
 
@@ -194,18 +194,18 @@ t_codigoPrograma* buscarCodigoDeProceso(int pid){
 }
 
 void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
-	log_info(loggerConPantalla,"Cambiando nuevo proceso desde Nuevos a Listos--->PID: %d",proceso->pid);
+	log_info(logKernel,"Cambiando nuevo proceso desde Nuevos a Listos--->PID: %d",proceso->pid);
 	pthread_mutex_lock(&mutexMemoria);
 	if(inicializarProcesoEnMemoria(proceso,codigoPrograma) < 0 ){
 		pthread_mutex_unlock(&mutexMemoria);
-				log_error(loggerConPantalla ,"No se pudo reservar recursos para ejecutar el programa");
+				log_error(logKernel ,"No se pudo reservar recursos para ejecutar el programa");
 				excepcionReservaRecursos(codigoPrograma->socketHiloConsola,proceso);
 			}
 	else{
 		pthread_mutex_unlock(&mutexMemoria);
+		inicializarTablaProceso(proceso->pid);
 			encolarProcesoListo(proceso);
 			aumentarGradoMultiprogramacion();
-			inicializarTablaProceso(proceso->pid); /*TODO: Mutex si uso hilos*/
 			sem_post(&sem_colaListos);
 	}
 	free(codigoPrograma);
@@ -213,13 +213,13 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 
 
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma){
-	log_info(loggerConPantalla, "Inicializando proceso en memoria--->PID: %d", proceso->pid);
+	log_info(logKernel, "Inicializando proceso en memoria--->PID: %d", proceso->pid);
 	if((pedirMemoria(proceso))< 0){
-				log_error(loggerConPantalla ,"Memoria no autorizo la solicitud de reserva--->PID:%d",proceso->pid);
+				log_error(logKernel ,"Memoria no autorizo la solicitud de reserva--->PID:%d",proceso->pid);
 				return -1;
 			}
 	if((almacenarCodigoEnMemoria(proceso,codigoPrograma->codigo,codigoPrograma->size))< 0){
-					log_error(loggerConPantalla ,"Memoria no puede almacenar contenido--->PID:%d",proceso->pid);
+					log_error(logKernel ,"Memoria no puede almacenar contenido--->PID:%d",proceso->pid);
 					return -2;
 				}
 	return 0;
@@ -231,30 +231,30 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 
 void interfazPausarPlanificacion(){
 
-	if(!flagPlanificacion)log_warning(loggerConPantalla, "Planificacion ya pausada");
+	if(!flagPlanificacion)log_warning(logKernel, "Planificacion ya pausada");
 	else{
 		flagPlanificacion = 0;
 		sem_wait(&sem_planificacion);
-		log_info(loggerConPantalla, "Se pauso la planificacion");
+		log_info(logKernel, "Se pauso la planificacion");
 	}
 }
 
 void interfazReanudarPlanificacion(){
 
 
-	if(flagPlanificacion) log_warning(loggerConPantalla, "Planificacion no se encuentra pausada");
+	if(flagPlanificacion) log_warning(logKernel, "Planificacion no se encuentra pausada");
 	else{
 		flagPlanificacion = 1;
 
 		sem_post(&sem_planificacion);
 		sem_post(&sem_planificacion);
-		log_info(loggerConPantalla, "Se reanudo la planificacion");
+		log_info(logKernel, "Se reanudo la planificacion");
 	}
 }
 
 void verificarPausaPlanificacion(){
 	if(!flagPlanificacion){
-		log_info(loggerConPantalla,"\nLa planificacion se encuentra pausada\n");
+		log_info(logKernel,"\nLa planificacion se encuentra pausada\n");
 		sem_wait(&sem_planificacion);
 	}
 }
@@ -316,7 +316,7 @@ void planificarCortoPlazo(){
 			list_add(colaEjecucion, pcbListo);
 			pthread_mutex_unlock(&mutexColaEjecucion);
 
-			log_info(loggerConPantalla,"\nPcb encolado en Ejecucion--->PID:%d\n",pcbListo->pid);
+			log_info(logKernel,"\nPcb encolado en Ejecucion--->PID:%d\n",pcbListo->pid);
 
 		}else{
 
@@ -354,7 +354,7 @@ void finQuantumAReady(){
 				list_add(colaListos,pcbBuffer);
 				pthread_mutex_unlock(&mutexColaListos);
 
-				log_info(loggerConPantalla, "\nPCB encolado en Listos---> PID: %d\n", pcbBuffer->pid);
+				log_info(logKernel, "\nPCB encolado en Listos---> PID: %d\n", pcbBuffer->pid);
 
 				sem_post(&sem_colaListos);
 			}
@@ -435,7 +435,7 @@ void pcbBloqueadoAReady(){
 
 					if(list_any_satisfy(colaBloqueados, (void*)verificaIdPCB)){
 
-						log_info(loggerConPantalla,"Cambiando proceso desde Bloqueados a Listos--->PID:%d",semYPCB->pcb->pid);
+						log_info(logKernel,"Cambiando proceso desde Bloqueados a Listos--->PID:%d",semYPCB->pcb->pid);
 
 						pthread_mutex_lock(&mutexColaBloqueados);
 						pcbADesbloquear = list_remove_by_condition(colaBloqueados,(void*)verificaIdPCB);
@@ -475,7 +475,7 @@ void pcbEjecucionABloqueado(){
 			semYPCB = list_get(listaSemYPCB, indice);
 			pthread_mutex_unlock(&mutexListaSemYPCB);
 
-			log_info(loggerConPantalla,"Cambiando proceso desde Ejecucion a Bloqueados--->PID:%d",semYPCB->pcb->pid);
+			log_info(logKernel,"Cambiando proceso desde Ejecucion a Bloqueados--->PID:%d",semYPCB->pcb->pid);
 
 			pthread_mutex_lock(&mutexColaEjecucion);
 			list_remove_by_condition(colaEjecucion, (void*)verificaPCB);
@@ -525,7 +525,7 @@ void encolarProcesoListo(t_pcb *procesoListo){
 	pthread_mutex_lock(&mutexColaListos);
 	list_add(colaListos,procesoListo);
 	pthread_mutex_unlock(&mutexColaListos);
-	log_info(loggerConPantalla, "Pcb encolado en Listos--->PID: %d", procesoListo->pid);
+	log_info(logKernel, "Pcb encolado en Listos--->PID: %d", procesoListo->pid);
 }
 
 
@@ -551,7 +551,7 @@ void gestionarFinalizacionProgramaEnCpu(int socketCPU){
 }
 
 void liberarRecursosEnMemoria(t_pcb* proceso){
-	log_info(loggerConPantalla,"Liberando proceso en memoria--->PID: %d",proceso->pid);
+	log_info(logKernel,"Liberando proceso en memoria--->PID: %d",proceso->pid);
 	char comandoFinalizarProceso= 'F';
 
 	send(socketMemoria,&comandoFinalizarProceso,sizeof(char),0);

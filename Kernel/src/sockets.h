@@ -26,7 +26,7 @@ void inicializarSockets(){
 }
 
 void eliminarSocket(int socket){
-	log_warning(loggerConPantalla,"Desconectando socket:%d",socket);
+	log_warning(logKernel,"Desconectando socket:%d",socket);
 	pthread_mutex_lock(&mutex_masterSet);
 	FD_CLR(socket,&master);
 	pthread_mutex_unlock(&mutex_masterSet);

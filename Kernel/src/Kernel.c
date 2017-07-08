@@ -147,14 +147,14 @@ void connectionHandler(int socket, char orden) {
 		case 'Z':	eliminarSocket(socket);
 					break;
 		default:
-				log_error(loggerConPantalla,"Orden %c no definida", orden);
+				log_error(logKernel,"Orden %c no definida", orden);
 				break;
 		}
 	return;
 }
 
 int atenderNuevoPrograma(int socketAceptado){
-		log_info(loggerConPantalla,"Atendiendo nuevo programa");
+		log_info(logKernel,"Atendiendo nuevo programa");
 
 		contadorPid++;
 		send(socketAceptado,&contadorPid,sizeof(int),0);
@@ -166,7 +166,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		if(!flagPlanificacion) {
 					contadorPid--;
 					free(proceso);
-					log_warning(loggerConPantalla,"La planificacion del sistema esta detenida");
+					log_warning(logKernel,"La planificacion del sistema esta detenida");
 					excepcionPlanificacionDetenida(codigoPrograma->socketHiloConsola);
 					free(codigoPrograma);
 					return -1;
@@ -177,7 +177,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		pthread_mutex_lock(&mutexColaNuevos);
 		list_add(colaNuevos,proceso);
 		pthread_mutex_unlock(&mutexColaNuevos);
-		log_info(loggerConPantalla,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
+		log_info(logKernel,"Pcb encolado en Nuevos--->PID: %d",proceso->pid);
 		pthread_mutex_lock(&mutexListaCodigo);
 		list_add(listaCodigosProgramas,codigoPrograma);
 		pthread_mutex_unlock(&mutexListaCodigo);
@@ -187,7 +187,7 @@ int atenderNuevoPrograma(int socketAceptado){
 		return 0;
 }
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola){
-	log_info(loggerConPantalla,"Recibiendo codigo del nuevo programa ANSISOP");
+	log_info(logKernel,"Recibiendo codigo del nuevo programa ANSISOP");
 	t_codigoPrograma* codigoPrograma=malloc(sizeof(t_codigoPrograma));
 	recv(socketHiloConsola,&codigoPrograma->size, sizeof(int),0);
 	codigoPrograma->codigo = malloc(codigoPrograma->size + sizeof(char));
@@ -234,7 +234,7 @@ void gestionarRRFinQuantum(int socket){
 
 	cpu = list_find(listaCPU, (void*)verificaSocket);
 
-	log_info(loggerConPantalla,"Expropiand por fin de quantum");
+	log_info(logKernel,"Expropiand por fin de quantum");
 	if(cpu->estado != FQPB){
 
 		recv(socket,&cpuFinalizada, sizeof(int),0);
@@ -252,7 +252,7 @@ void gestionarRRFinQuantum(int socket){
 }
 
 void interruptHandler(int socketAceptado,char orden){
-	log_warning(loggerConPantalla,"Ejecutando interrupt handler");
+	log_warning(logKernel,"Ejecutando interrupt handler");
 
 	switch(orden){
 
@@ -283,13 +283,13 @@ void interruptHandler(int socketAceptado,char orden){
 		default:
 			break;
 	}
-	log_warning(loggerConPantalla,"Interrupt Handler finalizado");
+	log_warning(logKernel,"Interrupt Handler finalizado");
 	return;
 }
 
 
 void gestionarCierreCpu(int socketCpu){
-	log_warning(loggerConPantalla,"Gestionando cierre de CPU:%d",socketCpu);
+	log_warning(logKernel,"Gestionando cierre de CPU:%d",socketCpu);
 	_Bool verificaSocket(t_cpu* cpu){
 		return cpu->socket == socketCpu;
 	}
@@ -301,23 +301,23 @@ t_cpu* cpu;
 	eliminarSocket(socketCpu);
 	//eliminarSocket(socketInterrupciones);
 	free(cpu);
-	log_error(loggerConPantalla,"La CPU %d se ha cerrado",socketCpu);
+	log_error(logKernel,"La CPU %d se ha cerrado",socketCpu);
 }
 
 void imprimirPorConsola(socketAceptado){
-	char* mensaje;
+	void* mensaje;
 	int size;
 	recv(socketAceptado,&size,sizeof(int),0);
 	mensaje=malloc(size);
 	recv(socketAceptado,mensaje,size,0);
 	recv(socketAceptado,&pid,sizeof(int),0);
-	log_info(loggerConPantalla,"Imprimiendo por consola--->PID:%d--->Mensaje: %s",pid,mensaje);
+	log_info(logKernel,"Imprimiendo por consola--->PID:%d--->Mensaje: %s",pid,mensaje);
 	informarConsola(buscarSocketHiloPrograma(pid),mensaje,size);
 	free(mensaje);
 }
 
 void gestionarCierreConsola(int socket){
-	log_warning(loggerConPantalla,"Gestionando cierre de consola %d",socket);
+	log_warning(logKernel,"Gestionando cierre de consola %d",socket);
 	int size, cantidad,pid;
 	char* procesosAFinalizar;
 	int desplazamiento=0;
@@ -348,19 +348,19 @@ void gestionarCierreConsola(int socket){
 						desplazamiento ++;
 			}
 
-			log_warning(loggerConPantalla,"Consola %d cerrada",socket);
+			log_warning(logKernel,"Consola %d cerrada",socket);
 			eliminarSocket(socket);
 			free(procesosAFinalizar);
 }
 
 void gestionarFinalizarProgramaConsola(int socket){
-	log_warning(loggerConPantalla,"La consola  %d  ha solicitado finalizar un proceso ",socket);
+	log_warning(logKernel,"La consola  %d  ha solicitado finalizar un proceso ",socket);
 	recv(socket,&pid,sizeof(int),0);
 	finalizarProcesoVoluntariamente(pid);
 }
 
 int buscarProcesoYTerminarlo(int pid){
-	log_info(loggerConPantalla,"Finalizando proceso--->PID: %d ",pid);
+	log_info(logKernel,"Finalizando proceso--->PID: %d ",pid);
 	int encontro=0;
 	t_pcb *procesoATerminar;
 	t_cpu *cpuAFinalizar = malloc(sizeof(t_cpu));
@@ -487,7 +487,7 @@ void gestionarAlocar(int socket){
 	int size,pid;
     pthread_t heapThread;
 	recv(socket,&pid,sizeof(int),0);
-	log_info(loggerConPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
+	log_info(logKernel,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
 	recv(socket,&size,sizeof(int),0);
 
 	if(size > config_paginaSize - sizeof(t_bloqueMetadata)*2) {
@@ -501,7 +501,7 @@ void gestionarAlocar(int socket){
 	data->socket = socket;
 	int err=pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
 	if(err){
-		log_error(loggerConPantalla,"error al crear el hilo para alocar memoria dinamicais %d\n", err);
+		log_error(logKernel,"error al crear el hilo para alocar memoria dinamicais %d\n", err);
 		return;
 	}
 
@@ -525,7 +525,7 @@ void gestionarLiberar(int socket){
 	recv(socket,&pid,sizeof(int),0);
 	recv(socket,&pagina,sizeof(int),0);
 	recv(socket,&offset,sizeof(int),0);
-	log_info(loggerConPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d--->Pagina:%d--->Offset:%d",pid,pagina,offset);
+	log_info(logKernel,"Gestionando liberacion de memoria dinamica--->PID:%d--->Pagina:%d--->Offset:%d",pid,pagina,offset);
 
 
 	liberarBloqueHeap(pid,pagina,offset);
@@ -588,13 +588,13 @@ void obtenerValorDeSharedVar(int socket){
 	recv(socket,&tamanio,sizeof(int),0);
 	identificador = malloc(tamanio);
 	recv(socket,identificador,tamanio,0);
-	log_info(loggerConPantalla, "Obteniendo el Valor de id: %s", identificador);
+	log_info(logKernel, "Obteniendo el Valor de id: %s", identificador);
 	int indice = indiceEnArray(shared_vars, identificador);
 	int valor;
 	pthread_mutex_lock(&mutexVariablesGlobales);
 	valor = variablesGlobales[indice];
 	pthread_mutex_unlock(&mutexVariablesGlobales);
-	log_info(loggerConPantalla, "Valor obtenido: %d", valor);
+	log_info(logKernel, "Valor obtenido: %d", valor);
 	send(socket,&valor,sizeof(int),0);
 
 	actualizarSysCalls(pid);
@@ -609,7 +609,7 @@ void guardarValorDeSharedVar(int socket){
 	identificador = malloc(tamanio);
 	recv(socket,identificador,tamanio,0);
 	recv(socket,&valorAGuardar,sizeof(int),0);
-	log_info(loggerConPantalla, "Guardar Valor de : id: %s, valor: %d", identificador, valorAGuardar);
+	log_info(logKernel, "Guardar Valor de : id: %s, valor: %d", identificador, valorAGuardar);
 	int indice = indiceEnArray(shared_vars, identificador);
 	pthread_mutex_lock(&mutexVariablesGlobales);
 	variablesGlobales[indice] = valorAGuardar;
@@ -625,7 +625,7 @@ int indiceEnArray(char** array, char* elemento){
 }
 
 void selectorConexiones() {
-	log_info(loggerConPantalla,"Iniciando selector de conexiones");
+	log_info(logKernel,"Iniciando selector de conexiones");
 	int nuevoFD;
 	int socket;
 	char orden;
@@ -661,7 +661,7 @@ void selectorConexiones() {
 
 					if (select(maximoFD + 1, &readFds, NULL, NULL, NULL) == -1) {
 						perror("select");
-						log_error(loggerSinPantalla,"Error en select\n");
+						log_error(logKernel,"Error en select\n");
 						exit(2);
 					}
 
@@ -677,7 +677,7 @@ void selectorConexiones() {
 										pthread_mutex_unlock(&mutex_masterSet);
 
 										if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
-										log_info(loggerConPantalla,"Nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
+										log_info(logKernel,"Nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 									}
 									else if(socket == descriptor_inotify){
 										char* mensaje = malloc(sizeof(struct inotify_event));
@@ -694,11 +694,11 @@ void selectorConexiones() {
 							}
 					}
 		}
-	log_info(loggerConPantalla,"Finalizando selector de conexiones");
+	log_info(logKernel,"Finalizando selector de conexiones");
 }
 
 void actualizarConfiguraciones(){
-	log_info(loggerConPantalla, "Leyendo cambios en archivo de config");
+	log_info(logKernel, "Leyendo cambios en archivo de config");
 	t_config* configuraciones = config_create(ruta_config);
 	config_quantum = config_get_int_value(configuraciones, "QUANTUM");
 	config_quantumSleep = config_get_int_value(configuraciones, "QUANTUM_SLEEP");
@@ -711,25 +711,25 @@ void actualizarConfiguraciones(){
 
 
 void signalHandlerKernel(int sigCode){
-	log_error(loggerConPantalla,"Cerrando proceso Kernel");
+	log_error(logKernel,"Cerrando proceso Kernel");
 	cerrarTodo();
 }
 
 void cerrarTodo(){
-	log_error(loggerConPantalla,"Iniciando rutina de cierre");
+	log_error(logKernel,"Iniciando rutina de cierre");
 	char comandoDesconexion = 'X';
 	send(socketFyleSys,&comandoDesconexion,sizeof(char),0);
 	send(socketMemoria,&comandoDesconexion,sizeof(char),0);
 
 
-	log_error(loggerConPantalla,"Finalizando hilos planificadores");
+	log_error(logKernel,"Finalizando hilos planificadores");
 	pthread_kill(planificadorLargoPlazo,SIGUSR1);
 	pthread_kill(planificadorCortoPlazo,SIGUSR1);
 	pthread_kill(planificadorMedianoPlazo,SIGUSR1);
 
 	int i;
 
-	log_error(loggerConPantalla,"Destruyendo procesos");
+	log_error(logKernel,"Destruyendo procesos");
 	for(i=0;i<colaNuevos->elements_count;i++){
 		list_remove_and_destroy_element(colaNuevos,i,free);
 	}

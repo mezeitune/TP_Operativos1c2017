@@ -155,7 +155,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 	if(resultadoEjecucion>0){
 		recv(socketKernel,infoLeida,tamanio,0);
-		log_info(loggerConPantalla,"La informacion leida es %s",infoLeida); /*TODO: Falta almacenarla en la posicion de memoria dada por la variable "informacion"*/
+		log_info(loggerConPantalla,"La informacion leida es %s",infoLeida);
 		almacenarDatosEnMemoria(infoLeida,tamanio,num_pagina,offset);
 	}else{
 		log_error(loggerConPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
@@ -179,7 +179,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 		send(socketKernel,&comandoImprimirPorConsola,sizeof(char),0);
 
 		send(socketKernel,&tamanio,sizeof(int),0);
-		send(socketKernel,(char*)informacion,tamanio,0);
+		send(socketKernel,informacion,tamanio,0);
 		send(socketKernel,&pcb_actual->pid,sizeof(int),0);
 	}else {
 		char comandoCapaFS = 'F';
