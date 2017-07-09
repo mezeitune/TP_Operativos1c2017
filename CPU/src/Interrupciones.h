@@ -16,12 +16,14 @@ enum{
 };
 
 int interrupcion=SIN_INTERRUPCION;
+int procesoFinalizado = 1;
 
 int verificaInterrupcion();
 void expropiar();
 
 
 int verificaInterrupcion(){
+
 
 	if(interrupcion != SIN_INTERRUPCION) return -1;
 	return 0;
@@ -38,11 +40,17 @@ void expropiar(){
 	default: break;
 
 	}
+}
 
+void expropiarPorKernel(){
+	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
 
 	serializarPcbYEnviar(pcb_actual,socketKernel);
+
 	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
+
 	free(pcb_actual);
-	recibiPcb=1;
+
+	procesoFinalizado=1;
 }
 #endif /* INTERRUPCIONES_H_ */

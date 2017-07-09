@@ -1,5 +1,5 @@
 #include "CPU.h"
-
+#include "Interrupciones.h"
 t_puntero definirVariable(t_nombre_variable variable) {
 
 

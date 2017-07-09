@@ -13,6 +13,7 @@
 #include "listasAdministrativas.h"
 #include "sincronizacion.h"
 #include "capaFilesystem.h"
+#include "logs.h"
 
 typedef struct{
 	int value;
@@ -50,7 +51,6 @@ t_pcb* expropiarPorEjecucion(int socket);
 void cambiarEstadoCpu(int socket,int estado);
 void removerDeColaEjecucion(int pid);
 
-void terminarProceso(t_pcb* pcb);
 void finalizarHiloPrograma(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 void liberarMemoriaDinamica(int pid);
@@ -223,27 +223,10 @@ void excepcionDireccionInvalida(int socket){
 /*
  * Rutinas para finalizar un proceso
  */
-void terminarProceso(t_pcb* proceso){
-	log_info(logKernel,"Liberando recursos--->PID:%d",proceso->pid);
-
-	finalizarHiloPrograma(proceso->pid);
-
-	pthread_mutex_lock(&mutexMemoria);
-	liberarRecursosEnMemoria(proceso);
-	pthread_mutex_unlock(&mutexMemoria);
-
-	liberarMemoriaDinamica(proceso->pid);
-	cambiarEstadoATerminado(proceso);
-
-	//verificarArchivosAbiertos(proceso->pid);
-
-	disminuirGradoMultiprogramacion();
-	sem_post(&sem_admitirNuevoProceso);
-}
 
 t_pcb* expropiarVoluntariamente(int socket){
 	t_pcb* pcb;
-	log_info(logKernel,"Expropiando proceso--->CPU:%d",socket);
+	log_info(logKernelPantalla,"Expropiando proceso--->CPU:%d",socket);
 	char comandoExpropiar='F';
 	int rafagas;
 

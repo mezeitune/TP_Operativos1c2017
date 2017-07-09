@@ -75,7 +75,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 	log_info(logConsola,"La cantidad de instrucciones a ejecutar son %d\n",cantidadInstruccionesAEjecutarDelPcbActual);
 
 	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
-		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual || cpuBloqueadaPorSemANSISOP != 0){
+		while((!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual) || cpuBloqueadaPorSemANSISOP != 0){
 
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel++; //para FIFO en si
@@ -118,7 +118,10 @@ void ejecutarInstruccion(){
 
 	recv(socketKernel,&orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
 
-	if(orden == 'F') cpuExpropiadaPorKernel = -1;
+	if(orden == 'F')  {
+		printf("Me llego una interrupciones del recv NO bloqeuante\n");
+		interrupcion = FINALIZADO_VOLUNTARIAMENTE;
+	}
 
 	free(instruccion);
 

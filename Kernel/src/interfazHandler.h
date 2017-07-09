@@ -8,6 +8,7 @@
 #include "planificacion.h"
 #include "configuraciones.h"
 #include "capaFilesystem.h"
+#include "logs.h"
 
 void interfazHandler();
 void imprimirInterfazUsuario();
@@ -37,10 +38,6 @@ void imprimirTablaArchivosProceso(int pid);
 pthread_t interfaz;
 int flagTerminarUI=0;
 /*-------------LOG-----------------*/
-
-void inicializarLog(char *rutaDeLog);
-t_log *logKernel;
-t_log *logKernelPantalla;
 
 
 void interfazHandler(){
@@ -326,13 +323,6 @@ void interfaceModificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a 
 	log_info(logKernel,"Se cambio la configuracion del Grado de Multiprogramacion a:%d\n",nuevoGrado);
 }
 
-void inicializarLog(char *rutaDeLog){
-
-		mkdir("/home/utnso/Log",0755);
-
-		logKernel = log_create(rutaDeLog,"Kernel", false, LOG_LEVEL_INFO);
-		logKernelPantalla = log_create(rutaDeLog,"Kernel", true, LOG_LEVEL_INFO);
-}
 
 void imprimirInterfazUsuario(){
 

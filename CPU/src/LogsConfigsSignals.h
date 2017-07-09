@@ -29,6 +29,11 @@ void signalHandler(int signum)
 
     if (signum == SIGUSR1 || signum == SIGINT)
     {
+    	if(procesoFinalizado) {
+    		log_warning(logConsolaPantalla,"Cierre por signal,cerrando CPU ...");
+    		cerrarTodo();
+    		exit(1);
+    	}
     	log_warning(logConsolaPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso y cerrando CPU ...");
     	cpuFinalizada = 1;
     }

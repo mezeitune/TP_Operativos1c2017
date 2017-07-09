@@ -15,8 +15,7 @@
 #include "sincronizacion.h"
 #include "excepciones.h"
 #include "planificacion.h"
-
-t_log *logKernelPantalla;
+#include "logs.h"
 
 typedef struct
 {

@@ -93,9 +93,6 @@ int quantum;
 int cantidadInstruccionesAEjecutarDelPcbActual;
 int recibiPcb=1;
 int retardo_entre_instruccion;
-
-
-int procesoFinalizado=0;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 //---------Primitivas Comunes----------//
 t_puntero definirVariable(t_nombre_variable variable);

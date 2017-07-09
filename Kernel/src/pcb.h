@@ -11,6 +11,8 @@
 #include "configuraciones.h"
 #include <parser/metadata_program.h>
 #include <parser/parser.h>
+#include "logs.h"
+
 typedef struct{
 
 	int pagina;
@@ -45,10 +47,7 @@ typedef struct {
 	}t_pcb;
 
 
-	void inicializarLog(char *rutaDeLog);
-	t_log *logKernel;
-	t_log *logKernel;
-	int contadorPid;
+int contadorPid;
 
 //---------PCB-----------------//
 t_pcb* crearPcb (char* programa, int programSize);

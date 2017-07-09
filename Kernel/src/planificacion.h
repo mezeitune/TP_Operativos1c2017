@@ -31,9 +31,8 @@
 #include "excepciones.h"
 #include "listasAdministrativas.h"
 #include "capaFilesystem.h"
+#include "logs.h"
 
-t_log *logKernelPantalla;
-t_log *logKernel;
 /*---PAUSA PLANIFICACION---*/
 int flagHuboAlgunProceso;
 int flagCPUSeDesconecto;
@@ -53,6 +52,7 @@ void administrarFinProcesos();
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
+void terminarProceso(t_pcb* proceso);
 
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
@@ -141,11 +141,6 @@ void administrarFinProcesos(){
 	t_pcb* proceso;
 
 	while(!flagTerminarPlanificadorLargoPlazo){
-
-
-		//if(!flagPlanificacion)sem_wait(&sem_planificacion);
-		//verificarPausaPlanificacion();
-
 		sem_wait(&sem_administrarFinProceso);
 
 				if(flagPlanificacion){
@@ -159,7 +154,6 @@ void administrarFinProcesos(){
 						}
 						pthread_mutex_unlock(&mutexListaEspera);
 					/*TODO:La tabla del proceso de archivos abiertos no la borro para que qude el registro*/
-					log_info(logKernelPantalla, "Proceso terminado--->PID:%d--->Exit Code:%d", proceso->pid,proceso->exitCode);
 				}
 	}
 	log_info(logKernel,"Hilo administrador de fin de procesos finalizado");
@@ -227,6 +221,23 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 	return 0;
 }
 
+void terminarProceso(t_pcb* proceso){
+	log_info(logKernelPantalla,"Terminando proceso--->PID:%d--->Exit Code:%d\n",proceso->pid,proceso->exitCode);
+	finalizarHiloPrograma(proceso->pid);
+
+	pthread_mutex_lock(&mutexMemoria);
+	liberarRecursosEnMemoria(proceso);
+	pthread_mutex_unlock(&mutexMemoria);
+
+	liberarMemoriaDinamica(proceso->pid);
+	cambiarEstadoATerminado(proceso);
+
+	//verificarArchivosAbiertos(proceso->pid);
+
+	disminuirGradoMultiprogramacion();
+	sem_post(&sem_admitirNuevoProceso);
+}
+
 
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
@@ -290,6 +301,7 @@ void planificarCortoPlazo(){
 		sem_wait(&sem_CPU);
 		sem_wait(&sem_procesoListo);
 
+		printf("Sacando un proceso de listos\n");
 		verificarPausaPlanificacion();
 												/*TODO: Ojo en este intervalo de tiempo. Cuando se reanude la planificacion, puede no existir mas ese proceso*/
 		pthread_mutex_lock(&mutexColaListos);

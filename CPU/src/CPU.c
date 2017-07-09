@@ -67,19 +67,6 @@ void expropiarVoluntariamente(){
 
 
 }
-void expropiarPorKernel(){
-	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
-
-	serializarPcbYEnviar(pcb_actual,socketKernel);
-
-	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
-
-	free(pcb_actual);
-	//recibiPcb=1;
-	//cpuExpropiadaPorKernel = 1;
-	//cpuOcupada=1;
-	//esperarPCB();
-}
 void expropiarPorDireccionInvalida(){
 	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
 	char interruptHandler= 'X';

@@ -21,7 +21,6 @@
 #include <commons/string.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
-#include <commons/log.h>
 #include <parser/metadata_program.h>
 #include <parser/parser.h>
 #include <signal.h>
@@ -40,6 +39,7 @@
 #include <sys/inotify.h>
 #include "capaFilesystem.h"
 #include "excepciones.h"
+#include "logs.h"
 
 typedef struct{
 	pthread_t hilo;
@@ -373,32 +373,30 @@ int buscarProcesoYTerminarlo(int pid){
 	}
 
 
-	pthread_mutex_lock(&mutexListaEspera);
-	pthread_mutex_lock(&mutexColaEjecucion);
-	pthread_mutex_lock(&mutexColaNuevos);
-	pthread_mutex_lock(&mutexColaListos);
-	pthread_mutex_lock(&mutexColaBloqueados);
-	pthread_mutex_lock(&mutexListaSemYPCB);
-	pthread_mutex_lock(&mutexListaFinQuantum);
-
 	if(!encontro){
+		pthread_mutex_lock(&mutexListaEspera);
 		if(list_any_satisfy(listaEspera,(void*)verificarPid)){
-			procesoATerminar=list_remove_by_condition(listaEspera,(void*)verificarPid);
-			encontro=1;
+			pthread_mutex_unlock(&mutexListaEspera);
 			printf("Proceso a finalizar en Espera\n");
+			sem_post(&sem_administrarFinProceso);
+			return 0;
 		}
+		pthread_mutex_unlock(&mutexListaEspera);
 	}
 
 	if(!encontro){
+		pthread_mutex_lock(&mutexColaEjecucion);
 		bool estaEjecutando= list_any_satisfy(colaEjecucion,(void*)verificarPid);
+		pthread_mutex_unlock(&mutexColaEjecucion);
 
 		if(estaEjecutando){
 			printf("Proceso a finalizar en Ejecucion\n");
+
 			pthread_mutex_lock(&mutexListaCPU);
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 			pthread_mutex_unlock(&mutexListaCPU);
 
-			pthread_mutex_lock(&mutexListaHilos);
+			pthread_mutex_lock(&mutexListaHilos);//TODO: Esto va a morir
 
 			if(list_any_satisfy(listaHilos,(void*)verificarPidHilo)){
 					t_hilo* hilo=list_remove_by_condition(listaHilos,(void*)verificarPidHilo);
@@ -411,68 +409,66 @@ int buscarProcesoYTerminarlo(int pid){
 			pthread_mutex_unlock(&mutexListaHilos);
 
 
-			pthread_mutex_unlock(&mutexColaEjecucion);
 			procesoATerminar = expropiarVoluntariamente(cpuAFinalizar->socket);
 			encontro=1;
 		}
 
 	}
-	pthread_mutex_unlock(&mutexColaEjecucion);
 
 
 	if(!encontro){
+		pthread_mutex_lock(&mutexColaNuevos);
 		if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
 			printf("Proceso a finalizar en Nuevos\n");
 			procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
 			encontro = 1;
 		}
+		pthread_mutex_unlock(&mutexColaNuevos);
 	}
 
 	if(!encontro){
+		pthread_mutex_lock(&mutexColaListos);
 		if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			printf("Proceso a finalizar en Listos\n");
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
 			sem_wait(&sem_procesoListo);
 			encontro = 1;
 		}
+		pthread_mutex_unlock(&mutexColaListos);
 	}
 
+
 	if(!encontro){
+		pthread_mutex_lock(&mutexColaBloqueados);
 		if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			printf("Proceso a finalizar en Bloqueados\n");
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
 			encontro = 1;
 		}
+		pthread_mutex_unlock(&mutexColaBloqueados);
 	}
 
 	if(!encontro){
+		pthread_mutex_lock(&mutexListaSemYPCB);
 		if(list_any_satisfy(listaSemYPCB,(void*)verificarPidSemYPCB)){
 			printf("Proceso a finalizar en Semaforo\n");
 			semYPCBAEliminar = list_remove_by_condition(listaSemYPCB,(void*)verificarPidSemYPCB);
 			procesoATerminar = semYPCBAEliminar->pcb;
 			encontro = 1;
 		}
+		pthread_mutex_unlock(&mutexListaSemYPCB);
 	}
 
 
 	if(!encontro){
+		pthread_mutex_lock(&mutexListaFinQuantum);
 		if(list_any_satisfy(listaFinQuantum,(void*)verificarPid)){
 			printf("Proceso a finalizar en Fin quantum\n");
 			procesoATerminar = list_remove_by_condition(listaFinQuantum,(void*)verificarPid);
 			encontro = 1;
 		}
+		pthread_mutex_unlock(&mutexListaFinQuantum);
 	}
-
-
-
-
-	pthread_mutex_unlock(&mutexColaBloqueados);
-	pthread_mutex_unlock(&mutexColaListos);
-	pthread_mutex_unlock(&mutexColaNuevos);
-	pthread_mutex_unlock(&mutexListaEspera);
-	pthread_mutex_unlock(&mutexListaSemYPCB);
-	pthread_mutex_unlock(&mutexListaFinQuantum);
-
 
 	procesoATerminar->exitCode = exitCodeArray[EXIT_END_OF_PROCESS]->value;
 	terminarProceso(procesoATerminar);

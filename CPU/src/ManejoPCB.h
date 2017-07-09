@@ -25,16 +25,16 @@ void recibirPCB(){
 
 		establecerPCB(socketKernel);
 
+		interrupcion = SIN_INTERRUPCION;
+		procesoFinalizado=0;
+
 		EjecutarProgramaMedianteAlgoritmo();
+
 		//connectionHandlerKernel(socketKernel,comandoRecibirPCB);
 }
 void establecerPCB(){
 
 	pcb_actual = recibirYDeserializarPcb(socketKernel);
-
-	interrupcion = SIN_INTERRUPCION;
-
-	//recibiPcb=0;
 
 	log_info(logConsolaPantalla, "CPU recibe PCB de PID %d correctamente\n",pcb_actual->pid);
 }
