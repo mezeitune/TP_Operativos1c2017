@@ -307,7 +307,7 @@ void cambiarEstadoCpu(int socket,int estado){
 }
 
 void removerDeColaEjecucion(int pid){
-	log_info(logKernel,"Removiendo y destruyendo proceso de cola de ejecucion--->PID:%d",pid);
+	log_info(logKernelPantalla,"Removiendo proceso de cola de ejecucion--->PID:%d",pid);
 	_Bool verificaPid(t_pcb* proceso){
 			return (proceso->pid == pid);
 		}

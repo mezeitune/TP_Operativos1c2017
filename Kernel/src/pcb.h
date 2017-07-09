@@ -198,7 +198,7 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);
 
-	log_info(logKernel, "Deserializando PCB--->PID:%d",pcb->pid);
+	log_info(logKernelPantalla, "Deserializando PCB--->PID:%d",pcb->pid);
 
 	memcpy(&pcb->cantidadPaginasCodigo,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);

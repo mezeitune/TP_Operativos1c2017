@@ -282,6 +282,7 @@ void imprimirListadoDeProcesos(t_list* procesos){
 
 
 void finalizarProcesoVoluntariamente(int pid){
+	log_info(logKernelPantalla,"Finalizando proceso--->PID: %d ",pid);
 	pthread_mutex_lock(&mutexNuevoProceso);
 	buscarProcesoYTerminarlo(pid);
 	pthread_mutex_unlock(&mutexNuevoProceso);
