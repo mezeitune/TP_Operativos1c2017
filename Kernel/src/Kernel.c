@@ -477,14 +477,6 @@ int buscarProcesoYTerminarlo(int pid){
 }
 
 
-
-
-
-
-
-
-
-
 void gestionarAlocar(int socket){
 	int size,pid;
     pthread_t heapThread;

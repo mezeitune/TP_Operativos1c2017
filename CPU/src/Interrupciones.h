@@ -13,6 +13,9 @@ enum{
 	SIN_INTERRUPCION,
 	FINALIZADO_VOLUNTARIAMENTE,
 	RES_EJEC_NEGATIVO,
+	STACKOVERFLOW,
+	DIRECCION_INVALIDA,
+	EXCEPCION_MEMORIA,
 };
 
 int interrupcion=SIN_INTERRUPCION;
@@ -37,10 +40,32 @@ void expropiar(){
 		break;
 	case RES_EJEC_NEGATIVO: expropiarPorKernel();
 		break;
+	case STACKOVERFLOW: expropiarPorStackOverflow();
+		break;
+	case DIRECCION_INVALIDA: expropiarPorDireccionInvalida();
+		break;
+	case EXCEPCION_MEMORIA: /*TODO> Ver como seguir aca*/
+		break;
 	default: break;
 
 	}
 }
+
+void stackOverflow(){
+		log_error(logConsolaPantalla, "El proceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
+		interrupcion = STACKOVERFLOW;
+}
+
+void direccionInvalida(){
+	log_error(logConsolaPantalla,"No se pudo solicitar el contenido\n");
+	interrupcion = DIRECCION_INVALIDA;
+}
+
+void excepcionMemoria(){ /**TODO: Preguntar que hacer aca*/
+	log_error(logConsolaPantalla,"No se pudo almacenar el contenido\n");
+	interrupcion = EXCEPCION_MEMORIA;
+}
+
 
 void expropiarPorKernel(){
 	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
@@ -53,4 +78,36 @@ void expropiarPorKernel(){
 
 	procesoFinalizado=1;
 }
+
+void expropiarPorDireccionInvalida(){
+	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
+	char interruptHandler= 'X';
+	char caseDireccionInvalida= 'M';
+
+	send(socketKernel,&interruptHandler,sizeof(char),0);
+	send(socketKernel,&caseDireccionInvalida,sizeof(char),0);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
+
+	free(pcb_actual);
+
+	procesoFinalizado = 1;
+}
+
+void expropiarPorStackOverflow(){
+	char interruptHandler= 'X';
+	char caseStackOverflow = 'K';
+
+	send(socketKernel,&interruptHandler,sizeof(char),0);
+	send(socketKernel,&caseStackOverflow,sizeof(char),0);
+
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
+	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
+
+	free(pcb_actual);
+
+	procesoFinalizado = 1;
+}
+
 #endif /* INTERRUPCIONES_H_ */

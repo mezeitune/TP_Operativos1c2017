@@ -5,7 +5,7 @@
 #include "ManejoPCB.h"
 #include "PrimitivasFS.h"
 #include "LogsConfigsSignals.h"
-
+#include "Interrupciones.h"
 
 int main(void) {
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/CPU/config_CPU");
@@ -41,42 +41,6 @@ void expropiarVoluntariamente(){
 	else if(cpuBloqueadaPorSemANSISOP !=0) expropiarPorRR();
 
 
-}
-void expropiarPorDireccionInvalida(){
-	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
-	char interruptHandler= 'X';
-	char caseDireccionInvalida= 'M';
-
-	send(socketKernel,&interruptHandler,sizeof(char),0);
-	send(socketKernel,&caseDireccionInvalida,sizeof(char),0);
-	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
-	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
-	log_info(logConsola, "La CPU ha enviado las instrucciones ejecutadas al kernel");
-	free(pcb_actual);
-	recibiPcb=1;
-	cpuExpropiadaPorKernel = 1;
-	cpuOcupada=1;
-	esperarPCB();
-}
-void expropiarPorStackOverflow(){
-	char interruptHandler= 'X';
-	char caseStackOverflow = 'K';
-
-	send(socketKernel,&interruptHandler,sizeof(char),0);
-	send(socketKernel,&caseStackOverflow,sizeof(char),0);
-
-	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
-	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
-	log_info(logConsola, "La CPU ha enviado las instrucciones ejecutadas al kernel");
-	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
-
-	free(pcb_actual);
-	recibiPcb=1;
-	cpuExpropiadaPorKernel = 1;
-	cpuOcupada=1;
-	esperarPCB();
 }
 
 void expropiarPorRR(){
@@ -144,11 +108,6 @@ int cantidadPaginasTotales(){
 
 
 
-void stackOverflow(){
-		log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
-		expropiarPorStackOverflow();
-
-}
 
 char* devolverStringFlags(t_banderas flags){
 	char *flagsAConcatenar = string_new();

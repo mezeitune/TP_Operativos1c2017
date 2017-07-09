@@ -58,6 +58,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 						nueva_posicion_memoria->size = 4;
 							if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 								stackOverflow(pcb_actual);
+								return 0;
 							} else {
 							list_add(nodo->args, nueva_posicion_memoria);
 							}
@@ -69,6 +70,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 									nueva_posicion_memoria->size = 4;
 									if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 										stackOverflow(pcb_actual);
+										return 0;
 									} else {
 										list_add(nodo->args, nueva_posicion_memoria);
 									}
@@ -84,6 +86,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								nueva_posicion_memoria->size = 4;
 								if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 									stackOverflow(pcb_actual);
+									return 0;
 								} else {
 									list_add(nodo->args, nueva_posicion_memoria);
 								}
@@ -103,6 +106,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								nueva_variable->dirVar = nueva_posicion_memoria;
 								if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 									stackOverflow(pcb_actual);
+									return 0;
 								} else {
 									list_add(nodo->vars, nueva_variable);
 								}
@@ -115,6 +119,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 								nueva_variable->dirVar = nueva_posicion_memoria;
 								if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 									stackOverflow(pcb_actual);
+									return 0;
 								} else {
 									list_add(nodo->vars, nueva_variable);
 								}
@@ -131,6 +136,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 										nueva_variable->dirVar = nueva_posicion_memoria;
 										if(nueva_posicion_memoria->pagina >= cantidadPaginasTotales(pcb_actual)){
 											stackOverflow(pcb_actual);
+											return 0;
 										} else {
 											list_add(nodo->vars, nueva_variable);
 										}
@@ -177,7 +183,7 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 	}
 	if(encontre_valor == 1){
 		log_info(logConsolaPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
-		expropiarPorDireccionInvalida();
+		direccionInvalida();
 		return -1;
 	}
 
@@ -208,8 +214,8 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 
 
 		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, sizeof(t_valor_variable))<0){
-			log_info(logConsolaPantalla,"No se pudo solicitar el contenido\n");
-			expropiarPorDireccionInvalida();
+			direccionInvalida();
+			return 0;
 		}else{
 				valor_variable_char=mensajeRecibido;
 		}
@@ -230,7 +236,8 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	int resultado = almacenarDatosEnMemoria(valor_variable,sizeof(t_valor_variable),num_pagina, offset);
 	if(resultado==-1){
 		log_info(logConsolaPantalla, "No se pudo almacenar el contenido %d en %d por excepcion de memoria", valor_variable,puntero);
-		expropiarPorKernel();
+		excepcionMemoria();
+		return;
 	}
 	log_info(logConsolaPantalla, "Valor a Asignar: %s en la posicion %d\n", valor_variable,puntero);
 	free(valor_variable);
@@ -293,7 +300,8 @@ char** string_cortado = string_split(etiqueta, "\n");
 int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
 	if(program_counter == -1){
 		log_info(logConsolaPantalla,"No se encontro la funcion %s en el indice de etiquetas\n", string_cortado[0]);
-		expropiarPorDireccionInvalida();
+		direccionInvalida();
+		return;
 	} else {
 		pcb_actual->programCounter = (program_counter - 1);
 		cantidadInstruccionesAEjecutarDelPcbActual = cantidadInstruccionesAEjecutarDelPcbActual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
@@ -318,7 +326,8 @@ char** string_cortado = string_split(etiqueta, "\n");
 int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
 	if(program_counter == -1){
 		log_info(logConsolaPantalla, "No se encontro la etiqueta: %s en el indice de etiquetas", string_cortado[0]);
-		expropiarPorDireccionInvalida();
+		direccionInvalida();
+		return ;
 	} else {
 		pcb_actual->programCounter = (program_counter-1);
 		log_info(logConsolaPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter+1,etiqueta);
