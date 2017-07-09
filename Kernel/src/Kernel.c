@@ -124,7 +124,6 @@ int main(int argc, char* argv[]) { /*TODO Agregar argv*/
 	return 0;
 }
 
-int quantum = 0; //FIFO--->0 ; RR != 0
 void connectionHandler(int socket, char orden) {
 	switch (orden) {
 		case 'A':	gestionarNuevoPrograma_ANSISOP(socket);
@@ -201,11 +200,7 @@ void handShakeCPU(int socketCPU){
 }
 
 
-
 void gestionarNuevaCPU(int socketCPU){
-
-	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum; //TODO> Pasar quantum y quantum sleep juntos
-	send(socketCPU,&quantum,sizeof(int),0);
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
@@ -234,6 +229,7 @@ void gestionarFinQuantum_RoundRobin(int socket){
 		recv(socket,&cpuFinalizada, sizeof(int),0);
 		recv(socket,&cantidadDeRafagas,sizeof(int),0);
 
+
 		t_pcb* proceso = recibirYDeserializarPcb(socket);
 
 		cambiarEstadoCpu(socket,OCIOSA);
@@ -244,7 +240,7 @@ void gestionarFinQuantum_RoundRobin(int socket){
 		sem_post(&sem_procesoListo);
 
 		//agregarAFinQuantum(proceso);
-		if(cpuFinalizada != 0)sem_post(&sem_CPU);
+		if(!cpuFinalizada)sem_post(&sem_CPU);
 	}
 
 }

@@ -75,7 +75,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 
 	cantidadInstruccionesAEjecutarDelPcbActual = pcb_actual->cantidadInstrucciones;
 
-	log_info(logConsolaPantalla,"La cantidad de instrucciones a ejecutar son %d\n",cantidadInstruccionesAEjecutarDelPcbActual);
+	log_info(logConsola,"La cantidad de instrucciones a ejecutar son %d\n",cantidadInstruccionesAEjecutarDelPcbActual);
 
 	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
 		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual || cpuBloqueadaPorSemANSISOP != 0){
@@ -83,7 +83,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel++; //para FIFO en si
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
-			log_info(logConsolaPantalla,"cantidad de instrucciones ejecutadas %d\n", cantidadInstruccionesEjecutadas);
+			log_info(logConsola,"cantidad de instrucciones ejecutadas %d\n", cantidadInstruccionesEjecutadas);
 
 				if(verificaInterrupcion()) {
 						expropiar();
@@ -95,9 +95,9 @@ void EjecutarProgramaMedianteAlgoritmo(){
 		while (!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel > 0 && cpuBloqueadaPorSemANSISOP != 0){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
-			log_info(logConsolaPantalla,"Quedan por ejecutar %d instrucciones", cantidadInstruccionesAEjecutarPorKernel);
+			log_info(logConsola,"Quedan por ejecutar %d instrucciones", cantidadInstruccionesAEjecutarPorKernel);
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
-			log_info(logConsolaPantalla,"cantidad de instrucciones ejecutadas %d", cantidadInstruccionesEjecutadas);
+			log_info(logConsola,"cantidad de instrucciones ejecutadas %d", cantidadInstruccionesEjecutadas);
 
 				if(verificaInterrupcion()) {
 					expropiar();
@@ -106,12 +106,6 @@ void EjecutarProgramaMedianteAlgoritmo(){
 				if(!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel== 0) expropiarPorRR();
 		}
 	}
-
-	//Este if va por el RR
-			/*if(cpuFinalizadaPorSignal == 0) CerrarPorSignal();
-			else expropiarVoluntariamente();
-*/
-
 }
 void ejecutarInstruccion(){
 

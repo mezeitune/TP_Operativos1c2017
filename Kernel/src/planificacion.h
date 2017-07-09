@@ -70,6 +70,7 @@ pthread_t planificadorMedianoPlazo;
 /*----CORTO PLAZO--------*/
 
 void planificarCortoPlazo();
+void enviarConfiguracionesQuantum(int socketCPU);
 void agregarA(t_list* lista, void* elemento, pthread_mutex_t mutex);
 void finQuantumAReady();
 void agregarAFinQuantum(t_pcb* pcb);
@@ -308,9 +309,10 @@ void planificarCortoPlazo(){
 
 			send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
 
+			enviarConfiguracionesQuantum(cpuEnEjecucion->socket);
+
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 
-			send(cpuEnEjecucion->socket,&config_quantumSleep,sizeof(int),0);
 
 			flagHuboAlgunProceso = 1;
 			pthread_mutex_lock(&mutexColaEjecucion);
@@ -330,6 +332,13 @@ void planificarCortoPlazo(){
 		}
 
 	}
+}
+
+void enviarConfiguracionesQuantum(int socketCPU){
+	int quantum = 0; //FIFO--->0 ; RR != 0
+	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum; //TODO> Pasar quantum y quantum sleep juntos
+		send(socketCPU,&quantum,sizeof(int),0);
+		send(socketCPU,&config_quantumSleep,sizeof(int),0);
 }
 
 void finQuantumAReady(){

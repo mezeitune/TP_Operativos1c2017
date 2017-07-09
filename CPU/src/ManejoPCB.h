@@ -10,7 +10,6 @@ void esperarPCB(){
 	while(!cpuFinalizada){
 
 		log_info(logConsolaPantalla,"CPU Esperando un script\n");
-		cantidadInstruccionesAEjecutarPorKernel = quantum;
 		recibirPCB();
 	}
 
@@ -22,15 +21,17 @@ void recibirPCB(){
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),MSG_WAITALL);
 		log_info(logConsolaPantalla, "Recibiendo PCB...\n");
 
+		recibirYMostrarAlgortimoDePlanificacion(socketKernel);
+
 		establecerPCB(socketKernel);
+
 		EjecutarProgramaMedianteAlgoritmo();
 		//connectionHandlerKernel(socketKernel,comandoRecibirPCB);
 }
 void establecerPCB(){
 
 	pcb_actual = recibirYDeserializarPcb(socketKernel);
-	/*TODO: Aca recibis quantum y quantum sleep*/
-	recv(socketKernel,&retardo_entre_instruccion,sizeof(int),0);
+
 	recibiPcb=0;
 
 	log_info(logConsolaPantalla, "CPU recibe PCB de PID %d correctamente\n",pcb_actual->pid);

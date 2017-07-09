@@ -26,22 +26,23 @@ void inicializarLog(char *rutaDeLog){
 }
 void signalHandler(int signum)
 {
+
     if (signum == SIGUSR1 || signum == SIGINT)
     {
     	log_warning(logConsolaPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso y cerrando CPU ...");
-    	//cerrarTodo();
-
-
-    	if(recibiPcb == 0) cpuFinalizadaPorSignal = 0;
-    	else CerrarPorSignal();
+    	cpuFinalizada = 1;
     }
 }
 void cerrarTodo(){
-	if(recibiPcb==1){
-		CerrarPorSignal();
-	}
-	else{
-		//finalizarAlTerminar = 1;
-	}
+
+	char comandoInterruptHandler='X';
+	char comandoCierreCpu='C';
+	char comandoCerrarMemoria = 'X';
+
+
+	send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
+	send(socketKernel,&comandoCierreCpu,sizeof(char),0);
+	send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
+
 }
 

@@ -195,17 +195,8 @@ void finalizar (){
 		log_info(logConsolaPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 		procesoFinalizado=1;
-		/*if(cpuFinalizadaPorSignal == 0){
-			CerrarPorSignal();
-		}
-		else{
-			cpuExpropiadaPorKernel = 1;
-			cpuOcupada=1;
-			recibiPcb=1;
-			free(pcb_actual);
-			esperarPCB();
-		}
-		*/
+
+		free(pcb_actual);
 }
 
 t_valor_variable dereferenciar(t_puntero puntero) {

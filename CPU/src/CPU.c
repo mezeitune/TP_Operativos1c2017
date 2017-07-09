@@ -24,9 +24,9 @@ int main(void) {
 
 	enviarAlKernelPedidoDeNuevoProceso(socketKernel);
 
-	recibirYMostrarAlgortimoDePlanificacion(socketKernel);/*TODO: Podriamos recibir el quantum sleep y usarla antes de recibir PCB*/
-
 	esperarPCB();
+
+	cerrarTodo();
 
 	return 0;
 }
@@ -120,14 +120,14 @@ void expropiarPorRR(){
 	if(cpuBloqueadaPorSemANSISOP != 0){
 
 		send(socketKernel,&comandoExpropiarFinQuantum , sizeof(char),0);
-		send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
+		send(socketKernel, &cpuFinalizada, sizeof(int),0);
 		send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
 		serializarPcbYEnviar(pcb_actual,socketKernel);
 
 		log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
 		log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
 		free(pcb_actual);
-		recibiPcb=1;
+	//	recibiPcb=1;
 	//	esperarPCB();
 	}
 }
@@ -156,6 +156,12 @@ void enviarAlKernelPedidoDeNuevoProceso(int socketKernel){
 }
 void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 	recv(socketKernel,&quantum,sizeof(int),0);
+	recv(socketKernel,&retardo_entre_instruccion,sizeof(int),0);
+
+	printf("Quantum:%d\n",quantum);
+	printf("Quantum sleep:%d\n",retardo_entre_instruccion);
+
+	cantidadInstruccionesAEjecutarPorKernel = quantum;
 
 		if(quantum==0){
 			log_info(logConsolaPantalla,"\nAlgoritmo FIFO\n");
