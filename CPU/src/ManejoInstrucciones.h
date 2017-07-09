@@ -1,9 +1,6 @@
+#include "Interrupciones.h"
+
 //----------------------------Manejo Instrucciones-------------------------------------
-int interrupcion=0;
-int verificaInterrupcion();
-void expropiar();
-
-
 char* obtener_instruccion(){
 	log_info(logConsola,"Obteniendo una instruccion del PC= %d", pcb_actual->programCounter);
 	int program_counter = pcb_actual->programCounter;
@@ -128,16 +125,4 @@ void ejecutarInstruccion(){
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
 }
 
-int verificaInterrupcion(){
-
-	if (interrupcion) return 1;
-	else return 0;
-}
-
-void expropiar(){
-	serializarPcbYEnviar(pcb_actual,socketKernel);
-	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
-	free(pcb_actual);
-	recibiPcb=1;
-}
 //----------------------------Manejo Instrucciones-------------------------------------

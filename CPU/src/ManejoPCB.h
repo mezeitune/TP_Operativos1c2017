@@ -32,7 +32,9 @@ void establecerPCB(){
 
 	pcb_actual = recibirYDeserializarPcb(socketKernel);
 
-	recibiPcb=0;
+	interrupcion = SIN_INTERRUPCION;
+
+	//recibiPcb=0;
 
 	log_info(logConsolaPantalla, "CPU recibe PCB de PID %d correctamente\n",pcb_actual->pid);
 }
