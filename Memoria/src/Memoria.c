@@ -34,8 +34,8 @@ void inicializarLog(char *rutaDeLog);
 
 
 
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
+t_log *logConsola;
+t_log *logConsolaPantalla;
 //----------------------------//
 //-------------------------------//
 
@@ -179,7 +179,7 @@ void inicializarMemoriaAdm()
 {
 	sizeStructsAdmMemoria = ((sizeof(struct_adm_memoria)*marcos)+marco_size-1)/marco_size;
 
-	log_info(loggerConPantalla,"Las estructuras administrativas de la memoria ocupan %i frames\n",sizeStructsAdmMemoria);
+	log_info(logConsolaPantalla,"Las estructuras administrativas de la memoria ocupan %i frames\n",sizeStructsAdmMemoria);
 
 	printf("---------------------------------------------------\n");
 
@@ -210,7 +210,7 @@ void inicializarMemoriaAdm()
 
 int inicializarPrograma(int pid, int cantPaginas)
 {
-	log_info(loggerConPantalla,"Inicializar Programa %d\n",pid);
+	log_info(logConsolaPantalla,"Inicializar Programa %d\n",pid);
 	int posicionFrame = verificarEspacioLibre();
 	if(posicionFrame >= 0)
 	{
@@ -223,31 +223,31 @@ int inicializarPrograma(int pid, int cantPaginas)
 
 int solicitarBytesPagina(int pid,int pagina, int offset, int size, char** buffer)
 {
-	log_info(loggerConPantalla,"Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
+	log_info(logConsolaPantalla,"Solicitar Bytes Pagina %d del proceso %d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
-	log_info(loggerConPantalla,"El frame es : %d\n",frame);
+	log_info(logConsolaPantalla,"El frame es : %d\n",frame);
 	if(frame != -1){
 		memcpy(*buffer,bloque_Memoria + frame*marco_size+offset,size);
 		strcpy(*buffer + size , "\0");
-		log_info(loggerConPantalla,"%s\0\n",*buffer);
+		log_info(logConsolaPantalla,"%s\0\n",*buffer);
 	}
 	return frame;
 }
 
 int almacenarBytesPagina(int pid,int pagina, int offset,int size, void* buffer)
 {
-	log_info(loggerConPantalla,"Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
+	log_info(logConsolaPantalla,"Almacenar Bytes A Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 
 	//printf("\nESTOY GUARDANDO :   %s\n",buffer);
-	log_info(loggerConPantalla,"Frame:%d\n",frame);
+	log_info(logConsolaPantalla,"Frame:%d\n",frame);
 	if(frame >= 0)
 	{
 		memcpy(bloque_Memoria + frame*marco_size+offset,buffer,size);
 	}
 	else
 	{
-		log_warning(loggerConPantalla,"No se encontró el PID/Pagina del programa\n");
+		log_warning(logConsolaPantalla,"No se encontró el PID/Pagina del programa\n");
 	}
 	return frame;
 }
@@ -260,7 +260,7 @@ int asignarPaginasAProceso(int pid, int cantPaginas, int posicionFrame)
 
 int finalizarPrograma(int pid)
 {
-	log_info(loggerConPantalla,"\nFinalizar Programa:%d\n",pid);
+	log_info(logConsolaPantalla,"\nFinalizar Programa:%d\n",pid);
 	borrarProgramDeStructAdms(pid);
 	borrarEntradasDeProcesoEnCache(pid);
 
@@ -276,14 +276,14 @@ int recibirConexion(int socket_servidor){
 	int estado = listen(socket_servidor, 5);
 
 	if(estado == -1){
-		log_info(loggerConPantalla,"\nError al poner el servidor en listen\n");
+		log_info(logConsolaPantalla,"\nError al poner el servidor en listen\n");
 		close(socket_servidor);
 		return 1;
 	}
 
 
 	if(estado == 0){
-		log_info(loggerConPantalla,"\nSe puso el socket en listen\n");
+		log_info(logConsolaPantalla,"\nSe puso el socket en listen\n");
 		printf("---------------------------------------------------\n");
 	}
 
@@ -293,12 +293,12 @@ int recibirConexion(int socket_servidor){
     socket_aceptado = accept(socket_servidor, (struct sockaddr *)&their_addr, &addr_size);
 
 	contadorConexiones ++;
-	log_info(loggerConPantalla,"\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
-	log_info(loggerConPantalla,"----------Handler asignado a (%d) ---------\n",contadorConexiones);
+	log_info(logConsolaPantalla,"\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
+	log_info(logConsolaPantalla,"----------Handler asignado a (%d) ---------\n",contadorConexiones);
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
-		log_error(loggerConPantalla,"\nError al aceptar conexion\n");
+		log_error(logConsolaPantalla,"\nError al aceptar conexion\n");
 		return 1;
 	}
 	sem_post(&sem);
@@ -312,7 +312,7 @@ char nuevaOrdenDeAccion(int socketCliente)
 	printf("\n--Esperando una orden del cliente-- \n");
 	recv(socketCliente,buffer,sizeof(char),0);
 	bufferRecibido = *buffer;
-	log_info(loggerConPantalla,"El cliente ha enviado la orden: %c\n",bufferRecibido);
+	log_info(logConsolaPantalla,"El cliente ha enviado la orden: %c\n",bufferRecibido);
 	free(buffer);
 	return bufferRecibido;
 }
@@ -325,8 +325,8 @@ int main_inicializarPrograma(int sock)
 	recv(sock,&pid,sizeof(int),0);
 	recv(sock,&cantPaginas,sizeof(int),0);
 
-	log_info(loggerConPantalla,"PID:%d\n",pid);
-	log_info(loggerConPantalla,"CantPaginas:%d\n",cantPaginas);
+	log_info(logConsolaPantalla,"PID:%d\n",pid);
+	log_info(logConsolaPantalla,"CantPaginas:%d\n",cantPaginas);
 
 	int espacioLibre = verificarEspacioLibre();
 
@@ -349,7 +349,7 @@ int main_inicializarPrograma(int sock)
 	else
 	{
 		sleep(retardo_memoria);
-		log_warning(loggerConPantalla,"No hay espacio suficiente en la memoria\n");
+		log_warning(logConsolaPantalla,"No hay espacio suficiente en la memoria\n");
 		return -1;
 	}
 }
@@ -367,7 +367,7 @@ int main_solicitarBytesPagina(int sock)
 	recv(sock,&offset,sizeof(int),0);
 	recv(sock,&size,sizeof(int),0);
 
-	log_info(loggerConPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
+	log_info(logConsolaPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
 
 	bufferAEnviar=malloc(size+sizeof(char));
@@ -376,7 +376,7 @@ int main_solicitarBytesPagina(int sock)
 
 	if(posicionEnCache != -1)
 	{
-		log_info(loggerConPantalla,"Se encontró la pagina %d del proceso %d en la entrada %d de la cache\n",pagina,pid,posicionEnCache);
+		log_info(logConsolaPantalla,"Se encontró la pagina %d del proceso %d en la entrada %d de la cache\n",pagina,pid,posicionEnCache);
 		leerContenidoEnCache(posicionEnCache,&bufferAEnviar, size, offset);
 	}
 	else
@@ -384,7 +384,7 @@ int main_solicitarBytesPagina(int sock)
 		if(cantidadEntradasDeProcesoEnCache(pid) < cache_x_proc){
 			iniciarEntradaEnCache(pid,pagina);
 		}
-		log_info(loggerConPantalla,"No se encontro la pagina %d del proceso %d en la cache\n",pagina,pid);
+		log_info(logConsolaPantalla,"No se encontro la pagina %d del proceso %d en la cache\n",pagina,pid);
 		resultadoEjecucion = solicitarBytesPagina(pid,pagina,offset,size,&bufferAEnviar);
 		sleep(retardo_memoria);
 		//enviar_string(sock,bufferAEnviar);
@@ -411,7 +411,7 @@ int main_almacenarBytesPagina(int sock)
 	bytes=malloc(size);
 	recv(sock,bytes,size,0);
 
-	log_info(loggerConPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
+	log_info(logConsolaPantalla,"PID:%d\tPagina:%d\tOffset:%d\tSize:%d\n",pid,pagina,offset,size);
 
 	resultadoEjecucion = almacenarBytesPagina(pid,pagina,offset,size,bytes);
 	if(buscarEntradaDeProcesoEnCache(pid,pagina) >= 0){
@@ -429,7 +429,7 @@ int main_asignarPaginasAProceso(int sock)
 	recv(sock,&pid,sizeof(int),0);
 	recv(sock,&cantPaginas,sizeof(int),0);
 
-	log_info(loggerConPantalla,"PID:%d\tCantidad de Paginas:%d\n",pid,cantPaginas);
+	log_info(logConsolaPantalla,"PID:%d\tCantidad de Paginas:%d\n",pid,cantPaginas);
 	//printf("Bitmap:%s\n",bitMap);
 
 	int espacioLibre = verificarEspacioLibre();
@@ -451,7 +451,7 @@ int main_asignarPaginasAProceso(int sock)
 	else
 	{
 		sleep(retardo_memoria);
-		log_warning(loggerConPantalla,"No hay espacio suficiente en la memoria\n");
+		log_warning(logConsolaPantalla,"No hay espacio suficiente en la memoria\n");
 		return -1;
 	}
 }
@@ -473,7 +473,7 @@ int main_liberarPaginaProceso(int sock){
 	recv(sock,&pid,sizeof(int),0);
 	recv(sock,&pagina,sizeof(int),0);
 
-	log_info(loggerConPantalla,"PID:%d\tPagina:%d\n",pid,pagina);
+	log_info(logConsolaPantalla,"PID:%d\tPagina:%d\n",pid,pagina);
 
 	resultadoDeEjecucion = liberarPaginaProceso(pid,pagina);
 
@@ -482,7 +482,7 @@ int main_liberarPaginaProceso(int sock){
 }
 
 int liberarPaginaProceso(int pid, int pagina){
-	log_info(loggerConPantalla,"Liberar Pagina:%d del proceso:%d\n",pagina,pid);
+	log_info(logConsolaPantalla,"Liberar Pagina:%d del proceso:%d\n",pagina,pid);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 
 	int desplazamiento = sizeof(struct_adm_memoria);
@@ -585,21 +585,21 @@ void *connection_handler(void *socket_desc)
 			orden = '\0';
 			break;
 		default:
-			log_error(loggerConPantalla,"Orden no definida %c",orden);
+			log_error(logConsolaPantalla,"Orden no definida %c",orden);
 			break;
 		}
-		log_info(loggerConPantalla,"Resultado de ejecucion:%d\n",resultadoDeEjecucion);
+		log_info(logConsolaPantalla,"Resultado de ejecucion:%d\n",resultadoDeEjecucion);
 		//imprimirBitMap();
 		//imprimirEstructurasAdministrativas();
 		if(orden != '\0') orden = nuevaOrdenDeAccion(sock);
 	}
 
-	log_warning(loggerConPantalla,"Cliente %d desconectado",sock);
+	log_warning(logConsolaPantalla,"Cliente %d desconectado",sock);
 	return 0;
 }
 
 void gestionarCierreDeConexion(int socket){
-	log_warning(loggerConPantalla,"Desconectando cliente %d",socket);
+	log_warning(logConsolaPantalla,"Desconectando cliente %d",socket);
 	close(socket);
 }
 
@@ -707,27 +707,27 @@ void imprimirEstructurasAdministrativas()
 	struct_adm_memoria auxMemoria;
 	int i = 0;
 	int desplazamiento = sizeof(struct_adm_memoria);
-	log_info(loggerConPantalla,"---Estructuras Adm De la Memoria---\n");
-	log_info(loggerConPantalla,"Frame/PID/NumPag\n");
+	log_info(logConsolaPantalla,"---Estructuras Adm De la Memoria---\n");
+	log_info(logConsolaPantalla,"Frame/PID/NumPag\n");
 	while(i < marcos)
 	{
 		memcpy(&auxMemoria, bloque_Memoria + i*desplazamiento, sizeof(struct_adm_memoria));
 		i++;
-		log_info(loggerConPantalla,"/___%d/__%d/__%d\n",auxMemoria.frame,auxMemoria.pid,auxMemoria.num_pag);
+		log_info(logConsolaPantalla,"/___%d/__%d/__%d\n",auxMemoria.frame,auxMemoria.pid,auxMemoria.num_pag);
 	}
 
 	int pidProc;
 	int paginaProc;
 	i = 0;
 	desplazamiento = sizeof(int)*2+marco_size;
-	log_info(loggerConPantalla,"---Estructuras Adm De la Cache---\n");
-	log_info(loggerConPantalla,"PID/NumPag\n");
+	log_info(logConsolaPantalla,"---Estructuras Adm De la Cache---\n");
+	log_info(logConsolaPantalla,"PID/NumPag\n");
 	while(i < entradas_cache)
 	{
 		memcpy(&pidProc, bloque_Cache + i*desplazamiento,sizeof(int));
 		memcpy(&paginaProc, bloque_Cache + i*desplazamiento+sizeof(int),sizeof(int));
 		i++;
-		log_info(loggerConPantalla,"/__%d/__%d\n",pidProc,paginaProc);
+		log_info(logConsolaPantalla,"/__%d/__%d\n",pidProc,paginaProc);
 	}
 	printf("---------------------------------------------------\n");
 }
@@ -772,8 +772,8 @@ void inicializarLog(char *rutaDeLog)
 {
 	mkdir("/home/utnso/Log",0755);
 
-	loggerSinPantalla = log_create(rutaDeLog,"Memoria", false, LOG_LEVEL_INFO);
-	loggerConPantalla = log_create(rutaDeLog,"Memoria", true, LOG_LEVEL_INFO);
+	logConsola = log_create(rutaDeLog,"Memoria", false, LOG_LEVEL_INFO);
+	logConsolaPantalla = log_create(rutaDeLog,"Memoria", true, LOG_LEVEL_INFO);
 }
 
 void interfazHandler()
@@ -807,7 +807,7 @@ void interfazHandler()
 			}
 			default:
 			{
-				log_warning(loggerConPantalla,"Error: Orden de interfaz no reconocida, ingrese una orden nuevamente\n");
+				log_warning(logConsolaPantalla,"Error: Orden de interfaz no reconocida, ingrese una orden nuevamente\n");
 				break;
 			}
 		}
@@ -820,7 +820,7 @@ void modificarRetardo()
 {
 	printf("Ingrese el nuevo retardo de la memoria\n");
 	scanf("%d",&retardo_memoria);
-	log_info(loggerConPantalla,"El retardo de la memoria a sido cambiado a: %d\n",retardo_memoria);
+	log_info(logConsolaPantalla,"El retardo de la memoria a sido cambiado a: %d\n",retardo_memoria);
 }
 
 void dumpDeMemoria()
@@ -848,7 +848,7 @@ void dumpDeMemoria()
 		}
 		default:
 		{
-			log_warning(loggerConPantalla,"Error: Orden de interfaz no reconocida\n");
+			log_warning(logConsolaPantalla,"Error: Orden de interfaz no reconocida\n");
 			break;
 		}
 	}
@@ -856,7 +856,7 @@ void dumpDeMemoria()
 
 void flush()
 {
-	log_info(loggerConPantalla,"--Flush--\n");
+	log_info(logConsolaPantalla,"--Flush--\n");
 	vaciarCache();
 }
 
@@ -880,7 +880,7 @@ void size()
 		}
 		default:
 		{
-			log_warning(loggerConPantalla,"Error: Orden de interfaz no reconocida\n");
+			log_warning(logConsolaPantalla,"Error: Orden de interfaz no reconocida\n");
 			break;
 		}
 	}
@@ -888,7 +888,7 @@ void size()
 
 void dumpCache()
 {
-	log_info(loggerConPantalla,"----Dump Cache ----\n");
+	log_info(logConsolaPantalla,"----Dump Cache ----\n");
 	int i = 0;
 	int desplazamiento = sizeof(int)*2+marco_size;
 	void*contenido = malloc(marco_size);
@@ -902,9 +902,9 @@ void dumpCache()
 		memcpy(&pagina,bloque_Cache + i*desplazamiento + sizeof(int),sizeof(int));
 		memcpy(contenido,bloque_Cache + i*desplazamiento + sizeof(int)*2,marco_size);
 		if(pid != -1){
-			log_info(loggerConPantalla,"PID:%d\n",pid);
-			log_info(loggerConPantalla,"Pagina:%d\n",pagina);
-			log_info(loggerConPantalla,"Contenido:%s\n",(char*) contenido);
+			log_info(logConsolaPantalla,"PID:%d\n",pid);
+			log_info(logConsolaPantalla,"Pagina:%d\n",pagina);
+			log_info(logConsolaPantalla,"Contenido:%s\n",(char*) contenido);
 		}
 
 		i++;
@@ -933,7 +933,7 @@ void contenidoDeMemoria()
 		}
 		default:
 		{
-			log_warning(loggerConPantalla,"Error: Orden de interfaz no reconocida\n");
+			log_warning(logConsolaPantalla,"Error: Orden de interfaz no reconocida\n");
 			break;
 		}
 	}
@@ -941,11 +941,11 @@ void contenidoDeMemoria()
 
 void datosAlmacenadosDeProceso()
 {
-	log_info(loggerConPantalla,"--Datos Almacenados De Proceso--\n");
+	log_info(logConsolaPantalla,"--Datos Almacenados De Proceso--\n");
 	printf("Ingrese el PID del proceso:\n");
 	int pid;
 	scanf("%d",&pid);
-	log_info(loggerConPantalla,"PID:%d\n",pid);
+	log_info(logConsolaPantalla,"PID:%d\n",pid);
 	struct_adm_memoria aux;
 	int i = 0;
 	int desplazamientoStruct = sizeof(struct_adm_memoria);
@@ -956,7 +956,7 @@ void datosAlmacenadosDeProceso()
 		if(aux.pid == pid)
 		{
 			memcpy(datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
-			log_info(loggerConPantalla,"%s\n",datosFrame);
+			log_info(logConsolaPantalla,"%s\n",datosFrame);
 		}
 		i++;
 	}
@@ -965,7 +965,7 @@ void datosAlmacenadosDeProceso()
 
 void datosAlmacenadosEnMemoria()
 {
-	log_info(loggerConPantalla,"--Datos Almacenados En Memoria--\n");
+	log_info(logConsolaPantalla,"--Datos Almacenados En Memoria--\n");
 
 	struct_adm_memoria aux;
 	int i = 0;
@@ -976,9 +976,9 @@ void datosAlmacenadosEnMemoria()
 		memcpy(&aux, bloque_Memoria + i*desplazamientoStruct, sizeof(struct_adm_memoria));
 		if(aux.pid != -9 && aux.pid != -1)
 		{
-			log_info(loggerConPantalla,"PID:%d\nFrame:%d\n",aux.pid,aux.frame);
+			log_info(logConsolaPantalla,"PID:%d\nFrame:%d\n",aux.pid,aux.frame);
 			memcpy(datosFrame, bloque_Memoria + aux.frame*marco_size, marco_size);
-			log_info(loggerConPantalla,"Datos:%s\n",datosFrame);
+			log_info(logConsolaPantalla,"Datos:%s\n",datosFrame);
 		}
 		i++;
 	}
@@ -1008,17 +1008,17 @@ void vaciarCache()
 		memcpy(bloqueBitUsoCache + i*desplazamiento,&bitUso , sizeof(int));
 		i++;
 	}
-	log_info(loggerConPantalla,"Cache Vaciada\n");
+	log_info(logConsolaPantalla,"Cache Vaciada\n");
 
 }
 
 void tamanioProceso()
 {
-	log_info(loggerConPantalla,"--Tamaño Proceso--\n");
+	log_info(logConsolaPantalla,"--Tamaño Proceso--\n");
 	printf("Ingrese el PID del proceso:\n");
 	int pid;
 	scanf("%d",&pid);
-	log_info(loggerConPantalla,"PID:%d\n",pid);
+	log_info(logConsolaPantalla,"PID:%d\n",pid);
 	struct_adm_memoria aux;
 	int i = 0,espacioTotal =0;
 	int desplazamientoStruct = sizeof(struct_adm_memoria);
@@ -1032,19 +1032,19 @@ void tamanioProceso()
 		}
 		i++;
 	}
-	log_info(loggerConPantalla,"El proceso %d ocupa %d paginas\n",pid,espacioTotal);
+	log_info(logConsolaPantalla,"El proceso %d ocupa %d paginas\n",pid,espacioTotal);
 }
 
 void tamanioMemoria()
 {
 	int espacioLibre = verificarEspacioLibre();
 	int espacioOcupado = marcos - espacioLibre;
-	log_info(loggerConPantalla,"Frames Totales:%d\nEspacios Libres:%d\nEspacios Ocupados:%d\n",marcos,espacioLibre,espacioOcupado);
+	log_info(logConsolaPantalla,"Frames Totales:%d\nEspacios Libres:%d\nEspacios Ocupados:%d\n",marcos,espacioLibre,espacioOcupado);
 }
 
 void inicializarCache()
 {
-	log_info(loggerConPantalla,"-------------Inicializar Cache-------------\n");
+	log_info(logConsolaPantalla,"-------------Inicializar Cache-------------\n");
 
 	int i = 0;
 	int desplazamiento = sizeof(int)*2+marco_size;
@@ -1112,17 +1112,17 @@ void iniciarEntradaEnCache(int pid, int pagina)
 {
 	int entrada = buscarUnaEntradaParaProcesoEnCache();
 
-	log_info(loggerConPantalla,"Iniciar Entrada en cache\nEntrada:%d\n",entrada);
+	log_info(logConsolaPantalla,"Iniciar Entrada en cache\nEntrada:%d\n",entrada);
 	int desplazamiento = sizeof(int)*2+marco_size;
 
 	char *contenidoReal = malloc(marco_size);
 	int frame = buscarFrameDePaginaDeProceso(pid,pagina);
 
-	log_info(loggerConPantalla,"Frame a meter en la cache:%d\n",frame);
+	log_info(logConsolaPantalla,"Frame a meter en la cache:%d\n",frame);
 
 	memcpy(contenidoReal,bloque_Memoria + frame*marco_size,marco_size);
 
-	log_info(loggerConPantalla,"Contenido a meter en la cache:%s\n",contenidoReal);
+	log_info(logConsolaPantalla,"Contenido a meter en la cache:%s\n",contenidoReal);
 
 	memcpy(bloque_Cache + entrada*desplazamiento,&pid ,sizeof(int));
 	memcpy(bloque_Cache + entrada*desplazamiento+sizeof(int),&pagina ,sizeof(int));
@@ -1158,7 +1158,7 @@ void leerContenidoEnCache(int entrada,char** buffer,int size,int offset)
 	memcpy(*buffer, bloque_Cache + entrada*desplazamiento+sizeof(int)*2 + offset,size);
 
 	strcpy(*buffer + size , "\0");
-	log_info(loggerConPantalla,"%s\n",*buffer);
+	log_info(logConsolaPantalla,"%s\n",*buffer);
 	memcpy(bloqueBitUsoCache + entrada*sizeof(int),&contadorBitDeUso , sizeof(int));
 	contadorBitDeUso++;
 }

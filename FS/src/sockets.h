@@ -24,14 +24,14 @@ int recibirConexion(int socket_servidor){
 	int estado = listen(socket_servidor, 5);
 
 	if(estado == -1){
-		log_info(loggerConPantalla,"\nError al poner el servidor en listen\n");
+		log_info(logConsolaPantalla,"\nError al poner el servidor en listen\n");
 		close(socket_servidor);
 		return 1;
 	}
 
 
 	if(estado == 0){
-		log_info(loggerConPantalla,"\nSe puso el socket en listen\n");
+		log_info(logConsolaPantalla,"\nSe puso el socket en listen\n");
 		printf("---------------------------------------------------\n");
 	}
 
@@ -46,7 +46,7 @@ int recibirConexion(int socket_servidor){
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);
-		log_error(loggerConPantalla,"\nError al aceptar conexion\n");
+		log_error(logConsolaPantalla,"\nError al aceptar conexion\n");
 		return 1;
 	}
 	return socket_aceptado;

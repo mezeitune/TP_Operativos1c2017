@@ -40,14 +40,15 @@ void actualizarCantidadImpresiones(int pid);
 void informarEstadisticas(t_hiloPrograma* programaAFinalizar);
 
 void crearHiloPrograma(){
+	log_info(logConsola,"Creando hilo programa\n");
+
 	t_hiloPrograma* nuevoPrograma = malloc(sizeof(t_hiloPrograma));
 	nuevoPrograma->socketHiloKernel=  crear_socket_cliente(ipKernel,puertoKernel);
 
 	nuevoPrograma->tiempoInicio= *localtime(&(time_t){time(NULL)});
 	nuevoPrograma->cantImpresiones = 0;
-	log_info(loggerConPantalla,"Creando hilo programa");
 	int err = pthread_create(&nuevoPrograma->idHilo , NULL ,(void*)iniciarPrograma ,&nuevoPrograma->socketHiloKernel);
-	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
+	if (err != 0) log_error(logConsola,"\nError al crear el hilo :[%s]", strerror(err));
 
 
 	pthread_mutex_lock(&mutexListaHilos);
@@ -65,11 +66,11 @@ void* iniciarPrograma(int* socketHiloKernel){
 		return programa->socketHiloKernel == *socketHiloKernel;
 	}
 
-	log_info(loggerConPantalla,"Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
+	printf("Indicar la ruta del archivo AnSISOP que se quiere ejecutar\n");
 	scanf("%s", ruta);
 
 	if ((enviarLecturaArchivo(ruta,*socketHiloKernel)) < 0) {
-		log_error(loggerConPantalla,"El archivo indicado es inexistente");
+		log_error(logConsolaPantalla,"El archivo indicado es inexistente");
 		send(*socketHiloKernel,&comandoCerrarSocket,sizeof(char),0);
 		list_remove_and_destroy_by_condition(listaHilosProgramas,(void*)verificaSocket,free);
 		close(*socketHiloKernel);
@@ -86,7 +87,7 @@ void finalizarPrograma(){
 	char comandoFinalizarPrograma= 'F';
 	int procesoATerminar;
 	t_hiloPrograma* proceso;
-	log_info(loggerConPantalla,"Ingresar el PID del programa a finalizar\n");
+	log_info(logConsolaPantalla,"Ingresar el PID del programa a finalizar\n");
 	scanf("%d", &procesoATerminar);
 
 		bool verificarPid(t_hiloPrograma* proceso){
@@ -97,13 +98,13 @@ void finalizarPrograma(){
 		if (list_any_satisfy(listaHilosProgramas,(void*)verificarPid)){
 
 			proceso = list_remove_by_condition(listaHilosProgramas,(void*)verificarPid);
-			log_info(loggerConPantalla,"Avisando al kernel que un programa finalizo");
+			log_info(logConsolaPantalla,"Avisando al kernel que un programa finalizo");
 
 				send(proceso->socketHiloKernel,&comandoInterruptHandler,sizeof(char),0);
 				send(proceso->socketHiloKernel,&comandoFinalizarPrograma,sizeof(char),0);
 				send(proceso->socketHiloKernel,&procesoATerminar, sizeof(int), 0);
 				list_add(listaHilosProgramas,proceso);
-			}else	log_error(loggerConPantalla,"\nPID incorrecto\n");
+			}else	log_error(logConsolaPantalla,"\nPID incorrecto\n");
 
 		pthread_mutex_unlock(&mutexListaHilos);
 
@@ -132,6 +133,7 @@ void gestionarCierrePrograma(int pidFinalizar){
 
 
 void cargarHiloPrograma(int pid, int socket){
+	log_info(logConsola,"Encolando programa en lista de ejecucion--->PID:%d\n",pid);
 
 	_Bool verificarSocket(t_hiloPrograma* hiloPrograma){
 					return (hiloPrograma->socketHiloKernel ==socket);
@@ -140,7 +142,6 @@ void cargarHiloPrograma(int pid, int socket){
 	t_hiloPrograma* hiloPrograma= list_remove_by_condition(listaHilosProgramas,(void*)verificarSocket);
 	hiloPrograma->pid = pid;
 	list_add(listaHilosProgramas,hiloPrograma);
-	log_info(loggerConPantalla,"Programa de pid %d cargado a la lista de programas ejecutando",pid);
 	pthread_mutex_unlock(&mutexListaHilos);
 }
 
@@ -151,35 +152,24 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 	int tamanioArchivo;
 	char comandoIniciarPrograma='A';
 
-
 	if ((f = fopen(ruta, "r+")) == NULL)return -1;
 
 	fseek(f, 0, SEEK_END);
 	tamanioArchivo = ftell(f);
 	rewind(f);
-	log_info(loggerConPantalla,"Leyendo el contenido del script del archivo");
+	log_info(logConsola,"Leyendo el contenido del script del archivo\n");
 
 	bufferArchivo = malloc(tamanioArchivo);
 
-	if (bufferArchivo == NULL) {
-		log_error(loggerConPantalla,"\nNo se pudo conseguir memoria dinamica\n");
-		free(bufferArchivo);
-		exit(1);
-	}
-
 	fread(bufferArchivo, sizeof(char), tamanioArchivo, f);
-	mensaje = malloc(sizeof(int) + sizeof(char) + tamanioArchivo); // Pido memoria para el mensaje EMPAQUETADO que voy a mandar
+	mensaje = malloc(sizeof(int) + sizeof(char) + tamanioArchivo);
 
-	if (mensaje == NULL) {
-		log_error(loggerConPantalla,"\nNo se pudo conseguir memoria\n");
-		free(mensaje);
-		free(bufferArchivo);
-		exit(2);
-	}
-	log_info(loggerConPantalla,"Enviando al kernel la peticion de un nuevo programa con el contenido del script ANSISOP");
+	log_info(logConsola,"Enviando al kernel la peticion de un nuevo programa con el contenido del script ANSISOP\n");
+
 	memcpy(mensaje, &comandoIniciarPrograma,sizeof(char));
 	memcpy(mensaje + sizeof(char), &tamanioArchivo, sizeof(int));
 	memcpy(mensaje + sizeof(char) + sizeof(int), bufferArchivo, tamanioArchivo);
+
 	send(socketHiloKernel, mensaje, tamanioArchivo + sizeof(int) + sizeof(char)  , 0);
 
 	free(bufferArchivo);
@@ -190,13 +180,15 @@ int enviarLecturaArchivo(char *ruta,int socketHiloKernel) {
 
 
 void informarEstadisticas(t_hiloPrograma* programaAFinalizar){
-	log_info(loggerConPantalla,"Informando estadisticas programa: %d",programaAFinalizar->pid);
+	log_info(logConsola,"Informando estadisticas programa: %d",programaAFinalizar->pid);
 	struct tm tiempoFinalizacion = *localtime(&(time_t){time(NULL)});
 	double seconds = difftime(mktime(&(tiempoFinalizacion)), mktime(&(programaAFinalizar->tiempoInicio)));
 
-	log_info(loggerSinPantalla,"\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
-	log_info(loggerSinPantalla,"\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
-	printf("\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
 
+	log_info(logConsola,"\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
+	log_info(logConsola,"\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
+
+	printf("\tEstadisticas programa--->PID:%d\n",programaAFinalizar->pid);
+	printf("\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
 	printf("\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
 }

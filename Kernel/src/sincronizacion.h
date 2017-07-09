@@ -51,7 +51,7 @@ pthread_mutex_t mutexListaHilos;
 sem_t sem_admitirNuevoProceso;
 sem_t sem_administrarFinProceso;
 sem_t sem_planificacion;
-sem_t sem_colaListos;
+sem_t sem_procesoListo;
 sem_t sem_CPU;
 
 sem_t sem_envioPCB;
@@ -92,7 +92,7 @@ void inicializarSemaforos(){
 
 		sem_init(&sem_admitirNuevoProceso, 0, 0);
 		sem_init(&sem_administrarFinProceso,0,0);
-		sem_init(&sem_colaListos,0,0);
+		sem_init(&sem_procesoListo,0,0);
 		sem_init(&sem_CPU,0,0);
 
 		sem_init(&sem_envioPCB,0,0);

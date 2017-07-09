@@ -12,31 +12,31 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
 	int tamanio = sizeof(char)*strlen(identificadorSemAEnviar);
-	log_info(loggerConPantalla, "Semaforo a bajar: %s", string_cortado[0]);
+	log_info(logConsolaPantalla, "Semaforo a bajar: %s", string_cortado[0]);
 
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoWait,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
-	log_info(loggerSinPantalla, "Enviando datos a la capa memoria del kernel para saber si el script debe bloquearse o no");
+	log_info(logConsola, "Enviando datos a la capa memoria del kernel para saber si el script debe bloquearse o no");
 	recv(socketKernel,&bloquearScriptONo,sizeof(int),MSG_WAITALL);
 
 
 	if(bloquearScriptONo < 0){
 		cpuBloqueadaPorSemANSISOP = 0;
 
-		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
+		log_info(logConsolaPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
 
 		send(socketKernel, &cantidadIntruccionesEjecutadas, sizeof(int),0);
 
 		serializarPcbYEnviar(pcb_actual, socketKernel);
 
-		log_info(loggerConPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
+		log_info(logConsolaPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
 
 		if(cpuFinalizadaPorSignal != 0) esperarPCB();
 
-	}else log_info(loggerConPantalla, "Script ANSISOP pid: %d sigue su ejecucion normal", pcb_actual->pid);
+	}else log_info(logConsolaPantalla, "Script ANSISOP pid: %d sigue su ejecucion normal", pcb_actual->pid);
 
 	int i = 0;
 	while(string_cortado[i] != NULL){
@@ -59,7 +59,7 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	char* identificadorSemAEnviar = string_new();
 	string_append(&identificadorSemAEnviar, string_cortado[0]);
 	int tamanio = sizeof(char)*strlen(identificadorSemAEnviar);
-	log_info(loggerConPantalla, "Semaforo a subir: %s", string_cortado[0]);
+	log_info(logConsolaPantalla, "Semaforo a subir: %s", string_cortado[0]);
 
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoSignal,sizeof(char),0);
@@ -67,7 +67,7 @@ void signal_Ansisop(t_nombre_semaforo identificador_semaforo){
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,identificadorSemAEnviar,tamanio,0);
 
-	log_info(loggerSinPantalla, "Enviando datos a la capa memoria del kernel para subir el semaforo %s",string_cortado[0]);
+	log_info(logConsola, "Enviando datos a la capa memoria del kernel para subir el semaforo %s",string_cortado[0]);
 
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
@@ -89,10 +89,10 @@ t_puntero reservar (t_valor_variable espacio){
 	send(socketKernel,&comandoReservarMemoria,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&espacio,sizeof(int),0);
-	log_info(loggerConPantalla, "Enviando datos a la capa memoria de proceso pid:%d para reservar memoria dinamica de %d bytes",pid,espacio);
+	log_info(logConsolaPantalla, "Enviando datos a la capa memoria de proceso pid:%d para reservar memoria dinamica de %d bytes",pid,espacio);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion < 0) {
-		log_info(loggerConPantalla, "No se pudo reservar memoria, expropiando proceso pid:%d",pid);
+		log_info(logConsolaPantalla, "No se pudo reservar memoria, expropiando proceso pid:%d",pid);
 		expropiarPorKernel();
 		return 0;
 	}
@@ -100,7 +100,7 @@ t_puntero reservar (t_valor_variable espacio){
 	recv(socketKernel,&offset,sizeof(int),0);
 
 	t_puntero puntero = pagina * config_paginaSize + offset;
-	log_info(loggerConPantalla, "La direccion logica es: %d",puntero);
+	log_info(logConsolaPantalla, "La direccion logica es: %d",puntero);
 
 	return puntero;
 }
@@ -121,12 +121,12 @@ void liberar (t_puntero puntero){
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&num_pagina,sizeof(int),0);
 	send(socketKernel,&offset,tamanio,0);
-	log_info(loggerConPantalla, "Enviando datos a la capa memoria del kernel para liberar de la pagina:%d offset:%d del proceso pid:%d",num_pagina,offset,pid);
+	log_info(logConsolaPantalla, "Enviando datos a la capa memoria del kernel para liberar de la pagina:%d offset:%d del proceso pid:%d",num_pagina,offset,pid);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion==1)
-		log_info(loggerConPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
+		log_info(logConsolaPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
 	else{
-		log_info(loggerConPantalla,"No se ha podido liberar el heap apuntada por",puntero);
+		log_info(logConsolaPantalla,"No se ha podido liberar el heap apuntada por",puntero);
 	}
 }
 //HEAP
@@ -153,13 +153,13 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 
 	send(socketKernel,&tamanio,sizeof(int),0);
 	send(socketKernel,variable_string,tamanio,0);
-	log_info(loggerConPantalla, "Enviando datos a la capa memoria del kernel para obtener la variable %s del proceso pid:%d",variable,pid);
+	log_info(logConsolaPantalla, "Enviando datos a la capa memoria del kernel para obtener la variable %s del proceso pid:%d",variable,pid);
 	free(variable_string);
 
 	int valor_variable_int;
 	recv(socketKernel,&valor_variable_int,sizeof(int),0);
 
-	log_info(loggerConPantalla, "Valor de la variable compartida: %d", valor_variable_int);
+	log_info(logConsolaPantalla, "Valor de la variable compartida: %d", valor_variable_int);
 	int i = 0;
 	while(string_cortado[i] != NULL){
 		free(string_cortado[i]);
@@ -181,7 +181,7 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 	string_append(&variable_string, string_cortado[0]);
 	int tamanio = sizeof(int)*strlen(variable_string);
 
-	log_info(loggerConPantalla, "Enviando datos a la capa memoria para asignar el valor %d: de id: %s del proceso pid:%d", valor,variable,pid);
+	log_info(logConsolaPantalla, "Enviando datos a la capa memoria para asignar el valor %d: de id: %s del proceso pid:%d", valor,variable,pid);
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&comandoAsignarCompartida,sizeof(char),0);
 	send(socketKernel,&pid,sizeof(int),0);

@@ -21,14 +21,14 @@ void inicializarLog(char *rutaDeLog){
 
 	mkdir("/home/utnso/Log",0755);
 
-	loggerSinPantalla = log_create(rutaDeLog,"CPU", false, LOG_LEVEL_INFO);
-	loggerConPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
+	logConsola = log_create(rutaDeLog,"CPU", false, LOG_LEVEL_INFO);
+	logConsolaPantalla = log_create(rutaDeLog,"CPU", true, LOG_LEVEL_INFO);
 }
 void signalHandler(int signum)
 {
     if (signum == SIGUSR1 || signum == SIGINT)
     {
-    	log_warning(loggerConPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso y cerrando CPU ...");
+    	log_warning(logConsolaPantalla,"Cierre por signal, ejecutando ultimas instrucciones del proceso y cerrando CPU ...");
     	//cerrarTodo();
 
 

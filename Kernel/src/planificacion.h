@@ -88,7 +88,7 @@ void aumentarGradoMultiprogramacion();
 void disminuirGradoMultiprogramacion();
 void encolarProcesoListo(t_pcb *procesoListo);
 void cargarConsola(int pid, int idConsola);
-void gestionarFinalizacionProgramaEnCpu(int socket);
+void gestionarFinProcesoCPU(int socket);
 
 int contadorPid=0;
 /*---PLANIFICACION GENERAL-------*/
@@ -207,7 +207,7 @@ void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 		inicializarTablaProceso(proceso->pid);
 			encolarProcesoListo(proceso);
 			aumentarGradoMultiprogramacion();
-			sem_post(&sem_colaListos);
+			sem_post(&sem_procesoListo);
 	}
 	free(codigoPrograma);
 }
@@ -281,16 +281,16 @@ void planificarCortoPlazo(){
 	signal(SIGUSR1,signalHandler);
 
 
-	pthread_create(&threadFinQuantumAReady, NULL, (void*)finQuantumAReady, NULL);
+	//pthread_create(&threadFinQuantumAReady, NULL, (void*)finQuantumAReady, NULL);
 
 
 	while(!flagTerminarPlanificadorCortoPlazo){
 
 		sem_wait(&sem_CPU);
-		sem_wait(&sem_colaListos);
+		sem_wait(&sem_procesoListo);
 
 		verificarPausaPlanificacion();
-
+												/*TODO: Ojo en este intervalo de tiempo. Cuando se reanude la planificacion, puede no existir mas ese proceso*/
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
@@ -325,7 +325,7 @@ void planificarCortoPlazo(){
 			list_add(colaListos,pcbListo);
 			pthread_mutex_unlock(&mutexColaListos);
 
-			sem_post(&sem_colaListos);
+			sem_post(&sem_procesoListo);
 
 		}
 
@@ -357,7 +357,7 @@ void finQuantumAReady(){
 
 				log_info(logKernelPantalla, "\nPCB encolado en Listos---> PID: %d\n", pcbBuffer->pid);
 
-				sem_post(&sem_colaListos);
+				sem_post(&sem_procesoListo);
 			}
 	}
 }
@@ -446,7 +446,7 @@ void pcbBloqueadoAReady(){
 						list_add(colaListos,pcbADesbloquear);
 						pthread_mutex_unlock(&mutexColaListos);
 
-						sem_post(&sem_colaListos);
+						sem_post(&sem_procesoListo);
 					}
 				}
 			}
@@ -530,7 +530,7 @@ void encolarProcesoListo(t_pcb *procesoListo){
 }
 
 
-void gestionarFinalizacionProgramaEnCpu(int socketCPU){
+void gestionarFinProcesoCPU(int socketCPU){
 	_Bool verificaCpu(t_cpu* cpu){
 				return (cpu->socket == socketCPU);
 	}

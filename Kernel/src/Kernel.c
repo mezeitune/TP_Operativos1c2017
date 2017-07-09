@@ -53,10 +53,10 @@ void cerrarTodo();
 //--------ConnectionHandler--------//
 void connectionHandler(int socket, char orden);
 void inicializarListas();
-int atenderNuevoPrograma(int socketAceptado);
+int gestionarNuevoPrograma_ANSISOP(int socketAceptado);
 t_codigoPrograma* recibirCodigoPrograma(int socketHiloConsola);
 void gestionarNuevaCPU(int socketCPU/*,int quantum*/);
-void gestionarRRFinQuantum(int socket);
+void gestionarFinQuantum_RoundRobin(int socket);
 void handShakeCPU(int socketCPU);
 //---------ConnectionHandler-------//
 
@@ -127,11 +127,11 @@ int main(int argc, char* argv[]) { /*TODO Agregar argv*/
 int quantum = 0; //FIFO--->0 ; RR != 0
 void connectionHandler(int socket, char orden) {
 	switch (orden) {
-		case 'A':	atenderNuevoPrograma(socket);
+		case 'A':	gestionarNuevoPrograma_ANSISOP(socket);
 					break;
-		case 'N':	gestionarNuevaCPU(socket/*,quantum*/);
+		case 'N':	gestionarNuevaCPU(socket);
 					break;
-		case 'T':	gestionarFinalizacionProgramaEnCpu(socket);
+		case 'T':	gestionarFinProcesoCPU(socket);
 					break;
 		case 'F':	gestionarIO(socket);
 					break;
@@ -140,7 +140,7 @@ void connectionHandler(int socket, char orden) {
 		case 'X':	recv(socket,&orden,sizeof(char),0);
 					interruptHandler(socket,orden);
 					break;
-		case 'R':	gestionarRRFinQuantum(socket);
+		case 'R':	gestionarFinQuantum_RoundRobin(socket);
 					break;
 		case 'Z':	eliminarSocket(socket);
 					break;
@@ -151,8 +151,8 @@ void connectionHandler(int socket, char orden) {
 	return;
 }
 
-int atenderNuevoPrograma(int socketAceptado){
-		log_info(logKernel,"Atendiendo nuevo programa");
+int gestionarNuevoPrograma_ANSISOP(int socketAceptado){
+		log_info(logKernelPantalla,"Atendiendo nuevo programa\n");
 
 		contadorPid++;
 		send(socketAceptado,&contadorPid,sizeof(int),0);
@@ -202,16 +202,14 @@ void handShakeCPU(int socketCPU){
 
 
 
-void gestionarNuevaCPU(int socketCPU/*,int quantum*/){
+void gestionarNuevaCPU(int socketCPU){
 
-	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
+	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum; //TODO> Pasar quantum y quantum sleep juntos
 	send(socketCPU,&quantum,sizeof(int),0);
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	cpu->socket = socketCPU;
 	cpu->estado = OCIOSA;
-	//cpu->socketInterrupciones = socketCPU +1;
-
 
 	pthread_mutex_lock(&mutexListaCPU);
 	list_add(listaCPU,cpu);
@@ -219,9 +217,8 @@ void gestionarNuevaCPU(int socketCPU/*,int quantum*/){
 	sem_post(&sem_CPU);
 }
 
-void gestionarRRFinQuantum(int socket){
-	t_pcb* pcb;
-	t_cpu *cpu;
+void gestionarFinQuantum_RoundRobin(int socket){
+	log_info(logKernelPantalla,"Expropiando por fin de quantum--->CPU:%d\n",socket);
 	int cantidadDeRafagas;
 	int cpuFinalizada;
 
@@ -230,20 +227,23 @@ void gestionarRRFinQuantum(int socket){
 	}
 
 
-	cpu = list_find(listaCPU, (void*)verificaSocket);
+	t_cpu* cpu = list_find(listaCPU, (void*)verificaSocket);
 
-	log_info(logKernelPantalla,"Expropiando por fin de quantum");
 	if(cpu->estado != FQPB){
 
 		recv(socket,&cpuFinalizada, sizeof(int),0);
 		recv(socket,&cantidadDeRafagas,sizeof(int),0);
 
-		pcb = recibirYDeserializarPcb(socket);
+		t_pcb* proceso = recibirYDeserializarPcb(socket);
 
 		cambiarEstadoCpu(socket,OCIOSA);
-		actualizarRafagas(pcb->pid,cantidadDeRafagas);
-		removerDeColaEjecucion(pcb->pid);
-		agregarAFinQuantum(pcb);
+		actualizarRafagas(proceso->pid,cantidadDeRafagas);
+		removerDeColaEjecucion(proceso->pid);
+
+		encolarProcesoListo(proceso);
+		sem_post(&sem_procesoListo);
+
+		//agregarAFinQuantum(proceso);
 		if(cpuFinalizada != 0) sem_post(&sem_CPU);
 	}
 
@@ -291,13 +291,10 @@ void gestionarCierreCpu(int socketCpu){
 	_Bool verificaSocket(t_cpu* cpu){
 		return cpu->socket == socketCpu;
 	}
-t_cpu* cpu;
 	pthread_mutex_lock(&mutexListaCPU);
-	cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
+	t_cpu* cpu = list_remove_by_condition(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
-//	socketInterrupciones = cpu->socketInterrupciones;
 	eliminarSocket(socketCpu);
-	//eliminarSocket(socketInterrupciones);
 	free(cpu);
 	log_error(logKernel,"La CPU %d se ha cerrado",socketCpu);
 }
@@ -439,7 +436,7 @@ int buscarProcesoYTerminarlo(int pid){
 		if(list_any_satisfy(colaListos,(void*)verificarPid)){
 			printf("Proceso a finalizar en Listos\n");
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
-			sem_wait(&sem_colaListos);
+			sem_wait(&sem_procesoListo);
 			encontro = 1;
 		}
 	}
@@ -530,6 +527,7 @@ void gestionarAlocar(int socket){
 
 
 void gestionarIO(int socket){
+	log_info(logKernelPantalla,"Gestionando entrada y salida Filesystem\n")
 	interfaceHandlerFileSystem(socket);
 }
 
@@ -638,7 +636,7 @@ int indiceEnArray(char** array, char* elemento){
 }
 
 void selectorConexiones() {
-	log_info(logKernel,"Iniciando selector de conexiones");
+	log_info(logKernelPantalla,"Iniciando selector de conexiones\n");
 	int nuevoFD;
 	int socket;
 	char orden;
@@ -724,25 +722,25 @@ void actualizarConfiguraciones(){
 
 
 void signalHandlerKernel(int sigCode){
-	log_error(logKernel,"Cerrando proceso Kernel");
+	log_error(logKernelPantalla,"Cerrando proceso Kernel\n");
 	cerrarTodo();
 }
 
 void cerrarTodo(){
-	log_error(logKernel,"Iniciando rutina de cierre");
+	log_error(logKernelPantalla,"Iniciando rutina de cierre\n");
 	char comandoDesconexion = 'X';
 	send(socketFyleSys,&comandoDesconexion,sizeof(char),0);
 	send(socketMemoria,&comandoDesconexion,sizeof(char),0);
 
 
-	log_error(logKernel,"Finalizando hilos planificadores");
+	log_error(logKernelPantalla,"Finalizando hilos planificadores\n");
 	pthread_kill(planificadorLargoPlazo,SIGUSR1);
 	pthread_kill(planificadorCortoPlazo,SIGUSR1);
 	pthread_kill(planificadorMedianoPlazo,SIGUSR1);
 
 	int i;
 
-	log_error(logKernel,"Destruyendo procesos");
+	log_error(logKernelPantalla,"Destruyendo procesos\n");
 	for(i=0;i<colaNuevos->elements_count;i++){
 		list_remove_and_destroy_element(colaNuevos,i,free);
 	}

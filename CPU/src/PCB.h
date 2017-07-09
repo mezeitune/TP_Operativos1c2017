@@ -37,8 +37,8 @@ typedef struct {
 
 
 void inicializarLog(char *rutaDeLog);
-t_log *loggerSinPantalla;
-t_log *loggerConPantalla;
+t_log *logConsola;
+t_log *logConsolaPantalla;
 int contadorPid;
 
 //---------PCB-----------------//
@@ -58,7 +58,7 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones);
 
 
 t_pcb* crearPcb (char* programa, int programSize){
-	log_info(loggerConPantalla,"Creando PCB ---> PID: %d", contadorPid);
+	log_info(logConsolaPantalla,"Creando PCB ---> PID: %d", contadorPid);
 	t_pcb* pcb = malloc (sizeof(t_pcb));
 	t_metadata_program* metadata = metadata_desde_literal(programa);
 	pcb->pid = contadorPid;
@@ -94,7 +94,7 @@ int** inicializarIndiceCodigo(t_size cantidadInstrucciones){
 }
 
 void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
-	log_info(loggerConPantalla, "Serializando PCB ----- PID:%d",pcb->pid);
+	log_info(logConsolaPantalla, "Serializando PCB ----- PID:%d",pcb->pid);
 
 	int pcbSerializadoSize = calcularPcbSerializadoSize(pcb);
 	void* pcbEnviar= malloc(pcbSerializadoSize);
@@ -167,7 +167,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 	send(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	send(socketCPU,pcbEnviar,pcbSerializadoSize,0);
-	log_info(loggerConPantalla, "Pcb serializado y enviado ----- PID: %d ------ socketCPU: %d-----Tamano: %d ", pcb->pid, socketCPU,pcbSerializadoSize);
+	log_info(logConsolaPantalla, "Pcb serializado y enviado ----- PID: %d ------ socketCPU: %d-----Tamano: %d ", pcb->pid, socketCPU,pcbSerializadoSize);
 
 	//imprimirPcb(pcb);
 
@@ -177,7 +177,7 @@ void serializarPcbYEnviar(t_pcb* pcb,int socketCPU){
 
 t_pcb* recibirYDeserializarPcb(int socketCPU){
 	t_pcb* pcb = malloc(sizeof(t_pcb));
-	log_info(loggerConPantalla, "Recibiendo PCB serializado---- SOCKET:%d", socketCPU);
+	log_info(logConsolaPantalla, "Recibiendo PCB serializado---- SOCKET:%d", socketCPU);
 	int pcbSerializadoSize;
 	recv(socketCPU,&pcbSerializadoSize,sizeof(int),0);
 	void * pcbADeserializar = malloc(pcbSerializadoSize);
@@ -187,7 +187,7 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);
 
-	log_info(loggerConPantalla, "Deserializando PCB ----- PID:%d",pcb->pid);
+	log_info(logConsolaPantalla, "Deserializando PCB ----- PID:%d",pcb->pid);
 
 	memcpy(&pcb->cantidadPaginasCodigo,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);
@@ -267,7 +267,7 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 			//log_info(loggerConPantalla, "Stack deserializado");
 
 			memcpy(&pcb->exitCode,pcbSerializado,sizeof(int));
-			log_info(loggerConPantalla,"Pcb deserializado------PID: %d -----SocketCPU: %d -----Tamanio: %d",pcb->pid,socketCPU,pcbSerializadoSize);
+			log_info(logConsolaPantalla,"Pcb deserializado------PID: %d -----SocketCPU: %d -----Tamanio: %d",pcb->pid,socketCPU,pcbSerializadoSize);
 
 			//imprimirPcb(pcb);
 
@@ -346,13 +346,13 @@ void recibirTamanioPagina(int socketKernel){
 	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
 	recv(socketKernel,&config_paginaSize,sizeof(int),0);
 	recv(socketKernel,&config_stackSize,sizeof(int),0);
-	log_info(loggerConPantalla, "El tamanio de la pagina es %d y el stack tiene %d paginas",config_paginaSize,config_stackSize);
+	log_info(logConsolaPantalla, "El tamanio de la pagina es %d y el stack tiene %d paginas",config_paginaSize,config_stackSize);
 }
 
 int cantidadPaginasCodigoProceso(int programSize){
-	log_info(loggerConPantalla, "Calculando paginas de codigo requeridas");
+	log_info(logConsolaPantalla, "Calculando paginas de codigo requeridas");
 	int mod = programSize % config_paginaSize;
-	log_info(loggerConPantalla, "Pagina de codigo requeridas: %d",mod);
+	log_info(logConsolaPantalla, "Pagina de codigo requeridas: %d",mod);
 	return mod==0? (programSize / config_paginaSize):(programSize / config_paginaSize)+ 1;
 
 }

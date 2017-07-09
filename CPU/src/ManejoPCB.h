@@ -7,7 +7,7 @@ void esperarPCB(){
 
 	while(cpuOcupada==1){
 
-		log_info(loggerConPantalla," CPU Esperando un script");
+		log_info(logConsolaPantalla," CPU Esperando un script");
 		cantidadInstruccionesAEjecutarPorKernel = quantum;
 		recibirPCB();
 		cpuOcupada--;
@@ -20,7 +20,7 @@ void recibirPCB(){
 		char comandoRecibirPCB;
 
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),MSG_WAITALL);
-		log_info(loggerConPantalla, "Recibiendo PCB...\n");
+		log_info(logConsolaPantalla, "Recibiendo PCB...\n");
 		connectionHandlerKernel(socketKernel,comandoRecibirPCB);
 
 }
@@ -30,22 +30,22 @@ void connectionHandlerKernel(int socketAceptado, char orden) {
 
 	switch (orden) {
 		case 'S':
-			log_info(loggerConPantalla, "Se esta por asignar un PCB");
+			log_info(logConsolaPantalla, "Se esta por asignar un PCB");
 
 			establecerPCB(socketAceptado);
 					break;
 		default:
 				if(orden == '\0') break;
-				log_warning(loggerConPantalla,"\nOrden %c no definida\n", orden);
+				log_warning(logConsolaPantalla,"\nOrden %c no definida\n", orden);
 				break;
 	}
 	orden = '\0';
 	return;
 }
 void nuevaOrdenDeAccion(int socketCliente, char nuevaOrden) {
-		log_info(loggerConPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
+		log_info(logConsolaPantalla,"\n--Esperando una orden del cliente %d-- \n", socketCliente);
 		recv(socketCliente, &nuevaOrden, sizeof nuevaOrden, 0);
-		log_info(loggerConPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, nuevaOrden);
+		log_info(logConsolaPantalla,"El cliente %d ha enviado la orden: %c\n", socketCliente, nuevaOrden);
 }
 void establecerPCB(){
 
@@ -53,7 +53,7 @@ void establecerPCB(){
 	recv(socketKernel,&retardo_entre_instruccion,sizeof(int),0);
 	recibiPcb=0;
 
-	log_info(loggerConPantalla, "CPU recibe PCB de PID %d correctamente\n",pcb_actual->pid);
+	log_info(logConsolaPantalla, "CPU recibe PCB de PID %d correctamente\n",pcb_actual->pid);
 
 	printf("\nPCB:%d\n", pcb_actual->pid);
 	EjecutarProgramaMedianteAlgoritmo();

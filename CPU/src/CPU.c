@@ -16,7 +16,7 @@ int main(void) {
 	socketKernel = crear_socket_cliente(ipKernel,puertoKernel);
 	socketMemoria = crear_socket_cliente(ipMemoria,puertoMemoria);
 
-	log_info(loggerConPantalla, "Inicia proceso CPU");
+	log_info(logConsolaPantalla, "Inicia proceso CPU");
 
 	signal(SIGUSR1, signalHandler);
 	signal(SIGINT, signalHandler);
@@ -53,20 +53,20 @@ void CerrarPorSignal(){
 	//close(socketKernel);
 	//close(socketInterrupciones);
 	//close(socketMemoria);
-	log_warning(loggerConPantalla,"Se ha desconectado CPU con signal correctamente");
+	log_warning(logConsolaPantalla,"Se ha desconectado CPU con signal correctamente");
 	free(pcb_actual);
 	exit(1);
 }
 void expropiarVoluntariamente(){
 
 	if(cpuExpropiadaPorKernel == -1) expropiarPorKernel();
-	if(cpuBloqueadaPorSemANSISOP == 0) log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
+	if(cpuBloqueadaPorSemANSISOP == 0) log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
 	else if(cpuBloqueadaPorSemANSISOP !=0) expropiarPorRR();
 
 
 }
 void expropiarPorKernel(){
-	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
+	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	free(pcb_actual);
@@ -76,16 +76,16 @@ void expropiarPorKernel(){
 	esperarPCB();
 }
 void expropiarPorDireccionInvalida(){
-	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
+	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por intentar acceder a una referencia en memoria invalida", pcb_actual->pid);
 	char interruptHandler= 'X';
 	char caseDireccionInvalida= 'M';
 
 	send(socketKernel,&interruptHandler,sizeof(char),0);
 	send(socketKernel,&caseDireccionInvalida,sizeof(char),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
+	log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
-	log_info(loggerSinPantalla, "La CPU ha enviado las instrucciones ejecutadas al kernel");
+	log_info(logConsola, "La CPU ha enviado las instrucciones ejecutadas al kernel");
 	free(pcb_actual);
 	recibiPcb=1;
 	cpuExpropiadaPorKernel = 1;
@@ -100,10 +100,10 @@ void expropiarPorStackOverflow(){
 	send(socketKernel,&caseStackOverflow,sizeof(char),0);
 
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
+	log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
-	log_info(loggerSinPantalla, "La CPU ha enviado las instrucciones ejecutadas al kernel");
-	log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
+	log_info(logConsola, "La CPU ha enviado las instrucciones ejecutadas al kernel");
+	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por StackOverflow\n", pcb_actual->pid);
 
 	free(pcb_actual);
 	recibiPcb=1;
@@ -121,8 +121,8 @@ void expropiarPorRR(){
 		send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
 		send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 		serializarPcbYEnviar(pcb_actual,socketKernel);
-		log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
-		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
+		log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
+		log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
 		free(pcb_actual);
 		recibiPcb=1;
 		esperarPCB();
@@ -138,7 +138,7 @@ void expropiarPorRRYCerrar(){
 	send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
 	send(socketKernel,&cantidadIntruccionesEjecutadas,sizeof(int),0);
 	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_info(loggerSinPantalla, "La CPU ha enviado el  PCB serializado al kernel");
+	log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
 	return;
 }
 //------------------------------EXPROPIAR PROCESOS--------------------------------------
@@ -149,15 +149,15 @@ void expropiarPorRRYCerrar(){
 void enviarAlKernelPedidoDeNuevoProceso(int socketKernel){
 	char comandoGetNuevoProceso = 'N';
 	send(socketKernel,&comandoGetNuevoProceso,sizeof(char),0);
-	log_info(loggerConPantalla,"Se hizo el pedido a Kernel para comenzar a ejecutar Script ANSISOP\n");
+	log_info(logConsolaPantalla,"Se hizo el pedido a Kernel para comenzar a ejecutar Script ANSISOP\n");
 }
 void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 	recv(socketKernel,&quantum,sizeof(int),0);
 
 		if(quantum==0){
-			log_info(loggerConPantalla,"\nAlgoritmo FIFO\n");
+			log_info(logConsolaPantalla,"\nAlgoritmo FIFO\n");
 			return;
-		}else log_info(loggerConPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
+		}else log_info(logConsolaPantalla,"\nAlgoritmo: RR de Q:%d\n", quantum);
 		return;
 }
 //-----------------------------PEDIDOS AL KERNEL-----------------------------------------
@@ -171,7 +171,7 @@ int cantidadPaginasTotales(){
 
 
 void stackOverflow(){
-		log_warning(loggerConPantalla, "El proceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
+		log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d sufrio stack overflow", pcb_actual->pid);
 		expropiarPorStackOverflow();
 
 }

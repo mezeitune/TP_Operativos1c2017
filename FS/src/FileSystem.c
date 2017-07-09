@@ -100,8 +100,8 @@ void inicializarLog(char *rutaDeLog){
 
 		mkdir("/home/utnso/Log",0755);
 
-		loggerSinPantalla = log_create(rutaDeLog,"FileSystem", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"FileSystem", true, LOG_LEVEL_INFO);
+		logConsola = log_create(rutaDeLog,"FileSystem", false, LOG_LEVEL_INFO);
+		logConsolaPantalla = log_create(rutaDeLog,"FileSystem", true, LOG_LEVEL_INFO);
 
 }
 
@@ -118,7 +118,7 @@ void connectionHandler()
 	recv(socketKernel,path,pathSize,0);
 	strcpy(path + pathSize , "\0");
 
-	log_info(loggerConPantalla,"Iniciando rutina de atencion");
+	log_info(logConsolaPantalla,"Iniciando rutina de atencion");
     	switch(orden){
 		case 'V'://validar archivo
 			validarArchivoFunction(path);
@@ -136,14 +136,14 @@ void connectionHandler()
 			guardarDatosArchivoFunction(path);
 			break;
 		default:
-			log_error(loggerConPantalla,"Orden no definida:%c",orden);
+			log_error(logConsolaPantalla,"Orden no definida:%c",orden);
 			break;
 		}
-    	log_info(loggerConPantalla,"Finalizando rutina de atencion");
+    	log_info(logConsolaPantalla,"Finalizando rutina de atencion");
     	orden = '\0';
 }
 void selectorConexiones() {
-	log_info(loggerConPantalla,"Iniciando selector de conexiones");
+	log_info(logConsolaPantalla,"Iniciando selector de conexiones");
 	int maximoFD;
 	int nuevoFD;
 	int socket;
@@ -170,7 +170,7 @@ void selectorConexiones() {
 
 					if (select(maximoFD + 1, &readFds, NULL, NULL, NULL) == -1) {
 						perror("select");
-						log_error(loggerSinPantalla,"Error en select\n");
+						log_error(logConsola,"Error en select\n");
 						exit(2);
 					}
 
@@ -187,7 +187,7 @@ void selectorConexiones() {
 											FD_SET(nuevoFD, &master);
 											if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
 
-											log_info(loggerConPantalla,"Selectserver: nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
+											log_info(logConsolaPantalla,"Selectserver: nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 										}
 									}
 									else if(socket != 0) {
@@ -197,5 +197,5 @@ void selectorConexiones() {
 							}
 					}
 		}
-	log_info(loggerConPantalla,"Finalizando selector de conexiones");
+	log_info(logConsolaPantalla,"Finalizando selector de conexiones");
 }

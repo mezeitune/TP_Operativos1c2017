@@ -33,7 +33,7 @@ void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques);
 void validarArchivoFunction(char* path){
 	int validado;
 
-    log_info(loggerConPantalla,"Validando existencia de archivo--->Direccion:%s",path);
+    log_info(logConsolaPantalla,"Validando existencia de archivo--->Direccion:%s",path);
 
 
 	char *nombreArchivoRecibido = string_new();
@@ -45,13 +45,13 @@ void validarArchivoFunction(char* path){
 
 	if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
 	    // file exists
-		log_info(loggerConPantalla,"El archivo existe");
+		log_info(logConsolaPantalla,"El archivo existe");
 		validado=1;
-		log_info(loggerConPantalla,"Archivo %s existente en FS",path);
+		log_info(logConsolaPantalla,"Archivo %s existente en FS",path);
 		send(socketKernel,&validado,sizeof(int),0);
 	} else {
 	    // file doesn't exist
-	  log_warning(loggerConPantalla,"El archivo no existe");
+	  log_warning(logConsolaPantalla,"El archivo no existe");
 	   validado=0;
 	   send(socketKernel,&validado,sizeof(int),0);
 	}
@@ -75,7 +75,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 
 	char* montajeCarpeta = string_new();
 
-	log_info(loggerConPantalla,"Creando archivo--->Path relativo:%s",path);
+	log_info(logConsolaPantalla,"Creando archivo--->Path relativo:%s",path);
 
 	char *rutaAbsoluta = string_new();
 	string_append(&rutaAbsoluta, puntoMontaje);
@@ -99,7 +99,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 				if(!esArchivo(carpetaSiguiente)) mkdir(montajeCarpeta, 0777);
 		if(!esArchivo(carpetaSiguiente))
 			{
-				log_info(loggerConPantalla,"Creando nuevo directorio");
+				log_info(logConsolaPantalla,"Creando nuevo directorio");
 				mkdir(montajeCarpeta, 0777);
 			}
 				string_append(&montajeCarpeta,"/");
@@ -130,7 +130,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
 
-		log_info(loggerConPantalla,"Asignando nuevo bloque del FS");
+		log_info(logConsolaPantalla,"Asignando nuevo bloque del FS");
 		bitarray_set_bit(bitarray,bloqueEncontrado);
 
 		char *dataAPonerEnFile = string_new();
@@ -142,7 +142,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 		string_append(&dataAPonerEnFile,numerito);
 		string_append(&dataAPonerEnFile,"]");
 
-		log_info(loggerConPantalla,"Guardando info de metadata en %s",rutaAbsoluta);
+		log_info(logConsolaPantalla,"Guardando info de metadata en %s",rutaAbsoluta);
 		adx_store_data(rutaAbsoluta,dataAPonerEnFile);
 
 		validado=1;
@@ -151,7 +151,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 		fclose(fp);
 	}else{
 		validado=0;
-		log_info(loggerConPantalla,"No se encontraron bloques disponibles");
+		log_info(logConsolaPantalla,"No se encontraron bloques disponibles");
 		send(socketKernel,&validado,sizeof(int),0);
 		printf("No se creo el archivo\n");
 	}
@@ -164,7 +164,7 @@ void borrarArchivoFunction(char* path){
 	int validado;
 
 
-	log_info(loggerConPantalla,"Borrando archivo:%s",path);
+	log_info(logConsolaPantalla,"Borrando archivo:%s",path);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
@@ -181,7 +181,7 @@ void borrarArchivoFunction(char* path){
 	   if(remove(nombreArchivoRecibido) == 0){
 		   //marcar los bloques como libres dentro del bitmap (recorriendo con un for el array que cree arriba)
 		   int d=0;
-		   log_info(loggerConPantalla,"Marcando bloques del archivo como disponibles en el bitmap");
+		   log_info(logConsolaPantalla,"Marcando bloques del archivo como disponibles en el bitmap");
 		   while(!(arrayBloques[d] == NULL)){
 			  bitarray_clean_bit(bitarray,atoi(arrayBloques[d]));
 		      d++;
@@ -189,17 +189,17 @@ void borrarArchivoFunction(char* path){
 		   validado=1;
 		   send(socketKernel,&validado,sizeof(char),0);
 		   //send diciendo que se elimino correctamente el archivo
-		   log_info(loggerConPantalla,"El archivo ha sido borrar--->Archivo:%s",path);
+		   log_info(logConsolaPantalla,"El archivo ha sido borrar--->Archivo:%s",path);
 	   }
 	   else
 	   {
-		   log_error(loggerConPantalla,"Excepecion de filesystem al borrar archivo--->Archivo:%s",path);
+		   log_error(logConsolaPantalla,"Excepecion de filesystem al borrar archivo--->Archivo:%s",path);
 		   validado=0;
 		   send(socketKernel,&validado,sizeof(char),0);
 	      //send que no se pudo eliminar el archivo
 	   }
 	}else {
-		log_error(loggerConPantalla,"El archivo no se puede borrar porque no existe--->Archivo:%s",path);
+		log_error(logConsolaPantalla,"El archivo no se puede borrar porque no existe--->Archivo:%s",path);
 		validado=0;
 		send(socketKernel,&validado,sizeof(char),0);
 		//send diciendo que hubo un error y no se pudo eliminar el archivo
@@ -220,7 +220,7 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 	recv(socketKernel,&cursor,sizeof(int),0);
 	recv(socketKernel,&size,sizeof(int),0);
 
-	log_info(loggerConPantalla,"Obteniendo datos--->Archivo:%s--->Posicion cursor:%d--->Size:%d",path,cursor,size);
+	log_info(logConsolaPantalla,"Obteniendo datos--->Archivo:%s--->Posicion cursor:%d--->Size:%d",path,cursor,size);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
@@ -332,7 +332,7 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 		send(socketKernel,&validado,sizeof(int),0);
 		send(socketKernel,infoTraidaDeLosArchivos,size,0);
 	} else {
-		log_error(loggerConPantalla,"No se puede leer porque el archivo no existe");
+		log_error(logConsolaPantalla,"No se puede leer porque el archivo no existe");
 		validado=-1;
 		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
 	}
@@ -459,7 +459,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 	recv(socketKernel,buffer,size,0);
 	printf("Data :%s\n",(char*)buffer);
 
-	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
+	log_info(logConsolaPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
@@ -567,7 +567,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 			//void* stringComoSeQuiere=(void* stringComoSeQuiere);
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
-							log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
+							log_info(logConsolaPantalla,"Existen bloques disponibles para almacenar la informacion");
 							//guardamos en los bloques deseados
 
 							int s;
@@ -610,7 +610,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 							}
 
 			}else{
-				log_error(loggerConPantalla,"No existen suficientes bloques para escribir la informacion solicitada");
+				log_error(logConsolaPantalla,"No existen suficientes bloques para escribir la informacion solicitada");
 				validado=0;
 				send(socketKernel,&validado,sizeof(int),0);
 				return;
@@ -629,7 +629,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 
 	}else{
-		log_error(loggerConPantalla,"El archivo no fue creado--->Archivo:%s",path);
+		log_error(logConsolaPantalla,"El archivo no fue creado--->Archivo:%s",path);
 		validado=0;
 		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
 	}
@@ -657,7 +657,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 	recv(socketKernel,buffer,size,0);
 	printf("Data :%s\n",(char*)buffer);
 
-	log_info(loggerConPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
+	log_info(logConsolaPantalla,"Guardando datos--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
@@ -711,7 +711,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 			fseek(bloque,tamanioBloques-(tamanioBloqueAcumulado - cursor),SEEK_SET);
 
 			fwrite(buffer,1,size,bloque);
-			log_info(loggerConPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
+			log_info(logConsolaPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
 			fclose(bloque);
 		}
 
@@ -753,7 +753,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 			printf("Bloques encontrados :%d\n",bloquesEncontrados);
 
 			if(bloquesEncontrados>=cuantosBloquesMasNecesito){
-				log_info(loggerConPantalla,"Existen bloques disponibles para almacenar la informacion");
+				log_info(logConsolaPantalla,"Existen bloques disponibles para almacenar la informacion");
 				//guardamos en los bloques deseados
 
 
@@ -840,7 +840,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 				}
 
 			}else{
-				log_error(loggerConPantalla,"No existen suficientes bloques para escribir la informacion solicitada");
+				log_error(logConsolaPantalla,"No existen suficientes bloques para escribir la informacion solicitada");
 				validado=0;
 				send(socketKernel,&validado,sizeof(int),0);
 				return;
@@ -852,7 +852,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 		validado=1;
 		send(socketKernel,&validado,sizeof(int),0);
 	}else{
-		log_error(loggerConPantalla,"El archivo no fue creado--->Archivo:%s",path);
+		log_error(logConsolaPantalla,"El archivo no fue creado--->Archivo:%s",path);
 		validado=0;
 		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
 	}
@@ -862,7 +862,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 }
 
 void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques){
-	log_info(loggerConPantalla,"Actualizando metadata de archivo:%s",path);
+	log_info(logConsolaPantalla,"Actualizando metadata de archivo:%s",path);
 	int i;
 			//Obtenemos los datos viejos
 			int tamanioArchivoViejo=atoi(obtTamanioArchivo(path));

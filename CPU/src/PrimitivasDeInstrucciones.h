@@ -139,7 +139,7 @@ t_puntero definirVariable(t_nombre_variable variable) {
 					}
 
 int posicion= (nueva_posicion_memoria->pagina * config_paginaSize) + nueva_posicion_memoria->offset;
-log_info(loggerConPantalla,"Definida la variable %c en la pagina %d y offset %d del stack",variable,nueva_posicion_memoria->pagina,nueva_posicion_memoria->offset);
+log_info(logConsolaPantalla,"Definida la variable %c en la pagina %d y offset %d del stack",variable,nueva_posicion_memoria->pagina,nueva_posicion_memoria->offset);
 return posicion;
 }
 
@@ -147,7 +147,7 @@ return posicion;
 
 
 t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
-	log_info(loggerConPantalla, "Obteniendo la posicion de la variable: %c\n", variable);
+	log_info(logConsolaPantalla, "Obteniendo la posicion de la variable: %c\n", variable);
 
 	int nodos_stack = list_size(pcb_actual->indiceStack);//obtengo cantidad de nodos
 	int cantidad_variables;
@@ -176,14 +176,14 @@ t_puntero obtenerPosicionVariable(t_nombre_variable variable) {
 		}
 	}
 	if(encontre_valor == 1){
-		log_info(loggerConPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
+		log_info(logConsolaPantalla, "ObtenerPosicionVariable: No se encontro variable o argumento\n");
 		expropiarPorDireccionInvalida();
 		return -1;
 	}
 
 	int posicion_serializada = (posicion_memoria->pagina * config_paginaSize) + posicion_memoria->offset;//me devuelve la posicion en memoria
 	//free(pcb_actual);}
-	log_info(loggerConPantalla,"La posicion de la variable es %d\n",posicion_serializada);
+	log_info(logConsolaPantalla,"La posicion de la variable es %d\n",posicion_serializada);
 	return posicion_serializada;
 }
 void finalizar (){
@@ -192,7 +192,7 @@ void finalizar (){
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
 
 		serializarPcbYEnviar(pcb_actual,socketKernel);
-		log_info(loggerConPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
+		log_info(logConsolaPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
 
 
@@ -217,7 +217,7 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 
 
 		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, sizeof(t_valor_variable))<0){
-			log_info(loggerConPantalla,"No se pudo solicitar el contenido\n");
+			log_info(logConsolaPantalla,"No se pudo solicitar el contenido\n");
 			expropiarPorDireccionInvalida();
 		}else{
 				valor_variable_char=mensajeRecibido;
@@ -227,7 +227,7 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 	char *ptr;
 	int valor_variable = strtol(valor_variable_char, &ptr, 10);
 	free(valor_variable_char);
-	log_info(loggerConPantalla, "Dereferenciar: Valor Obtenido: %d en la posicion %d\n", valor_variable,puntero);
+	log_info(logConsolaPantalla, "Dereferenciar: Valor Obtenido: %d en la posicion %d\n", valor_variable,puntero);
 	return valor_variable;
 
 }
@@ -238,10 +238,10 @@ void asignar(t_puntero puntero, t_valor_variable variable) {
 	char *valor_variable = string_itoa(variable);
 	int resultado = almacenarDatosEnMemoria(valor_variable,sizeof(t_valor_variable),num_pagina, offset);
 	if(resultado==-1){
-		log_info(loggerConPantalla, "No se pudo almacenar el contenido %d en %d por excepcion de memoria", valor_variable,puntero);
+		log_info(logConsolaPantalla, "No se pudo almacenar el contenido %d en %d por excepcion de memoria", valor_variable,puntero);
 		expropiarPorKernel();
 	}
-	log_info(loggerConPantalla, "Valor a Asignar: %s en la posicion %d\n", valor_variable,puntero);
+	log_info(logConsolaPantalla, "Valor a Asignar: %s en la posicion %d\n", valor_variable,puntero);
 	free(valor_variable);
 }
 void retornar(t_valor_variable retorno){
@@ -301,7 +301,7 @@ list_add(pcb_actual->indiceStack, nodo);
 char** string_cortado = string_split(etiqueta, "\n");
 int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
 	if(program_counter == -1){
-		log_info(loggerConPantalla,"No se encontro la funcion %s en el indice de etiquetas\n", string_cortado[0]);
+		log_info(logConsolaPantalla,"No se encontro la funcion %s en el indice de etiquetas\n", string_cortado[0]);
 		expropiarPorDireccionInvalida();
 	} else {
 		pcb_actual->programCounter = (program_counter - 1);
@@ -326,11 +326,11 @@ void irAlLabel(t_nombre_etiqueta etiqueta){
 char** string_cortado = string_split(etiqueta, "\n");
 int program_counter = metadata_buscar_etiqueta(string_cortado[0], pcb_actual->indiceEtiquetas, pcb_actual->indiceEtiquetasSize);
 	if(program_counter == -1){
-		log_info(loggerConPantalla, "No se encontro la etiqueta: %s en el indice de etiquetas", string_cortado[0]);
+		log_info(logConsolaPantalla, "No se encontro la etiqueta: %s en el indice de etiquetas", string_cortado[0]);
 		expropiarPorDireccionInvalida();
 	} else {
 		pcb_actual->programCounter = (program_counter-1);
-		log_info(loggerConPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter+1,etiqueta);
+		log_info(logConsolaPantalla, "Actualizando Program Counter a %d, despues de etiqueta: %s", pcb_actual->programCounter+1,etiqueta);
 		cantidadInstruccionesAEjecutarDelPcbActual = cantidadInstruccionesAEjecutarDelPcbActual+(pcb_actual->cantidadInstrucciones-pcb_actual->programCounter);
 	}
 int i = 0;

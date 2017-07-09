@@ -23,14 +23,14 @@ int main(void) {
 	flagCerrarConsola = 1;
 
 	socketKernel = crear_socket_cliente(ipKernel, puertoKernel);
-	log_info(loggerConPantalla,"LCreando hilo interfaz usuario");
+	log_info(logConsola,"Creando hilo interfaz usuario\n");
 	int err = pthread_create(&hiloInterfazUsuario, NULL, (void*)connectionHandler,NULL);
-	if (err != 0) log_error(loggerConPantalla,"\nError al crear el hilo :[%s]", strerror(err));
+	if (err != 0) log_error(logConsola,"Error al crear el hilo :[%s]", strerror(err));
 
 	signal(SIGINT, signalHandler);
 
 	pthread_join(hiloInterfazUsuario, NULL);
-	log_warning(loggerConPantalla,"La Consola ha finalizado");
+	log_warning(logConsolaPantalla,"La Consola ha finalizado\n");
 	return 0;
 
 }
@@ -39,12 +39,12 @@ void signalHandler(int signum)
 {
     if (signum == SIGINT)
     {
-    	log_warning(loggerConPantalla,"Finalizando consola");
+    	log_warning(logConsolaPantalla,"Finalizando consola\n");
     	cerrarTodo();
     	pthread_kill(hiloInterfazUsuario,SIGUSR1);
     }
     if(signum==SIGUSR1){
-    	log_warning(loggerConPantalla,"Finalizando hilo de Interfaz de Usuario");
+    	log_warning(logConsola,"Finalizando hilo de Interfaz de Usuario\n");
     	int exitCode;
     	pthread_exit(&exitCode);
     }
@@ -60,9 +60,8 @@ void connectionHandler() {
 	while (flagCerrarConsola) {
 		pthread_mutex_lock(&mutex_crearHilo);
 		scanf("%c", &orden);
-		log_info(loggerConPantalla,"Orden definida %d",orden);
+		log_info(logConsola,"Orden definida %d",orden);
 		cont++;
-		imprimirInterfaz();
 
 		switch (orden) {
 			case 'I':
@@ -77,8 +76,12 @@ void connectionHandler() {
 			case 'Q':
 				cerrarTodo();
 				break;
+			case 'U':
+				imprimirInterfaz();
+				pthread_mutex_unlock(&mutex_crearHilo);
+				break;
 			default:
-				if(cont!=2)log_error(loggerConPantalla,"Orden %c no definida", orden);
+				if(cont!=2)log_error(logConsolaPantalla,"Orden %c no definida", orden);
 				else cont=0;
 				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
@@ -89,7 +92,8 @@ void connectionHandler() {
 
 void limpiarPantalla(){
 	system("clear");
-	log_info(loggerConPantalla,"Limpiando pantalla");
+	log_info(logConsola,"Limpiando pantalla");
+	imprimirInterfaz();
 	pthread_mutex_unlock(&mutex_crearHilo);
 }
 
@@ -105,7 +109,7 @@ void cerrarTodo(){
 	int cantidad= listaHilosProgramas->elements_count;
 	flagCerrarConsola = 0;
 
-	log_info(loggerConPantalla,"Informando Kernel el cierre de la Consola");
+	log_info(logConsola,"Informando Kernel el cierre de la Consola\n");
 	if(cantidad == 0) {
 		char comandoCerrarSocket= 'Z';
 		send(socketKernel,&comandoCerrarSocket,sizeof(char),0);
@@ -152,7 +156,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 	char* mensaje;
 
 	recv(socketHiloKernel, &pid, sizeof(int), 0);
-	log_info(loggerConPantalla,"Al Programa ANSISOP en socket: %d se le ha asignado el PID: %d", socketHiloKernel,pid);
+	log_info(logConsolaPantalla,"Al Programa ANSISOP en socket: %d se le ha asignado el PID: %d\n", socketHiloKernel,pid);
 
 	cargarHiloPrograma(pid,socketHiloKernel);
 	pthread_mutex_unlock(&mutex_crearHilo);
@@ -162,12 +166,9 @@ void recibirDatosDelKernel(int socketHiloKernel){
 
 		pthread_mutex_lock(&mutexRecibirDatos);
 
-		log_warning(loggerConPantalla,"Hilo:%d--->PID:%d",socketHiloKernel,pid);
 
 		mensaje = malloc(size * sizeof(char) + sizeof(char));
-
 		recv(socketHiloKernel,mensaje,size,0);
-
 		strcpy(mensaje+size,"\0");
 
 		if(strcmp(mensaje,"Finalizar")==0) {
@@ -175,19 +176,15 @@ void recibirDatosDelKernel(int socketHiloKernel){
 			free(mensaje);
 			break;
 		}
-		printf("\n%s\n",mensaje);
+		printf("Informacion para programa--->PID:%d\n",pid);
+		printf("\t%s\n\n",mensaje);
 		actualizarCantidadImpresiones(pid);
 		free(mensaje);
-		imprimirInterfaz();
 		pthread_mutex_unlock(&mutexRecibirDatos);
 	}
-
 	gestionarCierrePrograma(pid);
-	log_warning(loggerConPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado",pid,socketHiloKernel);
-
-	imprimirInterfaz();
+	log_warning(logConsolaPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado\n",pid,socketHiloKernel);
 	pthread_mutex_unlock(&mutexRecibirDatos);
-
 }
 
 void actualizarCantidadImpresiones(int pid){
@@ -217,14 +214,15 @@ void imprimirConfiguraciones() {
 
 void imprimirInterfaz(){
 	printf("----------------------------------------------------------------------\n");
-	printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n");
+	printf("Ingresar orden:\n 'I' para iniciar un programa AnSISOP\n 'F' para finalizar un programa AnSISOP\n"
+			" 'C' para limpiar la pantalla\n 'Q' para desconectar esta Consola\n 'U' para imprimir Interfaz de Usuario\n");
 	printf("----------------------------------------------------------------------\n");
 }
 
 void inicializarLog(char *rutaDeLog){
 		mkdir("/home/utnso/Log",0755);
-		loggerSinPantalla = log_create(rutaDeLog,"Consola", false, LOG_LEVEL_INFO);
-		loggerConPantalla = log_create(rutaDeLog,"Consola", true, LOG_LEVEL_INFO);
+		logConsola = log_create(rutaDeLog,"Consola", false, LOG_LEVEL_INFO);
+		logConsolaPantalla = log_create(rutaDeLog,"Consola", true, LOG_LEVEL_INFO);
 }
 
 void inicializarListas(){
