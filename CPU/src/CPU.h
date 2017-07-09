@@ -88,11 +88,14 @@ int cpuFinalizadaPorSignal=1;
 int cantidadInstruccionesAEjecutarPorKernel=0;
 int cpuExpropiadaPorKernel=1;
 int cpuBloqueadaPorSemANSISOP=1;
-int cantidadIntruccionesEjecutadas=0;
+int cantidadInstruccionesEjecutadas=0;
 int quantum;
 int cantidadInstruccionesAEjecutarDelPcbActual;
 int recibiPcb=1;
 int retardo_entre_instruccion;
+
+
+int procesoFinalizado=0;
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
 //---------Primitivas Comunes----------//
 t_puntero definirVariable(t_nombre_variable variable);

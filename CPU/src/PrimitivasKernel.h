@@ -28,7 +28,7 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 		log_info(logConsolaPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
 
-		send(socketKernel, &cantidadIntruccionesEjecutadas, sizeof(int),0);
+		send(socketKernel, &cantidadInstruccionesEjecutadas, sizeof(int),0);
 
 		serializarPcbYEnviar(pcb_actual, socketKernel);
 

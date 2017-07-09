@@ -1,4 +1,9 @@
 //----------------------------Manejo Instrucciones-------------------------------------
+int interrupcion=0;
+int verificaInterrupcion();
+void expropiar();
+
+
 char* obtener_instruccion(){
 	log_info(logConsola,"Obteniendo una instruccion del PC= %d", pcb_actual->programCounter);
 	int program_counter = pcb_actual->programCounter;
@@ -69,31 +74,46 @@ char* obtener_instruccion(){
 void EjecutarProgramaMedianteAlgoritmo(){
 
 	cantidadInstruccionesAEjecutarDelPcbActual = pcb_actual->cantidadInstrucciones;
-	log_info(logConsolaPantalla,"La cantidad de instrucciones a ejecutar son %d",cantidadInstruccionesAEjecutarDelPcbActual);
+
+	log_info(logConsolaPantalla,"La cantidad de instrucciones a ejecutar son %d\n",cantidadInstruccionesAEjecutarDelPcbActual);
+
 	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
 		while(cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual || cpuBloqueadaPorSemANSISOP != 0){
 
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel++; //para FIFO en si
-			cantidadIntruccionesEjecutadas++;//para contabilidad del kernel
-			log_info(logConsola,"cantidad de instrucciones ejecutadas %d", cantidadIntruccionesEjecutadas);
+			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
+			log_info(logConsolaPantalla,"cantidad de instrucciones ejecutadas %d\n", cantidadInstruccionesEjecutadas);
 
+				if(verificaInterrupcion()) {
+						expropiar();
+						break;
+					}
 		}
-	} else{//es RR con quantum = cantidadInstruccionesAEjecutarPorKernel
-		while (cantidadInstruccionesAEjecutarPorKernel > 0 && cpuBloqueadaPorSemANSISOP != 0){
+	}else{//es RR con quantum = cantidadInstruccionesAEjecutarPorKernel
+		procesoFinalizado=0;
+		while (!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel > 0 && cpuBloqueadaPorSemANSISOP != 0){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
-			log_info(logConsola,"Quedan por ejecutar %d instrucciones", cantidadInstruccionesAEjecutarPorKernel);
-			cantidadIntruccionesEjecutadas++;////para contabilidad del kernel
-			log_info(logConsola,"cantidad de instrucciones ejecutadas %d", cantidadIntruccionesEjecutadas);
+			log_info(logConsolaPantalla,"Quedan por ejecutar %d instrucciones", cantidadInstruccionesAEjecutarPorKernel);
+			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
+			log_info(logConsolaPantalla,"cantidad de instrucciones ejecutadas %d", cantidadInstruccionesEjecutadas);
+
+				if(verificaInterrupcion()) {
+					expropiar();
+					break;
+				}
+				if(!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel== 0) expropiarPorRR();
 		}
-		//Este if va por el RR
-		if(cpuFinalizadaPorSignal == 0) CerrarPorSignal();
-		else expropiarVoluntariamente();
 	}
+
+	//Este if va por el RR
+			/*if(cpuFinalizadaPorSignal == 0) CerrarPorSignal();
+			else expropiarVoluntariamente();
+*/
+
 }
 void ejecutarInstruccion(){
-
 
 	char orden;
 	orden = '\0';
@@ -104,17 +124,26 @@ void ejecutarInstruccion(){
 	log_warning(logConsolaPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 
+
 	recv(socketKernel,&orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
 
 	if(orden == 'F') cpuExpropiadaPorKernel = -1;
 
-
 	free(instruccion);
 
 	pcb_actual->programCounter = pcb_actual->programCounter + 1;
+}
 
-	if(cpuExpropiadaPorKernel == -1 || cpuBloqueadaPorSemANSISOP == 0){
-		expropiarVoluntariamente();
-	}
+int verificaInterrupcion(){
+
+	if (interrupcion) return 1;
+	else return 0;
+}
+
+void expropiar(){
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
+	free(pcb_actual);
+	recibiPcb=1;
 }
 //----------------------------Manejo Instrucciones-------------------------------------

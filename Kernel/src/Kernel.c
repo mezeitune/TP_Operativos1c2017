@@ -244,7 +244,7 @@ void gestionarFinQuantum_RoundRobin(int socket){
 		sem_post(&sem_procesoListo);
 
 		//agregarAFinQuantum(proceso);
-		if(cpuFinalizada != 0) sem_post(&sem_CPU);
+		if(cpuFinalizada != 0)sem_post(&sem_CPU);
 	}
 
 }
@@ -527,7 +527,7 @@ void gestionarAlocar(int socket){
 
 
 void gestionarIO(int socket){
-	log_info(logKernelPantalla,"Gestionando entrada y salida Filesystem\n")
+	log_info(logKernelPantalla,"Gestionando entrada y salida Filesystem\n");
 	interfaceHandlerFileSystem(socket);
 }
 

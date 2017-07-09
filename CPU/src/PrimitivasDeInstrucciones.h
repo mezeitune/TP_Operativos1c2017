@@ -190,13 +190,12 @@ void finalizar (){
 		char comandoFinalizacion = 'T';
 
 		send(socketKernel,&comandoFinalizacion,sizeof(char),0);
-
 		serializarPcbYEnviar(pcb_actual,socketKernel);
+
 		log_info(logConsolaPantalla, "El proceso ANSISOP de PID %d ha finalizado\n", pcb_actual->pid);
 
-
-
-		if(cpuFinalizadaPorSignal == 0){
+		procesoFinalizado=1;
+		/*if(cpuFinalizadaPorSignal == 0){
 			CerrarPorSignal();
 		}
 		else{
@@ -206,6 +205,7 @@ void finalizar (){
 			free(pcb_actual);
 			esperarPCB();
 		}
+		*/
 }
 
 t_valor_variable dereferenciar(t_puntero puntero) {

@@ -346,7 +346,7 @@ void recibirTamanioPagina(int socketKernel){
 	send(socketKernel,&comandoGetPaginaSize,sizeof(char),0);
 	recv(socketKernel,&config_paginaSize,sizeof(int),0);
 	recv(socketKernel,&config_stackSize,sizeof(int),0);
-	log_info(logConsolaPantalla, "El tamanio de la pagina es %d y el stack tiene %d paginas",config_paginaSize,config_stackSize);
+	log_info(logConsolaPantalla, "El tamanio de la pagina es %d y el stack tiene %d paginas\n",config_paginaSize,config_stackSize);
 }
 
 int cantidadPaginasCodigoProceso(int programSize){
