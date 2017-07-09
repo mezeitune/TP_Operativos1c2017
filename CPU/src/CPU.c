@@ -33,32 +33,7 @@ int main(void) {
 
 
 //------------------------------EXPROPIAR PROCESOS-------------------------------------
-void CerrarPorSignal(){
 
-	char comandoInterruptHandler='X';
-	char comandoCierreCpu='C';
-	char comandoCerrarMemoria = 'X';
-
-	if(quantum > 0 && recibiPcb == 0){
-		expropiarPorRRYCerrar();
-	}
-		send(socketKernel,&comandoInterruptHandler,sizeof(char),0);
-		send(socketKernel,&comandoCierreCpu,sizeof(char),0);
-		send(socketMemoria,&comandoCerrarMemoria,sizeof(char),0);
-
-	if(recibiPcb == 0){
-		serializarPcbYEnviar(pcb_actual, socketKernel);
-	}
-
-	//shutdown(socketKernel,1);
-	///shutdown(socketInterrupciones,1);
-	//close(socketKernel);
-	//close(socketInterrupciones);
-	//close(socketMemoria);
-	log_warning(logConsolaPantalla,"Se ha desconectado CPU con signal correctamente");
-	free(pcb_actual);
-	exit(1);
-}
 void expropiarVoluntariamente(){
 
 	if(cpuExpropiadaPorKernel == -1) expropiarPorKernel();
