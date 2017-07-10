@@ -81,10 +81,12 @@ void reservarEspacioHeap(t_alocar* data){
 		pthread_mutex_unlock(&mutexMemoria);
 		puntero->offset = 0;
 
-					if(resultadoEjecucion < 0){
-							excepcionCantidadDePaginas(data->socket,data->pid);
-							return;
-					}
+		if(resultadoEjecucion < 0){
+				excepcionCantidadDePaginas(data->socket,data->pid);
+				free(data);
+				free(puntero);
+				return ;
+		}
 
 		actualizarPaginasHeap(data->pid);
 		}

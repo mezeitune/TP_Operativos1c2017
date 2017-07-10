@@ -88,7 +88,7 @@ t_puntero reservar (t_valor_variable espacio){
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 	if(resultadoEjecucion < 0) {
 		log_info(logConsolaPantalla, "No se pudo reservar memoria, expropiando proceso pid:%d",pid);
-		expropiarPorKernel();
+		interrupcion = RES_EJEC_NEGATIVO;
 		return 0;
 	}
 	recv(socketKernel,&pagina,sizeof(int),0);
@@ -121,6 +121,7 @@ void liberar (t_puntero puntero){
 	if(resultadoEjecucion==1)
 		log_info(logConsolaPantalla,"Se ha liberado correctamente el heap previamente reservado apuntando a %d",puntero);
 	else{
+		interrupcion = RES_EJEC_NEGATIVO;
 		log_info(logConsolaPantalla,"No se ha podido liberar el heap apuntada por",puntero);
 	}
 }

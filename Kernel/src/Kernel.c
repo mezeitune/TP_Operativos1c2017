@@ -543,11 +543,8 @@ void gestionarAlocar(int socket){
 	data->pid = pid;
 	data->size = size;
 	data->socket = socket;
-	int err=pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
-	if(err){
-		log_error(logKernelPantalla,"error al crear el hilo para alocar memoria dinamicais %d\n", err);
-		return;
-	}
+	//int err=pthread_create(&heapThread,NULL,(void*) reservarEspacioHeap,data);
+	reservarEspacioHeap(data);
 
 	actualizarSysCalls(pid);
 	actualizarAlocar(pid,size);

@@ -260,10 +260,9 @@ t_pcb* expropiarPorEjecucion(int socket){
 	t_pcb* pcb;
 	int resultadoEjecucion=-1;
 	int rafagas;
-	log_info(logKernel,"Expropiando proceso--->CPU:%d",socket);
+	log_info(logKernelPantalla,"Expropiando proceso por ejecucion negativa--->CPU:%d",socket);
 
 		send(socket,&resultadoEjecucion,sizeof(int),0);
-
 		pcb = recibirYDeserializarPcb(socket);
 		recv(socket,&rafagas,sizeof(int),0);
 		actualizarRafagas(pcb->pid,rafagas);
