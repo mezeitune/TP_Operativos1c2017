@@ -92,7 +92,7 @@ void reservarEspacioHeap(t_alocar* data){
 		}
 
 	pthread_mutex_lock(&mutexMemoria);
-	resultadoEjecucion = reservarBloqueHeap(data->pid, data->size,puntero);
+	resultadoEjecucion = reservarBloqueHeap(data->pid, data->size,puntero); /*TODO: Porque aca iria algun error??*/
 	pthread_mutex_unlock(&mutexMemoria);
 	if(resultadoEjecucion < 0){
 		printf("No se pudo reservar Bloque porque esta re loco\n");
@@ -135,7 +135,6 @@ t_punteroCPU *verificarEspacioLibreHeap(int size, int pid){
 		//printf("pid=%d\n",aux->pid);
 		if(aux->sizeDisponible >= size + sizeof(t_bloqueMetadata) && aux->pid == pid)
 		{
-			/**TODO: Mutex para compactar?*/
 			compactarPaginaHeap(aux->pagina,aux->pid);
 			puntero-> offset = paginaHeapBloqueSuficiente(i,aux->pagina,aux->pid,size);
 			if(puntero-> offset > 0){

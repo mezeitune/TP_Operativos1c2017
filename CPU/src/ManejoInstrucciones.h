@@ -106,7 +106,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 					break;
 				}
 
-			if(cantidadInstruccionesAEjecutarPorKernel== 0) expropiarPorRR();
+			if(!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel== 0) expropiarPorRR();
 		}
 	}
 }
