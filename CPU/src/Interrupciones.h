@@ -29,6 +29,7 @@ void expropiar();
 
 
 int verificaInterrupcion(){
+	log_info(logConsolaPantalla,"Verificando interrupciones");
 
 	if(procesoFinalizado) return 0; //El proceso ya finalizo al llegar a END
 
@@ -39,7 +40,7 @@ int verificaInterrupcion(){
 	send(socketKernel,&comandoConsultarInterrupciones,sizeof(char),0);
 	recv(socketKernel,&interrupcionesEnKernel,sizeof(int),0);
 
-	printf("Interrupciones:%d\n",interrupcionesEnKernel);
+	printf("Interrupciones desde Kernel--->:%s\n",interrupcionesEnKernel? "true":"false");
 
 	if(interrupcionesEnKernel) {
 		interrupcion = FINALIZADO_VOLUNTARIAMENTE;

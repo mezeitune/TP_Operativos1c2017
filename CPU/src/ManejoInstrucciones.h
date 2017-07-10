@@ -16,13 +16,15 @@ char* obtener_instruccion(){
 
 	if (bytes_tamanio_instruccion > (config_paginaSize * 2)){
 		log_info(logConsolaPantalla,"El tamanio de la instruccion es mayor al tamanio de pagina\n");
-		expropiarPorDireccionInvalida();
+		direccionInvalida();
+		return 0;
 	}
 	if ((offset + bytes_tamanio_instruccion) < config_paginaSize){
 		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, bytes_tamanio_instruccion)<0)
 			{
 			log_info(logConsolaPantalla,"No se pudo solicitar el contenido\n");
-			expropiarPorDireccionInvalida();
+			direccionInvalida();
+			return 0;
 			}
 			else{
 				instruccion=mensajeRecibido;
@@ -32,7 +34,8 @@ char* obtener_instruccion(){
 		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, bytes_a_leer_primera_pagina)<0)
 					{
 					log_info(logConsolaPantalla,"No se pudo solicitar el contenido\n");
-					expropiarPorDireccionInvalida();
+					direccionInvalida();
+					return 0;
 					}
 		else{
 				instruccion=mensajeRecibido;
@@ -42,7 +45,9 @@ char* obtener_instruccion(){
 		if((bytes_tamanio_instruccion - bytes_a_leer_primera_pagina) > 0){
 			if ( conseguirDatosMemoria(&mensajeRecibido2,(num_pagina + 1),0,(bytes_tamanio_instruccion - bytes_a_leer_primera_pagina))<0)
 					{log_info(logConsolaPantalla,"No se pudo solicitar el contenido\n");
-					expropiarPorDireccionInvalida();}
+					direccionInvalida();
+					return 0;
+					}
 						else{
 						continuacion_instruccion=mensajeRecibido2;
 						log_info(logConsolaPantalla, "Continuacion ejecucion: %s", continuacion_instruccion);
@@ -117,12 +122,13 @@ void ejecutarInstruccion(){
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 
 
-	recv(socketKernel,&orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
+	/*recv(socketKernel,&orden,sizeof(char),MSG_DONTWAIT); //espero sin bloquearme ordenes del kernel
 
 	if(orden == 'F')  {
 		printf("Me llego una interrupciones del recv NO bloqeuante\n");
 		interrupcion = FINALIZADO_VOLUNTARIAMENTE;
 	}
+	*/
 
 	free(instruccion);
 
