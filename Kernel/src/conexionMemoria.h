@@ -103,11 +103,12 @@ int almacenarCodigoEnMemoria(t_pcb* procesoListoAutorizado,char* programa, int p
 		int offset=0;
 		int nroPagina;
 
-		for(nroPagina=0; nroPagina<procesoListoAutorizado->cantidadPaginasCodigo && resultadoEjecucion==0;nroPagina++){
+
+		for(nroPagina=0; nroPagina<procesoListoAutorizado->cantidadPaginasCodigo && resultadoEjecucion>=0;nroPagina++){
 				particionSize=calcularTamanioParticion(&programSizeRestante);
 				strncpy(particionCodigo,programa,particionSize);
 				programa += particionSize;
-				resultadoEjecucion = escribirEnMemoria(procesoListoAutorizado->pid,nroPagina,offset,particionSize,(void*)particionCodigo);
+				resultadoEjecucion = escribirEnMemoria(procesoListoAutorizado->pid,nroPagina,offset,particionSize,particionCodigo);
 		}
 		free(particionCodigo);
 		return resultadoEjecucion;
