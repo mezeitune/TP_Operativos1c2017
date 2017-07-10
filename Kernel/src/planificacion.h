@@ -301,7 +301,6 @@ void planificarCortoPlazo(){
 		sem_wait(&sem_CPU);
 		sem_wait(&sem_procesoListo);
 
-		printf("Sacando un proceso de listos\n");
 		verificarPausaPlanificacion();
 												/*TODO: Ojo en este intervalo de tiempo. Cuando se reanude la planificacion, puede no existir mas ese proceso*/
 		pthread_mutex_lock(&mutexColaListos);
@@ -331,7 +330,7 @@ void planificarCortoPlazo(){
 			list_add(colaEjecucion, pcbListo);
 			pthread_mutex_unlock(&mutexColaEjecucion);
 
-			log_info(logKernelPantalla,"\nPcb encolado en Ejecucion--->PID:%d\n",pcbListo->pid);
+			log_info(logKernelPantalla,"Pcb encolado en Ejecucion--->PID:%d\n",pcbListo->pid);
 
 		}else{
 

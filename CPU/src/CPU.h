@@ -59,6 +59,7 @@ void expropiarPorDireccionInvalida();
 void expropiarPorStackOverflow();
 void expropiarPorRRYCerrar();
 void stackOverflow();
+void expropiadoVoluntariamente();
 
 
 //-----------------------------------------------------------------------------------------------------------------

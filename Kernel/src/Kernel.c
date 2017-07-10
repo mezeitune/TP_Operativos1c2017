@@ -48,6 +48,9 @@ typedef struct{
 
 t_list* listaHilos;
 
+void verificarInterrupcionesEnCPU(int socket);
+void recibirProcesoExpropiadoVoluntariamente(int socket);
+
 void signalHandlerKernel(int sigCode);
 void cerrarTodo();
 //--------ConnectionHandler--------//
@@ -70,7 +73,7 @@ void gestionarCierreCpu(int socketCpu);
 void gestionarAlocar(int socket);
 void gestionarLiberar(int socket);
 void gestionarIO(int socket);
-void abortarProcesos(t_list* procesosFinalizar);
+void abortarProcesos(char* procesosFinalizar);
 //------InterruptHandler-----//
 
 
@@ -141,6 +144,10 @@ void connectionHandler(int socket, char orden) {
 					interruptHandler(socket,orden);
 					break;
 		case 'R':	gestionarFinQuantum_RoundRobin(socket);
+					break;
+		case 'I':	verificarInterrupcionesEnCPU(socket);
+					break;
+		case 'E': 	recibirProcesoExpropiadoVoluntariamente(socket);
 					break;
 		case 'Z':	eliminarSocket(socket);
 					break;
@@ -284,7 +291,7 @@ void interruptHandler(int socketAceptado,char orden){
 
 
 void gestionarCierreCpu(int socketCpu){
-	log_warning(logKernel,"Gestionando cierre de CPU:%d",socketCpu);
+	log_warning(logKernelPantalla,"Gestionando cierre de CPU:%d",socketCpu);
 	_Bool verificaSocket(t_cpu* cpu){
 		return cpu->socket == socketCpu;
 	}
@@ -303,64 +310,65 @@ void imprimirPorConsola(socketAceptado){
 	mensaje=malloc(size);
 	recv(socketAceptado,mensaje,size,0);
 	recv(socketAceptado,&pid,sizeof(int),0);
+
+	_Bool verificaPid(t_consola* consolathread){
+				return (consolathread->pid == pid);
+		}
+	pthread_mutex_lock(&mutexListaConsolas);
+	bool hiloNoFinalizado = list_any_satisfy(listaConsolas,(void*)verificaPid);
+	pthread_mutex_unlock(&mutexListaConsolas);
+
+	if(hiloNoFinalizado){
 	log_info(logKernel,"Imprimiendo por consola--->PID:%d--->Mensaje: %s",pid,mensaje);
 	informarConsola(buscarSocketHiloPrograma(pid),mensaje,size);
+	}
 	free(mensaje);
 }
 
 void gestionarCierreConsola(int socket){
 	log_warning(logKernelPantalla,"Gestionando cierre de consola %d\n",socket);
-	int size, cantidad,pid;
+	int size;
 	char* procesosAFinalizar;
-	int desplazamiento=0;
-	int i;
 	pthread_t finalizadorProcesos;
-	t_list* procesosFinalizar = list_create();
 
 		recv(socket,&size,sizeof(int),0);
 		procesosAFinalizar = malloc(size);
 		recv(socket,procesosAFinalizar,size,0);
-		cantidad = *((int*)procesosAFinalizar+desplazamiento);
-		desplazamiento++;
 
-		for(i=0;i<cantidad;i++){
-			pid = *((int*)procesosAFinalizar+desplazamiento);
-			list_add(procesosFinalizar,&pid);
-		}
-
-
-	pthread_create(&finalizadorProcesos,NULL,(void*) abortarProcesos,procesosFinalizar);
+	pthread_create(&finalizadorProcesos,NULL,(void*) abortarProcesos,procesosAFinalizar);
 
 	log_warning(logKernel,"Consola %d cerrada",socket);
 	eliminarSocket(socket);
-	free(procesosAFinalizar);
 }
 
-void abortarProcesos(t_list* procesos){
+void abortarProcesos(char* procesosFinalizar){
 	int i=0;
+	int pid;
+	int desplazamiento = 0;
 	t_consola* consola;
 
 	_Bool verificaPid(t_consola* consolathread){
-					return (consolathread->pid == pid);
+					return (consolathread->pid == pid );
 			}
 
-	printf("Cantidad de procesos a abortar:%d\n",procesos->elements_count);
-	printf("Abortando a los procesos\n");
-	for(i=0;i<procesos->elements_count;i++){
+	int cantidad = *((int*)procesosFinalizar + desplazamiento);
+	desplazamiento ++;
+	printf("Cantidad de procesos a abortar:%d\n",cantidad);
+
+	for(i=0;i<cantidad;i++){
+
+			pid = *((int*)procesosFinalizar + desplazamiento);
+
 			pthread_mutex_lock(&mutexListaConsolas);
 			consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
 			eliminarSocket(consola->socketHiloPrograma);
 			free(consola);
 			pthread_mutex_unlock(&mutexListaConsolas);
 
-
-			printf("Proceso a finalizar:%d\n",*(int*)list_get(procesos,i));
-
-			finalizarProcesoVoluntariamente(*(int*)list_get(procesos,i));
+			finalizarProcesoVoluntariamente(pid);
+			desplazamiento ++;
 		}
-
-	list_destroy_and_destroy_elements(procesos,free);
-
+	free(procesosFinalizar);
 }
 
 
@@ -371,6 +379,7 @@ void gestionarFinalizarProgramaConsola(int socket){
 }
 
 int buscarProcesoYTerminarlo(int pid){
+	log_info(logKernelPantalla,"Buscando proceso para finalizar--->PID: %d\n",pid);
 	int encontro=0;
 	t_pcb *procesoATerminar;
 	t_cpu *cpuAFinalizar = malloc(sizeof(t_cpu));
@@ -391,7 +400,6 @@ int buscarProcesoYTerminarlo(int pid){
 		return (semYPCB->pcb->pid == pid);
 	}
 
-	printf("Por buscar en Esepra\n");
 	if(!encontro){
 		pthread_mutex_lock(&mutexListaEspera);
 		if(list_any_satisfy(listaEspera,(void*)verificarPid)){
@@ -402,7 +410,6 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_unlock(&mutexListaEspera);
 	}
 
-	printf("Por buscar en Ejecucion\n");
 	if(!encontro){
 		pthread_mutex_lock(&mutexColaEjecucion);
 		bool estaEjecutando= list_any_satisfy(colaEjecucion,(void*)verificarPid);
@@ -427,14 +434,13 @@ int buscarProcesoYTerminarlo(int pid){
 			}
 			pthread_mutex_unlock(&mutexListaHilos);
 
-
-			procesoATerminar = expropiarVoluntariamente(cpuAFinalizar->socket);
+			expropiarVoluntariamente(cpuAFinalizar->socket);
 			encontro=1;
+			return 0 ;
 		}
 
 	}
 
-	printf("Por buscarn en nuevos\n");
 	if(!encontro){
 		pthread_mutex_lock(&mutexColaNuevos);
 		if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
@@ -445,7 +451,6 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_unlock(&mutexColaNuevos);
 	}
 
-	printf("Por buscar en listos\n");
 	if(!encontro){
 		pthread_mutex_lock(&mutexColaListos);
 		if(list_any_satisfy(colaListos,(void*)verificarPid)){
@@ -497,6 +502,55 @@ int buscarProcesoYTerminarlo(int pid){
 	terminarProceso(procesoATerminar);
 
 	return 0;
+}
+
+
+void verificarInterrupcionesEnCPU(int socket){
+	t_cpu* cpu;
+
+	int existeInterrupcion=0;
+	_Bool verificaSocket(t_cpu* cpu){
+		return cpu->socket==socket;
+	}
+	_Bool verificaPid(int* pid){
+		return *pid == cpu->pid;
+	}
+
+	pthread_mutex_lock(&mutexListaCPU);
+	cpu = list_find(listaCPU,(void*)verificaSocket);
+	pthread_mutex_unlock(&mutexListaCPU);
+
+	int i=0;
+	for(i=0;i<listaProcesosInterrumpidos->elements_count;i++){
+		int pid = *(int*)list_get(listaProcesosInterrumpidos,i);
+		if(pid == cpu->pid) {
+			log_warning(logKernelPantalla,"El proceso debe ser expropiado--->PID:%d\n",pid);
+			list_remove_and_destroy_element(listaProcesosInterrumpidos,i,free);
+			existeInterrupcion=1;
+		}
+	}
+
+	send(socket,&existeInterrupcion,sizeof(int),0);
+}
+
+void recibirProcesoExpropiadoVoluntariamente(int socket){
+	t_pcb* proceso;
+	log_info(logKernelPantalla,"Recibiendo proceso expropiado--->CPU:%d",socket);
+	int rafagas;
+
+		proceso= recibirYDeserializarPcb(socket);
+
+		recv(socket,&rafagas,sizeof(int),0);
+		actualizarRafagas(proceso->pid,rafagas);
+		removerDeColaEjecucion(proceso->pid);
+		cambiarEstadoCpu(socket,OCIOSA);
+		sem_post(&sem_CPU);
+
+		pthread_mutex_lock(&mutexListaEspera);
+		list_add(listaEspera,proceso);
+		pthread_mutex_unlock(&mutexListaEspera);
+
+		sem_post(&sem_administrarFinProceso);
 }
 
 
@@ -587,6 +641,8 @@ void inicializarListas(){
 
 	tablaArchivosGlobal = list_create();
 	listaTablasProcesos = list_create();
+
+	listaProcesosInterrumpidos=list_create();
 }
 void obtenerVariablesCompartidasDeLaConfig(){
 	int tamanio = tamanioArray(shared_vars);

@@ -27,6 +27,18 @@ void expropiar();
 
 int verificaInterrupcion(){
 
+	int interrupcionesEnKernel=0;
+	char comandoConsultarInterrupciones = 'I';
+	send(socketKernel,&comandoConsultarInterrupciones,sizeof(char),0);
+	recv(socketKernel,&interrupcionesEnKernel,sizeof(int),0);
+
+	printf("Interrupciones:%d\n",interrupcionesEnKernel);
+
+	if(interrupcionesEnKernel) {
+		interrupcion = FINALIZADO_VOLUNTARIAMENTE;
+		pcb_actual->exitCode = -8;
+	}
+
 
 	if(interrupcion != SIN_INTERRUPCION) return -1;
 	return 0;
@@ -36,7 +48,7 @@ void expropiar(){
 
 
 	switch(interrupcion){
-	case FINALIZADO_VOLUNTARIAMENTE: expropiarPorKernel();
+	case FINALIZADO_VOLUNTARIAMENTE: expropiadoVoluntariamente();
 		break;
 	case RES_EJEC_NEGATIVO: expropiarPorKernel();
 		break;
@@ -64,6 +76,20 @@ void direccionInvalida(){
 void excepcionMemoria(){ /**TODO: Preguntar que hacer aca*/
 	log_error(logConsolaPantalla,"No se pudo almacenar el contenido\n");
 	interrupcion = EXCEPCION_MEMORIA;
+}
+
+void expropiadoVoluntariamente(){
+	log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado por Kernel", pcb_actual->pid);
+	char comandoExropiadoVoluntariamente = 'E';
+
+	send(socketKernel,&comandoExropiadoVoluntariamente,sizeof(char),0);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+
+	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
+
+	free(pcb_actual);
+
+	procesoFinalizado=1;
 }
 
 

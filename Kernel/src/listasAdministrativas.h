@@ -16,5 +16,7 @@ t_list* colaBloqueados;
 
 t_list* listaEspera;
 
+t_list* listaProcesosInterrumpidos;
+
 
 #endif /* LISTASADMINISTRATIVAS_H_ */

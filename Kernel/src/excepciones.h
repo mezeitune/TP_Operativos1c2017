@@ -45,7 +45,7 @@ t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
 void inicializarExitCodeArray();
 
 /*Rutinas para finalizar un proceso*/
-t_pcb* expropiarVoluntariamente(int socket);
+void expropiarVoluntariamente(int socket);
 t_pcb* expropiarPorEjecucion(int socket);
 
 void cambiarEstadoCpu(int socket,int estado);
@@ -224,22 +224,24 @@ void excepcionDireccionInvalida(int socket){
  * Rutinas para finalizar un proceso
  */
 
-t_pcb* expropiarVoluntariamente(int socket){
-	t_pcb* pcb;
+void expropiarVoluntariamente(int socket){
 	log_info(logKernelPantalla,"Expropiando proceso--->CPU:%d",socket);
-	char comandoExpropiar='F';
-	int rafagas;
 
-	send(socket,&comandoExpropiar,sizeof(char),0);
-	pcb = recibirYDeserializarPcb(socket);
+	_Bool verificaSocket(t_cpu* cpu){
+		return cpu->socket==socket;
+	}
 
-	recv(socket,&rafagas,sizeof(int),0);
-	actualizarRafagas(pcb->pid,rafagas);
-	removerDeColaEjecucion(pcb->pid);
-	cambiarEstadoCpu(socket,OCIOSA);
-	sem_post(&sem_CPU);
-	return pcb;
+	pthread_mutex_lock(&mutexListaCPU);
+	t_cpu* cpu=list_find(listaCPU,(void*)verificaSocket);
+	pthread_mutex_unlock(&mutexListaCPU);
+
+	int *pid = malloc(sizeof(int));
+	*pid = cpu->pid;
+
+	list_add(listaProcesosInterrumpidos,pid);
 }
+
+
 
 t_pcb* expropiarPorEjecucion(int socket){
 	t_pcb* pcb;
