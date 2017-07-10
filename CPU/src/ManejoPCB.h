@@ -1,7 +1,4 @@
 //----------------------------------Manejo PCB------------------------------------------
-
-int cpuFinalizada = 0;
-
 void esperarPCB(){
 
 	cpuBloqueadaPorSemANSISOP = 1;

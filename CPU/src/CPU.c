@@ -43,23 +43,6 @@ void expropiarVoluntariamente(){
 
 }
 
-void expropiarPorRR(){
-
-	char comandoExpropiarFinQuantum = 'R';
-	if(cpuBloqueadaPorSemANSISOP != 0){
-
-		send(socketKernel,&comandoExpropiarFinQuantum , sizeof(char),0);
-		send(socketKernel, &cpuFinalizada, sizeof(int),0);
-		send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
-		serializarPcbYEnviar(pcb_actual,socketKernel);
-
-		log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
-		log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por Fin de quantum", pcb_actual->pid, pcb_actual->programCounter);
-		free(pcb_actual);
-	//	recibiPcb=1;
-	//	esperarPCB();
-	}
-}
 void expropiarPorRRYCerrar(){
 	char comandoExpropiarCpu = 'R';
 

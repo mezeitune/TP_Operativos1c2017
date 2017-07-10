@@ -14,7 +14,6 @@ t_list* listaCPU;
 
 enum {	EJECUTANDO,
 		OCIOSA,
-		FQPB
 };
 
 typedef struct CPU {
@@ -42,7 +41,7 @@ void cpuEjecucionAFQPB(int socketCPU){
 
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_remove_by_condition(listaCPU, (void*)verificaSocket);
-	cpu->estado = FQPB;
+	//cpu->estado = FQPB;
 	list_add(listaCPU,cpu);
 	pthread_mutex_unlock(&mutexListaCPU);
 

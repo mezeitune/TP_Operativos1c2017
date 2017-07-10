@@ -24,19 +24,14 @@ void wait(t_nombre_semaforo identificador_semaforo){
 
 
 	if(bloquearScriptONo < 0){
-		cpuBloqueadaPorSemANSISOP = 0;
+	//	cpuBloqueadaPorSemANSISOP = 0;
 
 		log_info(logConsolaPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
 
-		send(socketKernel, &cantidadInstruccionesEjecutadas, sizeof(int),0);
-
-		serializarPcbYEnviar(pcb_actual, socketKernel);
-
-		log_info(logConsolaPantalla, "Script ANSISOP pid: %d bloqueado por semaforo: %s", pcb_actual->pid, string_cortado[0]);
-
-		if(cpuFinalizadaPorSignal != 0) esperarPCB();
+		interrupcion = SEM_WAIT;
 
 	}else log_info(logConsolaPantalla, "Script ANSISOP pid: %d sigue su ejecucion normal", pcb_actual->pid);
+
 
 	int i = 0;
 	while(string_cortado[i] != NULL){

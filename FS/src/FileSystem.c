@@ -62,6 +62,7 @@ char* obtenerBytesDeUnArchivo(FILE *fp, int offset, int size);
 char nuevaOrdenDeAccion(int puertoCliente);
 */
 int socketServidor;
+int finalizarFs = 0 ;
 
 int main(void){
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/FS/config_FileSys");
@@ -89,10 +90,10 @@ int main(void){
 	//*********************************************************************
 	socketServidor = crear_socket_servidor(ipFS,puertoFS);
 	socketKernel=recibirConexion(socketServidor);
-	while(1){
+	while(!finalizarFs){
 		connectionHandler();
 	}
-
+	log_warning(logConsolaPantalla,"Modulo Fs finalizado");
 	return 0;
 }
 void inicializarLog(char *rutaDeLog){
@@ -113,6 +114,12 @@ void connectionHandler()
 	char* path;
 	int pathSize;
 	recv(socketKernel,&orden,sizeof(char),0);
+
+	if(orden=='X') {
+		close(socketKernel);
+		finalizarFs=1;
+	}
+
 	recv(socketKernel,&pathSize,sizeof(int),0);
 	path = malloc(pathSize + sizeof(char));
 	recv(socketKernel,path,pathSize,0);

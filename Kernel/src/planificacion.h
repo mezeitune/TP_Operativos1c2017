@@ -286,7 +286,7 @@ void planificarCortoPlazo(){
 	t_cpu* cpuEnEjecucion = malloc(sizeof(t_cpu));
 
 	_Bool verificarCPU(t_cpu* cpu){
-		return (cpu->estado == OCIOSA || cpu->estado == FQPB);
+		return (cpu->estado == OCIOSA);
 	}
 	char comandoEnviarPcb = 'S';
 
@@ -306,7 +306,6 @@ void planificarCortoPlazo(){
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);
-
 
 		if(list_any_satisfy(listaCPU, (void*) verificarCPU)){
 
@@ -546,11 +545,12 @@ void encolarProcesoListo(t_pcb *procesoListo){
 	pthread_mutex_lock(&mutexColaListos);
 	list_add(colaListos,procesoListo);
 	pthread_mutex_unlock(&mutexColaListos);
-	log_info(logKernelPantalla, "Pcb encolado en Listos--->PID: %d", procesoListo->pid);
+	log_info(logKernelPantalla, "Pcb encolado en Listos--->PID: %d\n", procesoListo->pid);
 }
 
 
 void gestionarFinProcesoCPU(int socketCPU){
+	log_info(logKernelPantalla,"CPU: %d finalizo exitosamente un proceso",socketCPU);
 	_Bool verificaCpu(t_cpu* cpu){
 				return (cpu->socket == socketCPU);
 	}

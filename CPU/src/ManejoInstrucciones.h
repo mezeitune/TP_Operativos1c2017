@@ -75,32 +75,33 @@ void EjecutarProgramaMedianteAlgoritmo(){
 	log_info(logConsola,"La cantidad de instrucciones a ejecutar son %d\n",cantidadInstruccionesAEjecutarDelPcbActual);
 
 	if(cantidadInstruccionesAEjecutarPorKernel==0){ //es FIFO
-		while((!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual) || cpuBloqueadaPorSemANSISOP != 0){
+		while(!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel < cantidadInstruccionesAEjecutarDelPcbActual){
 
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel++; //para FIFO en si
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
 			log_info(logConsola,"cantidad de instrucciones ejecutadas %d\n", cantidadInstruccionesEjecutadas);
 
-				if(verificaInterrupcion()) {
+			if(verificaInterrupcion()) {
 						expropiar();
 						break;
 					}
 		}
 	}else{//es RR con quantum = cantidadInstruccionesAEjecutarPorKernel
 		procesoFinalizado=0;
-		while (!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel > 0 && cpuBloqueadaPorSemANSISOP != 0){
+		while (!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel > 0){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
 			log_info(logConsola,"Quedan por ejecutar %d instrucciones", cantidadInstruccionesAEjecutarPorKernel);
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
 			log_info(logConsola,"cantidad de instrucciones ejecutadas %d", cantidadInstruccionesEjecutadas);
 
-				if(verificaInterrupcion()) {
+			if(verificaInterrupcion()) {
 					expropiar();
 					break;
 				}
-				if(!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel== 0) expropiarPorRR();
+
+			if(cantidadInstruccionesAEjecutarPorKernel== 0) expropiarPorRR();
 		}
 	}
 }

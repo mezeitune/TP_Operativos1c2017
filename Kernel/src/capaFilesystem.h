@@ -102,7 +102,7 @@ void abrirArchivo(t_fsAbrir* data){
 		int indiceEnTablaGlobal;
 		int resultadoEjecucion=1;
 
-		log_info(logKernel,"Abriendo un archivo--->PID:%d--->Direccion:%s--->Permisos:%s",pid,direccion,flags);
+		log_info(logKernelPantalla,"Abriendo un archivo--->PID:%d--->Direccion:%s--->Permisos:%s\n",pid,direccion,flags);
 
 		int archivoExistente=validarArchivo(direccion);
 		
@@ -160,7 +160,7 @@ void borrarArchivo(int socket){
 		int resultadoEjecucion ;
 		recv(socket,&pid,sizeof(int),0);
 		recv(socket,&fileDescriptor,sizeof(int),0);
-		log_info(logKernel,"Borrando un archivo--->PID:%d--->FD:%d",pid,fileDescriptor);
+		log_info(logKernelPantalla,"Borrando un archivo--->PID:%d--->FD:%d\n",pid,fileDescriptor);
 
 		_Bool verificaFd(t_entradaTablaProceso* entrada){
 					return entrada->fd == fileDescriptor;
@@ -221,7 +221,7 @@ void cerrarArchivo(int socket){
 	int resultadoEjecucion=1;
 	recv(socket,&pid,sizeof(int),0);
 	recv(socket,&fileDescriptor,sizeof(int),0);
-	log_info(logKernel,"Cerrando el archivo--->PID:%d--->FD:%d",pid,fileDescriptor);
+	log_info(logKernelPantalla,"Cerrando el archivo--->PID:%d--->FD:%d\n",pid,fileDescriptor);
 
 		int fileDescriptorAbierto=verificarFileDescriptorAbierto(pid,fileDescriptor);
 
@@ -248,7 +248,7 @@ void escribirArchivo(t_fsEscribir* data){
 
 	int resultadoEjecucion;
 
-	log_info(logKernel,"Guardando datos del archivo indicado--->PID:%d--->Datos:%s",pid,informacion);
+	log_info(logKernelPantalla,"Guardando datos del archivo indicado--->PID:%d--->Datos:%s\n",pid,informacion);
 
 
 		_Bool verificaPid(t_indiceTablaProceso* entrada){
@@ -324,7 +324,7 @@ void leerArchivo(t_fsLeer* data){
 	char comandoLeer = 'O';
 	int resultadoEjecucion;
 
-	log_info(logKernel,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d",pid,fileDescriptor,tamanioALeer);
+	log_info(logKernelPantalla,"Leyendo de archivo--->PID:%d--->FD:%d--->Bytes:%d\n",pid,fileDescriptor,tamanioALeer);
 
 		_Bool verificaPid(t_indiceTablaProceso* entrada){
 						return entrada->pid == pid;
@@ -397,7 +397,7 @@ void moverCursorArchivo(int socket){
 		recv(socket,&fileDescriptor,sizeof(int),0);
 		recv(socket,&posicion,sizeof(int),0);
 
-		log_info(logKernel,"Moviendo puntero--->PID:%d--->FD:%d--->Posicion:%d",pid,fileDescriptor,posicion);
+		log_info(logKernelPantalla,"Moviendo puntero--->PID:%d--->FD:%d--->Posicion:%d\n",pid,fileDescriptor,posicion);
 
 		_Bool verificaPid(t_indiceTablaProceso* entrada){
 						return entrada->pid == pid;

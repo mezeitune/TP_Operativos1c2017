@@ -41,12 +41,6 @@
 #include "excepciones.h"
 #include "logs.h"
 
-typedef struct{
-	pthread_t hilo;
-	int pid;
-}t_hilo;
-
-t_list* listaHilos;
 
 void verificarInterrupcionesEnCPU(int socket);
 void recibirProcesoExpropiadoVoluntariamente(int socket);
@@ -117,7 +111,7 @@ int main(int argc, char* argv[]) { /*TODO Agregar argv*/
 	obtenerSemaforosANSISOPDeLasConfigs();
 
 	pthread_create(&planificadorCortoPlazo, NULL,(void*)planificarCortoPlazo,NULL);
-	pthread_create(&planificadorMedianoPlazo, NULL,(void*)planificarMedianoPlazo,NULL);
+	//pthread_create(&planificadorMedianoPlazo, NULL,(void*)planificarMedianoPlazo,NULL);
 	pthread_create(&planificadorLargoPlazo, NULL,(void*)planificarLargoPlazo,NULL);
 	pthread_create(&interfaz, NULL,(void*)interfazHandler,NULL);
 
@@ -221,7 +215,7 @@ void gestionarNuevaCPU(int socketCPU){
 }
 
 void gestionarFinQuantum_RoundRobin(int socket){
-	log_info(logKernelPantalla,"Expropiando por fin de quantum--->CPU:%d\n",socket);
+	log_info(logKernelPantalla,"Expropiando por fin de quantum--->CPU:%d",socket);
 	int cantidadDeRafagas;
 	int cpuFinalizada;
 
@@ -229,27 +223,20 @@ void gestionarFinQuantum_RoundRobin(int socket){
 		return (unaCpu->socket == socket);
 	}
 
+	recv(socket,&cpuFinalizada, sizeof(int),0);
+	recv(socket,&cantidadDeRafagas,sizeof(int),0);
 
-	t_cpu* cpu = list_find(listaCPU, (void*)verificaSocket);
+	t_pcb* proceso = recibirYDeserializarPcb(socket);
 
-	if(cpu->estado != FQPB){
+	cambiarEstadoCpu(socket,OCIOSA);
+	actualizarRafagas(proceso->pid,cantidadDeRafagas);
+	removerDeColaEjecucion(proceso->pid);
 
-		recv(socket,&cpuFinalizada, sizeof(int),0);
-		recv(socket,&cantidadDeRafagas,sizeof(int),0);
+	encolarProcesoListo(proceso);
+	sem_post(&sem_procesoListo);
 
-
-		t_pcb* proceso = recibirYDeserializarPcb(socket);
-
-		cambiarEstadoCpu(socket,OCIOSA);
-		actualizarRafagas(proceso->pid,cantidadDeRafagas);
-		removerDeColaEjecucion(proceso->pid);
-
-		encolarProcesoListo(proceso);
-		sem_post(&sem_procesoListo);
-
-		//agregarAFinQuantum(proceso);
-		if(!cpuFinalizada)sem_post(&sem_CPU);
-	}
+	//agregarAFinQuantum(proceso);
+	if(!cpuFinalizada)sem_post(&sem_CPU);
 
 }
 
@@ -392,9 +379,6 @@ int buscarProcesoYTerminarlo(int pid){
 		return (cpu->pid==pid);
 	}
 
-	_Bool verificarPidHilo(t_hilo* hilo){
-		return (hilo->pid==pid);
-	}
 
 	_Bool verificarPidSemYPCB(t_semYPCB* semYPCB){
 		return (semYPCB->pcb->pid == pid);
@@ -422,17 +406,6 @@ int buscarProcesoYTerminarlo(int pid){
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 			pthread_mutex_unlock(&mutexListaCPU);
 
-			pthread_mutex_lock(&mutexListaHilos);//TODO: Esto va a morir
-
-			if(list_any_satisfy(listaHilos,(void*)verificarPidHilo)){
-					t_hilo* hilo=list_remove_by_condition(listaHilos,(void*)verificarPidHilo);
-
-					pthread_mutex_lock(&mutexMemoria); /*TODO: Para garantizarme que no se este ejecutando un servicio a Memoria*/
-					pthread_kill(hilo->hilo,SIGUSR1); // Seria lo mismo con FS
-					pthread_mutex_unlock(&mutexMemoria);
-					encontro = 1;
-			}
-			pthread_mutex_unlock(&mutexListaHilos);
 
 			expropiarVoluntariamente(cpuAFinalizar->socket);
 			encontro=1;
@@ -558,7 +531,7 @@ void gestionarAlocar(int socket){
 	int size,pid;
     pthread_t heapThread;
 	recv(socket,&pid,sizeof(int),0);
-	log_info(logKernelPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
+	log_info(logKernelPantalla,"Gestionando reserva de memoria dinamica--->PID:%d\n",pid);
 	recv(socket,&size,sizeof(int),0);
 
 	if(size > config_paginaSize - sizeof(t_bloqueMetadata)*2) {
@@ -576,19 +549,14 @@ void gestionarAlocar(int socket){
 		return;
 	}
 
-	t_hilo* hilo = malloc(sizeof(t_hilo));
-	hilo->pid = pid;
-	hilo->hilo = heapThread;
-	pthread_mutex_lock(&mutexListaHilos);
-	list_add(listaHilos,hilo);
-	pthread_mutex_unlock(&mutexListaHilos);
 	actualizarSysCalls(pid);
 	actualizarAlocar(pid,size);
 }
 
 
 void gestionarIO(int socket){
-	log_info(logKernelPantalla,"Gestionando entrada y salida Filesystem\n");
+	log_info(logKernelPantalla,"Gestionando entrada y salida Filesystem--->CPU:%d",socket);
+
 	interfaceHandlerFileSystem(socket);
 }
 
@@ -597,7 +565,7 @@ void gestionarLiberar(int socket){
 	recv(socket,&pid,sizeof(int),0);
 	recv(socket,&pagina,sizeof(int),0);
 	recv(socket,&offset,sizeof(int),0);
-	log_info(logKernelPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d--->Pagina:%d--->Offset:%d",pid,pagina,offset);
+	log_info(logKernelPantalla,"Gestionando liberacion de memoria dinamica--->PID:%d--->Pagina:%d--->Offset:%d\n",pid,pagina,offset);
 
 
 	liberarBloqueHeap(pid,pagina,offset);
@@ -634,10 +602,9 @@ void inicializarListas(){
 	listaEspera = list_create();
 	listaContable = list_create();
 
+	colaSemaforos = list_create();
 	listaSemaforosGlobales = list_create();
 	listaSemYPCB = list_create();
-
-	listaHilos = list_create();
 
 	tablaArchivosGlobal = list_create();
 	listaTablasProcesos = list_create();
