@@ -652,7 +652,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 	char *nombreArchivoRecibido = string_new();
 	string_append(&nombreArchivoRecibido, puntoMontaje);
-	string_append(&nombreArchivoRecibido, "Archivos/");
+	string_append(&nombreArchivoRecibido, "Archivos");
 	string_append(&nombreArchivoRecibido, path);
 
 	printf("Toda la ruta :%s\n",nombreArchivoRecibido);
