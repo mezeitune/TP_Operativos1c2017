@@ -19,7 +19,7 @@ void* leerParaGuardar(char* nombreArchivoRecibido,int size,int cursor);
 void printBitmap(){
 
 	int j;
-	for(j=0;j<cantidadBloques;j++){
+	for(j=0;j<config_cantidadBloques;j++){
         bool a = bitarray_test_bit(bitarray,j);
         printf("%i", a);
 	}
@@ -27,31 +27,25 @@ void printBitmap(){
 	printf("\n");
 }
 
-int getSizeBloque(FILE* bloque);
 void actualizarMetadataArchivo(char* path,int size,t_list* nuevosBloques);
 
 void validarArchivoFunction(char* path){
 	int validado;
 
-    log_info(logConsolaPantalla,"Validando existencia de archivo--->Direccion:%s",path);
+	char *rutaAbsoluta = string_new();
+	string_append(&rutaAbsoluta, puntoMontaje);
+	string_append(&rutaAbsoluta, "Archivos");
+	string_append(&rutaAbsoluta, path);
+	log_info(logConsolaPantalla,"Validando existencia de archivo--->Direccion:%s",rutaAbsoluta);
 
-
-	char *nombreArchivoRecibido = string_new();
-	string_append(&nombreArchivoRecibido, puntoMontaje);
-	string_append(&nombreArchivoRecibido, "Archivos/");
-	string_append(&nombreArchivoRecibido, path);
-    printf("%s\n", nombreArchivoRecibido);
-
-
-	if( access(nombreArchivoRecibido , F_OK ) != -1 ) {
+	if( access(rutaAbsoluta , F_OK ) != -1 ) {
 	    // file exists
-		log_info(logConsolaPantalla,"El archivo existe");
-		validado=1;
 		log_info(logConsolaPantalla,"Archivo %s existente en FS",path);
+		validado=1;
 		send(socketKernel,&validado,sizeof(int),0);
 	} else {
 	    // file doesn't exist
-	  log_warning(logConsolaPantalla,"El archivo no existe");
+	  log_error(logConsolaPantalla,"El archivo no existe");
 	   validado=0;
 	   send(socketKernel,&validado,sizeof(int),0);
 	}
@@ -79,42 +73,41 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 
 	char *rutaAbsoluta = string_new();
 	string_append(&rutaAbsoluta, puntoMontaje);
-	string_append(&rutaAbsoluta, "Archivos/");
+	string_append(&rutaAbsoluta, "Archivos");
 	string_append(&rutaAbsoluta, path);
-
-	string_append(&montajeCarpeta,puntoMontaje);
-	string_append(&montajeCarpeta,"Archivos/");
 
 
 	char* carpetaSiguiente = strtok(path,"/");
-	string_append(&montajeCarpeta,carpetaSiguiente);
 
 	if(!esArchivo(carpetaSiguiente)){
+		printf("Verificando directorio:%s\n",carpetaSiguiente);
+
+		string_append(&montajeCarpeta,puntoMontaje);
+		string_append(&montajeCarpeta,"Archivos/");
+		string_append(&montajeCarpeta,carpetaSiguiente);
 		mkdir(montajeCarpeta,0777);
 		string_append(&montajeCarpeta,"/");
 
 		while((carpetaSiguiente = strtok(NULL,"/")) != NULL){
+
+				if(!esArchivo(carpetaSiguiente)) {
 				string_append(&montajeCarpeta,carpetaSiguiente);
-
-				if(!esArchivo(carpetaSiguiente)) mkdir(montajeCarpeta, 0777);
-		if(!esArchivo(carpetaSiguiente))
-			{
-				log_info(logConsolaPantalla,"Creando nuevo directorio");
+				printf("Verificando directorio:%s\n",carpetaSiguiente);
 				mkdir(montajeCarpeta, 0777);
-			}
 				string_append(&montajeCarpeta,"/");
-
-			}
+				}
+				else break;
+		}
 	}
 
 
-	printf("Hola\n");
+
 	//Recorro bitmap y veo si hay algun bloque para asignarle
 	//por default se le asigna un bloque al archivo recien creado
 	int j;
 	int encontroUnBloque=0;
 	int bloqueEncontrado=0;
-	for(j=0;j<cantidadBloques;j++){
+	for(j=0;j<config_cantidadBloques;j++){
 
         bool bit = bitarray_test_bit(bitarray,j);
         if(bit==0){
@@ -123,14 +116,14 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
         	break;
         }
 	}
-	printf("sali del bit map\n");
+	printf("sali del bitmap\n");
 
 	if(encontroUnBloque==1){
 		FILE* fp = fopen(rutaAbsoluta, "ab");
 		//asignar bloque en el metadata del archivo(y marcarlo como ocupado en el bitmap)
 		//escribir el metadata ese del archivo (TAMANO y BLOQUES)
 
-		log_info(logConsolaPantalla,"Asignando nuevo bloque del FS");
+		log_info(logConsolaPantalla,"Asignando bloque al nuevo archivo--->Bloque: %d.bin\n",bloqueEncontrado);
 		bitarray_set_bit(bitarray,bloqueEncontrado);
 
 		char *dataAPonerEnFile = string_new();
@@ -147,13 +140,11 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 
 		validado=1;
 		send(socketKernel,&validado,sizeof(int),0);
-		printf("Se creo el archivo\n");
 		fclose(fp);
 	}else{
 		validado=0;
 		log_info(logConsolaPantalla,"No se encontraron bloques disponibles");
 		send(socketKernel,&validado,sizeof(int),0);
-		printf("No se creo el archivo\n");
 	}
 
 }
@@ -236,20 +227,20 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 		char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
 		   printf("size:%d\n",size);
-		   printf("Tamanio bloque:%d\n",tamanioBloques);
+		   printf("Tamanio bloque:%d\n",config_tamanioBloques);
 
 		   int cantidadBloquesNecesito;
-		   if(((size+cursor)%tamanioBloques)==0) cantidadBloquesNecesito = ((size+cursor)/tamanioBloques);
-		   else cantidadBloquesNecesito = ((size+cursor)/tamanioBloques)+1;
+		   if(((size+cursor)%config_tamanioBloques)==0) cantidadBloquesNecesito = ((size+cursor)/config_tamanioBloques);
+		   else cantidadBloquesNecesito = ((size+cursor)/config_tamanioBloques)+1;
 
 		   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesNecesito);
 
 
 		   int d=0;
-		   int tamanioBloqueAcumulado = tamanioBloques;
+		   int tamanioBloqueAcumulado = config_tamanioBloques;
 		   while(!(cursor<tamanioBloqueAcumulado)){ //Para saber cual es el primer bloque a leer
 			   d++;
-			   tamanioBloqueAcumulado += tamanioBloques;
+			   tamanioBloqueAcumulado += config_tamanioBloques;
 		   }
 
 		   /*
@@ -285,7 +276,7 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 
 			   if(cantidadBloquesLeidos==0){
 
-				   if(size>tamanioBloques-cursor) sizeDentroBloque=tamanioBloques-cursor;//Leo la porcion restante del bloque
+				   if(size>config_tamanioBloques-cursor) sizeDentroBloque=config_tamanioBloques-cursor;//Leo la porcion restante del bloque
 				   else sizeDentroBloque = size; //Leo lo suficiente
 				   printf("El tamano a leer del bloque es :%d\n",sizeDentroBloque);
 
@@ -304,8 +295,8 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 				   sizeRestante -= sizeDentroBloque;
 			   }
 			   else{
-				   if(sizeRestante < tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
-				   else sizeDentroBloque = tamanioBloques; //Leo to-do el bloque
+				   if(sizeRestante < config_tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
+				   else sizeDentroBloque = config_tamanioBloques; //Leo to-do el bloque
 
 				   char *nombreBloque = string_new();
 				   string_append(&nombreBloque, puntoMontaje);
@@ -345,20 +336,20 @@ void* leerParaGuardar(char* nombreArchivoRecibido,int size,int cursor)
 	char** arrayBloques=obtArrayDeBloquesDeArchivo(nombreArchivoRecibido);
 
 	   printf("size:%d\n",size);
-	   printf("Tamanio bloque:%d\n",tamanioBloques);
+	   printf("Tamanio bloque:%d\n",config_tamanioBloques);
 
 	   int cantidadBloquesNecesito;
-	   if(((size+cursor)%tamanioBloques)==0) cantidadBloquesNecesito = ((size+cursor)/tamanioBloques);
-	   else cantidadBloquesNecesito = ((size+cursor)/tamanioBloques)+1;
+	   if(((size+cursor)%config_tamanioBloques)==0) cantidadBloquesNecesito = ((size+cursor)/config_tamanioBloques);
+	   else cantidadBloquesNecesito = ((size+cursor)/config_tamanioBloques)+1;
 
 	   printf("Cantidad de bloques que necesito leer :%d\n",cantidadBloquesNecesito);
 
 
 	   int d=0;
-	   int tamanioBloqueAcumulado = tamanioBloques;
+	   int tamanioBloqueAcumulado = config_tamanioBloques;
 	   while(!(cursor<tamanioBloqueAcumulado)){ //Para saber cual es el primer bloque a leer
 		   d++;
-		   tamanioBloqueAcumulado += tamanioBloques;
+		   tamanioBloqueAcumulado += config_tamanioBloques;
 	   }
 
 	   /*
@@ -394,7 +385,7 @@ void* leerParaGuardar(char* nombreArchivoRecibido,int size,int cursor)
 
 		   if(cantidadBloquesLeidos==0){
 
-			   if(size>tamanioBloques-cursor) sizeDentroBloque=tamanioBloques-cursor;//Leo la porcion restante del bloque
+			   if(size>config_tamanioBloques-cursor) sizeDentroBloque=config_tamanioBloques-cursor;//Leo la porcion restante del bloque
 			   else sizeDentroBloque = size; //Leo lo suficiente
 			   printf("El tamano a leer del bloque es :%d\n",sizeDentroBloque);
 
@@ -413,8 +404,8 @@ void* leerParaGuardar(char* nombreArchivoRecibido,int size,int cursor)
 			   sizeRestante -= sizeDentroBloque;
 		   }
 		   else{
-			   if(sizeRestante < tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
-			   else sizeDentroBloque = tamanioBloques; //Leo to-do el bloque
+			   if(sizeRestante < config_tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
+			   else sizeDentroBloque = config_tamanioBloques; //Leo to-do el bloque
 
 			   char *nombreBloque = string_new();
 			   string_append(&nombreBloque, puntoMontaje);
@@ -516,13 +507,13 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 
 			bloque = fopen(direccionBloque,"w");
-			fwrite(stringComoSeQuiere,tamanioBloques,1,bloque); //guardo hasta el size que me permite el bloque
+			fwrite(stringComoSeQuiere,config_tamanioBloques,1,bloque); //guardo hasta el size que me permite el bloque
 			fclose(bloque);
 
 			//Nose si esta bien que me permita escribir hasta tamanioBloques por que quiza escribe basura si es que es el ultimo bloque
 
 			//cortar el string
-			stringComoSeQuiere=string_substring_from(stringComoSeQuiere, tamanioBloques);
+			stringComoSeQuiere=string_substring_from(stringComoSeQuiere, config_tamanioBloques);
 			indiceBloque++;
 
 			//if((arrayBloques[indiceBloque+1] == NULL)) break;
@@ -541,10 +532,10 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 		if(seNecesecitaronMasBloques){
 	       size=string_length(stringComoSeQuiere);
-		   if((size%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
-		   if(size < tamanioBloques) cuantosBloquesMasNecesito = 1;
-		   if((size%tamanioBloques) == size) {
-			   cuantosBloquesMasNecesito = size / tamanioBloques ;
+		   if((size%config_tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
+		   if(size < config_tamanioBloques) cuantosBloquesMasNecesito = 1;
+		   if((size%config_tamanioBloques) == size) {
+			   cuantosBloquesMasNecesito = size / config_tamanioBloques ;
 			   cuantosBloquesMasNecesito += 1;
 		   }
 
@@ -554,7 +545,7 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 			int bloquesEncontrados=0;
 
 
-			for(numeroBloque=0;numeroBloque<cantidadBloques;numeroBloque++){
+			for(numeroBloque=0;numeroBloque<config_cantidadBloques;numeroBloque++){
 		        bool bit = bitarray_test_bit(bitarray,numeroBloque);
 		        if(bit==0){
 		        	bloquesEncontrados++;
@@ -586,14 +577,14 @@ void guardarDatosArchivoFunction2(char* path){//ver tema puntero, si lo tengo qu
 
 								bloque=fopen(nombreBloque,"w");
 
-								if(sizeRestante>tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
+								if(sizeRestante>config_tamanioBloques){ //if(string_length(loQueVaQuedandoDeBuffer)>tamanioBloques)
 									printf("Tengo que cortar el string\n");
 									//cortar el string
-									fwrite(stringComoSeQuiere + desplazamiento , tamanioBloques,1,bloque);
+									fwrite(stringComoSeQuiere + desplazamiento , config_tamanioBloques,1,bloque);
 									//char* recortado=string_substring_until(buffer + desplazamiento, tamanioBloques);
 									//adx_store_data(nombreBloque,recortado);
-									sizeRestante -= tamanioBloques;
-									desplazamiento += tamanioBloques;
+									sizeRestante -= config_tamanioBloques;
+									desplazamiento += config_tamanioBloques;
 									//loQueVaQuedandoDeBuffer=string_substring_from(loQueVaQuedandoDeBuffer, tamanioBloques);
 
 								}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
@@ -680,13 +671,13 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 		printf("Cantidad de bloques del archivo:%d\n",bloquesExistentes);
 
 		 int indiceBloque=0;
-		 int tamanioBloqueAcumulado = tamanioBloques;
+		 int tamanioBloqueAcumulado = config_tamanioBloques;
 	   while(!(cursor<tamanioBloqueAcumulado)){ //Para saber cual es el primer bloque a escribir
 					   indiceBloque++;
-					   tamanioBloqueAcumulado += tamanioBloques;
+					   tamanioBloqueAcumulado += config_tamanioBloques;
 				   }
 
-	   bool elArchivoTieneBloquesSuficientes = bloquesExistentes*tamanioBloques > size+cursor;
+	   bool elArchivoTieneBloquesSuficientes = bloquesExistentes*config_tamanioBloques > size+cursor;
 	   printf("%s\n",elArchivoTieneBloquesSuficientes? "True":"False");
 
 	   printf("Tamano bloque acumulador :%d\n",tamanioBloqueAcumulado);
@@ -708,7 +699,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 			bloque = fopen(direccionBloque,"r+b");
 			fseek(bloque,0,SEEK_SET);
 
-			fseek(bloque,tamanioBloques-(tamanioBloqueAcumulado - cursor),SEEK_SET);
+			fseek(bloque,config_tamanioBloques-(tamanioBloqueAcumulado - cursor),SEEK_SET);
 
 			fwrite(buffer,1,size,bloque);
 			log_info(logConsolaPantalla,"Datos guardados--->Archivo:%s--->Informacion:%s",path,(char*)buffer);
@@ -720,12 +711,12 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 			int bytesNecesarios = size+cursor-tamanioBloqueAcumulado;
 
 
-		   if((bytesNecesarios%tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
+		   if((bytesNecesarios%config_tamanioBloques) == 0) cuantosBloquesMasNecesito = 1;
 
-		   if(bytesNecesarios < tamanioBloques) cuantosBloquesMasNecesito = 1;
+		   if(bytesNecesarios < config_tamanioBloques) cuantosBloquesMasNecesito = 1;
 
-		   if(bytesNecesarios > tamanioBloques) {
-			   cuantosBloquesMasNecesito = bytesNecesarios / tamanioBloques ;
+		   if(bytesNecesarios > config_tamanioBloques) {
+			   cuantosBloquesMasNecesito = bytesNecesarios / config_tamanioBloques ;
 			   cuantosBloquesMasNecesito += 1;
 		   }
 
@@ -739,7 +730,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 		if(!elArchivoTieneBloquesSuficientes){
 			bloquesEncontrados = 0;
-			for(numeroBloque=0;numeroBloque<cantidadBloques;numeroBloque++){
+			for(numeroBloque=0;numeroBloque<config_cantidadBloques;numeroBloque++){
 		        int bit = bitarray_test_bit(bitarray,numeroBloque);
 		        if(bit==0){
 		        	bloquesEncontrados++;
@@ -765,7 +756,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 				bloque = fopen(direccionBloque,"r+b");
 				fseek(bloque,0,SEEK_SET);
 
-				fseek(bloque,tamanioBloques-(tamanioBloqueAcumulado-cursor),SEEK_SET);
+				fseek(bloque,config_tamanioBloques-(tamanioBloqueAcumulado-cursor),SEEK_SET);
 				fwrite(buffer,1,(tamanioBloqueAcumulado-cursor),bloque); //Bloque=64 y el tamanoActual = 40 --> Escribo 24 Bytes
 				fclose(bloque);
 
@@ -789,17 +780,17 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 					fseek(bloque,0,SEEK_SET);
 
 
-					if(sizeRestante < tamanioBloques){
+					if(sizeRestante < config_tamanioBloques){
 						fwrite(buffer + desplazamiento,1,sizeRestante,bloque);
 						sizeRestante -= sizeRestante;
 						desplazamiento += sizeRestante;
 						printf("Le alcanzo con los bloques disponbiles\n");
 						break;
 					}
-					else fwrite(buffer + desplazamiento,1,tamanioBloques,bloque);
+					else fwrite(buffer + desplazamiento,1,config_tamanioBloques,bloque);
 
-					sizeRestante -=tamanioBloques;
-					desplazamiento += tamanioBloques;
+					sizeRestante -=config_tamanioBloques;
+					desplazamiento += config_tamanioBloques;
 					s++;
 				}
 
@@ -818,13 +809,13 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 					bloque=fopen(nombreBloque,"wb");
 
-					if(sizeRestante>tamanioBloques){
+					if(sizeRestante>config_tamanioBloques){
 
 						printf("Tengo que cortar el string\n");
 
-						fwrite(buffer + desplazamiento,1,tamanioBloques,bloque);
-						sizeRestante -= tamanioBloques;
-						desplazamiento += tamanioBloques;
+						fwrite(buffer + desplazamiento,1,config_tamanioBloques,bloque);
+						sizeRestante -= config_tamanioBloques;
+						desplazamiento += config_tamanioBloques;
 
 					}else{ //Si entra aca, ya la proxima sale, entonces no actualizamos nada
 

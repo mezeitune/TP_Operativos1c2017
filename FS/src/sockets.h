@@ -31,8 +31,8 @@ int recibirConexion(int socket_servidor){
 
 
 	if(estado == 0){
-		log_info(logConsolaPantalla,"\nSe puso el socket en listen\n");
-		printf("---------------------------------------------------\n");
+	//	log_info(logConsolaPantalla,"\nSe puso el socket en listen\n");
+	//	printf("---------------------------------------------------\n");
 	}
 
 	addr_size = sizeof(their_addr);
@@ -42,7 +42,7 @@ int recibirConexion(int socket_servidor){
 
 	contadorConexiones ++;
 	printf("\n----------Nueva Conexion aceptada numero: %d ---------\n",contadorConexiones);
-	printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
+	//printf("----------Handler asignado a (%d) ---------\n",contadorConexiones);
 
 	if (socket_aceptado == -1){
 		close(socket_servidor);

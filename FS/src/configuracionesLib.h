@@ -17,8 +17,8 @@ char *puntoMontaje;
 char *puerto_Kernel;
 char *tamanioBloquesEnChar;
 char *cantidadBloquesEnChar;
-int tamanioBloques;
-int cantidadBloques;
+int config_tamanioBloques;
+int config_cantidadBloques;
 char* magicNumber;
 char *ipFS;
 t_config* configuracion_FS;
@@ -65,24 +65,23 @@ void leerConfiguracion(char* ruta){
 
 
 
-void leerConfiguracionMetadata(char* ruta){
-	configuracion_FS = config_create(ruta);
+void leerConfiguracionMetadata(){
 
-	tamanioBloquesEnChar= config_get_string_value(configuracion_FS,"TAMANIO_BLOQUES");
-	cantidadBloquesEnChar= config_get_string_value(configuracion_FS, "CANTIDAD_BLOQUES");
+	char* puntoMontajeMetadata = string_new();
+	string_append(&puntoMontajeMetadata,puntoMontaje);
+	string_append(&puntoMontajeMetadata,"Metadata/Metadata.bin");
+
+	configuracion_FS = config_create(puntoMontajeMetadata);
+
+	config_tamanioBloques= atoi(config_get_string_value(configuracion_FS,"TAMANIO_BLOQUES"));
+	config_cantidadBloques= atoi(config_get_string_value(configuracion_FS, "CANTIDAD_BLOQUES"));
 	magicNumber = config_get_string_value(configuracion_FS,"MAGIC_NUMBER");
-
-
-
 }
 
 char** obtArrayDeBloquesDeArchivo(char* ruta){
 	configuracion_FS = config_create(ruta);
 
 	return config_get_array_value(configuracion_FS, "BLOQUES");
-
-
-
 }
 
 
@@ -90,9 +89,6 @@ char* obtTamanioArchivo(char* ruta){
 	configuracion_FS = config_create(ruta);
 
 	return config_get_string_value(configuracion_FS,"TAMANIO");
-
-
-
 }
 
 
@@ -116,9 +112,6 @@ void inicializarBitMap(){
 }
 
 void inicializarMmap(){
-
-
-
     int size;
     struct stat s;
 

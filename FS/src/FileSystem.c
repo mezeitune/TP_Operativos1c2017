@@ -50,7 +50,7 @@ t_list* listaArchivos;
 int socket_servidor;
 void selectorConexiones();
 void leerConfiguracion(char* ruta);
-void leerConfiguracionMetadata(char* ruta);
+void leerConfiguracionMetadata();
 void imprimirConfiguraciones();
 void connectionHandler();
 
@@ -67,11 +67,7 @@ int finalizarFs = 0 ;
 int main(void){
 	leerConfiguracion("/home/utnso/workspace/tp-2017-1c-servomotor/FS/config_FileSys");
 
-	char* puntoMontajeMetadata = string_new();
-	string_append(&puntoMontajeMetadata,puntoMontaje);
-	string_append(&puntoMontajeMetadata,"Metadata/Metadata.bin");
-
-	leerConfiguracionMetadata(puntoMontajeMetadata);
+	leerConfiguracionMetadata();
 
 	imprimirConfiguraciones();
 
@@ -80,10 +76,7 @@ int main(void){
 	//*********************************************************************
 	inicializarMmap();
 
-	tamanioBloques=atoi(tamanioBloquesEnChar);
-	cantidadBloques=atoi(cantidadBloquesEnChar);
-
-	bitarray = bitarray_create_with_mode(mmapDeBitmap,(tamanioBloques*cantidadBloques)/(8*tamanioBloques), LSB_FIRST);
+	bitarray = bitarray_create_with_mode(mmapDeBitmap,(config_tamanioBloques*config_cantidadBloques)/(8*config_tamanioBloques), LSB_FIRST);
 
 	printf("El tamano del bitarray es de : %d\n",bitarray_get_max_bit(bitarray));
 

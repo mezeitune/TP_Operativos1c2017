@@ -711,7 +711,6 @@ void interfaceEscribirArchivo(int socket){
 		data->informacion=malloc(data->size);
 
 		recv(socket,data->informacion,data->size,0);
-		printf("\n\nDATA %s \n\n", (char*)data->informacion);
 
 		data->socket =socket;
 
