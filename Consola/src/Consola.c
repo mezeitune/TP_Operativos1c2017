@@ -185,7 +185,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		pthread_mutex_unlock(&mutexRecibirDatos);
 	}
 	gestionarCierrePrograma(pid);
-	log_warning(logConsolaPantalla,"Hilo Programa ANSISOP--->PID:%d--->Socket:%d ha finalizado\n",pid,socketHiloKernel);
+	log_warning(logConsolaPantalla,"Programa ANSISOP--->PID:%d ha finalizado\n",pid);
 	pthread_mutex_unlock(&mutexRecibirDatos);
 }
 

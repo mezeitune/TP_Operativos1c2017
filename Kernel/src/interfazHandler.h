@@ -19,6 +19,7 @@ void interfaceFinalizarProcesoVoluntariamente();
 void interfaceTablaGlobalArchivos();
 void interfaceSolicitarContenidoMemoria();
 void interfaceModificarGradoMultiprogramacion();
+void interfaceMostrarGradoMultiprogramacion();
 
 void finalizarProcesoVoluntariamente(int pid,int exitCode);
 void imprimirListadoDeProcesos(t_list* procesos);
@@ -61,6 +62,8 @@ void interfazHandler(){
 							break;
 				case 'K':	interfaceFinalizarProcesoVoluntariamente();
 							break;
+				case 'E': 	interfaceMostrarGradoMultiprogramacion();
+							break;
 				case 'S':	interfaceSolicitarContenidoMemoria();
 							break;
 				case 'I':	imprimirInterfazUsuario();
@@ -87,6 +90,12 @@ void interfazHandler(){
 
 }
 
+void interfaceMostrarGradoMultiprogramacion(){
+
+	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
+	printf("\033[22;34mEl grado de multiprogramacion actual es:%d\033[0m\n",gradoMultiProgramacion);
+	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
+}
 
 void interfaceObtenerDatosProceso(){
 	printf("Ingrese el pid del proceso\n");
@@ -95,16 +104,16 @@ void interfaceObtenerDatosProceso(){
 			log_warning(logKernelPantalla,"Proceso no existente---> PID: %d", pid);
 			return;
 		}
-		log_info(logKernelPantalla,"Datos del proceso--->%d\n",pid);
-		log_info(logKernelPantalla,"PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
-	obtenerDatosProceso(pid);
+		printf("\033[22;34mDatos del proceso--->%d\033[0m\n",pid);
+		printf("\033[22;34mPID/RAFAGAS/SysCalls/Pags. Heap/Cant. Alocar/ Size Alocar/ Cant Liberar/ Size Liberar/\033[0m\n");
+		obtenerDatosProceso(pid);
 }
 
 void interfaceFinalizarProcesoVoluntariamente(){
 	printf("Ingrese el pid del proceso a finalizar\n");
 	scanf("%d",&pid);
 			if(verificarProcesoExistente(pid)<0){
-				log_warning(logKernelPantalla,"El proceso no existe--->PID:%d\n",pid);
+				log_warning(logKernelPantalla,"Proceso no existente--->PID:%d\n",pid);
 				return;
 				}
 			if(verificarProcesoNoTerminado(pid)<0){
@@ -179,7 +188,7 @@ void obtenerDatosProceso(int pid){
 }
 
 void imprimirDatosContables(t_contable* proceso){
-	log_info(logKernelPantalla,"%d\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t%d\t\t%d\t\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+	printf("%d\t%d\t%d\t  %d\t      %d\t\t%d\t\t%d\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
 				proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 }
 
@@ -330,7 +339,23 @@ void imprimirInterfazUsuario(){
 	/**************************************Printea interfaz Usuario Kernel*******************************************************/
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	printf("Para realizar acciones permitidas en la consola Kernel, seleccionar una de las siguientes opciones\n");
-	printf("\nIngresar orden de accion:\nO - Obtener datos de proceso\nL - Obtener listado programas\n\tT - Obtener todos los procesos\n\tC - Obtener procesos de un estado\n\t\tN - New\n\t\tR - Ready\n\t\tE - Exec\n\t\tB - Blocked\n\t\tF - Finished\nP - Pausar planificacion\nR - Reanudar planificacion\nG - Mostrar tabla global de archivos\nM - Modif grado multiprogramacion\nK - Finalizar proceso\nH - Mostrar estructura Heap");
+	printf("\nIngresar orden de accion:\n"
+			"O - Obtener datos de proceso\n"
+			"L - Obtener listado programas\n"
+					"\tT - Obtener todos los procesos\n"
+					"\tC - Obtener procesos de un estado\n"
+							"\t\tN - New\n"
+							"\t\tR - Ready\n"
+							"\t\tE - Execution\n"
+							"\t\tB - Blocked\n"
+							"\t\tF - Finished\n"
+			"P - Pausar planificacion\n"
+			"R - Reanudar planificacion\n"
+			"G - Mostrar tabla global de archivos\n"
+			"M - Modif grado multiprogramacion\n"
+			"E - Ver grado multiprogramacion\n"
+			"K - Finalizar proceso\n"
+			"H - Mostrar estructura Heap");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
 }
