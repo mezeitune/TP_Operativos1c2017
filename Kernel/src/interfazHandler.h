@@ -43,11 +43,11 @@ int flagTerminarUI=0;
 void interfazHandler(){
 	char orden;
 	int cont = 0;
-	while(1){
+	do{
 		scanf("%c",&orden);
 		cont++;
 		switch(orden){
-				case 'L': 	interfaceObtenerListadoProcesos();
+				case 'L': 	interfaceObtenerListadoProcesos(); /*TODO: Solucionar el asunto de como se imprime todo*/
 							break;
 				case 'O': 	interfaceObtenerDatosProceso();
 							break;
@@ -83,7 +83,7 @@ void interfazHandler(){
 					if(cont!=2){} else cont = 0;
 					break;
 		}
-	}
+	}while(1);
 
 }
 
@@ -163,7 +163,7 @@ int verificarProcesoExistente(int pid){
 	return existe;
 }
 
-void obtenerDatosProceso(int pid){ /*TODO: Mutex tablas*/
+void obtenerDatosProceso(int pid){
 	_Bool verificaPid(t_contable* proceso){
 		return proceso->pid == pid;
 	}
@@ -203,18 +203,20 @@ void imprimirTablaArchivosProceso(int pid){
 }
 
 void interfaceObtenerListadoProcesos(){
-	char orden;
-	scanf("%c",&orden);
-	switch(orden){
+	char ordenMenu;
+	char ordenSubMenu;
+	//printf("T:Mostrar todos los procesos\nC:Mostrar una cola\n");
+	scanf("%c",&ordenMenu);
+	switch(ordenMenu){
 	case 'T':
 		mostrarTodosLosProcesos();
 		break;
 	case 'C':
-		scanf("%c",&orden);
-		mostrarProcesos(orden);
+		scanf("%c",&ordenSubMenu);
+		mostrarProcesos(ordenSubMenu);
 		break;
 	default:
-		log_error(logKernel,"Orden no reconocida-->ORDEN: %c\n", orden);
+		log_error(logKernel,"Orden no reconocida-->ORDEN: %c\n", ordenMenu);
 		break;
 	}
 }
@@ -227,7 +229,7 @@ void mostrarTodosLosProcesos(){
 	mostrarProcesos('F');
 }
 
-void mostrarProcesos(char orden){ /*TODO: Cambiar logs a prints*/
+void mostrarProcesos(char orden){
 
 	int transformarPid(t_pcb* pcb){
 				return pcb->pid;

@@ -92,8 +92,7 @@ void guardarValorDeSharedVar(int socket);
 int main(int argc, char* argv[]) { /*TODO Agregar argv*/
 
 	flagPlanificacion = 1;
-	flagHuboAlgunProceso = 0;
-	flagCPUSeDesconecto = 0;
+
 
 	ruta_config="/home/utnso/workspace/tp-2017-1c-servomotor/Kernel/config_Kernel";
 
@@ -576,8 +575,8 @@ void inicializarListas(){
 	listaContable = list_create();
 
 	colaSemaforos = list_create();
-	listaSemaforosGlobales = list_create();
-	listaSemYPCB = list_create();
+	//listaSemaforosGlobales = list_create();
+	//listaSemYPCB = list_create();
 
 	tablaArchivosGlobal = list_create();
 	listaTablasProcesos = list_create();

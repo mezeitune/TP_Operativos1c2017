@@ -35,7 +35,7 @@ typedef struct{
 void obtenerSemaforosANSISOPDeLasConfigs();
 void recibirNombreSemaforo(int socketCpu,char ** semaforo);
 void buscarSemaforo(char* semaforoId, t_semaforoAsociado **semaforoAsociado);
-
+int tamanioArray(char** array);
 /*
  * Wait_Semaforos_ANSISOP
  * */
@@ -50,16 +50,13 @@ void encolarProcesoBloqueadoASemaforo(int pid,char* semaforo);
 void signalSemaforoAnsisop(int socketAceptado);
 void aumentarYConsultarSemaforo(char* semaforoId);
 
-/*TODO: No se usan*/
-int tamanioArray(char** array);
-void disminuirSemaforo(char* semaforoId);
-void chequearColaDeSemaforo(char* semaforoId);
-
-t_list* listaSemaforosGlobales;
 
 t_list* colaSemaforos;
 
+/* TODO: No se usan
+t_list* listaSemaforosGlobales;
 t_list* listaSemYPCB;
+*/
 
 void obtenerSemaforosANSISOPDeLasConfigs(){
 	int i;
@@ -225,37 +222,8 @@ void encolarProcesoBloqueadoASemaforo(int pid,char* semaforoId){
 
 }
 
-void disminuirSemaforo(char* semaforoId){
 
-
-	_Bool verificaId(t_semaforo* semaforo){
-				return (!strcmp(semaforo->id,semaforoId));
-	}
-
-	t_semaforo *semaforoAsociado;
-
-
-
-	pthread_mutex_lock(&mutexListaSemaforos);
-
-	buscarSemaforo(semaforoId,&semaforoAsociado);
-
-
-	log_info(logKernel,"Semaforo id: %s", semaforoAsociado->id);
-	log_info(logKernel,"\nSemaforo valor: %d", semaforoAsociado->valor);
-
-	semaforoAsociado->valor -= 1;
-	list_add(listaSemaforosGlobales,semaforoAsociado);
-
-
-	log_info(logKernel,"Semaforo id: %s", semaforoAsociado->id);
-	log_info(logKernel,"\nSemaforo valor disminuido: %d", semaforoAsociado->valor);
-
-	pthread_mutex_unlock(&mutexListaSemaforos);
-
-}
-
-void aumentarYConsultarSemaforo(char* semaforoId){ /*TODO: Ojo con lo que se haga con el semaforo devuelto. Hay que eliminar la entrada anterior y actualizar por la nueva*/
+void aumentarYConsultarSemaforo(char* semaforoId){
 
 	_Bool verificaId(t_semaforoAsociado* indiceSemaforo){
 			return (!strcmp(indiceSemaforo->semaforo->id,semaforoId));

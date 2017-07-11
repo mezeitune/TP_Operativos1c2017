@@ -34,8 +34,8 @@
 #include "logs.h"
 
 /*---PAUSA PLANIFICACION---*/
-int flagHuboAlgunProceso;
-int flagCPUSeDesconecto;
+
+
 int flagTerminarPlanificadorLargoPlazo = 0;
 int flagTerminarPlanificadorCortoPlazo=0;
 int flagPlanificacion;
@@ -324,7 +324,6 @@ void planificarCortoPlazo(){
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);
 
 
-			flagHuboAlgunProceso = 1;
 			pthread_mutex_lock(&mutexColaEjecucion);
 			list_add(colaEjecucion, pcbListo);
 			pthread_mutex_unlock(&mutexColaEjecucion);
@@ -346,11 +345,12 @@ void planificarCortoPlazo(){
 
 void enviarConfiguracionesQuantum(int socketCPU){
 	int quantum = 0; //FIFO--->0 ; RR != 0
-	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum; //TODO> Pasar quantum y quantum sleep juntos
+	if(!strcmp(config_algoritmo, "RR")) quantum = config_quantum;
 		send(socketCPU,&quantum,sizeof(int),0);
 		send(socketCPU,&config_quantumSleep,sizeof(int),0);
 }
 
+/*
 void finQuantumAReady(){
 
 	int indice;
@@ -394,7 +394,7 @@ void agregarAFinQuantum(t_pcb* pcb){
 	sem_post(&sem_listaFinQuantum);
 
 }
-
+*/
 /*------------------------CORTO PLAZO-----------------------------------------*/
 
 
@@ -405,7 +405,7 @@ void agregarAFinQuantum(t_pcb* pcb){
 
 
 /*------------------------MEDIANO PLAZO-----------------------------------------*/
-
+/*
 pthread_t threadId;
 
  void planificarMedianoPlazo(){
@@ -417,7 +417,8 @@ pthread_t threadId;
 	 pcbEjecucionABloqueado();
 
  }
-
+ */
+/*
 void pcbBloqueadoAReady(){
 
 	int i;
@@ -508,7 +509,7 @@ void pcbEjecucionABloqueado(){
 	}
 	//free(semYPCB);
 }
-
+*/
 
 /*------------------------MEDIANO PLAZO-----------------------------------------*/
 
