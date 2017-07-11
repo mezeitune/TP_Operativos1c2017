@@ -222,8 +222,13 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 }
 
 void terminarProceso(t_pcb* proceso){
-	log_info(logKernelPantalla,"Terminando proceso--->PID:%d--->Exit Code:%d\n",proceso->pid,proceso->exitCode);
-	finalizarHiloPrograma(proceso->pid);
+	log_info(logKernelPantalla,"Terminando proceso--->PID:%d--->Exit Code:%d",proceso->pid,proceso->exitCode);
+	log_info(logKernelPantalla,"Descripcion Exit Code:%s",obtenerDescripcionExitCode(proceso->exitCode));
+
+	if(!verificarHiloFinalizado(proceso->pid)){
+		informarConsola(buscarSocketHiloPrograma(proceso->pid),obtenerDescripcionExitCode(proceso->exitCode),strlen(obtenerDescripcionExitCode(proceso->exitCode)));
+		finalizarHiloPrograma(proceso->pid);
+	}
 
 	pthread_mutex_lock(&mutexMemoria);
 	liberarRecursosEnMemoria(proceso);

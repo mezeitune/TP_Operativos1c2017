@@ -20,7 +20,7 @@ void interfaceTablaGlobalArchivos();
 void interfaceSolicitarContenidoMemoria();
 void interfaceModificarGradoMultiprogramacion();
 
-void finalizarProcesoVoluntariamente(int pid);
+void finalizarProcesoVoluntariamente(int pid,int exitCode);
 void imprimirListadoDeProcesos(t_list* procesos);
 void filtrarPorPidYMostrar(t_list* cola);
 void interfazHandlerParaFileSystem(char orden,int socket_aceptado);
@@ -111,7 +111,7 @@ void interfaceFinalizarProcesoVoluntariamente(){
 				log_info(logKernel,"El proceso ya ha finalizado--->PID:%d\n",pid);
 				return;
 				}
-	finalizarProcesoVoluntariamente(pid);
+	finalizarProcesoVoluntariamente(pid,exitCodeArray[EXIT_END_OF_PROCESS]->value);
 }
 
 void interfaceSolicitarContenidoMemoria(){
@@ -283,9 +283,9 @@ void imprimirListadoDeProcesos(t_list* procesos){
 
 
 
-void finalizarProcesoVoluntariamente(int pid){
+void finalizarProcesoVoluntariamente(int pid,int exitCode){
 	pthread_mutex_lock(&mutexNuevoProceso);
-	buscarProcesoYTerminarlo(pid);
+	buscarProcesoYTerminarlo(pid,exitCode);
 	pthread_mutex_unlock(&mutexNuevoProceso);
 }
 

@@ -188,7 +188,8 @@ void informarEstadisticas(t_hiloPrograma* programaAFinalizar){
 	log_info(logConsola,"\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
 	log_info(logConsola,"\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
 
-	printf("\tEstadisticas programa--->PID:%d\n",programaAFinalizar->pid);
-	printf("\tHora de inicializacion:   %s\n", asctime(&programaAFinalizar->tiempoInicio));
-	printf("\tHora de finalizacion:   %s\n\tTiempo de ejecucion:   %.f Segundos\n\n\tCantidad de impresiones:   %d\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
+
+	printf("\033[22;36mEstadisticas programa--->PID:%d\033[0m\n",programaAFinalizar->pid);
+	printf("\033[22;36m\tHora de inicializacion:%s\033[0m\n", asctime(&programaAFinalizar->tiempoInicio));
+	printf("\033[22;36m\tHora de finalizacion: %s\n\tTiempo de ejecucion: %.f Segundos\n\n\tCantidad de impresiones:%d\033[0m\n",asctime(&tiempoFinalizacion),seconds,programaAFinalizar->cantImpresiones);
 }

@@ -61,7 +61,7 @@ void handShakeCPU(int socketCPU);
 void interruptHandler(int socket,char orden);
 void imprimirPorConsola(int socketAceptado);
 void gestionarFinalizarProgramaConsola(int socket);
-int buscarProcesoYTerminarlo(int pid);
+int buscarProcesoYTerminarlo(int pid,int exitCode);
 void gestionarCierreConsola(int socket);
 void gestionarCierreCpu(int socketCpu);
 void gestionarAlocar(int socket);
@@ -352,7 +352,7 @@ void abortarProcesos(char* procesosFinalizar){
 			free(consola);
 			pthread_mutex_unlock(&mutexListaConsolas);
 
-			finalizarProcesoVoluntariamente(pid);
+			finalizarProcesoVoluntariamente(pid,exitCodeArray[EXIT_DISCONNECTED_CONSOLE]->value);
 			desplazamiento ++;
 		}
 	free(procesosFinalizar);
@@ -362,15 +362,14 @@ void abortarProcesos(char* procesosFinalizar){
 void gestionarFinalizarProgramaConsola(int socket){
 	log_warning(logKernel,"La consola  %d  ha solicitado finalizar un proceso",socket);
 	recv(socket,&pid,sizeof(int),0);
-	finalizarProcesoVoluntariamente(pid);
+	finalizarProcesoVoluntariamente(pid,exitCodeArray[EXIT_END_OF_PROCESS]->value);
 }
 
-int buscarProcesoYTerminarlo(int pid){
+int buscarProcesoYTerminarlo(int pid,int exitCode){
 	log_info(logKernelPantalla,"Buscando proceso para finalizar--->PID: %d\n",pid);
 	int encontro=0;
 	t_pcb *procesoATerminar;
 	t_cpu *cpuAFinalizar = malloc(sizeof(t_cpu));
-	t_semYPCB *semYPCBAEliminar = malloc(sizeof(t_semYPCB));
 
 	_Bool verificarPid(t_pcb* pcb){
 		return (pcb->pid==pid);
@@ -446,7 +445,7 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_unlock(&mutexColaBloqueados);
 	}
 
-	procesoATerminar->exitCode = exitCodeArray[EXIT_END_OF_PROCESS]->value;
+	procesoATerminar->exitCode = exitCode;
 	terminarProceso(procesoATerminar);
 
 	return 0;
@@ -690,7 +689,9 @@ void selectorConexiones() {
 										pthread_mutex_unlock(&mutex_masterSet);
 
 										if (nuevoFD > maximoFD)	maximoFD = nuevoFD;
-										log_info(logKernelPantalla,"Nueva conexion en IP: %s en socket %d",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP, INET6_ADDRSTRLEN), nuevoFD);
+										log_info(logKernelPantalla,"\033[22;34mNueva conexion en IP: %s en socket %d\033[0m\n",
+												inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),
+												remoteIP, INET6_ADDRSTRLEN), nuevoFD);
 									}
 									else if(socket == descriptor_inotify){
 										char* mensaje = malloc(sizeof(struct inotify_event));
