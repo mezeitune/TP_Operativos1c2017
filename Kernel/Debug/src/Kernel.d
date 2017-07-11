@@ -3,8 +3,8 @@ src/Kernel.d: ../src/Kernel.c ../src/pcb.h ../src/configuraciones.h \
  ../src/planificacion.h ../src/conexionMemoria.h ../src/contabilidad.h \
  ../src/semaforosAnsisop.h ../src/comandosCPU.h \
  ../src/listasAdministrativas.h ../src/excepciones.h \
- ../src/conexionConsola.h ../src/sockets.h ../src/capaFilesystem.h \
- ../src/heap.h
+ ../src/conexionConsola.h ../src/sockets.h ../src/heap.h \
+ ../src/capaFilesystem.h
 
 ../src/pcb.h:
 
@@ -34,6 +34,6 @@ src/Kernel.d: ../src/Kernel.c ../src/pcb.h ../src/configuraciones.h \
 
 ../src/sockets.h:
 
-../src/capaFilesystem.h:
-
 ../src/heap.h:
+
+../src/capaFilesystem.h:

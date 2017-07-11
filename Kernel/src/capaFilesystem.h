@@ -10,6 +10,7 @@
 #include "sockets.h"
 #include <commons/collections/list.h>
 #include "sincronizacion.h"
+#include "excepciones.h"
 
 typedef struct{
 	char* path;
@@ -532,6 +533,7 @@ int disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
 		free(entrada);
 		return 1;
 	}
+	return 0;
 }
 
 void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal){

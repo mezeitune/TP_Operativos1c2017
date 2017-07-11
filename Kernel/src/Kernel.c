@@ -379,10 +379,6 @@ int buscarProcesoYTerminarlo(int pid,int exitCode){
 	}
 
 
-	_Bool verificarPidSemYPCB(t_semYPCB* semYPCB){
-		return (semYPCB->pcb->pid == pid);
-	}
-
 	if(!encontro){
 		pthread_mutex_lock(&mutexListaEspera);
 		if(list_any_satisfy(listaEspera,(void*)verificarPid)){
@@ -404,7 +400,6 @@ int buscarProcesoYTerminarlo(int pid,int exitCode){
 			pthread_mutex_lock(&mutexListaCPU);
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 			pthread_mutex_unlock(&mutexListaCPU);
-
 
 			expropiarVoluntariamente(cpuAFinalizar->socket);
 			encontro=1;
@@ -436,7 +431,7 @@ int buscarProcesoYTerminarlo(int pid,int exitCode){
 
 
 	if(!encontro){
-		pthread_mutex_lock(&mutexColaBloqueados);
+		pthread_mutex_lock(&mutexColaBloqueados); /*TODO: Si esta en bloqueados, deberiamos aumentar el semaforo en el cual estuvo encolado*/
 		if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			log_info(logKernelPantalla,"Procesos a finalizar en bloqueados--->PID: %d\n",pid);
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
@@ -712,7 +707,7 @@ void selectorConexiones() {
 }
 
 void actualizarConfiguraciones(){
-	log_info(logKernel, "Leyendo cambios en archivo de config");
+	log_info(logKernelPantalla, "Leyendo cambios en archivo de config");
 	t_config* configuraciones = config_create(ruta_config);
 	config_quantum = config_get_int_value(configuraciones, "QUANTUM");
 	config_quantumSleep = config_get_int_value(configuraciones, "QUANTUM_SLEEP");

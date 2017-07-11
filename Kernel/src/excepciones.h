@@ -12,7 +12,6 @@
 #include "sockets.h"
 #include "listasAdministrativas.h"
 #include "sincronizacion.h"
-#include "capaFilesystem.h"
 #include "logs.h"
 
 typedef struct{

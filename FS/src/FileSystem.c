@@ -118,7 +118,6 @@ void connectionHandler()
 	recv(socketKernel,path,pathSize,0);
 	strcpy(path + pathSize , "\0");
 
-	log_info(logConsolaPantalla,"Iniciando rutina de atencion");
     	switch(orden){
 		case 'V'://validar archivo
 			validarArchivoFunction(path);
@@ -139,7 +138,6 @@ void connectionHandler()
 			log_error(logConsolaPantalla,"Orden no definida:%c",orden);
 			break;
 		}
-    	log_info(logConsolaPantalla,"Finalizando rutina de atencion");
     	orden = '\0';
 }
 void selectorConexiones() {
