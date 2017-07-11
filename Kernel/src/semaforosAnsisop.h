@@ -133,14 +133,15 @@ void expropiarProcesoBloqueado(int socket,char* semaforoId){
 
 	recv(socket, &rafagasEjecutadas, sizeof(int), 0);
 
+	actualizarRafagas(proceso->pid,rafagasEjecutadas);
+	removerDeColaEjecucion(proceso->pid);
+	cambiarEstadoCpu(socket,OCIOSA);
+
+	log_info(logKernelPantalla,"Proceso encolado en Bloqueados--->PID:%d\n",proceso->pid);
 	pthread_mutex_lock(&mutexColaBloqueados);
 	list_add(colaBloqueados,proceso);
 	pthread_mutex_unlock(&mutexColaBloqueados);
 
-
-	actualizarRafagas(proceso->pid,rafagasEjecutadas);
-	removerDeColaEjecucion(proceso->pid);
-	cambiarEstadoCpu(socket,OCIOSA);
 	sem_post(&sem_CPU);
 
 	encolarProcesoBloqueadoASemaforo(proceso->pid,semaforoId);

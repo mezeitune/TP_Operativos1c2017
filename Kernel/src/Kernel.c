@@ -340,7 +340,8 @@ void abortarProcesos(char* procesosFinalizar){
 
 	int cantidad = *((int*)procesosFinalizar + desplazamiento);
 	desplazamiento ++;
-	printf("Cantidad de procesos a abortar:%d\n",cantidad);
+
+	log_info(logKernelPantalla,"Cantidad de procesos a abortar:%d\n",cantidad);
 
 	for(i=0;i<cantidad;i++){
 
@@ -360,7 +361,7 @@ void abortarProcesos(char* procesosFinalizar){
 
 
 void gestionarFinalizarProgramaConsola(int socket){
-	log_warning(logKernel,"La consola  %d  ha solicitado finalizar un proceso ",socket);
+	log_warning(logKernel,"La consola  %d  ha solicitado finalizar un proceso",socket);
 	recv(socket,&pid,sizeof(int),0);
 	finalizarProcesoVoluntariamente(pid);
 }
@@ -387,7 +388,7 @@ int buscarProcesoYTerminarlo(int pid){
 	if(!encontro){
 		pthread_mutex_lock(&mutexListaEspera);
 		if(list_any_satisfy(listaEspera,(void*)verificarPid)){
-			printf("Proceso a finalizar en Espera\n");
+			log_info(logKernelPantalla,"Procesos a finalizar en espera--->PID: %d\n",pid);
 			procesoATerminar=list_remove_by_condition(listaEspera,(void*)verificarPid);
 			encontro = 1;
 		}
@@ -400,7 +401,7 @@ int buscarProcesoYTerminarlo(int pid){
 		pthread_mutex_unlock(&mutexColaEjecucion);
 
 		if(estaEjecutando){
-			printf("Proceso a finalizar en Ejecucion\n");
+			log_info(logKernelPantalla,"Procesos a finalizar en ejecucion--->PID: %d\n",pid);
 
 			pthread_mutex_lock(&mutexListaCPU);
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
@@ -417,7 +418,7 @@ int buscarProcesoYTerminarlo(int pid){
 	if(!encontro){
 		pthread_mutex_lock(&mutexColaNuevos);
 		if(list_any_satisfy(colaNuevos,(void*)verificarPid)){
-			printf("Proceso a finalizar en Nuevos\n");
+			log_info(logKernelPantalla,"Procesos a finalizar en nuevos--->PID: %d\n",pid);
 			procesoATerminar=list_remove_by_condition(colaNuevos,(void*)verificarPid);
 			encontro = 1;
 		}
@@ -427,7 +428,7 @@ int buscarProcesoYTerminarlo(int pid){
 	if(!encontro){
 		pthread_mutex_lock(&mutexColaListos);
 		if(list_any_satisfy(colaListos,(void*)verificarPid)){
-			printf("Proceso a finalizar en Listos\n");
+			log_info(logKernelPantalla,"Procesos a finalizar en listos--->PID: %d\n",pid);
 			procesoATerminar=list_remove_by_condition(colaListos,(void*)verificarPid);
 			sem_wait(&sem_procesoListo);
 			encontro = 1;
@@ -439,37 +440,12 @@ int buscarProcesoYTerminarlo(int pid){
 	if(!encontro){
 		pthread_mutex_lock(&mutexColaBloqueados);
 		if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
-			printf("Proceso a finalizar en Bloqueados\n");
+			log_info(logKernelPantalla,"Procesos a finalizar en bloqueados--->PID: %d\n",pid);
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
 			encontro = 1;
 		}
 		pthread_mutex_unlock(&mutexColaBloqueados);
 	}
-
-	if(!encontro){
-		pthread_mutex_lock(&mutexListaSemYPCB);
-		if(list_any_satisfy(listaSemYPCB,(void*)verificarPidSemYPCB)){
-			printf("Proceso a finalizar en Semaforo\n");
-			semYPCBAEliminar = list_remove_by_condition(listaSemYPCB,(void*)verificarPidSemYPCB);
-			procesoATerminar = semYPCBAEliminar->pcb;
-			encontro = 1;
-		}
-		pthread_mutex_unlock(&mutexListaSemYPCB);
-	}
-
-
-	if(!encontro){
-		pthread_mutex_lock(&mutexListaFinQuantum);
-		if(list_any_satisfy(listaFinQuantum,(void*)verificarPid)){
-			printf("Proceso a finalizar en Fin quantum\n");
-			procesoATerminar = list_remove_by_condition(listaFinQuantum,(void*)verificarPid);
-			encontro = 1;
-		}
-		pthread_mutex_unlock(&mutexListaFinQuantum);
-	}
-
-
-	printf("ENCONTRO:%d\n",encontro);
 
 	procesoATerminar->exitCode = exitCodeArray[EXIT_END_OF_PROCESS]->value;
 	terminarProceso(procesoATerminar);
