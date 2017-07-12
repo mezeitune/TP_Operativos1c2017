@@ -85,7 +85,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			ejecutarInstruccion();
 			cantidadInstruccionesAEjecutarPorKernel++; //para FIFO en si
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
-			log_info(logConsola,"cantidad de instrucciones ejecutadas %d\n", cantidadInstruccionesEjecutadas);
+			log_info(logConsola,"Cantidad de instrucciones ejecutadas %d\n", cantidadInstruccionesEjecutadas);
 
 			if(verificaInterrupcion()) {
 						expropiar();
@@ -99,7 +99,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
 			log_info(logConsola,"Quedan por ejecutar %d instrucciones", cantidadInstruccionesAEjecutarPorKernel);
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
-			log_info(logConsola,"cantidad de instrucciones ejecutadas %d", cantidadInstruccionesEjecutadas);
+			log_info(logConsola,"Cantidad de instrucciones ejecutadas %d", cantidadInstruccionesEjecutadas);
 
 			if(verificaInterrupcion()) {
 					expropiar();
@@ -112,12 +112,12 @@ void EjecutarProgramaMedianteAlgoritmo(){
 }
 void ejecutarInstruccion(){
 
-	char orden;
-	orden = '\0';
+	//char orden;
+	//orden = '\0';
 	char *instruccion = obtener_instruccion();
-	retardo_entre_instruccion=retardo_entre_instruccion/1000;
+
 	sleep(retardo_entre_instruccion);
-	log_info(logConsola,"El sleep es : %d ms",retardo_entre_instruccion);
+
 	log_warning(logConsolaPantalla,"Evaluando -> %s\n", instruccion );
 	analizadorLinea(instruccion , &functions, &kernel_functions);
 

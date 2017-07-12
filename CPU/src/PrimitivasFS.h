@@ -148,11 +148,19 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
-
+	char* mensajeRecibido;
+	char* valor_variable_char;
 	if(resultadoEjecucion>0){
 		recv(socketKernel,infoLeida,tamanio,0);
 		log_info(logConsolaPantalla,"La informacion leida es %s",infoLeida);
 		almacenarDatosEnMemoria(infoLeida,tamanio,num_pagina,offset);
+
+		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, sizeof(t_valor_variable))<0){
+					direccionInvalida();
+				}else{
+						valor_variable_char=mensajeRecibido;
+				}
+		printf("/n/nlo que lei es : %s/n",valor_variable_char);
 	}else{
 		log_error(logConsolaPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d",pid,descriptor_archivo);
 		interrupcion = RES_EJEC_NEGATIVO;

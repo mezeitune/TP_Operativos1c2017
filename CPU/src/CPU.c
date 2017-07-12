@@ -32,33 +32,6 @@ int main(void) {
 }
 
 
-//------------------------------EXPROPIAR PROCESOS-------------------------------------
-
-void expropiarVoluntariamente(){
-
-	if(cpuExpropiadaPorKernel == -1) expropiarPorKernel();
-	if(cpuBloqueadaPorSemANSISOP == 0) log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
-	else if(cpuBloqueadaPorSemANSISOP !=0) expropiarPorRR();
-
-
-}
-
-void expropiarPorRRYCerrar(){
-	char comandoExpropiarCpu = 'R';
-
-	if(pcb_actual->programCounter == pcb_actual->cantidadInstrucciones){//Por si justo el quantum toca en el end
-		return;
-	}
-	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
-	send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
-	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
-	serializarPcbYEnviar(pcb_actual,socketKernel);
-	log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
-	return;
-}
-//------------------------------EXPROPIAR PROCESOS--------------------------------------
-
-
 
 //-----------------------------PEDIDOS AL KERNEL-----------------------------------------
 void enviarAlKernelPedidoDeNuevoProceso(int socketKernel){
@@ -70,8 +43,9 @@ void recibirYMostrarAlgortimoDePlanificacion(int socketKernel){
 	recv(socketKernel,&quantum,sizeof(int),0);
 	recv(socketKernel,&retardo_entre_instruccion,sizeof(int),0);
 
-	printf("Quantum:%d\n",quantum);
-	printf("Quantum sleep:%d\n",retardo_entre_instruccion);
+	log_info(logConsolaPantalla,"Quantum:%d\n",quantum);
+	retardo_entre_instruccion=retardo_entre_instruccion/1000;
+	log_info(logConsolaPantalla,"Quantum sleep:%d ms\n",retardo_entre_instruccion);
 
 	cantidadInstruccionesAEjecutarPorKernel = quantum;
 

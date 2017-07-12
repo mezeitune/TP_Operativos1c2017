@@ -162,5 +162,26 @@ void expropiarPorStackOverflow(){
 
 	procesoFinalizado = 1;
 }
+void expropiarVoluntariamente(){
 
+	if(cpuExpropiadaPorKernel == -1) expropiarPorKernel();
+	if(cpuBloqueadaPorSemANSISOP == 0) log_warning(logConsolaPantalla, "El proceso ANSISOP de PID %d ha sido expropiado en la instruccion %d por semaforo negativo", pcb_actual->pid, pcb_actual->programCounter);
+	else if(cpuBloqueadaPorSemANSISOP !=0) expropiarPorRR();
+
+
+}
+
+void expropiarPorRRYCerrar(){
+	char comandoExpropiarCpu = 'R';
+
+	if(pcb_actual->programCounter == pcb_actual->cantidadInstrucciones){//Por si justo el quantum toca en el end
+		return;
+	}
+	send(socketKernel,&comandoExpropiarCpu , sizeof(char),0);
+	send(socketKernel, &cpuFinalizadaPorSignal, sizeof(int),0);
+	send(socketKernel,&cantidadInstruccionesEjecutadas,sizeof(int),0);
+	serializarPcbYEnviar(pcb_actual,socketKernel);
+	log_info(logConsola, "La CPU ha enviado el  PCB serializado al kernel");
+	return;
+}
 #endif /* INTERRUPCIONES_H_ */
