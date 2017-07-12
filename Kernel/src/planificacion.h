@@ -52,7 +52,12 @@ void administrarFinProcesos();
 void crearProceso(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma);
 t_codigoPrograma* buscarCodigoDeProceso(int pid);
-void terminarProceso(t_pcb* proceso);
+
+void terminarProceso(t_pcb* proceso);void finalizarHiloPrograma(int pid);
+void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
+void liberarMemoriaDinamica(int pid);
+void cambiarEstadoATerminado(t_pcb* procesoTerminar);
+void verificarArchivosAbiertos(int pid);
 
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
@@ -136,58 +141,6 @@ void administrarNuevosProcesos(){
 	log_info(logKernel,"Hilo administrador de nuevos procesos finalizado");
 }
 
-void administrarFinProcesos(){
-	int indice;
-	t_pcb* proceso;
-
-	while(!flagTerminarPlanificadorLargoPlazo){
-		sem_wait(&sem_administrarFinProceso);
-
-				if(flagPlanificacion){
-					pthread_mutex_lock(&mutexListaEspera);
-						if(!list_is_empty(listaEspera)){
-
-							for(indice = 0; indice< listaEspera->elements_count ; indice++){
-								proceso=list_remove(listaEspera,indice);
-								terminarProceso(proceso);
-							}
-						}
-						pthread_mutex_unlock(&mutexListaEspera);
-					/*TODO:La tabla del proceso de archivos abiertos no la borro para que qude el registro*/
-				}
-	}
-	log_info(logKernel,"Hilo administrador de fin de procesos finalizado");
-}
-
-void liberarMemoriaDinamica(int pid){
-	log_info(logKernel,"Liberando Memoria Dinamica ");
-	int bloquesSinLiberar;
-	int sizeSinLiberar;
-	_Bool verificaPid(t_contable* proceso){
-		return proceso->pid == pid;
-	}
-
-	pthread_mutex_lock(&mutexListaContable);
-	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
-	bloquesSinLiberar = proceso->cantAlocar - proceso->cantLiberar;
-	sizeSinLiberar = proceso->sizeAlocar - proceso->sizeLiberar;
-	list_add(listaContable,proceso);
-	pthread_mutex_unlock(&mutexListaContable);
-
-	if(bloquesSinLiberar > 0) log_warning(logKernelPantalla,"El proceso no libero %d bloques de Heap, acumulando %d bytes--->PID:%d",bloquesSinLiberar,sizeSinLiberar,pid);
-
-		destruirTodasLasPaginasHeapDeProceso(pid);
-
-}
-
-t_codigoPrograma* buscarCodigoDeProceso(int pid){
-	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
-			return (codigoPrograma->pid == pid);
-		}
-
-	return list_remove_by_condition(listaCodigosProgramas, (void*)verificarPid);
-
-}
 
 void crearProceso(t_pcb* proceso,t_codigoPrograma* codigoPrograma){
 	log_info(logKernelPantalla,"Cambiando nuevo proceso desde Nuevos a Listos--->PID: %d",proceso->pid);
@@ -221,6 +174,39 @@ int inicializarProcesoEnMemoria(t_pcb* proceso, t_codigoPrograma* codigoPrograma
 	return 0;
 }
 
+void administrarFinProcesos(){
+	int indice;
+	t_pcb* proceso;
+
+	while(!flagTerminarPlanificadorLargoPlazo){
+		sem_wait(&sem_administrarFinProceso);
+
+				if(flagPlanificacion){
+					pthread_mutex_lock(&mutexListaEspera);
+						if(!list_is_empty(listaEspera)){
+
+							for(indice = 0; indice< listaEspera->elements_count ; indice++){
+								proceso=list_remove(listaEspera,indice);
+								terminarProceso(proceso);
+							}
+						}
+						pthread_mutex_unlock(&mutexListaEspera);
+					/*TODO:La tabla del proceso de archivos abiertos no la borro para que qude el registro*/
+				}
+	}
+	log_info(logKernel,"Hilo administrador de fin de procesos finalizado");
+}
+
+
+t_codigoPrograma* buscarCodigoDeProceso(int pid){
+	_Bool verificarPid(t_codigoPrograma* codigoPrograma){
+			return (codigoPrograma->pid == pid);
+		}
+
+	return list_remove_by_condition(listaCodigosProgramas, (void*)verificarPid);
+
+}
+
 void terminarProceso(t_pcb* proceso){
 	log_info(logKernelPantalla,"Terminando proceso--->PID:%d--->Exit Code:%d",proceso->pid,proceso->exitCode);
 	log_info(logKernelPantalla,"Descripcion Exit Code:%s",obtenerDescripcionExitCode(proceso->exitCode));
@@ -235,12 +221,95 @@ void terminarProceso(t_pcb* proceso){
 	pthread_mutex_unlock(&mutexMemoria);
 
 	liberarMemoriaDinamica(proceso->pid);
+
+	verificarArchivosAbiertos(proceso->pid);
+
 	cambiarEstadoATerminado(proceso);
-
-	//verificarArchivosAbiertos(proceso->pid);
-
 	disminuirGradoMultiprogramacion();
 	sem_post(&sem_admitirNuevoProceso);
+}
+
+void finalizarHiloPrograma(int pid){
+	t_consola* consola = malloc(sizeof(t_consola));
+
+	char comandoFinalizarHiloPrograma='F';
+
+	_Bool verificaPid(t_consola* consolathread){
+			return (consolathread->pid == pid);
+	}
+
+		pthread_mutex_lock(&mutexListaConsolas);
+		consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
+		pthread_mutex_unlock(&mutexListaConsolas);
+
+		informarConsola(consola->socketHiloPrograma,&comandoFinalizarHiloPrograma,sizeof(char));
+		eliminarSocket(consola->socketHiloPrograma);
+		free(consola);
+}
+
+void liberarRecursosEnMemoria(t_pcb* proceso){
+	log_info(logKernel,"Liberando proceso en memoria--->PID: %d",proceso->pid);
+	char comandoFinalizarProceso= 'F';
+
+	send(socketMemoria,&comandoFinalizarProceso,sizeof(char),0);
+	send(socketMemoria,&proceso->pid,sizeof(int),0);
+
+}
+
+void liberarMemoriaDinamica(int pid){
+	log_info(logKernel,"Liberando Memoria Dinamica ");
+	int bloquesSinLiberar;
+	int sizeSinLiberar;
+	_Bool verificaPid(t_contable* proceso){
+		return proceso->pid == pid;
+	}
+
+	pthread_mutex_lock(&mutexListaContable);
+	t_contable* proceso = list_remove_by_condition(listaContable,(void*)verificaPid);
+	bloquesSinLiberar = proceso->cantAlocar - proceso->cantLiberar;
+	sizeSinLiberar = proceso->sizeAlocar - proceso->sizeLiberar;
+	list_add(listaContable,proceso);
+	pthread_mutex_unlock(&mutexListaContable);
+
+	if(bloquesSinLiberar > 0) log_warning(logKernelPantalla,"El proceso no libero %d bloques de Heap, acumulando %d bytes--->PID:%d",bloquesSinLiberar,sizeSinLiberar,pid);
+
+		destruirTodasLasPaginasHeapDeProceso(pid);
+
+}
+
+
+
+void verificarArchivosAbiertos(int pid){
+	int i;
+
+	_Bool verificaPid(t_indiceTablaProceso* indice){
+		return indice->pid==pid;
+	}
+
+	t_entradaTablaProceso*entrada;
+	t_indiceTablaProceso* indice = list_find(listaTablasProcesos,(void*)verificaPid);
+
+	for(i=0;i<indice->tablaProceso->elements_count;i++){
+		entrada=list_get(indice->tablaProceso,i);
+		disminuirOpenYVerificarExistenciaEntradaGlobal(entrada->indiceGlobal);
+	}
+}
+
+void cambiarEstadoATerminado(t_pcb* procesoTerminar){
+	log_info(logKernelPantalla,"Almacenando en Terminados--->PID:%d\n",procesoTerminar->pid);
+	_Bool verificaPid(t_pcb* pcb){
+			return (pcb->pid == procesoTerminar->pid);
+		}
+
+	pthread_mutex_lock(&mutexColaTerminados);
+	list_add(colaTerminados,procesoTerminar);
+	pthread_mutex_unlock(&mutexColaTerminados);
+}
+
+void disminuirGradoMultiprogramacion(){
+	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
+	gradoMultiProgramacion--;
+	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 }
 
 
@@ -577,24 +646,10 @@ void gestionarFinProcesoCPU(int socketCPU){
 
 }
 
-void liberarRecursosEnMemoria(t_pcb* proceso){
-	log_info(logKernel,"Liberando proceso en memoria--->PID: %d",proceso->pid);
-	char comandoFinalizarProceso= 'F';
-
-	send(socketMemoria,&comandoFinalizarProceso,sizeof(char),0);
-	send(socketMemoria,&proceso->pid,sizeof(int),0);
-
-}
 
 void aumentarGradoMultiprogramacion(){
 	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
 	gradoMultiProgramacion++;
-	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
-}
-
-void disminuirGradoMultiprogramacion(){
-	pthread_mutex_lock(&mutex_gradoMultiProgramacion);
-	gradoMultiProgramacion--;
 	pthread_mutex_unlock(&mutex_gradoMultiProgramacion);
 }
 

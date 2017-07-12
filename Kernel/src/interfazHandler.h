@@ -206,7 +206,7 @@ void imprimirTablaArchivosProceso(int pid){
 
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		log_info(logKernelPantalla,"\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->globalFd,entrada->puntero);
+		log_info(logKernelPantalla,"\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }

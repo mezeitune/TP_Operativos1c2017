@@ -25,7 +25,7 @@ typedef struct{
 typedef struct{
 	int fd;
 	char* flags;
-	int globalFd;
+	int indiceGlobal;
 	int puntero;
 }t_entradaTablaProceso;
 
@@ -289,7 +289,7 @@ void escribirArchivo(t_fsEscribir* data){
 			return;
 		}
 
-			char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
+			char* direccion = buscarDireccionEnTablaGlobal(entrada->indiceGlobal);
 
 			int tamanoDireccion=sizeof(char)*strlen(direccion);
 
@@ -360,7 +360,7 @@ void leerArchivo(t_fsLeer* data){
 			excepcionPermisosLectura(socket,pid);
 			return;
 		}
-		char* direccion = buscarDireccionEnTablaGlobal(entrada->globalFd);
+		char* direccion = buscarDireccionEnTablaGlobal(entrada->indiceGlobal);
 
 		int tamanoDireccion=sizeof(char)*strlen(direccion);
 
@@ -455,7 +455,7 @@ int actualizarTablaDelProceso(int pid,char* flags,int indiceEnTablaGlobal){
 		 t_entradaTablaProceso* entrada = malloc(sizeof(t_entradaTablaProceso));
 		 entrada->fd = entradaTablaExistente->tablaProceso->elements_count + 3;
 		 entrada->flags = flags;
-		 entrada->globalFd = indiceEnTablaGlobal;
+		 entrada->indiceGlobal = indiceEnTablaGlobal;
 		 entrada->puntero = 0;
 		 list_add(entradaTablaExistente->tablaProceso,entrada);
 		 list_add(listaTablasProcesos,entradaTablaExistente);//la vuelvo a agregar a la lista
@@ -474,7 +474,7 @@ int borrarEntradaTablaProceso(int pid,int fd){
 		}
 	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
 	t_entradaTablaProceso* entrada = list_remove_by_condition(entradaTablaProceso->tablaProceso,(void*)verificaFd);
-	globalFd = entrada->globalFd;
+	globalFd = entrada->indiceGlobal;
 	free(entrada);
 	list_add(listaTablasProcesos,entradaTablaProceso);
 	return globalFd;
@@ -549,7 +549,7 @@ void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal){
 
 		for(j=0;j<indiceTabla->tablaProceso->elements_count;j++){
 			entrada = list_remove(indiceTabla->tablaProceso,j);
-			if(entrada->globalFd > indiceTablaGlobal) entrada->globalFd--;
+			if(entrada->indiceGlobal > indiceTablaGlobal) entrada->indiceGlobal--;
 			list_add(indiceTabla->tablaProceso,entrada);
 		}
 
@@ -603,7 +603,7 @@ int buscarIndiceGlobalEnTablaProceso(int pid,int fileDescriptor){
 	t_indiceTablaProceso* indice = list_remove_by_condition(listaTablasProcesos,(void*)verificaPid);
 	t_entradaTablaProceso* entrada = list_remove_by_condition(indice->tablaProceso,(void*)verificaFd);
 
-	int indiceTablaGlobal = entrada->globalFd;
+	int indiceTablaGlobal = entrada->indiceGlobal;
 
 	list_add(indice->tablaProceso,entrada);
 	list_add(listaTablasProcesos,indice);

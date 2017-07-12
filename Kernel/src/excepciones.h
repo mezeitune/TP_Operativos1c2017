@@ -50,11 +50,6 @@ t_pcb* expropiarPorEjecucion(int socket);
 void cambiarEstadoCpu(int socket,int estado);
 void removerDeColaEjecucion(int pid);
 
-void finalizarHiloPrograma(int pid);
-void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
-void liberarMemoriaDinamica(int pid);
-void cambiarEstadoATerminado(t_pcb* procesoTerminar);
-void verificarArchivosAbiertos(int pid);
 
 void encolarEnListaParaTerminar(t_pcb* proceso);
 
@@ -245,35 +240,7 @@ t_pcb* expropiarPorEjecucion(int socket){
 		return pcb;
 }
 
-void cambiarEstadoATerminado(t_pcb* procesoTerminar){
-	log_info(logKernelPantalla,"Almacenando en Terminados--->PID:%d\n",procesoTerminar->pid);
-	_Bool verificaPid(t_pcb* pcb){
-			return (pcb->pid == procesoTerminar->pid);
-		}
 
-	pthread_mutex_lock(&mutexColaTerminados);
-	list_add(colaTerminados,procesoTerminar);
-	pthread_mutex_unlock(&mutexColaTerminados);
-}
-
-void finalizarHiloPrograma(int pid){
-	int size=sizeof(char)* strlen("Finalizar");
-	char* mensaje = malloc(size * sizeof(char));
-	t_consola* consola = malloc(sizeof(t_consola));
-	mensaje = "Finalizar";
-	_Bool verificaPid(t_consola* consolathread){
-			return (consolathread->pid == pid);
-	}
-
-		pthread_mutex_lock(&mutexListaConsolas);
-		consola = list_remove_by_condition(listaConsolas,(void*)verificaPid);
-		informarConsola(consola->socketHiloPrograma,mensaje,size);
-		eliminarSocket(consola->socketHiloPrograma);
-		free(consola);
-		pthread_mutex_unlock(&mutexListaConsolas);
-
-	//free(mensaje);TODO: Ver este free
-}
 
 bool verificarHiloFinalizado(pid){
 	_Bool verificaPid(t_consola* consolathread){

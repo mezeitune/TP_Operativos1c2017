@@ -171,7 +171,7 @@ void recibirDatosDelKernel(int socketHiloKernel){
 		recv(socketHiloKernel,mensaje,size,0);
 		strcpy(mensaje+size,"\0");
 
-		if(strcmp(mensaje,"Finalizar")==0) {
+		if(strcmp(mensaje,"F")==0) {
 			flagCerrarHilo = 0;
 			free(mensaje);
 			break;

@@ -96,7 +96,7 @@ char* obtTamanioArchivo(char* ruta){
 void imprimirConfiguraciones(){
 		printf("---------------------------------------------------\n");
 		printf("CONFIGURACIONES\nIP FS:%s\nPUERTO FS:%s\nPUNTO MONTAJE:%s\n",ipFS,puertoFS,puntoMontaje);
-		printf("\n \nTAMANIO BLOQUS:%s\nCANTIDAD BLQOUES:%s\nMAGIC NUMBER:%s\n",tamanioBloquesEnChar,cantidadBloquesEnChar,magicNumber);
+		printf("\n \nTAMANIO BLOQUES:%d\nCANTIDAD BLQOUES:%d\nMAGIC NUMBER:%s\n",config_tamanioBloques,config_cantidadBloques,magicNumber);
 		printf("---------------------------------------------------\n");
 }
 
