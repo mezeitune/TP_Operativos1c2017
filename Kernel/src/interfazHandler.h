@@ -206,7 +206,7 @@ void imprimirTablaArchivosProceso(int pid){
 
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		printf("\t\t\t\t%d\t%s\t\t%d\t     %d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
+		printf("\t\t\t\t%d\t%s\t\t%d\t\t%d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }
@@ -306,7 +306,7 @@ void interfaceTablaGlobalArchivos(){
 	printf("\033[22;34mDireccion\tAperturas\033[0m\n");
 	for(i=0;i<tablaArchivosGlobal->elements_count;i++){
 		entrada = list_get(tablaArchivosGlobal,i);
-		log_info(logKernelPantalla,"\t%s\t%d\n",entrada->path,entrada->open);
+		printf("%s\t%d\n",entrada->path,entrada->open);
 	}
 }
 

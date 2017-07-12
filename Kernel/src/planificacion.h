@@ -280,8 +280,8 @@ void liberarMemoriaDinamica(int pid){
 
 
 void verificarArchivosAbiertos(int pid){
-	int i;
-
+	int i=0;
+	int cont=0;
 	_Bool verificaPid(t_indiceTablaProceso* indice){
 		return indice->pid==pid;
 	}
@@ -289,10 +289,15 @@ void verificarArchivosAbiertos(int pid){
 	t_entradaTablaProceso*entrada;
 	t_indiceTablaProceso* indice = list_find(listaTablasProcesos,(void*)verificaPid);
 
-	for(i=0;i<indice->tablaProceso->elements_count;i++){
+
+	while(cont<indice->tablaProceso->elements_count){
+		imprimirTablaArchivosProceso(pid);
+		interfaceTablaGlobalArchivos();
 		entrada=list_get(indice->tablaProceso,i);
-		disminuirOpenYVerificarExistenciaEntradaGlobal(entrada->indiceGlobal);
+		if(!disminuirOpenYVerificarExistenciaEntradaGlobal(entrada->indiceGlobal)) i++;
+		cont++;
 	}
+
 }
 
 void cambiarEstadoATerminado(t_pcb* procesoTerminar){
