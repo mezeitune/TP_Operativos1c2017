@@ -29,7 +29,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
 	if(resultadoEjecucion < 0){
-		log_error(logConsolaPantalla,"Error del proceso de PID %d al abrir un archivo de descriptor %d en modo %s",pid,descriptor,flagsMapeados);
+		log_error(logConsolaPantalla,"Error del proceso de PID %d al abrir un archivo en modo %s",pid,flagsMapeados);
 		interrupcion = RES_EJEC_NEGATIVO;
 		return 0;
 	}
@@ -58,9 +58,9 @@ void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d");
+	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d",pid,descriptor_archivo);
 	else {
-		log_error(logConsolaPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d");
+		log_error(logConsolaPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d",pid,descriptor_archivo);
 		interrupcion = RES_EJEC_NEGATIVO;
 	}
 }
@@ -113,9 +113,9 @@ void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_varia
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	send(socketKernel,&posicion,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d");
+	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d",pid,descriptor_archivo,posicion);
 	else {
-		log_error(logConsolaPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d");
+		log_error(logConsolaPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d",pid,descriptor_archivo,posicion);
 		interrupcion = RES_EJEC_NEGATIVO;
 	}
 }
@@ -154,7 +154,7 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 		log_info(logConsolaPantalla,"La informacion leida es %s",infoLeida);
 		almacenarDatosEnMemoria(infoLeida,tamanio,num_pagina,offset);
 	}else{
-		log_error(logConsolaPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d en la posicion %d");
+		log_error(logConsolaPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d",pid,descriptor_archivo);
 		interrupcion = RES_EJEC_NEGATIVO;
 	}
 }
