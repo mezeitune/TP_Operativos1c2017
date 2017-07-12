@@ -45,7 +45,7 @@ int verificaInterrupcion(){
 
 	if(interrupcionesEnKernel) {
 		interrupcion = FINALIZADO_VOLUNTARIAMENTE;
-		pcb_actual->exitCode = -8;
+		pcb_actual->exitCode = -8; /*TODO: Ver como agregar el exit code -7*/
 		return -1;
 	}
 

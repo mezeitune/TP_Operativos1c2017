@@ -73,7 +73,7 @@ char* obtener_instruccion(){
 
 	return instruccion;
 }
-void EjecutarProgramaMedianteAlgoritmo(){
+void EjecutarProgramaMedianteAlgoritmo(){ //Fase busqueda: Buscar la instruccion en memoria - La decodificas - Buscas los operandos - Ejecutas - Chequea interrupciones
 
 	cantidadInstruccionesAEjecutarDelPcbActual = pcb_actual->cantidadInstrucciones;
 

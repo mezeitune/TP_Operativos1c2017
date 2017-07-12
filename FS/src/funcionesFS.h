@@ -245,8 +245,11 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 
 		   int sizeRestante=size;
 
-		   char* infoTraidaDeLosArchivos = string_new();
-		   char* data;
+
+		   void* informacion = malloc(size);
+		   int desplazamiento=0;
+
+
 		   int sizeDentroBloque=0;
 		   int cantidadBloquesLeidos=0;
 
@@ -268,10 +271,11 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 
 				   bloque=fopen(nombreBloque, "rb");
 
-				   data=(char*)obtenerBytesDeUnArchivo(bloque,cursor,sizeDentroBloque); //En el primero bloque, arranca del cursor
-
-				   string_append(&infoTraidaDeLosArchivos,data);
+				   memcpy(informacion + desplazamiento,obtenerBytesDeUnArchivo(bloque,cursor,sizeDentroBloque),sizeDentroBloque);
+				   //data=(char*)obtenerBytesDeUnArchivo(bloque,cursor,sizeDentroBloque); //En el primero bloque, arranca del cursor
+				  // string_append(&infoTraidaDeLosArchivos,data);
 				   sizeRestante -= sizeDentroBloque;
+				   desplazamiento += sizeDentroBloque;
 			   }
 			   else{
 				   if(sizeRestante < config_tamanioBloques) sizeDentroBloque = sizeRestante; //Es el ultimo bloque a leer
@@ -285,10 +289,12 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 
 				   bloque=fopen(nombreBloque, "rb");
 
-				   data=(char*)obtenerBytesDeUnArchivo(bloque,0,sizeDentroBloque); //Siempre arranca del principio
+				   memcpy(informacion + desplazamiento, obtenerBytesDeUnArchivo(bloque,0,sizeDentroBloque),sizeDentroBloque);
 
-				   string_append(&infoTraidaDeLosArchivos,data);
+				  // data=(char*)obtenerBytesDeUnArchivo(bloque,0,sizeDentroBloque); //Siempre arranca del principio
+				  // string_append(&infoTraidaDeLosArchivos,data);
 				   sizeRestante -= sizeDentroBloque;
+				   desplazamiento += sizeDentroBloque;
 			   }
 			   d++; //Avanzo de bloque
 			   cantidadBloquesLeidos++;
@@ -296,11 +302,11 @@ void obtenerDatosArchivoFunction(char* path){//ver tema puntero , si lo tenog qu
 
 
 
-		log_info(logConsolaPantalla,"Informacion leida:%s\n",infoTraidaDeLosArchivos); //Esta trayendo un caracter de mas, si llega al final del bloque
+		log_info(logConsolaPantalla,"Informacion leida:%s\n",informacion); //Esta trayendo un caracter de mas, si llega al final del bloque
 		//si todod ok
 		validado=1;
 		send(socketKernel,&validado,sizeof(int),0);
-		send(socketKernel,infoTraidaDeLosArchivos,size,0);
+		send(socketKernel,informacion,size,0);
 	} else {
 		log_error(logConsolaPantalla,"No se puede leer porque el archivo no existe\n");
 		validado=-1;
