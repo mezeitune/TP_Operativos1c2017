@@ -401,7 +401,7 @@ int buscarProcesoYTerminarlo(int pid,int exitCode){
 			if(list_any_satisfy(listaCPU,(void*)verificarPidCPU)) cpuAFinalizar = list_find(listaCPU, (void*) verificarPidCPU);
 			pthread_mutex_unlock(&mutexListaCPU);
 
-			expropiarVoluntariamente(cpuAFinalizar->socket);
+			expropiarVoluntariamente(cpuAFinalizar->socket,exitCode);
 			encontro=1;
 			return 0 ;
 		}
@@ -454,9 +454,6 @@ void verificarInterrupcionesEnCPU(int socket){
 	_Bool verificaSocket(t_cpu* cpu){
 		return cpu->socket==socket;
 	}
-	_Bool verificaPid(int* pid){
-		return *pid == cpu->pid;
-	}
 
 	pthread_mutex_lock(&mutexListaCPU);
 	cpu = list_find(listaCPU,(void*)verificaSocket);
@@ -464,10 +461,9 @@ void verificarInterrupcionesEnCPU(int socket){
 
 	int i=0;
 	for(i=0;i<listaProcesosInterrumpidos->elements_count;i++){
-		int pid = *(int*)list_get(listaProcesosInterrumpidos,i);
-		if(pid == cpu->pid) {
-			log_warning(logKernelPantalla,"El proceso debe ser expropiado--->PID:%d\n",pid);
-			list_remove_and_destroy_element(listaProcesosInterrumpidos,i,free);
+		t_procesoAbortado* interrupcion = list_get(listaProcesosInterrumpidos,i);
+		if(interrupcion->pid == cpu->pid) {
+			log_warning(logKernelPantalla,"El proceso debe ser expropiado--->PID:%d\n",interrupcion->pid);
 			existeInterrupcion=1;
 		}
 	}
@@ -480,6 +476,10 @@ void recibirProcesoExpropiadoVoluntariamente(int socket){
 	log_info(logKernelPantalla,"Recibiendo proceso expropiado--->CPU:%d",socket);
 	int rafagas;
 
+	_Bool verificaPid(t_procesoAbortado* interrupcion){
+		return interrupcion->pid == proceso->pid;
+	}
+
 		proceso= recibirYDeserializarPcb(socket);
 
 		recv(socket,&rafagas,sizeof(int),0);
@@ -488,6 +488,9 @@ void recibirProcesoExpropiadoVoluntariamente(int socket){
 		cambiarEstadoCpu(socket,OCIOSA);
 		sem_post(&sem_CPU);
 
+		t_procesoAbortado* interrupcion=list_remove_by_condition(listaProcesosInterrumpidos,(void*)verificaPid);
+		proceso->exitCode = interrupcion->exitCode;
+		free(interrupcion);
 		pthread_mutex_lock(&mutexListaEspera);
 		list_add(listaEspera,proceso);
 		pthread_mutex_unlock(&mutexListaEspera);

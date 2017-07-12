@@ -15,6 +15,11 @@
 #include "logs.h"
 
 typedef struct{
+	int pid;
+	int exitCode;
+}t_procesoAbortado;
+
+typedef struct{
 	int value;
 	char* mensaje;
 }t_exitCode;
@@ -44,7 +49,7 @@ t_exitCode* exitCodeArray [CANTIDADEXCEPCIONES];
 void inicializarExitCodeArray();
 
 /*Rutinas para finalizar un proceso*/
-void expropiarVoluntariamente(int socket);
+void expropiarVoluntariamente(int socket,int exitCode);
 t_pcb* expropiarPorEjecucion(int socket);
 
 void cambiarEstadoCpu(int socket,int estado);
@@ -205,7 +210,7 @@ void excepcionDireccionInvalida(int socket){
  * Rutinas para finalizar un proceso
  */
 
-void expropiarVoluntariamente(int socket){
+void expropiarVoluntariamente(int socket,int exitCode){
 	log_info(logKernelPantalla,"Expropiando proceso--->CPU:%d",socket);
 
 	_Bool verificaSocket(t_cpu* cpu){
@@ -216,10 +221,11 @@ void expropiarVoluntariamente(int socket){
 	t_cpu* cpu=list_find(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
 
-	int *pid = malloc(sizeof(int));
-	*pid = cpu->pid;
+	t_procesoAbortado* interrupcion = malloc(sizeof(t_procesoAbortado));
+	interrupcion->pid=cpu->pid;
+	interrupcion->exitCode=exitCode;
 
-	list_add(listaProcesosInterrumpidos,pid);
+	list_add(listaProcesosInterrumpidos,interrupcion);
 }
 
 
