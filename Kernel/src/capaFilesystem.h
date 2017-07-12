@@ -523,7 +523,7 @@ void aumentarOpenEnTablaGlobal(char* direccion){
 }
 
 int disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
-	log_info(logKernel,"Verificando apertura en tabla global--->Indice:%d",indiceTablaGlobal);
+	log_info(logKernelPantalla,"Verificando apertura en tabla global--->Indice:%d",indiceTablaGlobal);
 	t_entradaTablaGlobal* entrada = list_get(tablaArchivosGlobal,indiceTablaGlobal);
 	entrada->open --;
 
@@ -537,7 +537,7 @@ int disminuirOpenYVerificarExistenciaEntradaGlobal(int indiceTablaGlobal){
 }
 
 void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal){
-	log_info(logKernel,"Actualizando indices globales mayores al indice eliminado:%d",indiceTablaGlobal);
+	log_info(logKernelPantalla,"Actualizando indices globales mayores al indice eliminado:%d",indiceTablaGlobal);
 	int i;
 	int j;
 	t_indiceTablaProceso* indiceTabla;
@@ -546,14 +546,13 @@ void actualizarIndicesGlobalesEnTablasProcesos(int indiceTablaGlobal){
 	for(i=0;i<listaTablasProcesos->elements_count;i++){
 		indiceTabla = list_remove(listaTablasProcesos,i);
 
-
 		for(j=0;j<indiceTabla->tablaProceso->elements_count;j++){
 			entrada = list_remove(indiceTabla->tablaProceso,j);
 			if(entrada->indiceGlobal > indiceTablaGlobal) entrada->indiceGlobal--;
-			list_add(indiceTabla->tablaProceso,entrada);
+			list_add_in_index(indiceTabla->tablaProceso,j,entrada);
 		}
 
-		list_add(listaTablasProcesos,indiceTabla);
+		list_add_in_index(listaTablasProcesos,i,indiceTabla);
 	}
 }
 

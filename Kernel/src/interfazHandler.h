@@ -206,7 +206,7 @@ void imprimirTablaArchivosProceso(int pid){
 
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		printf("\t\t\t\t%d\t%s\t\t%d\t     %d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
+		printf("\t\t\t\t%d\t%s\t\t%d\t\t%d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }
@@ -246,31 +246,31 @@ void mostrarProcesos(char orden){
 
 	switch(orden){
 	case 'N':
-		printf("Procesos en estado ---> NEW\n");
+		printf("\033[22;36mProcesos en estado NUEVO--->Cantidad:%d\033[0m\n",colaNuevos->elements_count);
 		pthread_mutex_lock(&mutexColaNuevos);
 		imprimirListadoDeProcesos(colaNuevos);
 		pthread_mutex_unlock(&mutexColaNuevos);
 		break;
 	case 'R':
-		log_info(logKernel,"Procesos en estado ---> READY\n");
+		printf("\033[22;36mProcesos en estado LISTO--->Cantidad:%d\033[0m\n",colaListos->elements_count);
 		pthread_mutex_lock(&mutexColaListos);
 		imprimirListadoDeProcesos(colaListos);
 		pthread_mutex_unlock(&mutexColaListos);
 		break;
 	case 'E':
-		log_info(logKernel,"Procesos en estado ---> EXEC\n");
+		printf("\033[22;36mProcesos en estado EJECUCION--->Cantidad:%d\033[0m\n",colaEjecucion->elements_count);
 		pthread_mutex_lock(&mutexColaEjecucion);
 		imprimirListadoDeProcesos(colaEjecucion);
 		pthread_mutex_unlock(&mutexColaEjecucion);
 		break;
 	case 'F':
-		log_info(logKernel,"Procesos en estado ---> FINISHED\n");
+		printf("\033[22;36mProcesos en estado TERMINADO--->Cantidad:%d\033[0m\n",colaTerminados->elements_count);
 		pthread_mutex_lock(&mutexColaTerminados);
 		imprimirListadoDeProcesos(colaTerminados);
 		pthread_mutex_unlock(&mutexColaTerminados);
 		break;
 	case 'B':
-		log_info(logKernel,"Procesos en estado ---> BLOCKED\n");
+		printf("\033[22;36mProcesos en estado BLOQUEADO--->Cantidad:%d\033[0m\n",colaBloqueados->elements_count);
 		pthread_mutex_lock(&mutexColaBloqueados);
 		imprimirListadoDeProcesos(colaBloqueados);
 		pthread_mutex_unlock(&mutexColaBloqueados);
@@ -281,8 +281,7 @@ void mostrarProcesos(char orden){
 }
 
 void imprimirListadoDeProcesos(t_list* procesos){
-	log_info(logKernel,"Cantidad de procesos: %d\n", procesos->elements_count);
-	printf("PID\tCantidad de Rafagas\tCantidad de SysCalls\tPaginas de Heap\t\tCantidad Alocar\tSize Alocar\tCantidad Liberar\tSize Liberar\n");
+	if(!list_is_empty(procesos))printf("\033[22;34mPID/RAFAGAS/SysCalls/Pags. Heap/Cant. Alocar/ Size Alocar/ Cant Liberar/ Size Liberar/\033[0m\n");
 	int i;
 	for(i=0 ; i<procesos->elements_count ; i++){
 		t_pcb* proceso= list_get(procesos,i);
@@ -307,7 +306,7 @@ void interfaceTablaGlobalArchivos(){
 	printf("\033[22;34mDireccion\tAperturas\033[0m\n");
 	for(i=0;i<tablaArchivosGlobal->elements_count;i++){
 		entrada = list_get(tablaArchivosGlobal,i);
-		log_info(logKernelPantalla,"\t%s\t%d\n",entrada->path,entrada->open);
+		printf("%s\t%d\n",entrada->path,entrada->open);
 	}
 }
 

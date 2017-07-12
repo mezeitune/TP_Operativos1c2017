@@ -73,7 +73,7 @@ char* obtener_instruccion(){
 
 	return instruccion;
 }
-void EjecutarProgramaMedianteAlgoritmo(){
+void EjecutarProgramaMedianteAlgoritmo(){ //Fase busqueda: Buscar la instruccion en memoria - La decodificas - Buscas los operandos - Ejecutas - Chequea interrupciones
 
 	cantidadInstruccionesAEjecutarDelPcbActual = pcb_actual->cantidadInstrucciones;
 
@@ -87,7 +87,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
 			log_info(logConsola,"Cantidad de instrucciones ejecutadas %d\n", cantidadInstruccionesEjecutadas);
 
-			if(verificaInterrupcion()) {
+			if(verificaInterrupcion()>0) {
 						expropiar();
 						break;
 					}
@@ -101,7 +101,7 @@ void EjecutarProgramaMedianteAlgoritmo(){
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
 			log_info(logConsola,"Cantidad de instrucciones ejecutadas %d", cantidadInstruccionesEjecutadas);
 
-			if(verificaInterrupcion()) {
+			if(verificaInterrupcion()>0) {
 					expropiar();
 					break;
 				}

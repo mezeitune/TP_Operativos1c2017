@@ -32,9 +32,9 @@ int verificaInterrupcion(){
 	log_info(logConsolaPantalla,"Verificando interrupciones");
 
 	printf("Proceso finalizado:%d\n",procesoFinalizado);
-	if(procesoFinalizado) return 0; //El proceso ya finalizo al llegar a END
+	if(procesoFinalizado) return -1; //El proceso ya finalizo al llegar a END
 
-	if(interrupcion != SIN_INTERRUPCION) return -1; //Primero preguntamos si la CPU autodetecto una interrupcion
+	if(interrupcion != SIN_INTERRUPCION) return 1; //Primero preguntamos si la CPU autodetecto una interrupcion
 
 	int interrupcionesEnKernel=0; //Sino, le preguntamos al Kernel
 	char comandoConsultarInterrupciones = 'I';
@@ -45,8 +45,8 @@ int verificaInterrupcion(){
 
 	if(interrupcionesEnKernel) {
 		interrupcion = FINALIZADO_VOLUNTARIAMENTE;
-		pcb_actual->exitCode = -8;
-		return -1;
+		pcb_actual->exitCode = -8; /*TODO: Ver como agregar el exit code -7*/
+		return 1;
 	}
 
 	return 0;//No paso naranja
