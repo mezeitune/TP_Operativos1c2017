@@ -29,9 +29,9 @@ void expropiar();
 
 
 int verificaInterrupcion(){
-	log_info(logConsolaPantalla,"Verificando interrupciones");
+	log_info(logConsola,"Verificando interrupciones");
 
-	printf("Proceso finalizado:%d\n",procesoFinalizado);
+	//printf("Proceso finalizado:%d\n",procesoFinalizado);
 	if(procesoFinalizado) return -1; //El proceso ya finalizo al llegar a END
 
 	if(interrupcion != SIN_INTERRUPCION) return 1; //Primero preguntamos si la CPU autodetecto una interrupcion

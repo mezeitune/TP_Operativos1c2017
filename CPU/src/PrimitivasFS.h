@@ -29,7 +29,7 @@ t_descriptor_archivo abrir_archivo(t_direccion_archivo direccion, t_banderas fla
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
 	if(resultadoEjecucion < 0){
-		log_error(logConsolaPantalla,"Error del proceso de PID %d al abrir un archivo en modo %s",pid,flagsMapeados);
+		log_error(logConsolaPantalla,"Error del proceso de PID %d al abrir un archivo en modo %s\n",pid,flagsMapeados);
 		interrupcion = RES_EJEC_NEGATIVO;
 		return 0;
 	}
@@ -58,7 +58,7 @@ void borrar_archivo (t_descriptor_archivo descriptor_archivo){
 	send(socketKernel,&pid,sizeof(int),0);
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d",pid,descriptor_archivo);
+	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha borrado un archivo de descriptor %d\n",pid,descriptor_archivo);
 	else {
 		log_error(logConsolaPantalla,"Error del proceso de PID %d al borrar el archivo de descriptor %d",pid,descriptor_archivo);
 		interrupcion = RES_EJEC_NEGATIVO;
@@ -86,7 +86,7 @@ void cerrar_archivo(t_descriptor_archivo descriptor_archivo){
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 
 
-	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d",pid,descriptor_archivo);
+	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha cerrado un archivo de descriptor %d\n",pid,descriptor_archivo);
 	else {
 		log_error(logConsolaPantalla,"Error del proceso de PID %d ha cerrado el archivo de descriptor %d",pid,descriptor_archivo);
 		interrupcion = RES_EJEC_NEGATIVO;
@@ -113,7 +113,7 @@ void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_varia
 	send(socketKernel,&descriptor_archivo,sizeof(int),0);
 	send(socketKernel,&posicion,sizeof(int),0);
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d",pid,descriptor_archivo,posicion);
+	if(resultadoEjecucion>0)log_info(logConsolaPantalla,"El proceso de PID %d ha movido el cursor de un archivo de descriptor %d en la posicion %d\n",pid,descriptor_archivo,posicion);
 	else {
 		log_error(logConsolaPantalla,"Error del proceso de PID %d al mover el cursor de un archivo de descriptor %d en la posicion %d",pid,descriptor_archivo,posicion);
 		interrupcion = RES_EJEC_NEGATIVO;
@@ -147,22 +147,22 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 
 	recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
-
 	char* mensajeRecibido;
-	char* valor_variable_char;
+	char* valor;
 	if(resultadoEjecucion>0){
 		recv(socketKernel,infoLeida,tamanio,0);
-		log_info(logConsolaPantalla,"La informacion leida es %s",infoLeida);
-		almacenarDatosEnMemoria(infoLeida,tamanio,num_pagina,offset);
 
-		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, sizeof(t_valor_variable))<0){
-					direccionInvalida();
-				}else{
-						valor_variable_char=mensajeRecibido;
-				}
-		printf("/n/nlo que lei es : %s/n",valor_variable_char);
+		almacenarDatosEnMemoria(infoLeida,tamanio,num_pagina,offset);
+		if ( conseguirDatosMemoria(&mensajeRecibido, num_pagina,offset, tamanio)<0){
+							direccionInvalida();
+						}else{
+								valor=mensajeRecibido;
+						}
+		int posicion= num_pagina*config_paginaSize+offset;
+		log_info(logConsolaPantalla,"\nSe ha guardado correctamente  '%s' en la posicion %d \n",valor,posicion);
+
 	}else{
-		log_error(logConsolaPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d",pid,descriptor_archivo);
+		log_error(logConsolaPantalla,"Error del proceso de PID %d al leer informacion de un archivo de descriptor %d \n",pid,descriptor_archivo);
 		interrupcion = RES_EJEC_NEGATIVO;
 	}
 }
@@ -207,7 +207,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 
 			recv(socketKernel,&resultadoEjecucion,sizeof(int),0);
 			if(resultadoEjecucion < 0) {
-				log_error(logConsolaPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d ",pid,descriptor_archivo);
+				log_error(logConsolaPantalla,"Error del proceso de PID %d al escribir un archivo de descriptor %d \n",pid,descriptor_archivo);
 				interrupcion = RES_EJEC_NEGATIVO;
 					return;
 				}

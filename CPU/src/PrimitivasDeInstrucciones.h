@@ -219,10 +219,8 @@ t_valor_variable dereferenciar(t_puntero puntero) {
 		}else{
 				valor_variable_char=mensajeRecibido;
 		}
-	//log_info(loggerConPantalla, "Valor Obtenido de la Memoria: %s", valor_variable_char);
-	//int valor_variable = atoi(valor_variable_char);
-	char *ptr;
-	int valor_variable = strtol(valor_variable_char, &ptr, 10);
+
+	t_valor_variable valor_variable = atoi(valor_variable_char);
 	free(valor_variable_char);
 	log_info(logConsolaPantalla, "Dereferenciar: Valor Obtenido: %d en la posicion %d\n", valor_variable,puntero);
 	return valor_variable;
