@@ -104,7 +104,7 @@ void interfaceObtenerDatosProceso(){
 			log_warning(logKernelPantalla,"Proceso no existente---> PID: %d", pid);
 			return;
 		}
-		printf("\033[22;34mDatos del proceso--->%d\033[0m\n",pid);
+		printf("Datos del proceso--->%d\n",pid);
 		printf("\033[22;34mPID/RAFAGAS/SysCalls/Pags. Heap/Cant. Alocar/ Size Alocar/ Cant Liberar/ Size Liberar/\033[0m\n");
 		obtenerDatosProceso(pid);
 }
@@ -198,15 +198,15 @@ void imprimirTablaArchivosProceso(int pid){
 		return entrada->pid == pid;
 	}
 	int i;
-	printf("\t\t\tTabla de archivos del proceso\n");
-	printf("\t\t\tFile Descriptor\tFlags\tIndice Global\tCursor\n");
+	printf("Tabla de archivos del proceso\n");
+	printf("\033[22;34m\t\t\tFile Descriptor\tFlags\t   Indice Global\tCursor\033[0m\n");
 
 	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
 	t_entradaTablaProceso* entrada;
 
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		log_info(logKernelPantalla,"\t\t\t\t%d\t%s\t\t%d\t%d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
+		printf("\t\t\t\t%d\t%s\t\t%d\t     %d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }
@@ -303,8 +303,8 @@ void finalizarProcesoVoluntariamente(int pid,int exitCode){
 void interfaceTablaGlobalArchivos(){
 	int i;
 	t_entradaTablaGlobal* entrada;
-	printf("\t\tTabla Global de Archivos\n");
-	printf("\tDireccion\tAperturas\n");
+	printf("Tabla Global de Archivos\n");
+	printf("\033[22;34mDireccion\tAperturas\033[0m\n");
 	for(i=0;i<tablaArchivosGlobal->elements_count;i++){
 		entrada = list_get(tablaArchivosGlobal,i);
 		log_info(logKernelPantalla,"\t%s\t%d\n",entrada->path,entrada->open);
