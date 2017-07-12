@@ -87,7 +87,7 @@ void EjecutarProgramaMedianteAlgoritmo(){ //Fase busqueda: Buscar la instruccion
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
 			log_info(logConsola,"cantidad de instrucciones ejecutadas %d\n", cantidadInstruccionesEjecutadas);
 
-			if(verificaInterrupcion()) {
+			if(verificaInterrupcion()>0) {
 						expropiar();
 						break;
 					}
@@ -101,7 +101,7 @@ void EjecutarProgramaMedianteAlgoritmo(){ //Fase busqueda: Buscar la instruccion
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel
 			log_info(logConsola,"cantidad de instrucciones ejecutadas %d", cantidadInstruccionesEjecutadas);
 
-			if(verificaInterrupcion()) {
+			if(verificaInterrupcion()>0) {
 					expropiar();
 					break;
 				}
