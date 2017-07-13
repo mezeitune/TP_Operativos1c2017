@@ -140,7 +140,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 		send(socketKernel,&validado,sizeof(int),0);
 		fclose(fp);
 	}else{
-		validado=0;
+		validado=-1;
 		log_error(logConsolaPantalla,"No existen bloques disponibles para crear el archivo\n");
 		send(socketKernel,&validado,sizeof(int),0);
 	}
@@ -180,13 +180,13 @@ void borrarArchivoFunction(char* path){
 	   else
 	   {
 		   log_error(logConsolaPantalla,"Excepecion de filesystem al borrar archivo--->Archivo:%s\n",rutaAbsoluta);
-		   validado=0;
+		   validado=-1;
 		   send(socketKernel,&validado,sizeof(char),0);
 	      //send que no se pudo eliminar el archivo
 	   }
 	}else {
 		log_error(logConsolaPantalla,"El archivo no se puede borrar porque no existe--->Archivo:%s\n",rutaAbsoluta);
-		validado=0;
+		validado=-1;
 		send(socketKernel,&validado,sizeof(char),0);
 		//send diciendo que hubo un error y no se pudo eliminar el archivo
 	}
@@ -508,7 +508,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 
 			}else{
 				log_error(logConsolaPantalla,"No existen suficientes bloques para escribir la informacion solicitada\n");
-				validado=0;
+				validado=-1;
 				send(socketKernel,&validado,sizeof(int),0);
 				return;
 			}
@@ -521,7 +521,7 @@ void guardarDatosArchivoFunction(char* path){//ver tema puntero, si lo tengo que
 		log_info(logConsolaPantalla,"Datos almacenados--->Archivo:%s--->Informacion:%s\n",path,(char*)buffer);
 	}else{
 		log_error(logConsolaPantalla,"No se puede guardar datos porque el archivo no fue creado--->Archivo:%s\n",path);
-		validado=0;
+		validado=-1;
 		send(socketKernel,&validado,sizeof(int),0); //El archivo no existe
 	}
 

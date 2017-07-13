@@ -41,6 +41,7 @@ enum {
 	EXIT_FILE_DESCRIPTOR_NOT_OPEN,
 	EXIT_DIDNOT_OPEN_TABLE,
 	EXIT_FILESYSTEM_EXCEPTION,
+	EXIT_INSUFFICIENT_CLUSTERS,
 	EXIT_STOPPED_SCHEDULING
 };
 
@@ -148,6 +149,12 @@ void excepcionArchivoInexistente(int socket,int pid){
 	encolarEnListaParaTerminar(proceso);
 }
 
+void excepcionBloquesInsuficientes(int socket,int pid){
+	log_error(logKernelPantalla,"Error por no existir espacio suficiente para crear/exteneder un archivo--->PID:%d\n",pid);
+	t_pcb* proceso = expropiarPorEjecucion(socket);
+	proceso->exitCode = exitCodeArray[EXIT_INSUFFICIENT_CLUSTERS]->value;
+	encolarEnListaParaTerminar(proceso);
+}
 
 /*
  * Excepeciones Memoria
@@ -375,7 +382,10 @@ void inicializarExitCodeArray(){
 	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value = -15;
 	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje="Ha surgido una excepecion de Filesystem";
 
-	exitCodeArray[EXIT_STOPPED_SCHEDULING]->value=-16;
+	exitCodeArray[EXIT_INSUFFICIENT_CLUSTERS]->value=-16;
+	exitCodeArray[EXIT_INSUFFICIENT_CLUSTERS]->mensaje="No existe espacio suficiente para crear/extender el archivo";
+
+	exitCodeArray[EXIT_STOPPED_SCHEDULING]->value=-17;
 	exitCodeArray[EXIT_STOPPED_SCHEDULING]->mensaje="La planificacion del sistema se encuentra detenida";
 }
 #endif /* EXCEPCIONES_H_ */
