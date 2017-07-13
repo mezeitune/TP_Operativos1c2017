@@ -363,7 +363,7 @@ void imprimirMetadatasPaginaProceso(int pagina, int pid){
 
 		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
 		memcpy(&auxBloque,buffer,sizeof(t_bloqueMetadata));
-		printf("Metadata\nBitUso:%d\nSize:%d\n",auxBloque->bitUso,auxBloque->size);
+		printf("Metadata\nBitUso:%d\nSize:%d\n",auxBloque.bitUso,auxBloque.size);
 
 		i = i + sizeof(t_bloqueMetadata) + auxBloque.size;
 	}
