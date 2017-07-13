@@ -74,14 +74,14 @@ void interfazHandler(){
 						testEscribirArchivo();
 					//interfazHandlerParaFileSystem('A',1);
 					break;
-				case 'H': imprimirListaAdministrativaHeap();
-						  break;
-				case 'Z':
-						testLeerArchivo();
-					break;
-				case 'X':
-						testBorrarArchivo();
-					break;
+				case 'H': 	imprimirListaAdministrativaHeap();
+							break;
+				case 'Q': 	interfaceimprimirMetadatasPaginaProceso();
+							break;
+				case 'Z':	testLeerArchivo();
+							break;
+				case 'X':	testBorrarArchivo();
+							break;
 				case 'D': sem_post(&sem_planificacion);
 						  break;
 				default:
@@ -90,6 +90,16 @@ void interfazHandler(){
 		}
 	}while(1);
 
+}
+
+void interfaceimprimirMetadatasPaginaProceso(){
+	int pid;
+	int pagina;
+	printf("Ingrese el PID del proceso\n");
+	scanf("%d",&pid);
+	printf("Ingrese la pagina del proceso\n");
+	scanf("%d",&pagina);
+	imprimirMetadatasPaginaProceso(pagina,pid);
 }
 
 void interfaceMostrarGradoMultiprogramacion(){
@@ -367,6 +377,7 @@ void imprimirInterfazUsuario(){
 			"M - Modif grado multiprogramacion\n"
 			"E - Ver grado multiprogramacion\n"
 			"K - Finalizar proceso\n"
+			"Q - Imprimir Metadatas De Paginas de un Proceso\n"
 			"H - Mostrar estructura Heap");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
