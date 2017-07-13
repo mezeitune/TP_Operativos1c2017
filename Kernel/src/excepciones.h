@@ -40,7 +40,9 @@ enum {
 	EXIT_FILE_CANNOT_BE_DELETE,
 	EXIT_FILE_DESCRIPTOR_NOT_OPEN,
 	EXIT_DIDNOT_OPEN_TABLE,
-	EXIT_FILESYSTEM_EXCEPTION
+	EXIT_FILESYSTEM_EXCEPTION,
+	EXIT_INSUFFICIENT_CLUSTERS,
+	EXIT_STOPPED_SCHEDULING
 };
 
 int resultadoEjecucion=-1;
@@ -81,10 +83,9 @@ void excepcionStackOverflow(int socket);
 void excepcionPlanificacionDetenida(int socket){
 	log_error(logKernelPantalla,"No se puede iniciar un nuevo proceso por planificacion detenida\n");
 	log_error(logKernel,"Informando a Consola excepcion por planificacion detenido");
-	informarConsola(socket,exitCodeArray[EXIT_RESOURCE]->mensaje,strlen(exitCodeArray[EXIT_RESOURCE]->mensaje));
-	char* mensaje = "Finalizar";
-	int size=strlen(mensaje);
-	informarConsola(socket,mensaje,size);
+	informarConsola(socket,exitCodeArray[EXIT_STOPPED_SCHEDULING]->mensaje,strlen(exitCodeArray[EXIT_STOPPED_SCHEDULING]->mensaje));
+	char comandoFinalizarPrograma='F';
+	informarConsola(socket,&comandoFinalizarPrograma,sizeof(char));
 	eliminarSocket(socket);
 
 }
@@ -148,6 +149,12 @@ void excepcionArchivoInexistente(int socket,int pid){
 	encolarEnListaParaTerminar(proceso);
 }
 
+void excepcionBloquesInsuficientes(int socket,int pid){
+	log_error(logKernelPantalla,"Error por no existir espacio suficiente para crear/exteneder un archivo--->PID:%d\n",pid);
+	t_pcb* proceso = expropiarPorEjecucion(socket);
+	proceso->exitCode = exitCodeArray[EXIT_INSUFFICIENT_CLUSTERS]->value;
+	encolarEnListaParaTerminar(proceso);
+}
 
 /*
  * Excepeciones Memoria
@@ -374,5 +381,11 @@ void inicializarExitCodeArray(){
 
 	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->value = -15;
 	exitCodeArray[EXIT_FILESYSTEM_EXCEPTION]->mensaje="Ha surgido una excepecion de Filesystem";
+
+	exitCodeArray[EXIT_INSUFFICIENT_CLUSTERS]->value=-16;
+	exitCodeArray[EXIT_INSUFFICIENT_CLUSTERS]->mensaje="No existe espacio suficiente para crear/extender el archivo";
+
+	exitCodeArray[EXIT_STOPPED_SCHEDULING]->value=-17;
+	exitCodeArray[EXIT_STOPPED_SCHEDULING]->mensaje="La planificacion del sistema se encuentra detenida";
 }
 #endif /* EXCEPCIONES_H_ */

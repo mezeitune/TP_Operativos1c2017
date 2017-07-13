@@ -80,6 +80,12 @@ int main(void){
 
 	printf("El tamano del bitarray es de : %d\n",bitarray_get_max_bit(bitarray));
 
+	/*int i; //Para testear cuando no existen mas bloques
+	for(i=0;i<config_cantidadBloques;i++){
+		bitarray_set_bit(bitarray,i);
+	}
+	*/
+
 	//*********************************************************************
 	socketServidor = crear_socket_servidor(ipFS,puertoFS);
 	socketKernel=recibirConexion(socketServidor);

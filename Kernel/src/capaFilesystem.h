@@ -137,7 +137,7 @@ void abrirArchivo(t_fsAbrir* data){
 			resultadoEjecucion=crearArchivo(socket,direccion);
 
 				if(resultadoEjecucion < 0){
-					excepcionFileSystem(socket,pid);
+					excepcionBloquesInsuficientes(socket,pid);
 					free(direccion);
 					free(flags);
 					return;
@@ -149,6 +149,8 @@ void abrirArchivo(t_fsAbrir* data){
 		fileDescriptor = actualizarTablaDelProceso(pid,flags,indiceEnTablaGlobal);
 
 		 send(socket,&resultadoEjecucion,sizeof(int),0);
+
+
 		 send(socket,&fileDescriptor,sizeof(int),0);
 
 		log_info(logKernel,"Finalizo la apertura del archivo--->PID:%d--->FD:%d",pid,fileDescriptor);
