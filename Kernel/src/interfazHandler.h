@@ -64,6 +64,8 @@ void interfazHandler(){
 							break;
 				case 'E': 	interfaceMostrarGradoMultiprogramacion();
 							break;
+				case 'A':	interfaceImprimirPaginasHeapProceso();
+							break;
 				case 'S':	interfaceSolicitarContenidoMemoria();
 							break;
 				case 'I':	imprimirInterfazUsuario();
@@ -310,6 +312,17 @@ void interfaceTablaGlobalArchivos(){
 	}
 }
 
+
+void interfaceImprimirPaginasHeapProceso(){
+	int pid,pagina;
+	printf("Ingrese el pid del proceso\n");
+	scanf("%d",&pid);
+
+	printf("Ingrese la pagina\n");
+	scanf("%d",&pagina);
+
+	imprimirMetadatasPaginaProceso(pagina, pid);
+}
 
 void interfaceModificarGradoMultiprogramacion(){ /*TODO: Ver de dejar cambiar a uno menor*/
 	int nuevoGrado;
