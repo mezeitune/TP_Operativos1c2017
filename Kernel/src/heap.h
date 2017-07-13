@@ -352,6 +352,24 @@ int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid ,int si
 	return -1;
 }
 
+void imprimirMetadatasPaginaProceso(int pagina, int pid){
+	int i = 0;
+	printf("Metadatas de página %d del pid %d\n",pagina,pid);
+
+	t_bloqueMetadata auxBloque;
+	void *buffer= malloc(sizeof(t_bloqueMetadata));
+
+	while(i < config_paginaSize){
+
+		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
+		memcpy(&auxBloque,buffer,sizeof(t_bloqueMetadata));
+		printf("Metadata\nBitUso:%d\nSize:%d\n",auxBloque->bitUso,auxBloque->size);
+
+		i = i + sizeof(t_bloqueMetadata) + auxBloque.size;
+	}
+	free(buffer);
+}
+
 void liberarBloqueHeap(int pid, int pagina, int offset){
 	log_info(logKernel,"Liberando bloque de pagina:%d y offset:%d de la memoria dinamica--->PID:%d",pagina,offset,pid);
 
