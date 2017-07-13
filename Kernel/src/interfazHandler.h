@@ -8,6 +8,7 @@
 #include "planificacion.h"
 #include "configuraciones.h"
 #include "capaFilesystem.h"
+#include "heap.h"
 #include "logs.h"
 
 void interfazHandler();
@@ -20,6 +21,7 @@ void interfaceTablaGlobalArchivos();
 void interfaceSolicitarContenidoMemoria();
 void interfaceModificarGradoMultiprogramacion();
 void interfaceMostrarGradoMultiprogramacion();
+void interfaceimprimirMetadatasPaginaProceso();
 
 void finalizarProcesoVoluntariamente(int pid,int exitCode);
 void imprimirListadoDeProcesos(t_list* procesos);
@@ -64,8 +66,6 @@ void interfazHandler(){
 							break;
 				case 'E': 	interfaceMostrarGradoMultiprogramacion();
 							break;
-				case 'A':	interfaceImprimirPaginasHeapProceso();
-							break;
 				case 'S':	interfaceSolicitarContenidoMemoria();
 							break;
 				case 'I':	imprimirInterfazUsuario();
@@ -94,12 +94,21 @@ void interfazHandler(){
 
 void interfaceimprimirMetadatasPaginaProceso(){
 	int pid;
-	int pagina;
+	int i;
+	t_adminBloqueHeap* paginaHeap;
 	printf("Ingrese el PID del proceso\n");
 	scanf("%d",&pid);
-	printf("Ingrese la pagina del proceso\n");
-	scanf("%d",&pagina);
-	imprimirMetadatasPaginaProceso(pagina,pid);
+
+	_Bool verificaPid(t_adminBloqueHeap* paginaHeap){
+		return paginaHeap->pid == pid;
+	}
+
+	t_list* paginasHeapProceso = list_filter(listaAdmHeap,(void*)verificaPid);
+
+	for(i=0;i<paginasHeapProceso->elements_count;i++){
+		paginaHeap = list_get(paginasHeapProceso,i);
+		imprimirMetadatasPaginaProceso(paginaHeap->pagina,pid);
+	}
 }
 
 void interfaceMostrarGradoMultiprogramacion(){
