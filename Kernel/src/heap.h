@@ -59,6 +59,7 @@ void destruirTodasLasPaginasHeapDeProceso(int pidProc);
 int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid,int size);
 void liberarBloqueHeap(int pid, int pagina, int offset);
 void imprimirListaAdministrativaHeap();
+void imprimirMetadatasPaginaProceso(int pagina, int pid);
 
 void reservarEspacioHeap(t_alocar* data){
 	log_info(logKernel,"Reservando %d bytes de memoria dinamica:--->PID:%d",data->size,data->pid);
@@ -363,7 +364,7 @@ void imprimirMetadatasPaginaProceso(int pagina, int pid){
 
 		buffer = leerDeMemoria(pid,pagina,i,sizeof(t_bloqueMetadata));
 		memcpy(&auxBloque,buffer,sizeof(t_bloqueMetadata));
-		printf("Metadata\nBitUso:%d\nSize:%d\n",auxBloque.bitUso,auxBloque.size);
+		log_info(logKernelPantalla,"Metadata\nBitUso:%d\nSize:%d\n",auxBloque.bitUso,auxBloque.size);
 
 		i = i + sizeof(t_bloqueMetadata) + auxBloque.size;
 	}
