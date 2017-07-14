@@ -190,7 +190,6 @@ void administrarFinProcesos(){
 							}
 						}
 						pthread_mutex_unlock(&mutexListaEspera);
-					/*TODO:La tabla del proceso de archivos abiertos no la borro para que qude el registro*/
 				}
 	}
 	log_info(logKernel,"Hilo administrador de fin de procesos finalizado");

@@ -180,10 +180,10 @@ int disminuirYConsultarSemaforo(char* semaforoId){
 	//log_info(logKernel,"Semaforo id: %s", semaforoAsociado->id);
 	//log_info(logKernel,"\nSemaforo valor: %d", semaforoAsociado->valor);
 
+	indiceSemaforo->semaforo->valor -= 1;
 
 	if(indiceSemaforo->semaforo->valor < 0) expropiar = -1;
 
-	indiceSemaforo->semaforo->valor -= 1;
 
 
 	//if(semaforoAsociado->valor < 1) expropiar = -1;

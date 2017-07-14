@@ -466,7 +466,6 @@ void verificarInterrupcionesEnCPU(int socket){
 		if(interrupcion->pid == cpu->pid) {
 			log_warning(logKernelPantalla,"El proceso debe ser expropiado--->PID:%d\n",interrupcion->pid);
 			existeInterrupcion=1;
-			list_remove(listaProcesosInterrumpidos,i);
 		}
 	}
 
@@ -493,6 +492,9 @@ void recibirProcesoExpropiadoVoluntariamente(int socket){
 		t_procesoAbortado* interrupcion=list_remove_by_condition(listaProcesosInterrumpidos,(void*)verificaPid);
 		proceso->exitCode = interrupcion->exitCode;
 		free(interrupcion);
+
+
+		printf("HOLA\n");
 		pthread_mutex_lock(&mutexListaEspera);
 		list_add(listaEspera,proceso);
 		pthread_mutex_unlock(&mutexListaEspera);
@@ -505,7 +507,7 @@ void gestionarAlocar(int socket){
 	int size,pid;
     pthread_t heapThread;
 	recv(socket,&pid,sizeof(int),0);
-	log_info(logKernelPantalla,"Gestionando reserva de memoria dinamica--->PID:%d\n",pid);
+	log_info(logKernelPantalla,"Gestionando reserva de memoria dinamica--->PID:%d",pid);
 	recv(socket,&size,sizeof(int),0);
 
 	if(size > config_paginaSize - sizeof(t_bloqueMetadata)*2) {
@@ -717,7 +719,7 @@ void actualizarConfiguraciones(){
 	config_quantum = config_get_int_value(configuraciones, "QUANTUM");
 	config_quantumSleep = config_get_int_value(configuraciones, "QUANTUM_SLEEP");
 
-	log_info(logKernelPantalla, "Nuevo quantum:%d\n",config_quantum);
+	log_info(logKernelPantalla, "Nuevo quantum:%d",config_quantum);
 	log_info(logKernelPantalla, "Nuevo quantum sleep:%d\n",config_quantumSleep);
 
 	config_destroy(configuraciones);

@@ -254,7 +254,7 @@ void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **c
 }
 
 void reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
-	log_info(logKernelPantalla,"Reservando bloque de %d bytes en pagina heap:%d --->PID:%d",size,puntero->pagina,pid);
+	log_info(logKernelPantalla,"Reservando bloque de %d bytes en pagina heap:%d --->PID:%d\n",size,puntero->pagina,pid);
 	t_bloqueMetadata auxBloque;
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 	int i = 0;
@@ -429,7 +429,7 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 			i++;
 		}
 	pthread_mutex_unlock(&mutexListaAdminHeap);
-	imprimirListaAdministrativaHeap();
+	//imprimirListaAdministrativaHeap();
 
 	/*imprimirMetadatasPaginaProceso(pagina,pid);
 
@@ -439,7 +439,8 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 }
 
 void imprimirListaAdministrativaHeap(){
-		log_info(logKernelPantalla,"Imprimir Lista Administrativas Heap\n");
+		log_info(logKernel,"Imprimir Lista Administrativas Heap\n");
+		printf("Paginas de heap\n");
 		t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 		int i = 0;
 
@@ -447,8 +448,8 @@ void imprimirListaAdministrativaHeap(){
 		while(i < list_size(listaAdmHeap))
 		{
 			aux = list_get(listaAdmHeap,i);
-			log_info(logKernelPantalla,"Pagina:%d\n",aux->pagina);
-			log_info(logKernelPantalla,"PID:%d\n",aux->pid);
+			log_info(logKernelPantalla,"Pid:%d",aux->pid);
+			log_info(logKernelPantalla,"Pagina:%d",aux->pagina);
 			log_info(logKernelPantalla,"Size Disponible:%d\n",aux->sizeDisponible);
 			i++;
 		}

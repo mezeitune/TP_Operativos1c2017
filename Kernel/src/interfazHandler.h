@@ -35,7 +35,7 @@ void obtenerDatosProceso(int pid);
 void mostrarProcesos(char orden);
 void mostrarTodosLosProcesos();
 
-void mostrarSemaforos();
+void interfaceMostrarEstadoSemaforos();
 void imprimirDatosContables(t_contable* proceso);
 void imprimirTablaArchivosProceso(int pid);
 
@@ -51,7 +51,7 @@ void interfazHandler(){
 		scanf("%c",&orden);
 		cont++;
 		switch(orden){
-				case 'B':   mostrarSemaforos();
+				case 'B':   interfaceMostrarEstadoSemaforos();
 							break;
 				case 'L': 	interfaceObtenerListadoProcesos(); /*TODO: Solucionar el asunto de como se imprime todo*/
 							break;
@@ -97,17 +97,21 @@ void interfazHandler(){
 }
 
 
-void mostrarSemaforos(){
+void interfaceMostrarEstadoSemaforos(){
 	t_semaforoAsociado *semaforo;
 	int i,j, pid;
 
+	printf("Estado de semaforos ANSISOP:\n");
+
 	for (i = 0; i < list_size(colaSemaforos); ++i) {
 		semaforo = list_get(colaSemaforos,i);
-		printf("\nSEMAFORO %s\tVALOR %d", semaforo->semaforo->id,semaforo->semaforo->valor);
+		printf("Semaforo %s\t Valor %d", semaforo->semaforo->id,semaforo->semaforo->valor);
+		if(!list_is_empty(semaforo->pids)) printf("\tProcesos en espera--->");
 		for (j = 0; j < list_size(semaforo->pids); ++j) {
 			pid = *(int*)list_get(semaforo->pids, j);
-			printf("PID %d", pid);
+			printf("\tPid %d", pid);
 		}
+		printf("\n");
 	}
 
 }
@@ -410,8 +414,9 @@ void imprimirInterfazUsuario(){
 			"M - Modif grado multiprogramacion\n"
 			"E - Ver grado multiprogramacion\n"
 			"K - Finalizar proceso\n"
-			"Q - Imprimir Metadatas De Paginas de un Proceso\n"
-			"H - Mostrar estructura Heap");
+			"Q - Imprimir Metadatas De Paginas de Heap de un Proceso\n"
+			"H - Paginas de Heap"
+			"B - Mostrar estado de Semaforos");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
 }
