@@ -392,7 +392,7 @@ void planificarCortoPlazo(){
 	_Bool verificarCPU(t_cpu* cpu){
 		return (cpu->estado == OCIOSA);
 	}
-	char comandoEnviarPcb = 'S';
+	char comandoEnviarPcb = 'P';
 
 	signal(SIGUSR1,signalHandler);
 

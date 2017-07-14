@@ -16,6 +16,7 @@ void recibirPCB(){
 		char comandoRecibirPCB;
 
 		recv(socketKernel,&comandoRecibirPCB,sizeof(char),MSG_WAITALL);
+		if(comandoRecibirPCB!='P')return;
 		log_info(logConsolaPantalla, "Recibiendo PCB...\n");
 
 		recibirYMostrarAlgortimoDePlanificacion(socketKernel);

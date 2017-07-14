@@ -415,7 +415,7 @@ void imprimirInterfazUsuario(){
 			"E - Ver grado multiprogramacion\n"
 			"K - Finalizar proceso\n"
 			"Q - Imprimir Metadatas De Paginas de Heap de un Proceso\n"
-			"H - Paginas de Heap"
+			"H - Paginas de Heap\n"
 			"B - Mostrar estado de Semaforos");
 	printf("\n-----------------------------------------------------------------------------------------------------\n");
 	/****************************************************************************************************************************/
