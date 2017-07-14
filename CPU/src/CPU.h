@@ -119,7 +119,12 @@ void moverCursor_archivo (t_descriptor_archivo descriptor_archivo, t_valor_varia
 void leer_archivo(t_descriptor_archivo descriptor_archivo,t_puntero informacion, t_valor_variable tamanio);
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio);
 //-------------------------------------------------------------------------PRIMITIVAS------------------------------------//
-
+typedef struct CPU {
+	char* stringLeidoDeFs;
+	int tamanio;
+	int direccionLogicaHeap;
+}t_leerFS;
+t_leerFS * leerFS;
 AnSISOP_funciones functions = {
 	.AnSISOP_definirVariable	=definirVariable,
 	.AnSISOP_obtenerPosicionVariable= obtenerPosicionVariable,

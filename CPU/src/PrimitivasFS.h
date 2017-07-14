@@ -159,6 +159,10 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 								valor=mensajeRecibido;
 						}
 		int posicion= num_pagina*config_paginaSize+offset;
+		leerFS=malloc(sizeof(t_leerFS));
+		leerFS->direccionLogicaHeap=posicion;
+		leerFS->stringLeidoDeFs= valor;
+		leerFS->tamanio=tamanio;
 		log_info(logConsolaPantalla,"\nSe ha guardado correctamente  '%s' en la posicion %d \n",valor,posicion);
 
 	}else{
@@ -176,6 +180,11 @@ void leer_archivo(t_descriptor_archivo descriptor_archivo, t_puntero informacion
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
 	if(descriptor_archivo==DESCRIPTOR_SALIDA){
+		if(tamanio==1){
+			informacion= (void *)(long)leerFS->stringLeidoDeFs;
+			tamanio= leerFS->tamanio;
+			free(leerFS);
+		}
 
 		char comandoImprimir = 'X';
 		char comandoImprimirPorConsola = 'P';
