@@ -132,9 +132,9 @@ t_punteroCPU *verificarEspacioLibreHeap(int size, int pid){
 		aux = (t_adminBloqueHeap*) list_get(listaAdmHeap,i);
 		pthread_mutex_unlock(&mutexListaAdminHeap);
 
-		printf("i=%d\n",i);
+		/*printf("i=%d\n",i);
 		printf("sizeDisponible=%d\n",aux->sizeDisponible);
-		printf("pid=%d\n",aux->pid);
+		printf("pid=%d\n",aux->pid);*/
 		if(aux->sizeDisponible >= size + sizeof(t_bloqueMetadata) && aux->pid == pid)
 		{
 			compactarPaginaHeap(aux->pagina,aux->pid);
@@ -173,9 +173,9 @@ int reservarPaginaHeap(int pid,int pagina){ //Reservo una página de heap nueva 
 	bloqueAdmin->pid = pid;
 	bloqueAdmin->sizeDisponible = aux.size;
 
-	printf("Pagina Reservada:%d\n",bloqueAdmin->pagina);
+	/*printf("Pagina Reservada:%d\n",bloqueAdmin->pagina);
 	printf("PID Proceso Reservado:%d\n",bloqueAdmin->pid);
-	printf("Size Disponible Pagina Reservada:%d\n",bloqueAdmin->sizeDisponible);
+	printf("Size Disponible Pagina Reservada:%d\n",bloqueAdmin->sizeDisponible);*/
 
 	list_add(listaAdmHeap, bloqueAdmin);
 	free(buffer);
@@ -197,11 +197,11 @@ void compactarPaginaHeap(int pagina, int pid){
 	while(offset < config_paginaSize && offset + sizeof(t_bloqueMetadata) + actual.size < config_paginaSize - sizeof(t_bloqueMetadata)){
 
 		buffer = leerDeMemoria(pid,pagina,offset,sizeof(t_bloqueMetadata)); //Leo el metadata Actual
-		memcpy(&actual,(t_bloqueMetadata*)buffer,sizeof(t_bloqueMetadata));
+		memcpy(&actual,buffer,sizeof(t_bloqueMetadata));
 
 		buffer = leerDeMemoria(pid,pagina,offset + sizeof(t_bloqueMetadata) + actual.size,sizeof(t_bloqueMetadata)); //Leo la posición del metadata que le sigue al actual
 
-		memcpy(&siguiente,(t_bloqueMetadata*)buffer,sizeof(t_bloqueMetadata));
+		memcpy(&siguiente,buffer,sizeof(t_bloqueMetadata));
 
 		/*printf("Actual bitUso=%d\n",actual.bitUso);
 		printf("Actual size=%d\n",actual.size);
@@ -253,7 +253,7 @@ void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **c
 }
 
 int reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
-	log_info(logKernel,"Reservando bloque de %d bytes en pagina heap:%d --->PID:%d",size,puntero->pagina,pid);
+	log_info(logKernelPantalla,"Reservando bloque de %d bytes en pagina heap:%d --->PID:%d",size,puntero->pagina,pid);
 	t_bloqueMetadata auxBloque;
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
 	int i = 0;
@@ -292,6 +292,9 @@ int reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
 
 	auxBloque.bitUso = -1;
 	auxBloque.size = sizeLibreViejo - size - sizeof(t_bloqueMetadata);
+	/*printf("SizeLibreViejo:%d\n",sizeLibreViejo);
+	printf("Size:%d\n",size);
+	printf("Size struct Metadata:%d\n",sizeof(t_bloqueMetadata));*/
 
 	memcpy(buffer,&auxBloque,sizeof(t_bloqueMetadata));
 
@@ -409,7 +412,7 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	bloque.bitUso = -1;
 
 	/*TODO: Poder saber bien cuanto estoy liberando*/
-	printf("\n\nEstoy liberando:%d\n\n",bloque.size);
+	//printf("\n\nEstoy liberando:%d\n\n",bloque.size);
 
 	actualizarLiberar(pid,bloque.size);
 	memcpy(buffer,&bloque,sizeof(t_bloqueMetadata));
@@ -432,12 +435,11 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	pthread_mutex_unlock(&mutexListaAdminHeap);
 	imprimirListaAdministrativaHeap();
 
-	imprimirMetadatasPaginaProceso(pagina,pid);
-	printf("ACÁ ESTA LO QUE TE IMPORTA\n");
+	/*imprimirMetadatasPaginaProceso(pagina,pid);
+
 	compactarPaginaHeap(pagina,pid);
-	printf("ACÁ ESTA LO QUE TE IMPORTA\n");
 	imprimirMetadatasPaginaProceso(pagina,pid);
-	imprimirListaAdministrativaHeap();
+	imprimirListaAdministrativaHeap();*/
 }
 
 void imprimirListaAdministrativaHeap(){
