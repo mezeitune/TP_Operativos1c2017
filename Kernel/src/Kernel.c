@@ -340,7 +340,7 @@ void abortarProcesos(char* procesosFinalizar){
 	int cantidad = *((int*)procesosFinalizar + desplazamiento);
 	desplazamiento ++;
 
-	log_info(logKernelPantalla,"Cantidad de procesos a abortar:%d\n",cantidad);
+	log_info(logKernel,"Cantidad de procesos a abortar:%d\n",cantidad);
 
 	for(i=0;i<cantidad;i++){
 

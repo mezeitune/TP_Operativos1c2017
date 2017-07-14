@@ -96,7 +96,6 @@ void EjecutarProgramaMedianteAlgoritmo(){ //Fase busqueda: Buscar la instruccion
 		procesoFinalizado=0;
 		while (!procesoFinalizado && cantidadInstruccionesAEjecutarPorKernel > 0){
 			ejecutarInstruccion();
-			printf("\n\nHOLAAA\n\n");
 			cantidadInstruccionesAEjecutarPorKernel--; //voy decrementando el Quantum que me dio el kernel hasta llegar a 0
 			log_info(logConsola,"Quedan por ejecutar %d instrucciones", cantidadInstruccionesAEjecutarPorKernel);
 			cantidadInstruccionesEjecutadas++;//para contabilidad del kernel

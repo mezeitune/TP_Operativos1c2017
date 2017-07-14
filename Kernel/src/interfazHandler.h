@@ -242,7 +242,8 @@ void imprimirTablaArchivosProceso(int pid){
 		return entrada->pid == pid;
 	}
 	int i;
-	printf("\t\t\t\tTabla de archivos abiertos del proceso\n");
+	if(!list_any_satisfy(listaTablasProcesos,(void*)verificaPidArchivo)) return;
+	printf("\t\t\t\tTabla de archivos abiertos del proceso--->Archivos abiertos\n");
 	printf("\033[22;34m\t\t\tFile Descriptor\tFlags\t   Indice Global\tCursor\033[0m\n");
 
 	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);

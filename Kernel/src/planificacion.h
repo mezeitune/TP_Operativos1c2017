@@ -56,7 +56,7 @@ void terminarProceso(t_pcb* proceso);void finalizarHiloPrograma(int pid);
 void liberarRecursosEnMemoria(t_pcb* pcbProcesoTerminado);
 void liberarMemoriaDinamica(int pid);
 void cambiarEstadoATerminado(t_pcb* procesoTerminar);
-void verificarArchivosAbiertos(int pid);
+void destruirTablaArchivosYActualizarTablaGlobal(int pid);
 
 pthread_t planificadorLargoPlazo;
 /*----LARGO PLAZO--------*/
@@ -221,7 +221,7 @@ void terminarProceso(t_pcb* proceso){
 
 	liberarMemoriaDinamica(proceso->pid);
 
-	verificarArchivosAbiertos(proceso->pid);
+	destruirTablaArchivosYActualizarTablaGlobal(proceso->pid);
 
 	verificarPidColaSemaforos(proceso->pid);
 
@@ -302,7 +302,7 @@ void liberarMemoriaDinamica(int pid){
 
 
 
-void verificarArchivosAbiertos(int pid){
+void destruirTablaArchivosYActualizarTablaGlobal(int pid){
 	int i=0;
 	int cont=0;
 	_Bool verificaPid(t_indiceTablaProceso* indice){
@@ -320,6 +320,10 @@ void verificarArchivosAbiertos(int pid){
 		if(!disminuirOpenYVerificarExistenciaEntradaGlobal(entrada->indiceGlobal)) i++;
 		cont++;
 	}
+
+	list_remove_and_destroy_by_condition(listaTablasProcesos,(void*)verificaPid,free);
+	//list_destroy_and_destroy_elements(indice->tablaProceso,free);
+	//free(indice);
 }
 
 

@@ -29,7 +29,7 @@ void expropiar();
 
 
 int verificaInterrupcion(){
-	log_info(logConsola,"Verificando interrupciones");
+	log_info(logConsolaPantalla,"Verificando interrupciones");
 
 	//printf("Proceso finalizado:%d\n",procesoFinalizado);
 	if(procesoFinalizado) return -1; //El proceso ya finalizo al llegar a END
