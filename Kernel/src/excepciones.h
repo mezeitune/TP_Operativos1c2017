@@ -194,7 +194,7 @@ void excepcionStackOverflow(int socket){
 	encolarEnListaParaTerminar(proceso);
 	cambiarEstadoCpu(socket,OCIOSA);
 
-
+	sem_post(&sem_administrarFinProceso);
 	sem_post(&sem_CPU);
 }
 
