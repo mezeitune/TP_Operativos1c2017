@@ -97,7 +97,7 @@ void gestionarFinProcesoCPU(int socket);
 
 int contadorPid=0;
 /*---PLANIFICACION GENERAL-------*/
-
+void verificarPidColaSemaforos(int pid);
 void signalHandler(int sigCode);
 
 /*------------------------LARGO PLAZO-----------------------------------------*/
@@ -223,10 +223,34 @@ void terminarProceso(t_pcb* proceso){
 
 	verificarArchivosAbiertos(proceso->pid);
 
+	verificarPidColaSemaforos(proceso->pid);
+
 	cambiarEstadoATerminado(proceso);
 	disminuirGradoMultiprogramacion();
 	sem_post(&sem_admitirNuevoProceso);
 }
+
+
+void verificarPidColaSemaforos(int pid){
+	int i,j;
+	t_semaforoAsociado *semaforo;
+
+	for (i = 0; i < list_size(colaSemaforos); ++i) {
+		semaforo = list_get(colaSemaforos,i);
+		for (j = 0; j < list_size(semaforo->pids); ++j) {
+
+			if(pid == *(int*)list_get(semaforo->pids, j)) {
+
+				printf("\nPID ELIMINADO %d\tSEMAFORO %s\n", pid, semaforo->semaforo->id);
+				list_remove(semaforo->pids,j);
+			}
+		}
+
+	}
+}
+
+
+
 
 void finalizarHiloPrograma(int pid){
 	t_consola* consola = malloc(sizeof(t_consola));
