@@ -289,6 +289,7 @@ void gestionarCierreCpu(int socketCpu){
 }
 
 void imprimirPorConsola(socketAceptado){
+	int pid;
 	void* mensaje;
 	int size;
 	recv(socketAceptado,&size,sizeof(int),0);
@@ -359,6 +360,7 @@ void abortarProcesos(char* procesosFinalizar){
 
 
 void gestionarFinalizarProgramaConsola(int socket){
+	int pid;
 	log_warning(logKernel,"La consola  %d  ha solicitado finalizar un proceso",socket);
 	recv(socket,&pid,sizeof(int),0);
 	finalizarProcesoVoluntariamente(pid,exitCodeArray[EXIT_END_OF_PROCESS]->value);

@@ -139,6 +139,7 @@ void interfaceMostrarGradoMultiprogramacion(){
 }
 
 void interfaceObtenerDatosProceso(){
+	int pid;
 	printf("Ingrese el pid del proceso\n");
 	scanf("%d",&pid);
 		if(verificarProcesoExistente(pid)<0){
@@ -151,6 +152,7 @@ void interfaceObtenerDatosProceso(){
 }
 
 void interfaceFinalizarProcesoVoluntariamente(){
+	int pid;
 	printf("Ingrese el pid del proceso a finalizar\n");
 	scanf("%d",&pid);
 			if(verificarProcesoExistente(pid)<0){

@@ -45,7 +45,6 @@ void interfazPausarPlanificacion();
 /*-------------------------*/
 
 /*----LARGO PLAZO--------*/
-int pid=0;
 void planificarLargoPlazo();
 void administrarNuevosProcesos();
 void administrarFinProcesos();
