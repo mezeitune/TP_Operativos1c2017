@@ -297,8 +297,9 @@ void verificarArchivosAbiertos(int pid){
 		if(!disminuirOpenYVerificarExistenciaEntradaGlobal(entrada->indiceGlobal)) i++;
 		cont++;
 	}
-
 }
+
+
 
 void cambiarEstadoATerminado(t_pcb* procesoTerminar){
 	log_info(logKernelPantalla,"Almacenando en Terminados--->PID:%d\n",procesoTerminar->pid);
@@ -376,12 +377,12 @@ void planificarCortoPlazo(){
 
 
 	while(!flagTerminarPlanificadorCortoPlazo){
+		verificarPausaPlanificacion();
 
 		sem_wait(&sem_CPU);
 		sem_wait(&sem_procesoListo);
 
-		verificarPausaPlanificacion();
-												/*TODO: Ojo en este intervalo de tiempo. Cuando se reanude la planificacion, puede no existir mas ese proceso*/
+
 		pthread_mutex_lock(&mutexColaListos);
 		pcbListo = list_remove(colaListos,0);
 		pthread_mutex_unlock(&mutexColaListos);

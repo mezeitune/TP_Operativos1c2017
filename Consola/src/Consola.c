@@ -111,9 +111,25 @@ void cerrarTodo(){
 
 	log_info(logConsola,"Informando Kernel el cierre de la Consola\n");
 	if(cantidad == 0) {
-		char comandoCerrarSocket= 'Z';
-		send(socketKernel,&comandoCerrarSocket,sizeof(char),0);
-		close(socketKernel);
+		printf("Informando\n");
+		int bufferProcesosSize = sizeof(int);
+		char* mensaje = malloc(sizeof(char)*2 + sizeof(int)*2);
+
+		memcpy(mensaje + desplazamiento,&comandoInterruptHandler,sizeof(char));
+		desplazamiento += sizeof(char);
+
+		memcpy(mensaje + desplazamiento,&comandoCierreConsola,sizeof(char));
+		desplazamiento += sizeof(char);
+
+		memcpy(mensaje + desplazamiento,&bufferProcesosSize,sizeof(int));
+		desplazamiento += sizeof(int);
+
+		memcpy(mensaje + desplazamiento,&cantidad,sizeof(int));
+		desplazamiento += sizeof(int);
+
+		send(socketKernel,mensaje,sizeof(char)*2+sizeof(int)*2,0);
+
+		free(mensaje);
 		return;
 	}
 

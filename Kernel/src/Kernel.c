@@ -312,7 +312,7 @@ void imprimirPorConsola(socketAceptado){
 }
 
 void gestionarCierreConsola(int socket){
-	log_warning(logKernelPantalla,"Gestionando cierre de consola %d\n",socket);
+	log_warning(logKernelPantalla,"Gestionando cierre de consola %d",socket);
 	int size;
 	char* procesosAFinalizar;
 	pthread_t finalizadorProcesos;
