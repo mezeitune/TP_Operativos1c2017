@@ -111,7 +111,6 @@ void cerrarTodo(){
 
 	log_info(logConsola,"Informando Kernel el cierre de la Consola\n");
 	if(cantidad == 0) {
-		printf("Informando\n");
 		int bufferProcesosSize = sizeof(int);
 		char* mensaje = malloc(sizeof(char)*2 + sizeof(int)*2);
 

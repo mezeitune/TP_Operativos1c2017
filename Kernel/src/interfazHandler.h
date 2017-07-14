@@ -209,7 +209,7 @@ void obtenerDatosProceso(int pid){
 }
 
 void imprimirDatosContables(t_contable* proceso){
-	printf("%d\t%d\t%d\t  %d\t      %d\t\t   %d\t\t%d\t\t%d\n",pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
+	printf("%d\t%d\t%d\t  %d\t      %d\t\t   %d\t\t%d\t\t%d\n",proceso->pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
 				proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 }
 
