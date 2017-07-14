@@ -494,7 +494,6 @@ void recibirProcesoExpropiadoVoluntariamente(int socket){
 		free(interrupcion);
 
 
-		printf("HOLA\n");
 		pthread_mutex_lock(&mutexListaEspera);
 		list_add(listaEspera,proceso);
 		pthread_mutex_unlock(&mutexListaEspera);
