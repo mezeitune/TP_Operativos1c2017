@@ -41,7 +41,6 @@
 #include "excepciones.h"
 #include "logs.h"
 
-
 void verificarInterrupcionesEnCPU(int socket);
 void recibirProcesoExpropiadoVoluntariamente(int socket);
 

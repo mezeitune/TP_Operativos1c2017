@@ -35,6 +35,7 @@ void obtenerDatosProceso(int pid);
 void mostrarProcesos(char orden);
 void mostrarTodosLosProcesos();
 
+void mostrarSemaforos();
 void imprimirDatosContables(t_contable* proceso);
 void imprimirTablaArchivosProceso(int pid);
 
@@ -50,6 +51,8 @@ void interfazHandler(){
 		scanf("%c",&orden);
 		cont++;
 		switch(orden){
+				case 'B':   mostrarSemaforos();
+							break;
 				case 'L': 	interfaceObtenerListadoProcesos(); /*TODO: Solucionar el asunto de como se imprime todo*/
 							break;
 				case 'O': 	interfaceObtenerDatosProceso();
@@ -84,11 +87,28 @@ void interfazHandler(){
 							break;
 				case 'D': sem_post(&sem_planificacion);
 						  break;
+
 				default:
 					if(cont!=2){} else cont = 0;
 					break;
 		}
 	}while(1);
+
+}
+
+
+void mostrarSemaforos(){
+	t_semaforoAsociado *semaforo;
+	int i,j, pid;
+
+	for (i = 0; i < list_size(colaSemaforos); ++i) {
+		semaforo = list_get(colaSemaforos,i);
+		printf("\nSEMAFORO %s\tVALOR %d", semaforo->semaforo->id,semaforo->semaforo->valor);
+		for (j = 0; j < list_size(semaforo->pids); ++j) {
+			pid = *(int*)list_get(semaforo->pids, j);
+			printf("PID %d", pid);
+		}
+	}
 
 }
 
