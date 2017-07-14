@@ -305,7 +305,7 @@ void imprimirPorConsola(socketAceptado){
 	pthread_mutex_unlock(&mutexListaConsolas);
 
 	if(hiloNoFinalizado){
-	log_info(logKernelPantalla,"Imprimiendo por consola--->PID:%d--->Mensaje: %s\n",pid,mensaje);
+	log_info(logKernel,"Imprimiendo por consola--->PID:%d--->Mensaje: %s\n",pid,mensaje);
 	informarConsola(buscarSocketHiloPrograma(pid),mensaje,size);
 	}
 	free(mensaje);
