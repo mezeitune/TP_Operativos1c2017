@@ -53,7 +53,7 @@ int reservarPaginaHeap(int pid,int pagina);
 void compactarPaginaHeap(int pagina, int pid);
 void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **contenido);
 void escribirContenidoPaginaHeap(int pagina, int pid, int offset, int size, void *contenido);
-int reservarBloqueHeap(int pid,int size,t_punteroCPU *puntero);
+void reservarBloqueHeap(int pid,int size,t_punteroCPU *puntero);
 void destruirPaginaHeap(int pidProc, int pagina);
 void destruirTodasLasPaginasHeapDeProceso(int pidProc);
 int paginaHeapBloqueSuficiente(int posicionPaginaHeap,int pagina,int pid,int size);
@@ -93,12 +93,10 @@ void reservarEspacioHeap(t_alocar* data){
 		}
 
 	pthread_mutex_lock(&mutexMemoria);
-	resultadoEjecucion = reservarBloqueHeap(data->pid, data->size,puntero); /*TODO: Porque aca iria algun error??*/
+	reservarBloqueHeap(data->pid, data->size,puntero);
 	pthread_mutex_unlock(&mutexMemoria);
-	if(resultadoEjecucion < 0){
-		printf("No se pudo reservar Bloque porque esta re loco\n");
-	}
-	imprimirMetadatasPaginaProceso(puntero->pagina,data->pid);
+
+	//imprimirMetadatasPaginaProceso(puntero->pagina,data->pid);
 
 	//printf("\nPagina que se le da para ese espacio de memoria:%d\n",puntero->pagina);
 	send(data->socket,&resultadoEjecucion,sizeof(int),0);
@@ -255,7 +253,7 @@ void leerContenidoPaginaHeap(int pagina, int pid, int offset, int size, void **c
 	*contenido = leerDeMemoria(pid,pagina,offset+sizeof(t_bloqueMetadata),size);
 }
 
-int reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
+void reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
 	log_info(logKernelPantalla,"Reservando bloque de %d bytes en pagina heap:%d --->PID:%d",size,puntero->pagina,pid);
 	t_bloqueMetadata auxBloque;
 	t_adminBloqueHeap* aux = malloc(sizeof(t_adminBloqueHeap));
@@ -271,7 +269,7 @@ int reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
 			if(size + sizeof(t_bloqueMetadata) > aux->sizeDisponible){
 				pthread_mutex_unlock(&mutexListaAdminHeap);
 				printf("\nEntre a un error\n");
-				return -16; //CODIGO DE ERROR - NO SE PUEDE HACER ESTA RESERVA
+			//	return -16; //CODIGO DE ERROR - NO SE PUEDE HACER ESTA RESERVA
 			}
 			else{
 				aux->sizeDisponible = aux->sizeDisponible - size - sizeof(t_bloqueMetadata);
@@ -307,7 +305,6 @@ int reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
 
 	free(buffer);
 	log_info(logKernel,"Bloque de pagina heap %d reservado --->PID:%d",puntero->pagina,pid);
-	return 1;
 }
 
 void destruirPaginaHeap(int pidProc, int pagina){ //Si quiero destruir una página específica de la lista
