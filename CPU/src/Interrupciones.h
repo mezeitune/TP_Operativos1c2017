@@ -64,7 +64,7 @@ void expropiar(){
 		break;
 	case DIRECCION_INVALIDA: expropiarPorDireccionInvalida();
 		break;
-	case EXCEPCION_MEMORIA: /*TODO> Ver como seguir aca*/
+	case EXCEPCION_MEMORIA: expropiarPorDireccionInvalida();
 		break;
 	case SEM_WAIT: expropiarPorKernel();
 		break;
