@@ -137,9 +137,11 @@ t_punteroCPU *verificarEspacioLibreHeap(int size, int pid){
 		printf("pid=%d\n",aux->pid);*/
 		if(aux->sizeDisponible >= size + sizeof(t_bloqueMetadata) && aux->pid == pid)
 		{
+			//imprimirMetadatasPaginaProceso(aux->pagina, aux->pid);
 			compactarPaginaHeap(aux->pagina,aux->pid);
+			//imprimirMetadatasPaginaProceso(aux->pagina, aux->pid);
 			puntero-> offset = paginaHeapBloqueSuficiente(i,aux->pagina,aux->pid,size);
-			printf("Puntero:%d\n",puntero->offset);
+			//printf("Puntero:%d\n",puntero->offset);
 			if(puntero-> offset >= 0){
 				puntero->pagina = aux->pagina;
 				break;
@@ -218,6 +220,7 @@ void compactarPaginaHeap(int pagina, int pid){
 		}
 		else{
 			offset += sizeof(t_bloqueMetadata) + actual.size;
+			actual.size = siguiente.size;
 		}
 	}
 	free(buffer);
@@ -282,6 +285,8 @@ int reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
 
 	buffer = leerDeMemoria(pid,puntero->pagina,puntero->offset,sizeof(t_bloqueMetadata));
 	memcpy(&auxBloque,buffer,sizeof(t_bloqueMetadata));
+
+	//printf("AuxBloque.size:%d\n",auxBloque.size);
 
 	sizeLibreViejo = auxBloque.size;
 	auxBloque.bitUso = 1;
