@@ -147,7 +147,7 @@ void interfaceObtenerDatosProceso(){
 			return;
 		}
 		printf("Datos del proceso--->%d\n",pid);
-		printf("\033[22;34mPID/RAFAGAS/SysCalls/Pags. Heap/Cant. Alocar/ Size Alocar/ Cant Liberar/ Size Liberar/\033[0m\n");
+		//printf("\033[22;34mPID/RAFAGAS/SysCalls/Pags. Heap/Cant. Alocar/ Size Alocar/ Cant Liberar/ Size Liberar/\033[0m\n");
 		obtenerDatosProceso(pid);
 }
 
@@ -231,6 +231,7 @@ void obtenerDatosProceso(int pid){
 }
 
 void imprimirDatosContables(t_contable* proceso){
+	printf("\033[22;34mPID/RAFAGAS/SysCalls/Pags. Heap/Cant. Alocar/ Size Alocar/ Cant Liberar/ Size Liberar/\033[0m\n");
 	printf("%d\t%d\t%d\t  %d\t      %d\t\t   %d\t\t%d\t\t%d\n",proceso->pid,proceso->cantRafagas,proceso->cantSysCalls,proceso->cantPaginasHeap,proceso->cantAlocar,
 				proceso->sizeAlocar,proceso->cantLiberar,proceso->sizeLiberar);
 }
@@ -241,7 +242,8 @@ void imprimirTablaArchivosProceso(int pid){
 		return entrada->pid == pid;
 	}
 	int i;
-	printf("Tabla de archivos del proceso\n");
+	if(!list_any_satisfy(listaTablasProcesos,(void*)verificaPidArchivo)) return;
+	printf("\t\t\t\tTabla de archivos abiertos del proceso--->Archivos abiertos\n");
 	printf("\033[22;34m\t\t\tFile Descriptor\tFlags\t   Indice Global\tCursor\033[0m\n");
 
 	t_indiceTablaProceso* entradaTablaProceso = list_remove_by_condition(listaTablasProcesos,(void*)verificaPidArchivo);
@@ -249,7 +251,7 @@ void imprimirTablaArchivosProceso(int pid){
 
 	for(i=0;i<entradaTablaProceso->tablaProceso->elements_count;i++){
 		entrada = list_get(entradaTablaProceso->tablaProceso,i);
-		printf("\t\t\t\t%d\t%s\t\t%d\t\t%d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
+		printf("\t\t\t\t%d\t%s\t\t%d\t\t   %d\n",entrada->fd,entrada->flags,entrada->indiceGlobal,entrada->puntero);
 	}
 	list_add(listaTablasProcesos,entradaTablaProceso);
 }
@@ -324,7 +326,7 @@ void mostrarProcesos(char orden){
 }
 
 void imprimirListadoDeProcesos(t_list* procesos){
-	if(!list_is_empty(procesos))printf("\033[22;34mPID/RAFAGAS/SysCalls/Pags. Heap/Cant. Alocar/ Size Alocar/ Cant Liberar/ Size Liberar/\033[0m\n");
+	//if(!list_is_empty(procesos))printf("\033[22;34mPID/RAFAGAS/SysCalls/Pags. Heap/Cant. Alocar/ Size Alocar/ Cant Liberar/ Size Liberar/\033[0m\n");
 	int i;
 	for(i=0 ; i<procesos->elements_count ; i++){
 		t_pcb* proceso= list_get(procesos,i);

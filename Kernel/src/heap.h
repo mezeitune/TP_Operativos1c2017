@@ -93,8 +93,10 @@ void reservarEspacioHeap(t_alocar* data){
 		}
 
 	pthread_mutex_lock(&mutexMemoria);
-	reservarBloqueHeap(data->pid, data->size,puntero); /*TODO: Porque aca iria algun error??*/
+	reservarBloqueHeap(data->pid, data->size,puntero);
 	pthread_mutex_unlock(&mutexMemoria);
+
+	//imprimirMetadatasPaginaProceso(puntero->pagina,data->pid);
 
 	//printf("\nPagina que se le da para ese espacio de memoria:%d\n",puntero->pagina);
 	send(data->socket,&resultadoEjecucion,sizeof(int),0);
@@ -267,6 +269,7 @@ void reservarBloqueHeap(int pid,int size,t_punteroCPU* puntero){
 			aux->sizeDisponible = aux->sizeDisponible - size - sizeof(t_bloqueMetadata);
 			list_replace(listaAdmHeap,i,aux);
 			break;
+
 		}
 		i++;
 	}

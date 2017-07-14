@@ -78,6 +78,7 @@ void crearArchivoFunction(char* path){ // /Carpeta1/Carpeta2/archivo.bin
 
 	char* carpetaSiguiente = strtok(path,"/");
 
+
 	if(!esArchivo(carpetaSiguiente)){
 		printf("Verificando directorio:%s\n",carpetaSiguiente);
 

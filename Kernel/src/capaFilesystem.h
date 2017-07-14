@@ -305,7 +305,7 @@ void escribirArchivo(t_fsEscribir* data){
 			recv(socketFyleSys,&resultadoEjecucion,sizeof(int),0);
 
 		if(resultadoEjecucion < 0){
-			excepcionFileSystem(socket,pid);
+			excepcionBloquesInsuficientes(socket,pid);
 			free(informacion);
 			free(data);
 			return;
