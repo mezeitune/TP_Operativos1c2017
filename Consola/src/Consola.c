@@ -81,7 +81,10 @@ void connectionHandler() {
 				pthread_mutex_unlock(&mutex_crearHilo);
 				break;
 			default:
-				if(cont!=2)log_error(logConsolaPantalla,"Orden %c no definida", orden);
+				if(cont!=2){
+					log_error(logConsola,"Orden %c no definida", orden);
+					cont=0;
+				}
 				else cont=0;
 				pthread_mutex_unlock(&mutex_crearHilo);
 				break;

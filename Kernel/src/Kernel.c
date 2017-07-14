@@ -305,7 +305,7 @@ void imprimirPorConsola(socketAceptado){
 	pthread_mutex_unlock(&mutexListaConsolas);
 
 	if(hiloNoFinalizado){
-	log_info(logKernel,"Imprimiendo por consola--->PID:%d--->Mensaje: %s",pid,mensaje);
+	log_info(logKernelPantalla,"Imprimiendo por consola--->PID:%d--->Mensaje: %s\n",pid,mensaje);
 	informarConsola(buscarSocketHiloPrograma(pid),mensaje,size);
 	}
 	free(mensaje);
@@ -432,11 +432,12 @@ int buscarProcesoYTerminarlo(int pid,int exitCode){
 
 
 	if(!encontro){
-		pthread_mutex_lock(&mutexColaBloqueados); /*TODO: Si esta en bloqueados, deberiamos aumentar el semaforo en el cual estuvo encolado*/
+		pthread_mutex_lock(&mutexColaBloqueados);
 		if(list_any_satisfy(colaBloqueados,(void*)verificarPid)){
 			log_info(logKernelPantalla,"Procesos a finalizar en bloqueados--->PID: %d\n",pid);
 			procesoATerminar=list_remove_by_condition(colaBloqueados,(void*)verificarPid);
 			encontro = 1;
+			verificarPidColaSemaforos(procesoATerminar->pid);
 		}
 		pthread_mutex_unlock(&mutexColaBloqueados);
 	}
@@ -711,13 +712,13 @@ void selectorConexiones() {
 }
 
 void actualizarConfiguraciones(){
-	log_info(logKernelPantalla, "Leyendo cambios en archivo de config");
+	log_info(logKernelPantalla, "Leyendo cambios de configuraciones");
 	t_config* configuraciones = config_create(ruta_config);
 	config_quantum = config_get_int_value(configuraciones, "QUANTUM");
 	config_quantumSleep = config_get_int_value(configuraciones, "QUANTUM_SLEEP");
 
-	printf("Nuevo quantum:%d\n",config_quantum);
-	printf("Nuevo quantum sleep:%d\n",config_quantumSleep);
+	log_info(logKernelPantalla, "Nuevo quantum:%d\n",config_quantum);
+	log_info(logKernelPantalla, "Nuevo quantum sleep:%d\n",config_quantumSleep);
 
 	config_destroy(configuraciones);
 }
@@ -743,25 +744,36 @@ void cerrarTodo(){
 	int i;
 
 	log_error(logKernelPantalla,"Destruyendo procesos\n");
+
+	if(!list_is_empty(colaNuevos)){
 	for(i=0;i<colaNuevos->elements_count;i++){
 		list_remove_and_destroy_element(colaNuevos,i,free);
 	}
+	}
 
+	if(!list_is_empty(colaListos)){
 	for(i=0;i<colaListos->elements_count;i++){
 			list_remove_and_destroy_element(colaListos,i,free);
 		}
+	}
 
+	if(!list_is_empty(colaEjecucion)){
 	for(i=0;i<colaEjecucion->elements_count;i++){
 			list_remove_and_destroy_element(colaEjecucion,i,free);
 		}
+	}
 
+	if(!list_is_empty(colaBloqueados)){
 	for(i=0;i<colaBloqueados->elements_count;i++){
 			list_remove_and_destroy_element(colaBloqueados,i,free);
 		}
+	}
 
+	if(!list_is_empty(colaTerminados)){
 	for(i=0;i<colaTerminados->elements_count;i++){
 			list_remove_and_destroy_element(colaTerminados,i,free);
 		}
+	}
 
 
 	/*Recibir todos los pcb en ejecucion*/

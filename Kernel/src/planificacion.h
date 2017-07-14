@@ -223,8 +223,6 @@ void terminarProceso(t_pcb* proceso){
 
 	destruirTablaArchivosYActualizarTablaGlobal(proceso->pid);
 
-	verificarPidColaSemaforos(proceso->pid);
-
 	cambiarEstadoATerminado(proceso);
 	disminuirGradoMultiprogramacion();
 	sem_post(&sem_admitirNuevoProceso);
@@ -314,8 +312,8 @@ void destruirTablaArchivosYActualizarTablaGlobal(int pid){
 
 
 	while(cont<indice->tablaProceso->elements_count){
-		imprimirTablaArchivosProceso(pid);
-		interfaceTablaGlobalArchivos();
+		//imprimirTablaArchivosProceso(pid);
+		//interfaceTablaGlobalArchivos();
 		entrada=list_get(indice->tablaProceso,i);
 		if(!disminuirOpenYVerificarExistenciaEntradaGlobal(entrada->indiceGlobal)) i++;
 		cont++;
