@@ -443,7 +443,6 @@ int buscarProcesoYTerminarlo(int pid,int exitCode){
 
 	procesoATerminar->exitCode = exitCode;
 	terminarProceso(procesoATerminar);
-
 	return 0;
 }
 
@@ -460,12 +459,13 @@ void verificarInterrupcionesEnCPU(int socket){
 	cpu = list_find(listaCPU,(void*)verificaSocket);
 	pthread_mutex_unlock(&mutexListaCPU);
 
-	int i=0;
+	int i;
 	for(i=0;i<listaProcesosInterrumpidos->elements_count;i++){
 		t_procesoAbortado* interrupcion = list_get(listaProcesosInterrumpidos,i);
 		if(interrupcion->pid == cpu->pid) {
 			log_warning(logKernelPantalla,"El proceso debe ser expropiado--->PID:%d\n",interrupcion->pid);
 			existeInterrupcion=1;
+			list_remove(listaProcesosInterrumpidos,i);
 		}
 	}
 

@@ -160,7 +160,7 @@ void interfaceFinalizarProcesoVoluntariamente(){
 				return;
 				}
 			if(verificarProcesoNoTerminado(pid)<0){
-				log_info(logKernel,"El proceso ya ha finalizado--->PID:%d\n",pid);
+				log_warning(logKernelPantalla,"El proceso ya ha finalizado--->PID:%d\n",pid);
 				return;
 				}
 	finalizarProcesoVoluntariamente(pid,exitCodeArray[EXIT_END_OF_PROCESS]->value);
