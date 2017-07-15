@@ -402,12 +402,13 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 
 	memcpy(&bloque,buffer,sizeof(t_bloqueMetadata));
 
+	/*
 	printf("Leo:\n");
 	printf("Pagina:%d\n",pagina);
 	printf("Offset:%d\n",i);
 	printf("BitUso:%d\n",bloque.bitUso);
 	printf("Size:%d\n",bloque.size);
-
+*/
 	bloque.bitUso = -1;
 
 	//printf("\n\nEstoy liberando:%d\n\n",bloque.size);
