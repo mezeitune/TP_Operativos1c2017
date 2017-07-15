@@ -231,14 +231,14 @@ void terminarProceso(t_pcb* proceso){
 void verificarPidColaSemaforos(int pid){
 	int i,j;
 	t_semaforoAsociado *semaforo;
-	printf("Verificando cola semaforos\n");
-	printf("Pid a checkear:%d\n",pid);
+	//printf("Verificando cola semaforos\n");
+	//printf("Pid a checkear:%d\n",pid);
 	for (i = 0; i < list_size(colaSemaforos); ++i) {
 		semaforo = list_get(colaSemaforos,i);
 		for (j = 0; j < list_size(semaforo->pids); ++j) {
-			printf("Pid a comparar:%d\n",*(int*)list_get(semaforo->pids, j));
+			//printf("Pid a comparar:%d\n",*(int*)list_get(semaforo->pids, j));
 			if(pid == *(int*)list_get(semaforo->pids, j)) {
-				printf("\nPID ELIMINADO %d\tSEMAFORO %s\n", pid, semaforo->semaforo->id);
+				//printf("\nPID ELIMINADO %d\tSEMAFORO %s\n", pid, semaforo->semaforo->id);
 				list_remove(semaforo->pids,j);
 			}
 		}
@@ -422,7 +422,6 @@ void planificarCortoPlazo(){
 
 
 			send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
-
 			enviarConfiguracionesQuantum(cpuEnEjecucion->socket);
 
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);

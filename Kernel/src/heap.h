@@ -410,7 +410,6 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 
 	bloque.bitUso = -1;
 
-	/*TODO: Poder saber bien cuanto estoy liberando*/
 	//printf("\n\nEstoy liberando:%d\n\n",bloque.size);
 
 	actualizarLiberar(pid,bloque.size);

@@ -740,7 +740,7 @@ void cerrarTodo(){
 	log_error(logKernelPantalla,"Finalizando hilos planificadores\n");
 	pthread_kill(planificadorLargoPlazo,SIGUSR1);
 	pthread_kill(planificadorCortoPlazo,SIGUSR1);
-	pthread_kill(planificadorMedianoPlazo,SIGUSR1);
+	//pthread_kill(planificadorMedianoPlazo,SIGUSR1);
 
 	int i;
 
