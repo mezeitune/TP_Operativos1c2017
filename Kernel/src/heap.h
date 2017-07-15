@@ -398,16 +398,15 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	pthread_mutex_unlock(&mutexMemoria);
 
 	memcpy(&bloque,buffer,sizeof(t_bloqueMetadata));
-	/*
+
 	printf("Leo:\n");
 	printf("Pagina:%d\n",pagina);
 	printf("Offset:%d\n",i);
 	printf("BitUso:%d\n",bloque.bitUso);
 	printf("Size:%d\n",bloque.size);
-	*/
+
 	bloque.bitUso = -1;
 
-	/*TODO: Poder saber bien cuanto estoy liberando*/
 	//printf("\n\nEstoy liberando:%d\n\n",bloque.size);
 
 	actualizarLiberar(pid,bloque.size);
