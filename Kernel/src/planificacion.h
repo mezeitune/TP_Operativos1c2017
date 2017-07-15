@@ -422,6 +422,7 @@ void planificarCortoPlazo(){
 
 
 			send(cpuEnEjecucion->socket,&comandoEnviarPcb,sizeof(char),0);
+			printf("hola\n");
 			enviarConfiguracionesQuantum(cpuEnEjecucion->socket);
 
 			serializarPcbYEnviar(pcbListo, cpuEnEjecucion->socket);

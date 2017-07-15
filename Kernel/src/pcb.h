@@ -190,10 +190,10 @@ t_pcb* recibirYDeserializarPcb(int socketCPU){
 	t_pcb* pcb = malloc(sizeof(t_pcb));
 	log_info(logKernel, "Recibiendo PCB serializado--->SOCKET:%d", socketCPU);
 	int pcbSerializadoSize;
-	recv(socketCPU,&pcbSerializadoSize,sizeof(int),0);
+	recv(socketCPU,&pcbSerializadoSize,sizeof(int),MSG_WAITALL);
 	void * pcbADeserializar = malloc(pcbSerializadoSize);
 	void* pcbSerializado = pcbADeserializar;
-	recv(socketCPU,pcbSerializado,pcbSerializadoSize,0);
+	recv(socketCPU,pcbSerializado,pcbSerializadoSize,MSG_WAITALL);
 
 	memcpy(&pcb->pid,pcbSerializado,sizeof(int));
 	pcbSerializado += sizeof(int);
