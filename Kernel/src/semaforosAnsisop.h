@@ -239,13 +239,11 @@ void aumentarYConsultarSemaforo(char* semaforoId){
 
 	semaforoAsociado->semaforo->valor +=1;
 
-	if(semaforoAsociado->semaforo->valor >= 0){
+	if(semaforoAsociado->pids->elements_count > 0){
 
-		if(!list_is_empty(semaforoAsociado->pids)){
 			int pid = *(int*)list_remove(semaforoAsociado->pids,0);
 			log_info(logKernelPantalla,"Cambiando proceso de Bloqueados a Listos--->PID:%d--->Semaforo:%s\n",pid,semaforoId);
 			desbloquearProceso(pid);
-		}
 	}
 
 	list_add(colaSemaforos,semaforoAsociado);
