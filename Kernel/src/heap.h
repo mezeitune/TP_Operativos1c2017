@@ -96,6 +96,8 @@ void reservarEspacioHeap(t_alocar* data){
 	reservarBloqueHeap(data->pid, data->size,puntero);
 	pthread_mutex_unlock(&mutexMemoria);
 
+	puntero->offset += sizeof(t_bloqueMetadata);
+
 	//imprimirMetadatasPaginaProceso(puntero->pagina,data->pid);
 
 	//printf("\nPagina que se le da para ese espacio de memoria:%d\n",puntero->pagina);
@@ -385,6 +387,7 @@ void imprimirMetadatasPaginaProceso(int pagina, int pid){
 
 void liberarBloqueHeap(int pid, int pagina, int offset){
 	log_info(logKernel,"Liberando bloque de pagina:%d y offset:%d de la memoria dinamica--->PID:%d",pagina,offset,pid);
+	offset -= sizeof(t_bloqueMetadata);
 
 
 	int i = 0;
@@ -398,13 +401,13 @@ void liberarBloqueHeap(int pid, int pagina, int offset){
 	pthread_mutex_unlock(&mutexMemoria);
 
 	memcpy(&bloque,buffer,sizeof(t_bloqueMetadata));
-	/*
+
 	printf("Leo:\n");
 	printf("Pagina:%d\n",pagina);
 	printf("Offset:%d\n",i);
 	printf("BitUso:%d\n",bloque.bitUso);
 	printf("Size:%d\n",bloque.size);
-	*/
+
 	bloque.bitUso = -1;
 
 	/*TODO: Poder saber bien cuanto estoy liberando*/
